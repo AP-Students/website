@@ -18,13 +18,13 @@ import { db } from "@/server/db";
  * @see https://next-auth.js.org/getting-started/typescript#module-augmentation
  */
 declare module "next-auth" {
-  interface Session extends DefaultSession {
+  type Session = {
     user: {
       id: string;
       // ...other properties
       // role: UserRole;
     } & DefaultSession["user"];
-  }
+  } & DefaultSession
 
   // interface User {
   //   // ...other properties
