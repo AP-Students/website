@@ -3,10 +3,10 @@ const config = {
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "project": true,
-    ecmaVersion: "latest",
-    sourceType: "module",
+    "ecmaVersion": "latest", "sourceType": "module",
   },
-  "plugins": [ "@typescript-eslint",
+  "plugins": [
+    "@typescript-eslint",
     "eslint-comments",
   ],
   "extends": [
@@ -69,11 +69,11 @@ const config = {
     "unicorn/prevent-abbreviations": [
       "error",
       {
-        allowList: {
-          env: true,
-          src: true,
-          props: true,
-          db: true,
+        "allowList": {
+          "env": true,
+          "src": true,
+          "props": true,
+          "db": true,
         },
       },
     ],
@@ -89,7 +89,7 @@ const config = {
     "no-console": [
       "warn",
       {
-        allow: ["warn", "error", "debug", "trace", "info", "fatal"],
+        "allow": ["warn", "error", "debug", "trace", "info", "fatal"],
       },
     ],
 
@@ -98,22 +98,22 @@ const config = {
     // deprecation
     "deprecation/deprecation": "warn", // warn about deprecated methods
   },
-  overrides: [
+  "overrides": [
     {
       // disable some rules in test files because jest requires casting
-      files: ["*.test.ts"],
-      rules: {
+      "files": ["*.test.ts"],
+      "rules": {
         "@typescript-eslint/no-explicit-any": "off",
         "unicorn/prevent-abbreviations": ["warn"],
       },
     },
   ],
-  env: {
-    browser: true,
-    es6: true,
-    node: true,
+  "env": {
+    "browser": true,
+    "es6": true,
+    "node": true,
   },
-  ignorePatterns: [
+  "ignorePatterns": [
     //   "*.d.ts",
     //   "types.ts",
     //   "*.js",
