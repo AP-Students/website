@@ -1,10 +1,11 @@
 import "@/styles/globals.css";
+import Header from "@/app/_components/Header/Header";
 
-import { Inter } from "next/font/google";
+import { Outfit } from "next/font/google";
 
 import { TRPCReactProvider } from "@/trpc/react";
 
-const inter = Inter({
+const outfit = Outfit({
   subsets: ["latin"],
   variable: "--font-sans",
 });
@@ -22,7 +23,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`font-sans ${inter.variable}`}>
+      <body className={`font-sans ${outfit.variable}`}>
+        <Header />
         <TRPCReactProvider>{children}</TRPCReactProvider>
       </body>
     </html>
