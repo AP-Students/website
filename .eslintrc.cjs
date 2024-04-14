@@ -61,11 +61,11 @@ const config = {
     "unicorn/no-null": "off",
     "unicorn/prefer-node-protocol": "off",
     "unicorn/filename-case": [
-      "off",
+      "error",
       {
         "case": "kebabCase"
       }
-    ], // up for debate
+    ],
     "unicorn/prevent-abbreviations": [
       "error",
       {
