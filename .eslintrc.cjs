@@ -15,7 +15,14 @@ const config = {
     "plugin:@typescript-eslint/stylistic-type-checked",
     "plugin:unicorn/recommended",
     "plugin:deprecation/recommended",
+    "plugin:import/recommended",
   ],
+  "settings": {
+    "import/resolver": {
+      typescript: true,
+      node: true,
+    },
+  },
   /**
    * Overall, the rules are set so that the code is as consistent as possible.
    * I want the code to be void of unnecessary stylistic differences,
