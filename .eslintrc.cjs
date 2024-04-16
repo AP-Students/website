@@ -16,6 +16,7 @@ const config = {
     "plugin:unicorn/recommended",
     "plugin:deprecation/recommended",
     "plugin:import/recommended",
+    "plugin:react/recommended",
   ],
   "settings": {
     "import/resolver": {
@@ -104,6 +105,11 @@ const config = {
 
     // deprecation
     "deprecation/deprecation": "warn", // warn about deprecated methods
+
+    // react
+    "react/react-in-jsx-scope": "off", // this is annoying and doesn't affect next
+    "react/boolean-prop-naming": "error",
+    
   },
   "overrides": [
     {
