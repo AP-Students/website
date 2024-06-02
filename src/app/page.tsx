@@ -59,7 +59,7 @@ export default async function Home() {
 
         <CrudShowcase />
       </div>
-      <Footer></Footer>
+      <Footer />
     </main>
   );
 }
