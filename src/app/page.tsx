@@ -114,6 +114,47 @@ export default async function Home() {
                 View All
             </Button>
           </Section>
+
+          <Section>
+            <Center>
+              <Title>How it works.</Title>
+              <Subtitle>
+                Learn about all of our features.
+              </Subtitle>
+            </Center>
+            <Button
+                href={'/guides'}
+                type="secondary"
+                className="w-full sm:w-auto justify-center"
+            >
+                Start Studying!
+            </Button>
+          </Section>
+
+          <Section>
+            <Center>
+              <Title>Built by the AP community.</Title>
+              <Subtitle>
+                Completely ran by student volunteers.<br/>No corporations or “non-profits” involved.
+              </Subtitle>
+            </Center>
+            <Button
+                href={'https://discord.com/invite/apstudents'}
+                type="secondary"
+                className="w-full sm:w-auto justify-center"
+            >
+                Join us!
+            </Button>
+          </Section>
+
+          <Section>
+            <Center>
+              <Title>FAQ</Title>
+              <Subtitle>
+                If you have any questions...
+              </Subtitle>
+            </Center>
+          </Section>
         </div>
       </main>
     </>
