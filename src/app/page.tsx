@@ -1,82 +1,121 @@
-import Link from "next/link";
+import cn from 'classnames';
+import NextLink from "next/link";
 
-import { CreatePost } from "@/app/_components/create-post";
-import { getServerAuthSession } from "@/server/auth";
-import { api } from "@/trpc/server";
+import Header from "@/app/components/Layout/Header";
 
-export default async function Home() {
-  const hello = await api.post.hello({ text: "from tRPC" });
-  const session = await getServerAuthSession();
-
+function Section({children}: React.AnchorHTMLAttributes<HTMLAnchorElement>) {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
-      <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 ">
-        <h1 className="text-5xl font-extrabold tracking-tight sm:text-[5rem]">
-          Create <span className="text-[hsl(280,100%,70%)]">T3</span> App
-        </h1>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
-          <Link
-            className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20"
-            href="https://create.t3.gg/en/usage/first-steps"
-            target="_blank"
-          >
-            <h3 className="text-2xl font-bold">First Steps →</h3>
-            <div className="text-lg">
-              Just the basics - Everything you need to know to set up your
-              database and authentication.
-            </div>
-          </Link>
-          <Link
-            className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20"
-            href="https://create.t3.gg/en/introduction"
-            target="_blank"
-          >
-            <h3 className="text-2xl font-bold">Documentation →</h3>
-            <div className="text-lg">
-              Learn more about Create T3 App, the libraries it uses, and how to
-              deploy it.
-            </div>
-          </Link>
-        </div>
-        <div className="flex flex-col items-center gap-2">
-          <p className="text-2xl text-white">
-            {hello ? hello.greeting : "Loading tRPC query..."}
-          </p>
-
-          <div className="flex flex-col items-center justify-center gap-4">
-            <p className="text-center text-2xl text-white">
-              {session && <span>Logged in as {session.user?.name}</span>}
-            </p>
-            <Link
-              href={session ? "/api/auth/signout" : "/api/auth/signin"}
-              className="rounded-full bg-white/10 px-10 py-3 font-semibold no-underline transition hover:bg-white/20"
-            >
-              {session ? "Sign out" : "Sign in"}
-            </Link>
-          </div>
-        </div>
-
-        <CrudShowcase />
+    <div
+      className={'mx-auto flex flex-col w-full'}
+      style={{
+        contain: 'content',
+      }}>
+      <div className="flex-col gap-2 flex grow w-full my-20 lg:my-32 mx-auto items-center">
+        {children}
       </div>
-    </main>
+    </div>
   );
 }
 
-async function CrudShowcase() {
-  const session = await getServerAuthSession();
-  if (!session?.user) return null;
-
-  const latestPost = await api.post.getLatest();
-
+function Title({children}: React.AnchorHTMLAttributes<HTMLAnchorElement>) {
   return (
-    <div className="w-full max-w-xs">
-      {latestPost ? (
-        <p className="truncate">Your most recent post: {latestPost.name}</p>
-      ) : (
-        <p>You have no posts yet.</p>
-      )}
+    <h2 className="leading-xl font-display text-primary dark:text-primary-dark font-semibold text-4xl lg:text-5xl -mt-4 mb-7 w-full max-w-3xl lg:max-w-4xl">
+      {children}
+    </h2>
+  );
+}
 
-      <CreatePost />
+function Subtitle({children}: React.AnchorHTMLAttributes<HTMLAnchorElement>) {
+  return (
+    <h3 className="max-w-3xl mx-auto text-lg lg:text-3xl text-slate-800 font-semibold dark:text-slate-200 leading-normal">
+      {children}
+    </h3>
+  );
+}
+
+function Center({children}: React.AnchorHTMLAttributes<HTMLAnchorElement>) {
+  return (
+    <div className="px-5 lg:px-0 max-w-4xl lg:text-center text-white text-opacity-80 flex flex-col items-center justify-center">
+      {children}
     </div>
+  );
+}
+
+interface ButtonProps {
+  type?: 'primary' | 'secondary';
+}
+
+function Button({
+  href,
+  className,
+  children,
+  type,
+}: React.AnchorHTMLAttributes<HTMLAnchorElement> & ButtonProps) {
+  const classes = cn(
+    className,
+    'p-5 px-10 text-3xl font-bold border-2 bg-white dark:bg-zinc-950 border-primary dark:border-primary-dark rounded-md',
+    {
+      'shadow-button': type === 'primary'
+    }
+  )
+  return (
+    <NextLink
+      href={href as string}
+      className={classes}
+    >
+      {children}
+    </NextLink>
+  )
+}
+
+export default async function Home() {
+  return (
+    <>
+      <Header />
+      <main className="min-w-0 isolate">
+        <div className="font-normal break-words text-primary dark:text-primary-dark">
+          <div className="px-5 pt-12 lg:pt-24 pb-20 lg:pb-32 flex flex-col justify-center bg-slate-50 dark:bg-zinc-900">
+            <h1 className="max-w-3xl text-5xl text-center font-display lg:text-6xl leading-snug lg:leading-snug self-center flex font-bold text-primary dark:text-primary-dark">
+              Made by AP students.<br/>For AP students.
+            </h1>
+            <h3 className="max-w-2xl mt-5 text-2xl text-center font-display lg:text-3xl leading-snug lg:leading-snug self-center flex text-slate-800 dark:text-slate-200">
+              Access curated study guides, practice tests, and more for your AP classes.
+            </h3>
+            <div className="mt-10 self-center flex gap-8 w-full sm:w-auto flex-col sm:flex-row">
+              <Button
+                href={'/guides'}
+                type="primary"
+                className="w-full sm:w-auto justify-center"
+              >
+                Study Now
+              </Button>
+              <Button
+                href={'https://discord.com/invite/apstudents'}
+                type="primary"
+                className="w-full sm:w-auto justify-center"
+              >
+                Join the Discord
+              </Button>
+            </div>
+          </div>
+
+          <Section>
+            <Center>
+              <Title>Everything all in one place. For free.</Title>
+              <Subtitle>
+                Explore our resources for your AP class.
+              </Subtitle>
+            </Center>
+            <Button
+                href={'/guides'}
+                type="primary"
+                className="w-full sm:w-auto justify-center"
+            >
+                View All
+            </Button>
+          </Section>
+        </div>
+      </main>
+    </>
   );
 }
