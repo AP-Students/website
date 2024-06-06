@@ -2,12 +2,26 @@
 
 import NextLink from 'next/link';
 
-function NavLink({url, children}: any) {
+function HeaderLink({url, children}: any) {
+    const classes = 'text-xl w-full text-center outline-link py-1.5 px-1.5 xs:px-3 sm:px-4 whitespace-nowrap';
+
+    if (url.startsWith('https://')) {
+      return (
+        <div className="flex flex-auto sm:flex-1">
+            <a
+                href={url}
+                className={classes}>
+                {children}
+            </a>
+        </div>
+      );
+    }
+
     return (
         <div className="flex flex-auto sm:flex-1">
             <NextLink
                 href={url}
-                className='text-xl w-full text-center outline-link py-1.5 px-1.5 xs:px-3 sm:px-4 whitespace-nowrap'>
+                className={classes}>
                 {children}
             </NextLink>
         </div>
@@ -33,15 +47,15 @@ export default function Header() {
                         </div>
                         <div className="text-base justify-center items-center gap-1.5 flex 3xl:flex-1 flex-row 3xl:justify-end">
                             <div className="mx-2.5 gap-1.5 hidden lg:flex">
-                                <NavLink url="/guides">
+                                <HeaderLink url="/guides">
                                     Study Guides
-                                </NavLink>
-                                <NavLink url="/practice">
+                                </HeaderLink>
+                                <HeaderLink url="/practice">
                                     Practice
-                                </NavLink>
-                                <NavLink url="https://discord.com/invite/apstudents">
+                                </HeaderLink>
+                                <HeaderLink url="https://discord.com/invite/apstudents">
                                     Discord
-                                </NavLink>
+                                </HeaderLink>
                             </div>
                         </div>
                     </div>

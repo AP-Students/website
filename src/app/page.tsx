@@ -42,6 +42,7 @@ function Center({children}: React.AnchorHTMLAttributes<HTMLAnchorElement>) {
 }
 
 interface ButtonProps {
+  href: string,
   type?: 'primary' | 'secondary';
 }
 
@@ -58,6 +59,16 @@ function Button({
       'shadow-button': type === 'primary'
     }
   )
+
+  if (href.startsWith('https://')) {
+    <a
+      href={href as string}
+      className={classes}
+    >
+      {children}
+    </a>
+  }
+
   return (
     <NextLink
       href={href as string}
