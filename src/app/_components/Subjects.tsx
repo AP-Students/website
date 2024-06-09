@@ -1,0 +1,5 @@
+export const mathAndCS = ["AP Calculus AB", "AP Calculus BC", "AP Statistics", "AP Computer Science Principles", "AP Computer Science A"]
+export const sciences = ["AP Biology", "AP Chemistry", "AP Environmental Science", "AP Physics 1", "AP Physics 2", "AP Physics C: E&M", "AP Physics C: M"]
+export const socialSciences = ["AP Psychology", "AP European History", "AP United States History", "AP World History", "AP Microeconomics", "AP Macroeconomics", "AP Human Geography", "AP Comparative Government and Politics", "AP US Government and Politics"]
+export const languages = ["AP English Language", "AP English Literature", "AP Spanish Language", "AP Spanish Literature", "AP Chinese", "AP French", "AP German", "AP Italian", "AP Japanese", "AP Latin"]
+export const arts =  ["AP 2D Art and Design", "AP 3D Art and Design", "AP Drawing", "AP Art History", "AP Biology", "AP Music Theory", "AP Research", "AP Seminar" ]

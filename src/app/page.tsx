@@ -3,7 +3,7 @@ import Link from "next/link";
 import { CreatePost } from "@/app/_components/create-post";
 import { getServerAuthSession } from "@/server/auth";
 import { api } from "@/trpc/server";
-import Footer from "./_components/footer";
+import Footer from "@/app/_components/Footer";
 
 export default async function Home() {
   const hello = await api.post.hello({ text: "from tRPC" });
