@@ -1,6 +1,6 @@
 "use client"
 import React, { useState } from 'react';
-import ArticleEditor from '../components/ArticleEditor';
+import ArticleEditor from '../_components/ArticleEditor';
 import html2md from 'html-to-md'
 
 const EditArticlePage = () => {
