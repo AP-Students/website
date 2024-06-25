@@ -10,6 +10,6 @@ export default {
       },
     },
   },
-  plugins: [],
-  darkMode: 'selector',
+  plugins: [require("@tailwindcss/typography")],
+  darkMode: "selector",
 } satisfies Config;
