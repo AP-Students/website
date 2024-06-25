@@ -53,6 +53,34 @@ https://www.youtube.com/watch?v=ZXsQAXx_ao0
 ### iframe copied from YouTube (alternative method)
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/ZXsQAXx_ao0?si=ygjJM7nCRSuzGl-f" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+## GitHub Flavored Markdown Test
+
+### Autolink literals
+
+www.example.com, https://example.com, and contact@example.com.
+
+### Footnote
+
+A note[^1]
+
+[^1]: Big note.
+
+### Strikethrough
+
+~one~ or ~~two~~ tildes.
+
+### Table
+
+| First Header  | Second Header |
+| ------------- | ------------- |
+| Content Cell  | Content Cell  |
+| Content Cell  | Content Cell  |
+
+### Tasklist
+
+* [ ] to do
+* [x] done
 `;
 
 export default function Page() {
