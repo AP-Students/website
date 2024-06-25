@@ -30,13 +30,27 @@ Welcome to our website. Here is some information about us.
 
 ![1 on APUSH](/APscore.webp)
 
-## Video in /public
+## Video Embed Test
+
+### Markdown image syntax
+
+![self-hosted video](/doit.mp4)
+
+![external video](https://user-images.githubusercontent.com/126239/151127893-5c98ba8d-c431-4a25-bb1f-e0b33645a2b6.mp4)
+
+### HTML video element in Markdown
 
 <video width="320" height="240" controls>
   <source src="/doit.mp4" type="video/mp4">
 </video>
 
-## Video embed from YouTube
+## YouTube Embed Test
+
+### YouTube link surrounded by newlines
+
+https://www.youtube.com/watch?v=ZXsQAXx_ao0
+
+### iframe copied from YouTube (alternative method)
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/ZXsQAXx_ao0?si=ygjJM7nCRSuzGl-f" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 `;
