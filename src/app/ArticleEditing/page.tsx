@@ -1,27 +1,27 @@
 "use client"
 import React, { useState } from 'react';
-import ArticleEditor from './_components/ArticleEditor';
+import ArticleEditor from '../_components/ArticleEditor'; 
 
-const EditArticlePage = () => {
+const EditArticlePage: React.FC = () => {
   const [content, setContent] = useState<string>('');
 
-  const handleChange = (newContent: string) => {
-    console.log(newContent)
-    setContent(newContent);
-  };
-
   const handleSubmit = () => {
-    console.log('Article content:', content);
-    // PLACEHOLDER. "content" variable contains article content in Markdown. Can store in database and use in Article Renderer. 
+    console.log('Article submitted:', content);
+    // PLACEHOLDER Function. "content" variable contains article content in Markdown format. Can be pushed to database and used for Article Renderer. 
   };
 
   return (
-    <div className="mx-auto max-w-3xl p-6">
-      <h1 className="text-3xl font-bold mb-4">Write your Article</h1>
-      <p>Write the article below and hit Submit to publish.</p>
-      <ArticleEditor content={content} onChange={handleChange} onSubmit={handleSubmit} />
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-4 text-center">AP(roject) Article Editor</h1>
+      <p className='text-center'>Write your article for AP(roject). Provide clear, comprehensive explanations, helpful tips and advice, and positive motivation. Once you're done, click Submit to make your article public!</p>
+      <ArticleEditor content={content} onChange={setContent} onSubmit={handleSubmit} />
     </div>
   );
 };
 
 export default EditArticlePage;
+
+
+
+
+
