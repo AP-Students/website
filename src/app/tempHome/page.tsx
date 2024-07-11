@@ -7,13 +7,16 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
+import { ChevronRight } from "lucide-react";
+
 export default async function Home() {
   return (
     <>
       <main>
         <div className="grid h-96 place-content-center gap-4 bg-rose-50 p-8 text-center">
-          <p className="mx-auto w-fit rounded-full border border-red-500 px-4 py-1 shadow-md shadow-red-500/50">
-            Trusted by 10,000+ AP Students {">"}
+          <p className="mx-auto flex w-fit rounded-full border border-red-500 px-4 py-1 text-red-500 shadow-md shadow-red-500/50">
+            Trusted by <span className="font-bold">10,000+ AP Students</span>
+            <ChevronRight />
           </p>
           <h1 className="text-3xl font-bold lg:text-5xl">
             By AP students. For AP students.
@@ -24,7 +27,7 @@ export default async function Home() {
           </p>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link href="/">
-              <button className="rounded-full border border-red-600 bg-red-500 px-9 py-3 font-bold text-white">
+              <button className="rounded-full border border-red-600 bg-red-500 px-9 py-3 font-bold tracking-wide text-white transition-colors hover:bg-red-600">
                 Start Studying for Free!
               </button>
             </Link>
@@ -36,7 +39,7 @@ export default async function Home() {
             </a>
           </div>
         </div>
-        <div className="mx-auto max-w-6xl px-4 lg:px-8">
+        <div className="mx-auto max-w-6xl px-4 pb-8 lg:px-8">
           <h2 className="mt-24 text-center text-5xl font-bold">
             Everything you need. For free.
           </h2>
@@ -52,9 +55,13 @@ export default async function Home() {
               }}
             >
               <h3 className="text-4xl font-bold text-white">Math and CS</h3>
-              <ul className="columns-2">
+              <ul className="mt-5 columns-2 space-y-4">
                 <li>AP Calculus AB</li>
                 <li>AP Calculus BC</li>
+                <li>AP Precalculus</li>
+                <li>AP Statistics</li>
+                <li>AP Computer Science Principles</li>
+                <li>AP Computer Science A</li>
               </ul>
             </div>
             <div
@@ -65,7 +72,7 @@ export default async function Home() {
               }}
             >
               <h3 className="text-4xl font-bold text-white">English</h3>
-              <ul className="columns-2">
+              <ul className="mt-5 columns-2 space-y-4">
                 <li>AP English Language</li>
                 <li>AP English Literature</li>
               </ul>
@@ -78,9 +85,15 @@ export default async function Home() {
               }}
             >
               <h3 className="text-4xl font-bold text-white">Sciences</h3>
-              <ul className="columns-2">
-                <li></li>
-                <li></li>
+              <ul className="mt-5 space-y-4 sm:columns-2 md:columns-3">
+                <li>AP Biology</li>
+                <li>AP Chemistry</li>
+                <li>AP Environmental Science</li>
+                <li>AP Physics 1</li>
+                <li>AP Physics 2</li>
+                <li>AP Physics C: E&M</li>
+                <li>AP Physics C: Mechanics</li>
+                <li>AP Psychology</li>
               </ul>
             </div>
             <div
@@ -91,9 +104,10 @@ export default async function Home() {
               }}
             >
               <h3 className="text-4xl font-bold text-white">History</h3>
-              <ul className="columns-2">
-                <li></li>
-                <li></li>
+              <ul className="mt-5 space-y-4">
+                <li>AP European History</li>
+                <li>AP US History</li>
+                <li>AP World History: Modern</li>
               </ul>
             </div>
             <div
@@ -104,9 +118,12 @@ export default async function Home() {
               }}
             >
               <h3 className="text-4xl font-bold text-white">Social Sciences</h3>
-              <ul className="columns-2">
-                <li></li>
-                <li></li>
+              <ul className="mt-5 space-y-4 sm:columns-2">
+                <li>AP Comparative Government</li>
+                <li>AP Human Geography</li>
+                <li>AP Macroeconomics</li>
+                <li>AP Microeconomics</li>
+                <li>AP United States Government</li>
               </ul>
             </div>
             <div
@@ -119,9 +136,15 @@ export default async function Home() {
               <h3 className="text-4xl font-bold text-white">
                 World Languages and Cultures
               </h3>
-              <ul className="columns-2">
-                <li></li>
-                <li></li>
+              <ul className="mt-5 space-y-4 sm:columns-2 md:columns-3">
+                <li>AP Chinese</li>
+                <li>AP French</li>
+                <li>AP German</li>
+                <li>AP Italian</li>
+                <li>AP Japanese</li>
+                <li>AP Latin</li>
+                <li>AP Spanish Language</li>
+                <li>AP Spanish Literature</li>
               </ul>
             </div>
             <div
@@ -132,9 +155,12 @@ export default async function Home() {
               }}
             >
               <h3 className="text-4xl font-bold text-white">Arts</h3>
-              <ul className="columns-2">
-                <li></li>
-                <li></li>
+              <ul className="mt-5 columns-2 space-y-4">
+                <li>AP 2-D Art and Design</li>
+                <li>AP 3-D Art and Design</li>
+                <li>AP Drawing</li>
+                <li>AP Art History</li>
+                <li>AP Music Theory</li>
               </ul>
             </div>
             <div
@@ -145,14 +171,14 @@ export default async function Home() {
               }}
             >
               <h3 className="text-4xl font-bold text-white">AP Capstone</h3>
-              <ul className="columns-2">
-                <li></li>
-                <li></li>
+              <ul className="mt-5 space-y-4">
+                <li>AP Research</li>
+                <li>AP Seminar</li>
               </ul>
             </div>
           </div>
-          <div className="flex space-x-8 rounded-lg bg-white px-16 py-32">
-            <div className="flex-1">
+          <div className="flex flex-col items-center justify-evenly gap-8 px-16 py-32 sm:flex-row">
+            <div>
               <h1 className="mb-4 text-3xl font-bold text-gray-900">
                 Built by the AP Community.
               </h1>
@@ -219,15 +245,17 @@ export default async function Home() {
                 Join the AP Discord
               </a>
             </div>
-            <div className="h-auto w-60">
-              <img
-                src="/discord.png"
-                alt="Discord Screenshot"
-                className="rounded-lg shadow-lg"
-              />
-            </div>
+            <img
+              src="/discord.png"
+              alt="Discord Screenshot"
+              className="w-60 rounded-lg shadow-lg"
+            />
           </div>
-          <Accordion type="single" collapsible>
+          <h2 className="mt-12 text-center text-5xl font-bold">FAQ</h2>
+          <p className="mb-12 text-center text-xl text-gray-700">
+            Need help? We got you covered.
+          </p>
+          <Accordion type="single" collapsible className="mx-auto max-w-4xl">
             <AccordionItem value="item-1">
               <AccordionTrigger className="text-2xl font-bold">
                 What types of resources do you offer for AP students?
@@ -270,7 +298,7 @@ export default async function Home() {
           <div className="mt-8 grid place-content-center gap-5 rounded-lg bg-red-50 p-12 text-center font-bold">
             <h2 className="text-4xl">Start your study sesh. Get that 5.</h2>
             <Link href="/">
-              <button className="rounded-full bg-red-500 px-9 py-3 font-bold text-white">
+              <button className="rounded-full border border-red-600 bg-red-500 px-9 py-3 font-bold tracking-wide text-white transition-colors hover:bg-red-600">
                 Study now!
               </button>
             </Link>
