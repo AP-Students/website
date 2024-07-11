@@ -6,7 +6,7 @@ import { TRPCReactProvider } from "@/trpc/react";
 
 const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-sans",
+  variable: "--font-inter",
 });
 
 export const metadata = {
@@ -22,7 +22,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`font-sans ${inter.variable}`}>
+      <body className={`${inter.variable} font-sans`}>
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -62,7 +62,7 @@ export default function RootLayout({
                 }
               });
             })();
-            `
+            `,
           }}
         />
         <TRPCReactProvider>{children}</TRPCReactProvider>
