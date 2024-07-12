@@ -5,13 +5,13 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: #2e0f0f;
+    --foreground: 0, 51%, 12%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
     --primary: 0 96% 65%;
-    --primary-foreground: 0 94% 93%;
+    --primary-foreground: 0, 100%, 98%;
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 0 0% 9%;
     --muted: 0 0% 96.1%;
@@ -63,7 +63,8 @@
   * {
     @apply border-border;
   }
-  body {
-    @apply bg-background text-foreground;
+  body,
+  html {
+    @apply overflow-x-hidden bg-background text-foreground;
   }
 }
