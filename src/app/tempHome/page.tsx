@@ -17,10 +17,10 @@ export default async function Home() {
     <>
       <Navbar className="bg-primary-foreground" />
       <main>
-        <div className="grid h-96 place-content-center gap-4 bg-primary-foreground p-4 text-center sm:p-8">
+        <div className="bg-primary-foreground grid h-96 place-content-center gap-4 p-4 text-center sm:p-8">
           <Link
             href={"/"}
-            className="group mx-auto flex w-fit rounded-full border border-primary px-4 py-1 text-primary shadow-md shadow-primary/30 transition-all hover:translate-y-1 hover:shadow-none"
+            className="border-primary text-primary shadow-primary/30 group mx-auto flex w-fit rounded-full border px-4 py-1 shadow-md transition-all hover:translate-y-1 hover:shadow-none"
           >
             Trusted by{" "}
             <span className=" ml-1 font-bold"> 10,000+ AP Students</span>
@@ -48,7 +48,11 @@ export default async function Home() {
               />
             </Link>
 
-            <Link className="w-full sm:w-auto" href="/">
+            <Link
+              className="w-full sm:w-auto"
+              href="https://discord.com/invite/apstudents"
+              target="_blank"
+            >
               <Button className="w-full border border-[#7289DA] bg-transparent py-6 text-base font-medium text-[#7289DA] transition-colors hover:bg-[#7289DA] hover:text-white sm:w-auto sm:p-6">
                 Join the AP Discord
               </Button>
@@ -351,7 +355,8 @@ export default async function Home() {
                 </li>
               </ul>
               <a
-                href="/"
+                href="https://discord.com/invite/apstudents"
+                target="_blank"
                 className="w-fit rounded-full border border-[#7289DA] px-6 py-3 font-medium text-[#7289DA] transition-colors hover:bg-[#7289DA] hover:text-white"
               >
                 Join the AP Discord
@@ -424,7 +429,7 @@ export default async function Home() {
               </AccordionContent>
             </AccordionItem>
           </Accordion>
-          <div className="relative mt-[6.75rem] grid place-content-center gap-5 overflow-clip rounded-lg bg-primary-foreground px-4 py-8 text-center font-bold sm:p-12">
+          <div className="bg-primary-foreground relative mt-[6.75rem] grid place-content-center gap-5 overflow-clip rounded-lg px-4 py-8 text-center font-bold sm:p-12">
             <Image
               className="absolute -right-36 top-6 block scale-75 sm:-right-24 sm:-top-8 sm:scale-100"
               src="/diamond.svg"
