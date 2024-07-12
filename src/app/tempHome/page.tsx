@@ -8,44 +8,70 @@ import {
 } from "@/components/ui/accordion";
 
 import { ChevronRight } from "lucide-react";
+import Navbar from "@/components/ui/navbar";
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 export default async function Home() {
   return (
     <>
+      <Navbar className="bg-primary-foreground" />
       <main>
-        <div className="grid h-96 place-content-center gap-4 bg-rose-50 p-8 text-center">
-          <p className="mx-auto flex w-fit rounded-full border border-red-500 px-4 py-1 text-red-500 shadow-md shadow-red-500/50">
-            Trusted by <span className="font-bold">10,000+ AP Students</span>
-            <ChevronRight />
-          </p>
-          <h1 className="text-3xl font-bold lg:text-5xl">
+        <div className="grid h-96 place-content-center gap-4 bg-primary-foreground p-4 text-center sm:p-8">
+          <Link
+            href={"/"}
+            className="group mx-auto flex w-fit rounded-full border border-primary px-4 py-1 text-primary shadow-md shadow-primary/30 transition-all hover:translate-y-1 hover:shadow-none"
+          >
+            Trusted by{" "}
+            <span className=" ml-1 font-bold"> 10,000+ AP Students</span>
+            <ChevronRight className="scale-75 rounded stroke-[3px] transition-transform group-hover:translate-x-0.5" />
+          </Link>
+          <h1 className="text-balance text-center text-4xl font-bold lg:text-5xl">
             By AP students. For AP students.
           </h1>
-          <p className="text-xl text-gray-700">
+          <p className="text-balance text-lg text-gray-700 lg:text-xl">
             Access free study guides, practice tests, and more for your AP
             class.
           </p>
-          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Link href="/">
-              <button className="rounded-full border border-red-600 bg-red-500 px-9 py-3 font-bold tracking-wide text-white transition-colors hover:bg-red-600">
+          <div className="maxw-96 mx-auto flex flex-wrap items-center justify-center gap-4 ">
+            <Link className="w-full sm:w-auto" href="/">
+              <Button className="w-full py-6 text-base font-medium sm:w-auto sm:p-6">
                 Start Studying for Free!
-              </button>
+              </Button>
             </Link>
-            <a
-              href="/"
-              className="w-fit rounded-full border border-blue-500 px-6 py-3 font-medium text-blue-500 transition-colors hover:bg-blue-500 hover:text-white"
-            >
-              Join the AP Discord
-            </a>
+
+            <Link className="w-full sm:w-auto" href="/">
+              <Button className="w-full border border-[#7289DA] bg-transparent py-6 text-base font-medium text-[#7289DA] transition-colors hover:bg-[#7289DA] hover:text-white sm:w-auto sm:p-6">
+                Join the AP Discord
+              </Button>
+            </Link>
           </div>
         </div>
-        <div className="mx-auto max-w-6xl px-4 pb-8 lg:px-8">
-          <h2 className="mt-24 text-center text-5xl font-bold">
-            Everything you need. For free.
+        <div className="mx-auto flex max-w-6xl flex-col px-6 pb-8 lg:px-8 ">
+          <h2 className="relative mx-auto mb-2 mt-24 inline-block text-center text-5xl font-bold leading-[1.2]">
+            <span>Everything you need.</span>{" "}
+            <span className="inline-block sm:block md:inline-block">
+              For free.
+            </span>
+            <Image
+              src="/star.svg"
+              alt="Star"
+              width={48}
+              height={48}
+              className="absolute -right-6 -top-6 hidden lg:block"
+            />
+            <Image
+              src="/star.svg"
+              alt="Star"
+              width={16}
+              height={16}
+              className="absolute -right-9 -top-9 hidden rotate-45 lg:block "
+            />
           </h2>
-          <p className="mb-12 text-center text-xl text-gray-700">
+          <p className="mb-12 text-center text-xl leading-tight text-gray-700">
             Explore our resources for your AP class.
           </p>
+
           <div className="grid grid-cols-3 gap-4 lg:gap-8">
             <div
               className="col-span-3 rounded-lg p-10 text-white lg:col-span-2 lg:h-60"
@@ -55,13 +81,25 @@ export default async function Home() {
               }}
             >
               <h3 className="text-4xl font-bold text-white">Math and CS</h3>
-              <ul className="mt-5 columns-2 space-y-4">
-                <li>AP Calculus AB</li>
-                <li>AP Calculus BC</li>
-                <li>AP Precalculus</li>
-                <li>AP Statistics</li>
-                <li>AP Computer Science Principles</li>
-                <li>AP Computer Science A</li>
+              <ul className="mt-5 columns-1 space-y-4 sm:columns-2">
+                <li>
+                  <Link href="/">AP Calculus AB</Link>
+                </li>
+                <li>
+                  <Link href="/">AP Calculus BC</Link>
+                </li>
+                <li>
+                  <Link href="/">AP Precalculus</Link>
+                </li>
+                <li>
+                  <Link href="/">AP Statistics</Link>
+                </li>
+                <li>
+                  <Link href="/">AP Computer Science Principles</Link>
+                </li>
+                <li>
+                  <Link href="/">AP Computer Science A</Link>
+                </li>
               </ul>
             </div>
             <div
@@ -72,9 +110,13 @@ export default async function Home() {
               }}
             >
               <h3 className="text-4xl font-bold text-white">English</h3>
-              <ul className="mt-5 columns-2 space-y-4">
-                <li>AP English Language</li>
-                <li>AP English Literature</li>
+              <ul className="mt-5 columns-1 space-y-4">
+                <li>
+                  <Link href="/">AP English Language</Link>
+                </li>
+                <li>
+                  <Link href="/">AP English Literature</Link>
+                </li>
               </ul>
             </div>
             <div
@@ -86,14 +128,30 @@ export default async function Home() {
             >
               <h3 className="text-4xl font-bold text-white">Sciences</h3>
               <ul className="mt-5 space-y-4 sm:columns-2 md:columns-3">
-                <li>AP Biology</li>
-                <li>AP Chemistry</li>
-                <li>AP Environmental Science</li>
-                <li>AP Physics 1</li>
-                <li>AP Physics 2</li>
-                <li>AP Physics C: E&M</li>
-                <li>AP Physics C: Mechanics</li>
-                <li>AP Psychology</li>
+                <li>
+                  <Link href="/">AP Biology</Link>
+                </li>
+                <li>
+                  <Link href="/">AP Chemistry</Link>
+                </li>
+                <li>
+                  <Link href="/">AP Environmental Science</Link>
+                </li>
+                <li>
+                  <Link href="/">AP Physics 1</Link>
+                </li>
+                <li>
+                  <Link href="/">AP Physics 2</Link>
+                </li>
+                <li>
+                  <Link href="/">AP Physics C: E&M</Link>
+                </li>
+                <li>
+                  <Link href="/">AP Physics C: Mechanics</Link>
+                </li>
+                <li>
+                  <Link href="/">AP Psychology</Link>
+                </li>
               </ul>
             </div>
             <div
@@ -105,9 +163,15 @@ export default async function Home() {
             >
               <h3 className="text-4xl font-bold text-white">History</h3>
               <ul className="mt-5 space-y-4">
-                <li>AP European History</li>
-                <li>AP US History</li>
-                <li>AP World History: Modern</li>
+                <li>
+                  <Link href="/">AP European History</Link>
+                </li>
+                <li>
+                  <Link href="/">AP US History</Link>
+                </li>
+                <li>
+                  <Link href="/">AP World History: Modern</Link>
+                </li>{" "}
               </ul>
             </div>
             <div
@@ -119,11 +183,21 @@ export default async function Home() {
             >
               <h3 className="text-4xl font-bold text-white">Social Sciences</h3>
               <ul className="mt-5 space-y-4 sm:columns-2">
-                <li>AP Comparative Government</li>
-                <li>AP Human Geography</li>
-                <li>AP Macroeconomics</li>
-                <li>AP Microeconomics</li>
-                <li>AP United States Government</li>
+                <li>
+                  <Link href="/">AP Comparative Government</Link>
+                </li>
+                <li>
+                  <Link href="/">AP Human Geography</Link>
+                </li>
+                <li>
+                  <Link href="/">AP Macroeconomics</Link>
+                </li>
+                <li>
+                  <Link href="/">AP Microeconomics</Link>
+                </li>
+                <li>
+                  <Link href="/">AP United States Government</Link>
+                </li>
               </ul>
             </div>
             <div
@@ -137,14 +211,30 @@ export default async function Home() {
                 World Languages and Cultures
               </h3>
               <ul className="mt-5 space-y-4 sm:columns-2 md:columns-3">
-                <li>AP Chinese</li>
-                <li>AP French</li>
-                <li>AP German</li>
-                <li>AP Italian</li>
-                <li>AP Japanese</li>
-                <li>AP Latin</li>
-                <li>AP Spanish Language</li>
-                <li>AP Spanish Literature</li>
+                <li>
+                  <Link href="/">AP Chinese</Link>
+                </li>
+                <li>
+                  <Link href="/">AP French</Link>
+                </li>
+                <li>
+                  <Link href="/">AP German</Link>
+                </li>
+                <li>
+                  <Link href="/">AP Italian</Link>
+                </li>
+                <li>
+                  <Link href="/">AP Japanese</Link>
+                </li>
+                <li>
+                  <Link href="/">AP Latin</Link>
+                </li>
+                <li>
+                  <Link href="/">AP Spanish Language</Link>
+                </li>
+                <li>
+                  <Link href="/">AP Spanish Literature</Link>
+                </li>
               </ul>
             </div>
             <div
@@ -155,12 +245,22 @@ export default async function Home() {
               }}
             >
               <h3 className="text-4xl font-bold text-white">Arts</h3>
-              <ul className="mt-5 columns-2 space-y-4">
-                <li>AP 2-D Art and Design</li>
-                <li>AP 3-D Art and Design</li>
-                <li>AP Drawing</li>
-                <li>AP Art History</li>
-                <li>AP Music Theory</li>
+              <ul className="mt-5 columns-1 space-y-4 sm:columns-2">
+                <li>
+                  <Link href="/">AP 2-D Art and Design</Link>
+                </li>
+                <li>
+                  <Link href="/">AP 3-D Art and Design</Link>
+                </li>
+                <li>
+                  <Link href="/">AP Art History</Link>
+                </li>
+                <li>
+                  <Link href="/">AP Drawing</Link>
+                </li>
+                <li>
+                  <Link href="/">AP Music Theory</Link>
+                </li>
               </ul>
             </div>
             <div
@@ -172,12 +272,16 @@ export default async function Home() {
             >
               <h3 className="text-4xl font-bold text-white">AP Capstone</h3>
               <ul className="mt-5 space-y-4">
-                <li>AP Research</li>
-                <li>AP Seminar</li>
+                <li>
+                  <Link href="/">AP Research</Link>
+                </li>
+                <li>
+                  <Link href="/">AP Seminar</Link>
+                </li>
               </ul>
             </div>
           </div>
-          <div className="flex flex-col items-center justify-evenly gap-8 px-16 py-32 sm:flex-row">
+          <div className="flex flex-wrap items-center justify-evenly gap-x-10 gap-y-36 px-16 py-32">
             <div>
               <h1 className="mb-4 text-3xl font-bold text-gray-900">
                 Built by the AP Community.
@@ -201,7 +305,7 @@ export default async function Home() {
                       d="M5 13l4 4L19 7"
                     ></path>
                   </svg>
-                  No corporations or "non-profits"
+                  No corporations or &quot;non-profits&quot;
                 </li>
                 <li className="flex items-center">
                   <svg
@@ -240,24 +344,41 @@ export default async function Home() {
               </ul>
               <a
                 href="/"
-                className="w-fit rounded-full border border-blue-500 px-6 py-3 font-medium text-blue-500 transition-colors hover:bg-blue-500 hover:text-white"
+                className="w-fit rounded-full border border-[#7289DA] px-6 py-3 font-medium text-[#7289DA] transition-colors hover:bg-[#7289DA] hover:text-white"
               >
                 Join the AP Discord
               </a>
             </div>
-            <img
-              src="/discord.png"
-              alt="Discord Screenshot"
-              className="w-60 rounded-lg shadow-lg"
-            />
+            <div className="relative">
+              <iframe
+                className="relative z-10 rounded-lg shadow-lg"
+                src="https://discord.com/widget?id=181970867549503489&theme=dark"
+                width="250"
+                height="350"
+                allowTransparency={true}
+                sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
+              ></iframe>
+
+              <Image
+                className="absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2 scale-[2.5] transform"
+                alt="Squiggle"
+                src={"/squiggle.svg"}
+                width={678}
+                height={617}
+              />
+            </div>
           </div>
-          <h2 className="mt-12 text-center text-5xl font-bold">FAQ</h2>
-          <p className="mb-12 text-center text-xl text-gray-700">
+          <h2 className="mb-2 mt-12 text-center text-5xl font-bold">FAQ</h2>
+          <p className="mb-10 text-center text-xl text-gray-700">
             Need help? We got you covered.
           </p>
-          <Accordion type="single" collapsible className="mx-auto max-w-4xl">
+          <Accordion
+            type="single"
+            collapsible
+            className="mx-auto min-w-[10rem] max-w-[50rem] lg:w-[50rem]"
+          >
             <AccordionItem value="item-1">
-              <AccordionTrigger className="text-2xl font-bold">
+              <AccordionTrigger className="text-left text-2xl font-bold">
                 What types of resources do you offer for AP students?
               </AccordionTrigger>
               <AccordionContent>
@@ -283,7 +404,7 @@ export default async function Home() {
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-3">
-              <AccordionTrigger className="text-2xl font-bold">
+              <AccordionTrigger className="text-2xl font-bold ">
                 How can I contribute?
               </AccordionTrigger>
               <AccordionContent>
@@ -295,16 +416,24 @@ export default async function Home() {
               </AccordionContent>
             </AccordionItem>
           </Accordion>
-          <div className="mt-8 grid place-content-center gap-5 rounded-lg bg-red-50 p-12 text-center font-bold">
-            <h2 className="text-4xl">Start your study sesh. Get that 5.</h2>
-            <Link href="/">
-              <button className="rounded-full border border-red-600 bg-red-500 px-9 py-3 font-bold tracking-wide text-white transition-colors hover:bg-red-600">
+          <div className="relative mt-[6.75rem] grid place-content-center gap-5 overflow-clip rounded-lg bg-primary-foreground px-4 py-8 text-center font-bold sm:p-12">
+            <Image
+              className="absolute -right-36 top-6 block scale-75 sm:-right-24 sm:-top-8 sm:scale-100"
+              src="/diamond.svg"
+              alt="Diamond"
+              width={475}
+              height={443}
+            />
+            <h2 className="z-10 text-balance text-4xl font-extrabold">
+              Start your study sesh. Get that 5.
+            </h2>
+            <Link className="z-10 mx-auto w-fit" href="/">
+              <Button className="px-8 py-7 text-lg font-semibold">
                 Study now!
-              </button>
+              </Button>
             </Link>
           </div>
         </div>
-        <div className="mx-8 max-w-5xl bg-red-200"></div>
       </main>
     </>
   );
