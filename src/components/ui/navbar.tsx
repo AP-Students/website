@@ -51,7 +51,9 @@ const Navbar = ({ className }: { className?: string }) => {
         </div>
 
         <div className="flex grow basis-0  items-center justify-center space-x-8">
-          <NavbarLink href="/discord">Discord</NavbarLink>
+          <NavbarLink href="https://discord.com/invite/apstudents">
+            Discord
+          </NavbarLink>
 
           <Button className="text-md px-5 py-3 font-semibold text-white">
             <Link href={"/signup"}>Sign up</Link>
@@ -138,7 +140,7 @@ const NavbarLink = ({
     <Link
       href={href}
       className={cn(
-        "capitalize opacity-70 transition-all ease-in-out hover:text-primary",
+        "hover:text-primary capitalize opacity-70 transition-all ease-in-out",
         !isMobile && "scale-100 hover:scale-105",
         className,
       )}
