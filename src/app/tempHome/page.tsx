@@ -34,10 +34,18 @@ export default async function Home() {
             class.
           </p>
           <div className="maxw-96 mx-auto flex flex-wrap items-center justify-center gap-4 ">
-            <Link className="w-full sm:w-auto" href="/">
+            <Link className="relative w-full sm:w-auto" href="/">
               <Button className="w-full py-6 text-base font-medium sm:w-auto sm:p-6">
                 Start Studying for Free!
               </Button>
+
+              <Image
+                className="absolute -left-48 top-10 hidden md:block"
+                alt="arrow"
+                src={"/arrow.svg"}
+                width={188}
+                height={77}
+              />
             </Link>
 
             <Link className="w-full sm:w-auto" href="/">
