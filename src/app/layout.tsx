@@ -1,12 +1,12 @@
 import "@/styles/globals.css";
 
-import { Inter } from "next/font/google";
+import { Outfit } from "next/font/google";
 
 import { TRPCReactProvider } from "@/trpc/react";
 
-const inter = Inter({
+const outfit = Outfit({
   subsets: ["latin"],
-  variable: "--font-sans",
+  variable: "--font-outfit",
 });
 
 export const metadata = {
@@ -22,7 +22,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`font-sans ${inter.variable}`}>
+      <body className={`${outfit.variable} font-sans`}>
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -62,7 +62,7 @@ export default function RootLayout({
                 }
               });
             })();
-            `
+            `,
           }}
         />
         <TRPCReactProvider>{children}</TRPCReactProvider>
