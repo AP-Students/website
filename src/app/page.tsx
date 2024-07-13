@@ -11,33 +11,38 @@ import { ChevronRight } from "lucide-react";
 import Navbar from "@/components/ui/navbar";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import Footer from "@/components/ui/footer";
 
 export default async function Home() {
   return (
     <>
       <Navbar className="bg-primary-foreground" />
       <main>
-        <div className="bg-primary-foreground grid h-96 place-content-center gap-4 p-4 text-center sm:p-8">
+        <div className="grid h-96 place-content-center gap-4 bg-primary-foreground p-4 text-center sm:p-8">
           <Link
             href={"/"}
-            className="border-primary text-primary shadow-primary/30 group mx-auto flex w-fit rounded-full border px-4 py-1 shadow-md transition-all hover:translate-y-1 hover:shadow-none"
+            className="group mx-auto flex w-fit rounded-full border border-primary px-4 py-1 text-primary shadow-md shadow-primary/30 transition-all hover:translate-y-1 hover:shadow-none"
           >
             Trusted by{" "}
             <span className=" ml-1 font-bold"> 10,000+ AP Students</span>
             <ChevronRight className="scale-75 rounded stroke-[3px] transition-transform group-hover:translate-x-0.5" />
           </Link>
-          <h1 className="text-balance text-center text-4xl font-bold lg:text-5xl">
-            By AP students. For AP students.
-          </h1>
-          <p className="text-balance text-lg text-gray-700 lg:text-xl">
-            Access free study guides, practice tests, and more for your AP
-            class.
-          </p>
-          <div className="maxw-96 mx-auto flex flex-wrap items-center justify-center gap-4 ">
-            <Link className="relative w-full sm:w-auto" href="/">
-              <Button className="w-full py-6 text-base font-medium sm:w-auto sm:p-6">
-                Start Studying for Free!
-              </Button>
+          <div className="flex flex-col gap-2">
+            <h1 className="text-balance text-center text-4xl font-extrabold md:text-5xl lg:text-6xl">
+              By AP students. For AP students.
+            </h1>
+            <p className="text-balance text-lg leading-tight opacity-70 lg:text-xl">
+              Access free study guides, practice tests, and more for your AP
+              class.
+            </p>
+          </div>
+          <div className="mx-auto flex max-w-96 flex-wrap items-center justify-center gap-4 sm:max-w-max ">
+            <div className="relative w-full sm:w-auto">
+              <Link href="/library">
+                <Button className="w-full py-6 text-base font-medium sm:w-auto sm:p-6">
+                  Start Studying for Free!
+                </Button>
+              </Link>
 
               <Image
                 className="absolute -left-48 top-10 hidden md:block"
@@ -46,7 +51,7 @@ export default async function Home() {
                 width={188}
                 height={77}
               />
-            </Link>
+            </div>
 
             <Link
               className="w-full sm:w-auto"
@@ -311,9 +316,9 @@ export default async function Home() {
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
                       d="M5 13l4 4L19 7"
                     ></path>
                   </svg>
@@ -328,9 +333,9 @@ export default async function Home() {
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
                       d="M5 13l4 4L19 7"
                     ></path>
                   </svg>
@@ -345,9 +350,9 @@ export default async function Home() {
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
                       d="M5 13l4 4L19 7"
                     ></path>
                   </svg>
@@ -368,7 +373,6 @@ export default async function Home() {
                 src="https://discord.com/widget?id=181970867549503489&theme=dark"
                 width="250"
                 height="350"
-                allowTransparency={true}
                 sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
               ></iframe>
 
@@ -429,7 +433,7 @@ export default async function Home() {
               </AccordionContent>
             </AccordionItem>
           </Accordion>
-          <div className="bg-primary-foreground relative mt-[6.75rem] grid place-content-center gap-5 overflow-clip rounded-lg px-4 py-8 text-center font-bold sm:p-12">
+          <div className="relative mt-[6.75rem] grid place-content-center gap-5 overflow-clip rounded-lg bg-primary-foreground px-4 py-8 text-center font-bold sm:p-12">
             <Image
               className="absolute -right-36 top-6 block scale-75 sm:-right-24 sm:-top-8 sm:scale-100"
               src="/diamond.svg"
@@ -440,13 +444,15 @@ export default async function Home() {
             <h2 className="z-10 text-balance text-4xl font-extrabold">
               Start your study sesh. Get that 5.
             </h2>
-            <Link className="z-10 mx-auto w-fit" href="/">
+            <Link className="z-10 mx-auto w-fit" href="/library">
               <Button className="px-8 py-7 text-lg font-semibold">
                 Study now!
               </Button>
             </Link>
           </div>
         </div>
+
+        <Footer />
       </main>
     </>
   );
