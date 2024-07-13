@@ -140,7 +140,7 @@ const NavbarLink = ({
     <Link
       href={href}
       className={cn(
-        "hover:text-primary capitalize opacity-70 transition-all ease-in-out",
+        "capitalize opacity-70 transition-all ease-in-out hover:text-primary",
         !isMobile && "scale-100 hover:scale-105",
         className,
       )}
