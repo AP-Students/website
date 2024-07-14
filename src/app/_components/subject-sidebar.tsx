@@ -1,4 +1,7 @@
 "use client";
+import { useState } from "react";
+import Link from "next/link";
+import { ChevronsLeft } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -8,9 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { type Subject } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
-import Link from "next/link";
-import { ChevronsLeft } from "lucide-react";
+
 type Props = {
   subject: Subject;
 };
@@ -21,7 +22,7 @@ const SubjectSidebar = (props: Props) => {
   return (
     <div
       className={cn(
-        "scrollbar scrollbar-w-1.5 scrollbar-track-primary/10 scrollbar-thumb-primary/30 scrollbar-thumb-rounded-full sticky top-0 hidden max-h-screen overflow-y-auto overflow-x-hidden bg-primary-foreground px-3 pb-12 pt-[11.5rem] transition-all duration-300 ease-in-out lg:block",
+        "sticky top-0 hidden max-h-screen shrink-0 overflow-y-auto overflow-x-hidden bg-primary-foreground px-3 pb-12 pt-[11.5rem] transition-all duration-300 ease-in-out scrollbar scrollbar-track-primary/10 scrollbar-thumb-primary/30 scrollbar-thumb-rounded-full scrollbar-w-1.5 lg:block",
         isCollapsed ? "w-16" : "w-72",
       )}
     >
@@ -53,6 +54,7 @@ const SubjectSidebar = (props: Props) => {
         <Accordion
           className={cn(isCollapsed ? "animate-hide" : "")}
           type="multiple"
+          defaultValue={props.subject.units.map((unit) => unit.title)}
         >
           {props.subject.units.map((unit) => (
             <AccordionItem
@@ -80,7 +82,7 @@ const SubjectSidebar = (props: Props) => {
                       href={chapter.src}
                       key={chapter.title}
                     >
-                      <div className="flex size-6 items-center justify-center rounded bg-primary text-center text-[.75rem] text-white">
+                      <div className="flex size-6 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-[.75rem] text-white">
                         {unit.unit}.{chapter.chapter}
                       </div>
 
