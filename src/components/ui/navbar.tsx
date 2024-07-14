@@ -27,7 +27,13 @@ const links = [
   },
 ];
 
-const Navbar = ({ className }: { className?: string }) => {
+const Navbar = ({
+  variant = "primary",
+  className,
+}: {
+  variant?: "primary" | "secondary";
+  className?: string;
+}) => {
   return (
     <>
       <div
@@ -36,21 +42,33 @@ const Navbar = ({ className }: { className?: string }) => {
           className,
         )}
       >
-        <div className="flex grow basis-0 items-center justify-center">
+        <div
+          className={cn(
+            "flex items-center justify-center",
+            variant === "primary" && "grow basis-0",
+          )}
+        >
           <Link href={"/"}>
             <Image src="/logo.svg" alt="Logo" width={100} height={120} />
           </Link>
         </div>
 
-        <div className="flex space-x-12">
-          {links.map((link) => (
-            <NavbarLink key={link.name} href={link.href}>
-              {link.name}
-            </NavbarLink>
-          ))}
-        </div>
+        {variant === "primary" && (
+          <div className="flex space-x-12">
+            {links.map((link) => (
+              <NavbarLink key={link.name} href={link.href}>
+                {link.name}
+              </NavbarLink>
+            ))}
+          </div>
+        )}
 
-        <div className="flex grow basis-0  items-center justify-center space-x-8">
+        <div
+          className={cn(
+            "flex items-center justify-center space-x-8",
+            variant === "primary" && "grow basis-0",
+          )}
+        >
           <NavbarLink href="https://discord.com/invite/apstudents">
             Discord
           </NavbarLink>
