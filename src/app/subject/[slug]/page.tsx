@@ -1,6 +1,11 @@
-import Navbar from "@/components/ui/navbar";
-import SubjectSidebar from "./_components/subject-sidebar";
-import { type Subject } from "@/lib/types";
+import Link from "next/link";
+
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -8,13 +13,12 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/components/ui/accordion";
-import Link from "next/link";
+import Footer from "@/components/ui/footer";
+import Navbar from "@/components/ui/navbar";
+import { type Subject } from "@/lib/types";
+import SubjectSidebar from "../../_components/subject-sidebar";
+import TableOfContents from "../../_components/table-of-contents";
+
 const Page = ({ params }: { params: { slug: string } }) => {
   const subject = {
     title: "AP Calculus AB",
@@ -173,10 +177,10 @@ const Page = ({ params }: { params: { slug: string } }) => {
     <div className="relative flex min-h-screen">
       <SubjectSidebar subject={subject} />
 
-      <div className="flex grow flex-col">
-        <Navbar className="w-full px-20" variant="secondary" />
+      <div className="relative flex grow flex-col">
+        <Navbar className="w-full px-10 xl:px-20" variant="secondary" />
 
-        <div className="mt-[5.5rem] flex justify-between px-20">
+        <div className="relative mt-[5.5rem] flex min-h-screen justify-between gap-x-16 px-10 xl:px-20">
           <div className="grow">
             <Breadcrumb>
               <BreadcrumbList>
@@ -192,18 +196,25 @@ const Page = ({ params }: { params: { slug: string } }) => {
               </BreadcrumbList>
             </Breadcrumb>
 
-            <h1 className="mb-9 mt-1 text-balance text-left text-5xl font-extrabold lg:text-6xl">
+            <h1 className="mb-9 mt-1 text-balance text-left text-5xl font-extrabold sm:text-6xl">
               {subject.title}
             </h1>
 
-            <Accordion className="w-full" type="multiple">
+            <Accordion
+              className="w-full"
+              type="multiple"
+              defaultValue={subject.units.map((unit) => unit.title)}
+            >
               {subject.units.map((unit) => (
                 <AccordionItem
                   className="mb-9 border-none"
                   value={unit.title}
                   key={unit.title}
                 >
-                  <AccordionTrigger className="pb-1.5 text-left text-4xl font-semibold hover:no-underline">
+                  <AccordionTrigger
+                    id={unit.title}
+                    className="pb-1.5 text-left text-3xl font-semibold hover:no-underline sm:text-4xl"
+                  >
                     Unit {unit.unit} - {unit.title}
                   </AccordionTrigger>
 
@@ -212,15 +223,15 @@ const Page = ({ params }: { params: { slug: string } }) => {
                   <AccordionContent className="flex flex-col gap-2">
                     {unit.chapters.map((chapter) => (
                       <Link
-                        className="group mb-3 flex items-center gap-x-3 text-lg font-semibold last:mb-0"
+                        className="group mb-3 flex items-center gap-x-3 font-semibold last:mb-0"
                         href={chapter.src}
                         key={chapter.title}
                       >
-                        <div className="flex size-8 items-center justify-center rounded bg-primary text-center text-base font-bold text-white">
+                        <div className="flex size-8 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-base font-bold text-white">
                           {unit.unit}.{chapter.chapter}
                         </div>
 
-                        <div className="font-medium group-hover:underline">
+                        <div className="text-base font-medium group-hover:underline sm:text-lg">
                           {chapter.title}
                         </div>
                       </Link>
@@ -231,8 +242,10 @@ const Page = ({ params }: { params: { slug: string } }) => {
             </Accordion>
           </div>
 
-          <div className="">table of contents</div>
+          <TableOfContents title="UNITS" subject={subject} />
         </div>
+
+        <Footer className="mx-0 w-full max-w-none px-10 xl:px-20" />
       </div>
     </div>
   );
