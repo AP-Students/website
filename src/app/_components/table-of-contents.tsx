@@ -4,14 +4,16 @@ import { useState } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { type Subject } from "@/lib/types";
+import { type Subject } from "@/types";
 import { cn } from "@/lib/utils";
+import { usePathname } from "next/navigation";
 
 type Props = {
   title: string;
   subject: Subject;
 };
 const TableOfContents = ({ title, subject }: Props) => {
+  const router = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -42,7 +44,7 @@ const TableOfContents = ({ title, subject }: Props) => {
       <div className={cn("flex flex-col gap-1", collapsed && "animate-hide")}>
         {subject.units.map((unit) => (
           <Link
-            href={`/subject/ap-calc-ab#${unit.title}`}
+            href={`${router}#${unit.title}`}
             key={unit.title}
             className={cn(
               "flex items-center gap-3 text-base font-medium opacity-50 transition-all hover:text-primary/70 hover:opacity-100",
