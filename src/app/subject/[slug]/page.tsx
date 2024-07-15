@@ -1,23 +1,11 @@
-import Link from "next/link";
-
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+import { Accordion } from "@/components/ui/accordion";
 import Footer from "@/components/ui/footer";
 import Navbar from "@/components/ui/navbar";
-import { type Subject } from "@/lib/types";
+import { type Subject } from "@/types";
+import SubjectBreadcrumb from "@/app/_components/subject-breadcrumb";
 import SubjectSidebar from "../../_components/subject-sidebar";
 import TableOfContents from "../../_components/table-of-contents";
+import UnitAccordion from "@/app/_components/unit-accordion";
 
 const Page = ({ params }: { params: { slug: string } }) => {
   const subject = {
@@ -182,19 +170,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
         <div className="relative mt-[5.5rem] flex min-h-screen justify-between gap-x-16 px-10 xl:px-20">
           <div className="grow">
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbLink href="/library">Library</BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbLink href="/library/ap-calc-ab">
-                    {subject.title}
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
+            <SubjectBreadcrumb subject={subject} />
 
             <h1 className="mb-9 mt-1 text-balance text-left text-5xl font-extrabold sm:text-6xl">
               {subject.title}
@@ -206,38 +182,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
               defaultValue={subject.units.map((unit) => unit.title)}
             >
               {subject.units.map((unit) => (
-                <AccordionItem
-                  className="mb-9 border-none"
-                  value={unit.title}
-                  key={unit.title}
-                >
-                  <AccordionTrigger
-                    id={unit.title}
-                    className="pb-1.5 text-left text-3xl font-semibold hover:no-underline sm:text-4xl"
-                  >
-                    Unit {unit.unit} - {unit.title}
-                  </AccordionTrigger>
-
-                  <hr className="mb-3 mt-1.5 h-1 w-full" />
-
-                  <AccordionContent className="flex flex-col gap-2">
-                    {unit.chapters.map((chapter) => (
-                      <Link
-                        className="group mb-3 flex items-center gap-x-3 font-semibold last:mb-0"
-                        href={chapter.src}
-                        key={chapter.title}
-                      >
-                        <div className="flex size-8 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-base font-bold text-white">
-                          {unit.unit}.{chapter.chapter}
-                        </div>
-
-                        <div className="text-base font-medium group-hover:underline sm:text-lg">
-                          {chapter.title}
-                        </div>
-                      </Link>
-                    ))}
-                  </AccordionContent>
-                </AccordionItem>
+                <UnitAccordion unit={unit} key={unit.title} />
               ))}
             </Accordion>
           </div>
