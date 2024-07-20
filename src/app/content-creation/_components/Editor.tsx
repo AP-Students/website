@@ -7,26 +7,27 @@ import {
 import useEditor from "hooks/useEditor";
 
 import Header from "@editorjs/header";
-import SimpleImage from "@editorjs/simple-image";
-import MathTex from "editorjs-math";
+// @ts-expect-error The import is correct
+import Paragraph from "@editorjs/paragraph";
 import Quote from "@editorjs/quote";
-import Warning from "@editorjs/warning";
-import Delimiter from "@editorjs/delimiter";
 import List from "@editorjs/list";
 import NestedList from "@editorjs/nested-list";
-import AttachesTool from "@editorjs/attaches";
-import Embed from "@editorjs/embed";
 import Table from "@editorjs/table";
 import CodeTool from "@editorjs/code";
-import Marker from "@editorjs/marker";
 import InlineCode from "@editorjs/inline-code";
+import SimpleImage from "@editorjs/simple-image";
+import Embed from "@editorjs/embed";
+import Marker from "@editorjs/marker";
 import Underline from "@editorjs/underline";
+import MathTex from "editorjs-math";
+import Delimiter from "@editorjs/delimiter";
+import AttachesTool from "@editorjs/attaches";
+import Alert from "editorjs-alert";
 
 export const EDITOR_TOOLS: EditorConfig["tools"] = {
   header: {
-    // https://github.com/editor-js/header/issues/23#issuecomment-1488922203
     class: Header as unknown as ToolConstructable,
-    shortcut: "CMD+SHIFT+H",
+    shortcut: "CTRL+SHIFT+H",
     inlineToolbar: true,
     config: {
       placeholder: "Enter a Header",
@@ -35,47 +36,34 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
     },
   },
 
-  image: {
-    class: SimpleImage as unknown as ToolConstructable,
+  paragraph: {
+    class: Paragraph as unknown as ToolConstructable,
+    shortcut: "CTRL+SHIFT+P",
     inlineToolbar: true,
-  },
-
-  math: {
-    class: MathTex as unknown as ToolConstructable,
-    toolbox: {
-      title: "LaTeX",
-    },
-  },
-
-  list: {
-    class: List as unknown as ToolConstructable,
-    inlineToolbar: true,
-    config: {
-      defaultStyle: "unordered",
-    },
   },
 
   quote: {
     class: Quote as unknown as ToolConstructable,
     inlineToolbar: true,
-    shortcut: "CMD+SHIFT+O",
     config: {
       quotePlaceholder: "Enter a quote",
       captionPlaceholder: "Quote's author",
     },
   },
 
-  warning: {
-    class: Warning as unknown as ToolConstructable,
+  list: {
+    class: List as unknown as ToolConstructable,
     inlineToolbar: true,
-    shortcut: "CMD+SHIFT+W",
+    shortcut: "CTRL+ALT+8",
     config: {
-      titlePlaceholder: "Title",
-      messagePlaceholder: "Message",
+      defaultStyle: "unordered",
     },
   },
 
-  delimiter: Delimiter as unknown as ToolConstructable,
+  image: {
+    class: SimpleImage as unknown as ToolConstructable,
+    inlineToolbar: true,
+  },
 
   table: {
     class: Table as unknown as ToolConstructable,
@@ -90,24 +78,45 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
     inlineToolbar: true,
   },
 
-  Marker: {
-    class: Marker as unknown as ToolConstructable,
-    shortcut: "CMD+SHIFT+M",
-  },
-
   inlineCode: {
     class: InlineCode as unknown as ToolConstructable,
-    shortcut: "CMD+SHIFT+M",
+    shortcut: "CTRL+ALT+C",
   },
 
-  underline: Underline as unknown as ToolConstructable,
+  Marker: {
+    class: Marker as unknown as ToolConstructable,
+  },
+
+  underline: {
+    class: Underline as unknown as ToolConstructable,
+  },
+
+  math: {
+    class: MathTex as unknown as ToolConstructable,
+    inlineToolbar: true,
+    shortcut: "CTRL+ALT+M",
+    toolbox: {
+      title: "LaTeX",
+    },
+  },
+
+  alert: Alert as unknown as ToolConstructable,
+
+  embed: {
+    class: Embed as unknown as ToolConstructable,
+    inlineToolbar: true,
+  },
+
+  delimiter: {
+    class: Delimiter as unknown as ToolConstructable,
+  },
 };
 
 const Editor = ({ setData }: { setData: (data: OutputData) => void }) => {
   const { editor, isEditorReady } = useEditor({
     holder: "editorjs",
     tools: EDITOR_TOOLS,
-    placeholder: "Start writing your content here...",
+    placeholder: "Press '/' to see available blocks",
     onChange: (api, event) => {
       api.saver
         .save()
@@ -127,9 +136,10 @@ const Editor = ({ setData }: { setData: (data: OutputData) => void }) => {
   }, [editor]);
 
   return (
-    <div>
-      <div className="mb-4 ml-4 pb-4 opacity-50">Article:</div>
-      <div className="prose mt-4" id="editorjs"></div>
+    <div className="flex flex-col gap-y-4">
+      <div></div>
+      <div className="mx-4 opacity-50">Article:</div>
+      <div className="prose mt-4 w-full" id="editorjs"></div>
     </div>
   );
 };
