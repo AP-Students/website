@@ -41,6 +41,9 @@ importers:
       '@editorjs/nested-list':
         specifier: ^1.4.2
         version: 1.4.2
+      '@editorjs/paragraph':
+        specifier: ^2.11.6
+        version: 2.11.6
       '@editorjs/quote':
         specifier: ^2.6.0
         version: 2.6.0
@@ -53,9 +56,6 @@ importers:
       '@editorjs/underline':
         specifier: ^1.1.0
         version: 1.1.0
-      '@editorjs/warning':
-        specifier: ^1.4.0
-        version: 1.4.0
       '@prisma/client':
         specifier: ^5.10.2
         version: 5.12.1(prisma@5.12.1)
@@ -95,9 +95,15 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      editorjs-alert:
+        specifier: ^1.1.4
+        version: 1.1.4
       editorjs-parser:
         specifier: ^1.5.3
         version: 1.5.3
+      highlight.js:
+        specifier: ^11.10.0
+        version: 11.10.0
       katex:
         specifier: ^0.16.11
         version: 0.16.11
@@ -259,6 +265,9 @@ packages:
   '@editorjs/nested-list@1.4.2':
     resolution: {integrity: sha512-qb1dAoJ+bihqmlR3822TC2GuIxEjTCLTZsZVWNces3uJIZ+W4019G3IJKBt/MOOgz4Evzad/RvUEKwPCPe6YOQ==}
 
+  '@editorjs/paragraph@2.11.6':
+    resolution: {integrity: sha512-i9B50Ylvh+0ZzUGWIba09PfUXsA00Y//zFZMwqsyaXXKxMluSIJ6ADFJbbK0zaV9Ijx49Xocrlg+CEPRqATk9w==}
+
   '@editorjs/quote@2.6.0':
     resolution: {integrity: sha512-8DiCMBT4n4UDV5bgzvfRH26HmL6YWddGC4+twvjhR+PzX0gwrnY8nFifvro79EeSqxwRtFjjlGnu5I0VTfw5aQ==}
 
@@ -270,9 +279,6 @@ packages:
 
   '@editorjs/underline@1.1.0':
     resolution: {integrity: sha512-vQj2ROW1KreD31QHlhaPikmDJGWYzRBusN4Zyfwl9nIIQCByt4S8fZQpsrRvH4sct5mkirsHllNT00rJlqHK7Q==}
-
-  '@editorjs/warning@1.4.0':
-    resolution: {integrity: sha512-JMYm3hrmN4/S6aHBHzKsJab9+8AJRPaPh9wDGE6QrVF3dj2fCo/DZcc0MaT5TN4YI5Hu4GKBH52wOKFGOyAuoA==}
 
   '@eslint-community/eslint-utils@4.4.0':
     resolution: {integrity: sha512-1/sA4dwrzBAyeUoQ6oxahHKmrZvsnLCg4RfxW3ZFGGmQkSNQPFNLV9CUEFQP1x9EYXHTo5p6xdhZM1Ne9p/AfA==}
@@ -1108,6 +1114,9 @@ packages:
   eastasianwidth@0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
 
+  editorjs-alert@1.1.4:
+    resolution: {integrity: sha512-m6w/cRxnFucC3dyfrB+DTNXw70SnJNv05AX6P3bZ8qkbzB1OAJTuaFrEKZBdN0YvEvTe1zvg3S344EkPAveemQ==}
+
   editorjs-math@1.0.2:
     resolution: {integrity: sha512-JdK4u6tzLdr2im3wuUYqyHboa3NnpEJHjmprijqJ9uOUXCOntxeOp8C1t2C5oaGX3137Be0qWbw1+yw3shDI2w==}
 
@@ -1402,6 +1411,10 @@ packages:
   hasown@2.0.2:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
+
+  highlight.js@11.10.0:
+    resolution: {integrity: sha512-SYVnVFswQER+zu1laSya563s+F8VDGt7o35d4utbamowvUNLLMovFqwCLSocpZTz3MgaSRA1IbqRWZv97dtErQ==}
+    engines: {node: '>=12.0.0'}
 
   ignore@5.3.1:
     resolution: {integrity: sha512-5Fytz/IraMjqpwfd34ke28PTVMjZjJG2MPn5t7OE4eUCUNf8BAa7b5WUS9/Qvr6mwOQS7Mk6vdsMno5he+T8Xw==}
@@ -2440,6 +2453,10 @@ snapshots:
     dependencies:
       '@codexteam/icons': 0.0.2
 
+  '@editorjs/paragraph@2.11.6':
+    dependencies:
+      '@codexteam/icons': 0.0.4
+
   '@editorjs/quote@2.6.0':
     dependencies:
       '@codexteam/icons': 0.0.5
@@ -2455,10 +2472,6 @@ snapshots:
   '@editorjs/underline@1.1.0':
     dependencies:
       '@codexteam/icons': 0.0.6
-
-  '@editorjs/warning@1.4.0':
-    dependencies:
-      '@codexteam/icons': 0.0.4
 
   '@eslint-community/eslint-utils@4.4.0(eslint@8.57.0)':
     dependencies:
@@ -3288,6 +3301,8 @@ snapshots:
 
   eastasianwidth@0.2.0: {}
 
+  editorjs-alert@1.1.4: {}
+
   editorjs-math@1.0.2:
     dependencies:
       katex: 0.13.24
@@ -3763,6 +3778,8 @@ snapshots:
   hasown@2.0.2:
     dependencies:
       function-bind: 1.1.2
+
+  highlight.js@11.10.0: {}
 
   ignore@5.3.1: {}
 

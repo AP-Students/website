@@ -3,7 +3,7 @@ declare module "editorjs-latex";
 declare module "@editorjs/simple-image";
 declare module "editorjs-math";
 declare module "@editorjs/quote";
-declare module "@editorjs/warning";
+declare module "editorjs-alert";
 declare module "@editorjs/delimiter";
 declare module "@editorjs/table";
 declare module "@editorjs/code";
