@@ -11,12 +11,51 @@ importers:
       '@auth/prisma-adapter':
         specifier: ^1.4.0
         version: 1.6.0(@prisma/client@5.12.1(prisma@5.12.1))
+      '@editorjs/attaches':
+        specifier: ^1.3.0
+        version: 1.3.0
+      '@editorjs/code':
+        specifier: ^2.9.0
+        version: 2.9.0
+      '@editorjs/delimiter':
+        specifier: ^1.4.0
+        version: 1.4.0
       '@editorjs/editorjs':
         specifier: ^2.30.2
         version: 2.30.2
+      '@editorjs/embed':
+        specifier: ^2.7.4
+        version: 2.7.4
       '@editorjs/header':
         specifier: ^2.8.7
         version: 2.8.7
+      '@editorjs/inline-code':
+        specifier: ^1.5.0
+        version: 1.5.0
+      '@editorjs/list':
+        specifier: ^1.9.0
+        version: 1.9.0
+      '@editorjs/marker':
+        specifier: ^1.4.0
+        version: 1.4.0
+      '@editorjs/nested-list':
+        specifier: ^1.4.2
+        version: 1.4.2
+      '@editorjs/quote':
+        specifier: ^2.6.0
+        version: 2.6.0
+      '@editorjs/simple-image':
+        specifier: ^1.6.0
+        version: 1.6.0
+      '@editorjs/table':
+        specifier: ^2.3.0
+        version: 2.3.0
+      '@editorjs/underline':
+        specifier: ^1.1.0
+        version: 1.1.0
+      '@editorjs/warning':
+        specifier: ^1.4.0
+        version: 1.4.0
       '@prisma/client':
         specifier: ^5.10.2
         version: 5.12.1(prisma@5.12.1)
@@ -47,12 +86,21 @@ importers:
       '@trpc/server':
         specifier: next
         version: 11.0.0-rc.334
+      '@types/katex':
+        specifier: ^0.16.7
+        version: 0.16.7
       class-variance-authority:
         specifier: ^0.7.0
         version: 0.7.0
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      editorjs-parser:
+        specifier: ^1.5.3
+        version: 1.5.3
+      katex:
+        specifier: ^0.16.11
+        version: 0.16.11
       lucide-react:
         specifier: ^0.407.0
         version: 0.407.0(react@18.2.0)
@@ -87,6 +135,9 @@ importers:
         specifier: ^3.22.4
         version: 3.22.4
     devDependencies:
+      '@tailwindcss/typography':
+        specifier: ^0.5.13
+        version: 0.5.13(tailwindcss@3.4.3)
       '@types/eslint':
         specifier: ^8.56.2
         version: 8.56.9
@@ -105,6 +156,9 @@ importers:
       '@typescript-eslint/parser':
         specifier: ^7.1.1
         version: 7.6.0(eslint@8.57.0)(typescript@5.4.5)
+      editorjs-math:
+        specifier: ^1.0.2
+        version: 1.0.2
       eslint:
         specifier: ^8.57.0
         version: 8.57.0
@@ -163,14 +217,62 @@ packages:
     resolution: {integrity: sha512-dkxf7+hn8mFBwKjs9bvBlArzLVxVbS8usaPUDd5p2a9JCL9tB8OaOVN1isD4+Xyk4ns89/xeOmbQvgdK7IIVdA==}
     engines: {node: '>=6.9.0'}
 
+  '@codexteam/icons@0.0.2':
+    resolution: {integrity: sha512-KdeKj3TwaTHqM3IXd5YjeJP39PBUZTb+dtHjGlf5+b0VgsxYD4qzsZkb11lzopZbAuDsHaZJmAYQ8LFligIT6Q==}
+
+  '@codexteam/icons@0.0.4':
+    resolution: {integrity: sha512-V8N/TY2TGyas4wLrPIFq7bcow68b3gu8DfDt1+rrHPtXxcexadKauRJL6eQgfG7Z0LCrN4boLRawR4S9gjIh/Q==}
+
   '@codexteam/icons@0.0.5':
     resolution: {integrity: sha512-s6H2KXhLz2rgbMZSkRm8dsMJvyUNZsEjxobBEg9ztdrb1B2H3pEzY6iTwI4XUPJWJ3c3qRKwV4TrO3J5jUdoQA==}
+
+  '@codexteam/icons@0.0.6':
+    resolution: {integrity: sha512-L7Q5PET8PjKcBT5wp7VR+FCjwCi5PUp7rd/XjsgQ0CI5FJz0DphyHGRILMuDUdCW2MQT9NHbVr4QP31vwAkS/A==}
+
+  '@editorjs/attaches@1.3.0':
+    resolution: {integrity: sha512-D+dj55EsC5bvXV///Dh/+KN4unuI0j6SU3f5QcMA5zrfda47PNKwbKOuwMBJwn0O+o5qwqrFv67g98lAo2qqVQ==}
+
+  '@editorjs/code@2.9.0':
+    resolution: {integrity: sha512-QNOWxF29j6mYl/gM5HJzeGOt3s4laoZCUbuRqj6RkIvLBWMU+ASwjckEiouA61hcYUOMfpw4vQjzhsfC7xm/vA==}
+
+  '@editorjs/delimiter@1.4.0':
+    resolution: {integrity: sha512-i1Wm3UQsVisM7Fh9focJ1a4kX2l7IxO3zrEd+GmYoPVaNwxb/63GLNbGfCCGZBuvUyzeUDnc8cdhD1QQGwUZIg==}
 
   '@editorjs/editorjs@2.30.2':
     resolution: {integrity: sha512-JjtUDs2/aHTEjNZzEf/2cugpIli1+aNeU8mloOd5USbVxv2vC02HTMpv7Vc1UyB7dIuc45JaYSJwgnBZp9duhA==}
 
+  '@editorjs/embed@2.7.4':
+    resolution: {integrity: sha512-ByvSZnVuh9FhjLGmvjNlxhk3hnqN0g5K+E/tJY6Whdspgh9mst0iBARoVJQDGeJC+NNL2sSgYGt1ZjvEK5Z+lQ==}
+
   '@editorjs/header@2.8.7':
     resolution: {integrity: sha512-rfxzYFR/Jhaocj3Xxx8XjEjyzfPbBIVkcPZ9Uy3rEz1n3ewhV0V4zwuxCjVfFhLUVgQQExq43BxJnTNlLOzqDQ==}
+
+  '@editorjs/inline-code@1.5.0':
+    resolution: {integrity: sha512-5i6BCOG8eOg4/6qGoLJuL6XSZZg834zIByDW8K80doM1L7ss/VqtLY0nrB2Q5bfs1KA0tOlVHOfjE4JD4438FQ==}
+
+  '@editorjs/list@1.9.0':
+    resolution: {integrity: sha512-BQEvZW4vi0O0dBvGNljiKxiE89vMSHoM2Tu2OzKUndoj7pY9AxqpgCh1qvwIVsJAlG4Lbt/vBFQilnoStMmI6A==}
+
+  '@editorjs/marker@1.4.0':
+    resolution: {integrity: sha512-5ipEXfL44jTTRzgNp/p/YjMO7jT08S5z4V8qA3FFJTfdhKgQyM3mvP1zpdYKw47ZZpVWMCncvk5Nto3BxihEtg==}
+
+  '@editorjs/nested-list@1.4.2':
+    resolution: {integrity: sha512-qb1dAoJ+bihqmlR3822TC2GuIxEjTCLTZsZVWNces3uJIZ+W4019G3IJKBt/MOOgz4Evzad/RvUEKwPCPe6YOQ==}
+
+  '@editorjs/quote@2.6.0':
+    resolution: {integrity: sha512-8DiCMBT4n4UDV5bgzvfRH26HmL6YWddGC4+twvjhR+PzX0gwrnY8nFifvro79EeSqxwRtFjjlGnu5I0VTfw5aQ==}
+
+  '@editorjs/simple-image@1.6.0':
+    resolution: {integrity: sha512-WvdGfQPlozwZd3PXQrJnRXk6gEYbv1U2vRupYJ6lTd3/UsLInXYUX5jSFcnGB5ZMH3bd0JDZfcb4d4Sv1/1big==}
+
+  '@editorjs/table@2.3.0':
+    resolution: {integrity: sha512-/dKE6A5FkukX/FpvIyQGsewwXglZk8YbXpEp9vkB6Ec4ETLeGJMxObCcYqbXqVod+IU/a1tFH+j3lsD8ASD41g==}
+
+  '@editorjs/underline@1.1.0':
+    resolution: {integrity: sha512-vQj2ROW1KreD31QHlhaPikmDJGWYzRBusN4Zyfwl9nIIQCByt4S8fZQpsrRvH4sct5mkirsHllNT00rJlqHK7Q==}
+
+  '@editorjs/warning@1.4.0':
+    resolution: {integrity: sha512-JMYm3hrmN4/S6aHBHzKsJab9+8AJRPaPh9wDGE6QrVF3dj2fCo/DZcc0MaT5TN4YI5Hu4GKBH52wOKFGOyAuoA==}
 
   '@eslint-community/eslint-utils@4.4.0':
     resolution: {integrity: sha512-1/sA4dwrzBAyeUoQ6oxahHKmrZvsnLCg4RfxW3ZFGGmQkSNQPFNLV9CUEFQP1x9EYXHTo5p6xdhZM1Ne9p/AfA==}
@@ -563,6 +665,11 @@ packages:
       typescript:
         optional: true
 
+  '@tailwindcss/typography@0.5.13':
+    resolution: {integrity: sha512-ADGcJ8dX21dVVHIwTRgzrcunY6YY9uSlAHHGVKvkA+vLc5qLwEszvKts40lx7z0qc4clpjclwLeK5rVCV2P/uw==}
+    peerDependencies:
+      tailwindcss: '>=3.0.0 || insiders'
+
   '@tanstack/query-core@5.29.0':
     resolution: {integrity: sha512-WgPTRs58hm9CMzEr5jpISe8HXa3qKQ8CxewdYZeVnA54JrPY9B1CZiwsCoLpLkf0dGRZq+LcX5OiJb0bEsOFww==}
 
@@ -618,6 +725,9 @@ packages:
 
   '@types/json5@0.0.29':
     resolution: {integrity: sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==}
+
+  '@types/katex@0.16.7':
+    resolution: {integrity: sha512-HMwFiRujE5PjrgwHQ25+bsLJgowjGjm5Z8FVSf0N6PwgJrwxH0QxzHYDcKsTfV3wva0vzrpqMTJS2jXPr5BMEQ==}
 
   '@types/node@20.12.7':
     resolution: {integrity: sha512-wq0cICSkRLVaf3UGLMGItu/PtdY7oaXaI/RVU+xliKVOtRna3PRY57ZDfztpDL0n11vfymMUnXv8QwYCO7L1wg==}
@@ -896,6 +1006,10 @@ packages:
     resolution: {integrity: sha512-NOKm8xhkzAjzFx8B2v5OAHT+u5pRQc2UCa2Vq9jYL/31o2wi9mxBA7LIFs3sV5VSC49z6pEhfbMULvShKj26WA==}
     engines: {node: '>= 6'}
 
+  commander@8.3.0:
+    resolution: {integrity: sha512-OkTL9umf+He2DZkUq8f8J9of7yL6RJKI24dVITBmNfZBmri9zYZQrKkuXiKhyfPSu8tUhnVBB1iKXevvnlR4Ww==}
+    engines: {node: '>= 12'}
+
   concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
 
@@ -993,6 +1107,12 @@ packages:
 
   eastasianwidth@0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
+
+  editorjs-math@1.0.2:
+    resolution: {integrity: sha512-JdK4u6tzLdr2im3wuUYqyHboa3NnpEJHjmprijqJ9uOUXCOntxeOp8C1t2C5oaGX3137Be0qWbw1+yw3shDI2w==}
+
+  editorjs-parser@1.5.3:
+    resolution: {integrity: sha512-ypc6mku0A55ycxdTHjijy/rRtQ060bwQKyEGMDPbnEglRAR/DE/4GJNdKtMGvUWNTGT6Fe25L/AoEQ5bhasQAg==}
 
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
@@ -1467,6 +1587,14 @@ packages:
     resolution: {integrity: sha512-ZZow9HBI5O6EPgSJLUb8n2NKgmVWTwCvHGwFuJlMjvLFqlGG6pjirPhtdsseaLZjSibD8eegzmYpUZwoIlj2cQ==}
     engines: {node: '>=4.0'}
 
+  katex@0.13.24:
+    resolution: {integrity: sha512-jZxYuKCma3VS5UuxOx/rFV1QyGSl3Uy/i0kTJF3HgQ5xMinCQVF8Zd4bMY/9aI9b9A2pjIBOsjSSm68ykTAr8w==}
+    hasBin: true
+
+  katex@0.16.11:
+    resolution: {integrity: sha512-RQrI8rlHY92OLf3rho/Ts8i/XvjgguEjOkO1BEXcU3N8BqPpSzBNwV/G0Ukr+P/l3ivvJUE/Fa/CwbS6HesGNQ==}
+    hasBin: true
+
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
 
@@ -1495,6 +1623,12 @@ packages:
   locate-path@6.0.0:
     resolution: {integrity: sha512-iPZK6eYjbxRu3uB4/WZ3EsEIMJFMqAoopl3R+zuq0UjcAm/MO6KCweDgPfP3elTztoKP3KtnVHxTn2NHBSDVUw==}
     engines: {node: '>=10'}
+
+  lodash.castarray@4.4.0:
+    resolution: {integrity: sha512-aVx8ztPv7/2ULbArGJ2Y42bG1mEQ5mGjpdvrbJcJFU3TbYybe+QlLS4pst9zV52ymy2in1KpFPiZnAOATxD4+Q==}
+
+  lodash.isplainobject@4.0.6:
+    resolution: {integrity: sha512-oSXzaWypCMHkPC3NvBEaPHf0KsA5mvPrOPgQWDsbg8n7orZ290M0BmC/jgRZ4vcJ6DTAhjrsSYgdsW/F+MFOBA==}
 
   lodash.merge@4.6.2:
     resolution: {integrity: sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ==}
@@ -1738,6 +1872,10 @@ packages:
     engines: {node: '>=12.0'}
     peerDependencies:
       postcss: ^8.2.14
+
+  postcss-selector-parser@6.0.10:
+    resolution: {integrity: sha512-IQ7TZdoaqbT+LCpShg46jnZVlhWD2w6iQYAcYXfHARZ7X1t/UGhhceQDs5X0cGqKvYlHNOuv7Oa1xmb0oQuA3w==}
+    engines: {node: '>=4'}
 
   postcss-selector-parser@6.0.16:
     resolution: {integrity: sha512-A0RVJrX+IUkVZbW3ClroRWurercFhieevHB38sr2+l9eUClMqome3LmEmnhlNy+5Mr2EYN6B2Kaw9wYdd+VHiw==}
@@ -2255,14 +2393,72 @@ snapshots:
     dependencies:
       regenerator-runtime: 0.14.1
 
+  '@codexteam/icons@0.0.2': {}
+
+  '@codexteam/icons@0.0.4': {}
+
   '@codexteam/icons@0.0.5': {}
 
+  '@codexteam/icons@0.0.6': {}
+
+  '@editorjs/attaches@1.3.0':
+    dependencies:
+      '@codexteam/icons': 0.0.4
+
+  '@editorjs/code@2.9.0':
+    dependencies:
+      '@codexteam/icons': 0.0.5
+
+  '@editorjs/delimiter@1.4.0':
+    dependencies:
+      '@codexteam/icons': 0.0.5
+
   '@editorjs/editorjs@2.30.2': {}
+
+  '@editorjs/embed@2.7.4':
+    dependencies:
+      '@editorjs/editorjs': 2.30.2
 
   '@editorjs/header@2.8.7':
     dependencies:
       '@codexteam/icons': 0.0.5
       '@editorjs/editorjs': 2.30.2
+
+  '@editorjs/inline-code@1.5.0':
+    dependencies:
+      '@codexteam/icons': 0.0.5
+
+  '@editorjs/list@1.9.0':
+    dependencies:
+      '@codexteam/icons': 0.0.4
+
+  '@editorjs/marker@1.4.0':
+    dependencies:
+      '@codexteam/icons': 0.0.5
+
+  '@editorjs/nested-list@1.4.2':
+    dependencies:
+      '@codexteam/icons': 0.0.2
+
+  '@editorjs/quote@2.6.0':
+    dependencies:
+      '@codexteam/icons': 0.0.5
+
+  '@editorjs/simple-image@1.6.0':
+    dependencies:
+      '@codexteam/icons': 0.0.6
+
+  '@editorjs/table@2.3.0':
+    dependencies:
+      '@codexteam/icons': 0.0.6
+
+  '@editorjs/underline@1.1.0':
+    dependencies:
+      '@codexteam/icons': 0.0.6
+
+  '@editorjs/warning@1.4.0':
+    dependencies:
+      '@codexteam/icons': 0.0.4
 
   '@eslint-community/eslint-utils@4.4.0(eslint@8.57.0)':
     dependencies:
@@ -2608,6 +2804,14 @@ snapshots:
     optionalDependencies:
       typescript: 5.4.5
 
+  '@tailwindcss/typography@0.5.13(tailwindcss@3.4.3)':
+    dependencies:
+      lodash.castarray: 4.4.0
+      lodash.isplainobject: 4.0.6
+      lodash.merge: 4.6.2
+      postcss-selector-parser: 6.0.10
+      tailwindcss: 3.4.3
+
   '@tanstack/query-core@5.29.0': {}
 
   '@tanstack/react-query@5.29.2(react@18.2.0)':
@@ -2652,6 +2856,8 @@ snapshots:
   '@types/json-schema@7.0.15': {}
 
   '@types/json5@0.0.29': {}
+
+  '@types/katex@0.16.7': {}
 
   '@types/node@20.12.7':
     dependencies:
@@ -2996,6 +3202,8 @@ snapshots:
 
   commander@4.1.1: {}
 
+  commander@8.3.0: {}
+
   concat-map@0.0.1: {}
 
   cookie@0.5.0: {}
@@ -3079,6 +3287,12 @@ snapshots:
       esutils: 2.0.3
 
   eastasianwidth@0.2.0: {}
+
+  editorjs-math@1.0.2:
+    dependencies:
+      katex: 0.13.24
+
+  editorjs-parser@1.5.3: {}
 
   emoji-regex@8.0.0: {}
 
@@ -3723,6 +3937,14 @@ snapshots:
       object.assign: 4.1.5
       object.values: 1.2.0
 
+  katex@0.13.24:
+    dependencies:
+      commander: 8.3.0
+
+  katex@0.16.11:
+    dependencies:
+      commander: 8.3.0
+
   keyv@4.5.4:
     dependencies:
       json-buffer: 3.0.1
@@ -3747,6 +3969,10 @@ snapshots:
   locate-path@6.0.0:
     dependencies:
       p-locate: 5.0.0
+
+  lodash.castarray@4.4.0: {}
+
+  lodash.isplainobject@4.0.6: {}
 
   lodash.merge@4.6.2: {}
 
@@ -3977,6 +4203,11 @@ snapshots:
     dependencies:
       postcss: 8.4.38
       postcss-selector-parser: 6.0.16
+
+  postcss-selector-parser@6.0.10:
+    dependencies:
+      cssesc: 3.0.0
+      util-deprecate: 1.0.2
 
   postcss-selector-parser@6.0.16:
     dependencies:
