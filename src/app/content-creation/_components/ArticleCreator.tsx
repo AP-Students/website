@@ -10,7 +10,7 @@ function ArticleCreator() {
 
   return (
     <>
-      <div className="ml-36 mt-4 grid grid-cols-2 divide-x-2">
+      <div className="mt-4 grid grid-cols-2 divide-x-2 px-12">
         <Editor setData={setData} />
 
         <div className="px-8">
