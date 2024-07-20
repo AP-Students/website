@@ -4,19 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import EditorJS from "@editorjs/editorjs";
 import { type EditorConfig } from "@editorjs/editorjs/types/configs";
 
-const DEFAULT_INITIAL_DATA = {
-  time: new Date().getTime(),
-  blocks: [
-    {
-      type: "header",
-      data: {
-        text: "Click me to start writing!",
-        level: 1,
-      },
-    },
-  ],
-};
-
 const useEditor = (config: EditorConfig) => {
   const [isEditorReady, setIsEditorReady] = useState(false);
   const editorInstance = useRef<EditorJS | null>(null);
@@ -29,7 +16,9 @@ const useEditor = (config: EditorConfig) => {
           setIsEditorReady(true);
           config.onReady?.();
         },
-        data: DEFAULT_INITIAL_DATA,
+        onChange: (api, event) => {
+          config.onChange?.(api, event);
+        },
       });
     }
     return () => {
