@@ -44,6 +44,7 @@
     "clsx": "^2.1.1",
     "editorjs-alert": "^1.1.4",
     "editorjs-parser": "^1.5.3",
+    "editorjs-undo": "^2.0.28",
     "highlight.js": "^11.10.0",
     "katex": "^0.16.11",
     "lucide-react": "^0.407.0",

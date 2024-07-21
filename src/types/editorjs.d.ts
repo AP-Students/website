@@ -14,6 +14,7 @@ declare module "@editorjs/attaches";
 declare module "@editorjs/embed";
 declare module "@editorjs/inline-code";
 declare module "@editorjs/underline";
+declare module "editorjs-undo";
 
 declare module "editorjs-parser" {
   // Configuration Interfaces

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import EditorJS from "@editorjs/editorjs";
 import { type EditorConfig } from "@editorjs/editorjs/types/configs";
+import Undo from "editorjs-undo";
 
 const useEditor = (config: EditorConfig) => {
   const [isEditorReady, setIsEditorReady] = useState(false);
@@ -10,16 +11,28 @@ const useEditor = (config: EditorConfig) => {
 
   useEffect(() => {
     if (!editorInstance.current) {
-      editorInstance.current = new EditorJS({
+      const editor = new EditorJS({
         ...config,
         onReady: () => {
           setIsEditorReady(true);
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- The call is safe
+          new Undo({ editor });
           config.onReady?.();
         },
         onChange: (api, event) => {
           config.onChange?.(api, event);
         },
+        i18n: {
+          messages: {
+            toolNames: {
+              Marker: "Highlight",
+              InlineCode: "Inline Code",
+            },
+          },
+        },
       });
+
+      editorInstance.current = editor;
     }
     return () => {
       if (editorInstance.current?.destroy) {
