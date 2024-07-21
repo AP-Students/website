@@ -27,7 +27,13 @@ const links = [
   },
 ];
 
-const Navbar = ({ className }: { className?: string }) => {
+const Navbar = ({
+  variant = "primary",
+  className,
+}: {
+  variant?: "primary" | "secondary";
+  className?: string;
+}) => {
   return (
     <>
       <div
@@ -36,21 +42,33 @@ const Navbar = ({ className }: { className?: string }) => {
           className,
         )}
       >
-        <div className="flex grow basis-0 items-center justify-center">
+        <div
+          className={cn(
+            "flex items-center justify-center",
+            variant === "primary" && "grow basis-0",
+          )}
+        >
           <Link href={"/"}>
             <Image src="/logo.svg" alt="Logo" width={100} height={120} />
           </Link>
         </div>
 
-        <div className="flex space-x-12">
-          {links.map((link) => (
-            <NavbarLink key={link.name} href={link.href}>
-              {link.name}
-            </NavbarLink>
-          ))}
-        </div>
+        {variant === "primary" && (
+          <div className="flex space-x-12">
+            {links.map((link) => (
+              <NavbarLink key={link.name} href={link.href}>
+                {link.name}
+              </NavbarLink>
+            ))}
+          </div>
+        )}
 
-        <div className="flex grow basis-0  items-center justify-center space-x-8">
+        <div
+          className={cn(
+            "flex items-center justify-center space-x-8",
+            variant === "primary" && "grow basis-0",
+          )}
+        >
           <NavbarLink href="https://discord.com/invite/apstudents">
             Discord
           </NavbarLink>
@@ -90,22 +108,26 @@ const MobileNavbar = () => {
           <SheetHeader>
             <SheetTitle className="flex w-full">
               {" "}
-              <Link className="inline-block" href={"/"}>
-                <Image
-                  src="/logo.svg"
-                  alt="Logo"
-                  width={75 * 1.35}
-                  height={80 * 1.35}
-                />
-              </Link>
+              <SheetTrigger asChild>
+                <Link className="inline-block" href={"/"}>
+                  <Image
+                    src="/logo.svg"
+                    alt="Logo"
+                    width={75 * 1.35}
+                    height={80 * 1.35}
+                  />
+                </Link>
+              </SheetTrigger>
             </SheetTitle>
           </SheetHeader>
           <div className="mt-4 flex flex-col gap-2">
             {links.map((link) => (
               <div key={link.name}>
-                <NavbarLink href={link.href} isMobile={true}>
-                  {link.name}
-                </NavbarLink>
+                <SheetTrigger asChild>
+                  <NavbarLink href={link.href} isMobile={true}>
+                    {link.name}
+                  </NavbarLink>
+                </SheetTrigger>
               </div>
             ))}
 
