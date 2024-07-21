@@ -102,8 +102,8 @@ const sectionData = [
 
 const APLibrary = () => {
   return (
-    <div className="grid grid-cols-3 gap-4 lg:gap-8">
-      {sectionData.map((section, index) => (
+    <>
+      {sectionData.map((section) => (
         <APsection
           key={section.title} 
           title={section.title}
@@ -112,7 +112,7 @@ const APLibrary = () => {
           courses={section.courses}
         />
       ))}
-    </div>
+    </>
   );
 };
 
