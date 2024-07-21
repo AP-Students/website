@@ -1,6 +1,6 @@
 // src/app/digital-testing/_components/Header.tsx
 import React from 'react';
-import ToolsDropdown from './ToolsDropdown'; // Import the ToolsDropdown component
+import ToolsDropdown from './ToolsDropdown'; 
 import styles from '../styles/Header.module.css';
 
 const Header: React.FC = () => {
@@ -16,7 +16,7 @@ const Header: React.FC = () => {
           <text>John Doe</text> 
           <text>ID: 123456</text>
         </div>
-        <ToolsDropdown /> {/* Replace End Exam button with ToolsDropdown */}
+        <ToolsDropdown /> {/* SWITCH TO ACTUAL TOOLS */}
       </div>
     </header>
   );
