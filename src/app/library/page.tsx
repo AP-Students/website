@@ -3,6 +3,7 @@ import Link from "next/link";
 import Footer from "@/components/ui/footer";
 
 const Page = () => {
+  console.log("Library")
   return (
     <div>
       <Navbar />
