@@ -12,8 +12,8 @@ import Navbar from "@/components/ui/navbar";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Footer from "@/components/ui/footer";
-import APsection from "@/components/ui/homePage/APsection";
 import APLibrary from "@/components/ui/homePage/APLibrary";
+import FAQ from "@/components/ui/homePage/FAQ";
 
 export default async function Home() {
   return (
@@ -91,9 +91,11 @@ export default async function Home() {
             Explore our resources for your AP class.
           </p>
 
+          {/* Library section*/}
           <div className="grid grid-cols-3 gap-4 lg:gap-8">
             <APLibrary/>
           </div>
+
           <div className="flex flex-wrap items-center justify-evenly gap-x-10 gap-y-36 px-16 py-32">
             <div>
               <h1 className="mb-4 text-3xl font-bold text-gray-900">
@@ -190,44 +192,7 @@ export default async function Home() {
             collapsible
             className="mx-auto min-w-[10rem] max-w-[50rem] lg:w-[50rem]"
           >
-            <AccordionItem value="item-1">
-              <AccordionTrigger className="text-left text-2xl font-bold">
-                What types of resources do you offer for AP students?
-              </AccordionTrigger>
-              <AccordionContent>
-                Lorem ipsum dolor sit, amet consectetur adipisicing elit.
-                Corrupti cupiditate repellendus ea perferendis error cumque
-                tempore impedit aperiam architecto dolorum similique numquam
-                nobis quisquam harum corporis itaque quibusdam, laudantium
-                tenetur laborum ipsum. Nobis hic veritatis nisi ducimus atque
-                repellat harum!
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="item-2">
-              <AccordionTrigger className="text-2xl font-bold">
-                Who creates the resources?
-              </AccordionTrigger>
-              <AccordionContent>
-                Lorem ipsum dolor sit, amet consectetur adipisicing elit.
-                Corrupti cupiditate repellendus ea perferendis error cumque
-                tempore impedit aperiam architecto dolorum similique numquam
-                nobis quisquam harum corporis itaque quibusdam, laudantium
-                tenetur laborum ipsum. Nobis hic veritatis nisi ducimus atque
-                repellat harum!
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="item-3">
-              <AccordionTrigger className="text-2xl font-bold ">
-                How can I contribute?
-              </AccordionTrigger>
-              <AccordionContent>
-                We welcome contributions from AP students like you! Whether you
-                have study notes, practice exams, or helpful tips to share, you
-                can submit your content to be reviewed and added to our resource
-                library. Join us in building a community-driven platform for AP
-                exam preparation.
-              </AccordionContent>
-            </AccordionItem>
+            <FAQ/>
           </Accordion>
           <div className="relative mt-[6.75rem] grid place-content-center gap-5 overflow-clip rounded-lg bg-primary-foreground px-4 py-8 text-center font-bold sm:p-12">
             <Image
