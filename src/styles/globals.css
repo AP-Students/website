@@ -65,6 +65,6 @@
   }
   body,
   html {
-    @apply overflow-x-hidden bg-background text-foreground;
+    @apply scroll-smooth bg-background text-foreground;
   }
 }

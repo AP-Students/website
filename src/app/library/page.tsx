@@ -27,7 +27,7 @@ const Page = () => {
             <h3 className="text-4xl font-bold text-white">Math and CS</h3>
             <ul className="mt-5 columns-1 space-y-4 sm:columns-2">
               <li>
-                <Link href="/">AP Calculus AB</Link>
+                <Link href="/subject/ap-calc-ab">AP Calculus AB</Link>
               </li>
               <li>
                 <Link href="/">AP Calculus BC</Link>
