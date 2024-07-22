@@ -28,7 +28,7 @@ const APsection: React.FC<SectionProps> = ({
       <ul className={`mt-5 columns-1 space-y-4 ${listMobile(+colSpanNumber)}`}>
         {courses.map((course, index) => (
           <li key={index}>
-            <Link href={`/${formatCourseName(course)}`}>{course}</Link>
+            <Link href={`/subject/${formatCourseName(course)}`}>{course}</Link>
           </li>
         ))}
       </ul>
