@@ -67,33 +67,34 @@ export default async function Home() {
           </div>
         </div>
         <div className="mx-auto flex max-w-6xl flex-col px-6 pb-8 lg:px-8 ">
-          <h2 className="relative mx-auto mb-2 mt-24 inline-block text-center text-5xl font-bold leading-[1.2]">
-            <span>Everything you need.</span>{" "}
-            <span className="inline-block sm:block md:inline-block">
-              For free.
-            </span>
-            <Image
-              src="/star.svg"
-              alt="Star"
-              width={48}
-              height={48}
-              className="absolute -right-6 -top-6 hidden lg:block"
-            />
-            <Image
-              src="/star.svg"
-              alt="Star"
-              width={16}
-              height={16}
-              className="absolute -right-9 -top-9 hidden rotate-45 lg:block "
-            />
-          </h2>
-          <p className="mb-12 text-center text-xl leading-tight text-gray-700">
-            Explore our resources for your AP class.
-          </p>
+          <div className="flex flex-col justify-center">
+            <h2 className="relative mx-auto mb-2 mt-24 inline-block text-center text-5xl font-bold leading-[1.2]">
+              <span>Everything you need.</span>{" "}
+              <span className="inline-block sm:block md:inline-block">
+                For free.
+              </span>
+              <Image
+                src="/star.svg"
+                alt="Star"
+                width={48}
+                height={48}
+                className="absolute -right-6 -top-6 hidden lg:block"
+              />
+              <Image
+                src="/star.svg"
+                alt="Star"
+                width={16}
+                height={16}
+                className="absolute -right-9 -top-9 hidden rotate-45 lg:block "
+              />
+            </h2>
+            <p className="mb-12 text-center text-xl leading-tight text-gray-700">
+              Explore our resources for your AP class.
+            </p>
+          </div>
 
-          {/* Library section*/}
-          <div className="grid grid-cols-3 gap-4 lg:gap-8">
-            <APLibrary/>
+          <div id="library-section" className="grid grid-cols-3 gap-4 lg:gap-8">
+            <APLibrary />
           </div>
 
           <div className="flex flex-wrap items-center justify-evenly gap-x-10 gap-y-36 px-16 py-32">
@@ -183,17 +184,19 @@ export default async function Home() {
               />
             </div>
           </div>
-          <h2 className="mb-2 mt-12 text-center text-5xl font-bold">FAQ</h2>
-          <p className="mb-10 text-center text-xl text-gray-700">
-            Need help? We got you covered.
-          </p>
-          <Accordion
-            type="single"
-            collapsible
-            className="mx-auto min-w-[10rem] max-w-[50rem] lg:w-[50rem]"
-          >
-            <FAQ/>
-          </Accordion>
+          <div id="FAQ-section">
+            <h2 className="mb-2 mt-12 text-center text-5xl font-bold">FAQ</h2>
+            <p className="mb-10 text-center text-xl text-gray-700">
+              Need help? We got you covered.
+            </p>
+            <Accordion
+              type="single"
+              collapsible
+              className="mx-auto min-w-[10rem] max-w-[50rem] lg:w-[50rem]"
+            >
+              <FAQ />
+            </Accordion>
+          </div>
           <div className="relative mt-[6.75rem] grid place-content-center gap-5 overflow-clip rounded-lg bg-primary-foreground px-4 py-8 text-center font-bold sm:p-12">
             <Image
               className="absolute -right-36 top-6 block scale-75 sm:-right-24 sm:-top-8 sm:scale-100"

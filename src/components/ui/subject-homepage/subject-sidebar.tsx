@@ -85,10 +85,10 @@ const SidebarItem = ({ unit }: { unit: Unit }) => {
           <span className="invisible opacity-0">.</span>
         </div>
         <div className="grow">
-          {unit.chapters.map((chapter) => (
+          {unit.chapters.map((chapter, index) => (
             <Link
               className="group mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0"
-              href={chapter.src}
+              href={"/chapter/1"} // Please fix this someone
               key={chapter.title}
             >
               <div className="flex size-6 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-[.75rem] text-white">
