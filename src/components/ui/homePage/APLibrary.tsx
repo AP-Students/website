@@ -12,7 +12,7 @@ const sectionData = [
       "AP Precalculus",
       "AP Statistics",
       "AP Computer Science Principles",
-      "AP Computer Science A",
+      "AP Computer Science Applications",
     ],
   },
   {
