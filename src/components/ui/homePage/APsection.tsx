@@ -5,7 +5,7 @@ import React from "react";
 
 interface SectionProps {
   title: string;
-  colSpanNumber: string;
+  numofCol: string;
   backgroundColor: string;
   courses: string[];
 }
@@ -13,25 +13,29 @@ interface SectionProps {
 const APsection: React.FC<SectionProps> = ({
   title,
   courses,
-  backgroundColor,    
-  colSpanNumber,
+  backgroundColor,
+  numofCol,
 }) => {
   return (
     <>
       <div
-        className={`col-span-3 rounded-lg p-10 text-white ${"lg:col-span-" + colSpanNumber} lg:h-60`}
+        className={`col-span-3 rounded-lg p-10 text-white ${numofCol} lg:h-60`}
         style={{
           background: backgroundColor,
         }}
       >
         <h3 className="text-4xl font-bold text-white">{title}</h3>
-      <ul className={`mt-5 columns-1 space-y-4 ${listMobile(+colSpanNumber)}`}>
-        {courses.map((course, index) => (
-          <li key={index}>
-            <Link href={`/subject/${formatCourseName(course)}`}>{course}</Link>
-          </li>
-        ))}
-      </ul>
+        <ul
+          className={`mt-5 columns-1 space-y-4 ${listMobile(+(numofCol.replace(/[^1-9]/g, "")))}`}
+        >
+          {courses.map((course, index) => (
+            <li key={index}>
+              <Link href={`/subject/${formatCourseName(course)}`}>
+                {course}
+              </Link>
+            </li>
+          ))}
+        </ul>
       </div>
     </>
   );
@@ -39,22 +43,21 @@ const APsection: React.FC<SectionProps> = ({
 
 const formatCourseName = (courseName: String) => {
   return courseName
-    .replace(/AP /g, '')  
-    .replace(/\s+/g, '-') 
-    .toLowerCase();       
+    .replace(/AP /g, "")
+    .toLowerCase()
+    .replace(/[^a-z1-9 &]+/g, "")
+    .replace(/\s+/g, "-");
 };
 
-const listMobile = (columnNumber: number) =>{
+const listMobile = (columnNumber: number) => {
   let returnString = "";
-  if(columnNumber === 3){
-    returnString = "sm:columns-2 md:columns-3"
-  }else if(columnNumber === 2){
-    returnString = "sm:columns-2"
+  if (columnNumber === 3) {
+    returnString = "sm:columns-2 md:columns-3";
+  } else if (columnNumber === 2) {
+    returnString = "sm:columns-2";
   }
 
   return returnString;
-}
-
+};
 
 export default APsection;
-
