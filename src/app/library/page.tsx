@@ -1,6 +1,6 @@
 import Navbar from "@/components/ui/navbar";
 import Footer from "@/components/ui/footer";
-import APLibrary from "@/components/ui/homePage/APLibrary";
+import APLibrary from "@/components/homePage/APLibrary";
 
 const Page = () => {
   return (
@@ -17,7 +17,7 @@ const Page = () => {
           </p>
         </div>
         <div className="grid grid-cols-3 gap-4 lg:gap-8">
-          <APLibrary/>
+          <APLibrary />
         </div>
       </div>
 
