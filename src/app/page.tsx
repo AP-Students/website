@@ -11,8 +11,8 @@ import Navbar from "@/components/ui/navbar";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Footer from "@/components/ui/footer";
-import APLibrary from "@/components/ui/homePage/APLibrary";
-import FAQ from "@/components/ui/homePage/FAQ";
+import APLibrary from "@/components/homePage/APLibrary";
+import FAQ from "@/components/homePage/FAQ";
 
 export default async function Home() {
   return (
