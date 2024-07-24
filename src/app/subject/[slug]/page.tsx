@@ -3,8 +3,8 @@ import Footer from "@/components/ui/footer";
 import Navbar from "@/components/ui/navbar";
 import { type Subject } from "@/types";
 import SubjectBreadcrumb from "@/components/ui/subject-homepage/subject-breadcrumb";
-import SubjectSidebar from "../../../components/ui/subject-homepage/subject-sidebar";
-import TableOfContents from "../../../components/ui/subject-homepage/table-of-contents";
+import SubjectSidebar from "@/components/ui/subject-homepage/subject-sidebar";
+import TableOfContents from "@/components/ui/subject-homepage/table-of-contents";
 import UnitAccordion from "@/components/ui/subject-homepage/unit-accordion";
 
 const Page = ({ params }: { params: { slug: string } }) => {
