@@ -12,33 +12,6 @@ jobs:
       repository-projects: write
     steps:
       - uses: actions/checkout@v2
-      - uses: dkershner6/vercel-set-env-action@v1
-        with:
-          token: ${{ secrets.VERCEL_TOKEN }}
-          projectName: events-app
-          envVariableKeys: DATABASE_URL,NEXTAUTH_SECRET,NEXTAUTH_URL,DISCORD_CLIENT_ID,DISCORD_CLIENT_SECRET,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          TARGET_DATABASE_URL: preview,development,production
-          TYPE_DATABASE_URL: encrypted
-          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-          TARGET_NEXTAUTH_SECRET: preview,development,production
-          TYPE_NEXTAUTH_SECRET: encrypted
-          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
-          TARGET_NEXTAUTH_URL: preview,development,production
-          TYPE_NEXTAUTH_URL: encrypted
-          DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
-          TARGET_DISCORD_CLIENT_ID: preview,development,production
-          TYPE_DISCORD_CLIENT_ID: encrypted
-          DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
-          TARGET_DISCORD_CLIENT_SECRET: preview,development,production
-          TYPE_DISCORD_CLIENT_SECRET: encrypted
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          TARGET_GOOGLE_CLIENT_ID: preview,development,production
-          TYPE_GOOGLE_CLIENT_ID: encrypted
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          TARGET_GOOGLE_CLIENT_SECRET: preview,development,production
-          TYPE_GOOGLE_CLIENT_SECRET: encrypted
       - uses: amondnet/vercel-action@v20
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
