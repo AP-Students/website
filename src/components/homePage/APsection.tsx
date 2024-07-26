@@ -44,7 +44,7 @@ const APsection: React.FC<SectionProps> = ({
   );
 };
 
-const formatCourseName = (courseName: String) => {
+const formatCourseName = (courseName: string) => {
   return courseName
     .replace(/AP /g, "")
     .toLowerCase()
