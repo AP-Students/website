@@ -19,18 +19,18 @@ const APsection: React.FC<SectionProps> = ({
   return (
     <>
       <div
-        className={`col-span-3 rounded-lg p-10 text-white ${numofCol} lg:h-60`}
+        className={`col-span-3 rounded-lg p-10 text-white ${numofCol}`}
         style={{
           background: backgroundColor,
         }}
       >
         <h3 className="text-4xl font-bold text-white">{title}</h3>
         <ul
-          className={`mt-5 columns-1 space-y-4 ${listMobile(+(numofCol.replace(/[^1-9]/g, "")))}`}
+          className={`text-2xl mt-5 columns-1 space-y-4 ${listMobile(+(numofCol.replace(/[^1-9]/g, "")))}`}
         >
           {courses.map((course, index) => (
-            <li key={index}>
-              <Link href={`/subject/${formatCourseName(course)}`}>
+            <li key={index} className="break-inside-avoid-column">
+              <Link href={`/subject/${formatCourseName(course)}`} className="hover:underline">
                 {course}
               </Link>
             </li>
