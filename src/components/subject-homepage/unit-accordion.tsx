@@ -1,3 +1,4 @@
+"use client";
 import {
   AccordionContent,
   AccordionItem,
@@ -27,10 +28,10 @@ const UnitAccordion = ({ unit }: Props) => {
       <hr className="mb-3 mt-1.5 h-1 w-full" />
 
       <AccordionContent className="flex flex-col gap-2">
-        {unit.chapters.map((chapter) => (
+        {unit.chapters.map((chapter, index) => (
           <Link
             className="group mb-3 flex items-center gap-x-3 font-semibold last:mb-0"
-            href={chapter.src}
+            href={`${window.location.pathname}/${unit.title.toLowerCase().replace(/[^a-z1-9 ]+/g, "").replace(/\s/g, "-")}/${index + 1}`}
             key={chapter.title}
           >
             <div className="flex size-8 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-base font-bold text-white">
