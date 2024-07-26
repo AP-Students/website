@@ -88,9 +88,9 @@ const SidebarItem = ({ unit }: { unit: Unit }) => {
           {unit.chapters.map((chapter) => (
             <Link
               className="group mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0"
-              href={chapter.src}
+              href={`${window.location.pathname}/${unit.title.toLowerCase().replace(/[^a-z1-9 ]+/g, "").replace(/\s/g, "-")}/${chapter.chapter}`}
               key={chapter.title}
-            >
+            > 
               <div className="flex size-6 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-[.75rem] text-white">
                 {unit.unit}.{chapter.chapter}
               </div>

@@ -108,22 +108,26 @@ const MobileNavbar = () => {
           <SheetHeader>
             <SheetTitle className="flex w-full">
               {" "}
-              <Link className="inline-block" href={"/"}>
-                <Image
-                  src="/logo.svg"
-                  alt="Logo"
-                  width={75 * 1.35}
-                  height={80 * 1.35}
-                />
-              </Link>
+              <SheetTrigger asChild>
+                <Link className="inline-block" href={"/"}>
+                  <Image
+                    src="/logo.svg"
+                    alt="Logo"
+                    width={75 * 1.35}
+                    height={80 * 1.35}
+                  />
+                </Link>
+              </SheetTrigger>
             </SheetTitle>
           </SheetHeader>
           <div className="mt-4 flex flex-col gap-2">
             {links.map((link) => (
               <div key={link.name}>
-                <NavbarLink href={link.href} isMobile={true}>
-                  {link.name}
-                </NavbarLink>
+                <SheetTrigger asChild>
+                  <NavbarLink href={link.href} isMobile={true}>
+                    {link.name}
+                  </NavbarLink>
+                </SheetTrigger>
               </div>
             ))}
 
