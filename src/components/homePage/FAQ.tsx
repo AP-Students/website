@@ -27,7 +27,7 @@ const FAQ = () => {
   return (
     <>
       {FAQData.map((FAQ, index) => (
-        <AccordionItem value={`item-${index + 1}`}>
+        <AccordionItem value={`item-${index + 1}`} key={FAQ.question}>
           <AccordionTrigger
             className={`${index === 0 && "text-left"} text-2xl font-bold`}
           >
