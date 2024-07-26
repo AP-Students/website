@@ -26,11 +26,14 @@ const APsection: React.FC<SectionProps> = ({
       >
         <h3 className="text-4xl font-bold text-white">{title}</h3>
         <ul
-          className={`text-2xl mt-5 columns-1 space-y-4 ${listMobile(+(numofCol.replace(/[^1-9]/g, "")))}`}
+          className={`mt-5 columns-1 space-y-4 text-2xl ${listMobile(+numofCol.replace(/[^1-9]/g, ""))}`}
         >
           {courses.map((course, index) => (
             <li key={index} className="break-inside-avoid-column">
-              <Link href={`/subject/${formatCourseName(course)}`} className="hover:underline">
+              <Link
+                href={`/subject/${formatCourseName(course)}`}
+                className="hover:underline"
+              >
                 {course}
               </Link>
             </li>

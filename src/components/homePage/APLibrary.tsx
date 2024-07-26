@@ -3,7 +3,7 @@ import APsection from "./APsection";
 const sectionData = [
   {
     title: "Math and Computer Science",
-    numofCol: "lg:col-span-2", 
+    numofCol: "lg:col-span-2",
     backgroundColor:
       "linear-gradient(139.26deg, #2449CF 21.25%, #4B71FC 90.93%)",
     courses: [
@@ -105,7 +105,7 @@ const APLibrary = () => {
     <>
       {sectionData.map((section) => (
         <APsection
-          key={section.title} 
+          key={section.title}
           title={section.title}
           numofCol={section.numofCol}
           backgroundColor={section.backgroundColor}
