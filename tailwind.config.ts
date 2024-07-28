@@ -90,6 +90,7 @@ const config = {
       preferredStrategy: "pseudoelements",
       nocompatible: true,
     }),
+    require("@tailwindcss/typography"),
   ],
 } satisfies Config;
 
