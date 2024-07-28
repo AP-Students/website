@@ -7,8 +7,8 @@ const Page = () => {
     <div>
       <Navbar />
 
-      <div className="mx-auto flex max-w-6xl flex-col px-8 pb-8 ">
-        <div className="mb-6 mt-12 flex flex-col gap-1">
+      <div className="mx-auto mt-12 flex max-w-6xl flex-col px-8 pb-8 ">
+        <div className="mb-6 flex flex-col gap-1">
           <h1 className="text-balance text-left text-5xl font-extrabold lg:text-6xl">
             Library
           </h1>
