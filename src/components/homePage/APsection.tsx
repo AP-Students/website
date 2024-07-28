@@ -5,7 +5,7 @@ import React from "react";
 
 interface SectionProps {
   title: string;
-  numofCol: string;
+  numofCol: number;
   backgroundColor: string;
   courses: string[];
 }
@@ -16,17 +16,18 @@ const APsection: React.FC<SectionProps> = ({
   backgroundColor,
   numofCol,
 }) => {
+  const cols = `lg:col-span-${numofCol}`;
   return (
     <>
       <div
-        className={`col-span-3 rounded-lg p-10 text-white ${numofCol} lg:h-60`}
+        className={`col-span-3 rounded-lg p-10 text-white ${cols} lg:h-60`}
         style={{
           background: backgroundColor,
         }}
       >
         <h3 className="text-4xl font-bold text-white">{title}</h3>
         <ul
-          className={`mt-5 columns-1 space-y-4 ${listMobile(+(numofCol.replace(/[^1-9]/g, "")))}`}
+          className={`mt-5 columns-1 space-y-4 ${listMobile(numofCol)}`}
         >
           {courses.map((course, index) => (
             <li key={index}>

@@ -3,7 +3,7 @@ import APsection from "./APsection";
 const sectionData = [
   {
     title: "Math and CS",
-    numofCol: "lg:col-span-2", 
+    numofCol: 2, 
     backgroundColor:
       "linear-gradient(139.26deg, #8FA7FD 21.25%, #4B71FC 90.93%)",
     courses: [
@@ -17,14 +17,14 @@ const sectionData = [
   },
   {
     title: "English",
-    numofCol: "lg:col-span-1",
+    numofCol: 1,
     backgroundColor:
       "linear-gradient(139.26deg, #FD8F8F 21.25%, #FC5F5F 90.93%)",
     courses: ["AP English Language", "AP English Literature"],
   },
   {
     title: "Sciences",
-    numofCol: "lg:col-span-3",
+    numofCol: 3,
     backgroundColor:
       "linear-gradient(139.26deg, #7EB56A 21.25%, #639D4E 90.93%)",
     courses: [
@@ -39,7 +39,7 @@ const sectionData = [
   },
   {
     title: "History",
-    numofCol: "lg:col-span-1",
+    numofCol: 1,
     backgroundColor:
       "linear-gradient(139.26deg, #BF9C69 21.25%, #AC8449 90.93%)",
     courses: [
@@ -50,7 +50,7 @@ const sectionData = [
   },
   {
     title: "Social Sciences",
-    numofCol: "lg:col-span-2",
+    numofCol: 2,
     backgroundColor:
       "linear-gradient(139.26deg, #D2DC5B 21.25%, #C6D331 90.93%)",
     courses: [
@@ -64,7 +64,7 @@ const sectionData = [
   },
   {
     title: "World Languages and Cultures",
-    numofCol: "lg:col-span-3",
+    numofCol: 3,
     backgroundColor:
       "linear-gradient(139.26deg, #EDBD40 21.25%, #E5AC15 90.93%)",
     courses: [
@@ -80,7 +80,7 @@ const sectionData = [
   },
   {
     title: "Arts",
-    numofCol: "lg:col-span-2",
+    numofCol: 2,
     backgroundColor:
       "linear-gradient(139.26deg, #D65CEB 21.25%, #CB2EE5 90.93%)",
     courses: [
@@ -93,7 +93,7 @@ const sectionData = [
   },
   {
     title: "AP Capstone",
-    numofCol: "lg:col-span-1",
+    numofCol: 1,
     backgroundColor:
       "linear-gradient(139.26deg, #9FD6CE 21.25%, #7BC7BC 90.93%)",
     courses: ["AP Research", "AP Seminar"],
