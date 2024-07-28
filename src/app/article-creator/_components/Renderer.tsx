@@ -10,6 +10,7 @@ const customParsers = {
   },
 
   code: (data: { code: string }) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
     const code = hljs.highlightAuto(data.code).value;
     console.log(code);
     return `<pre class="code"><code>${code}</code></pre>`;
@@ -31,6 +32,7 @@ const customParsers = {
   },
 
   math: (data: { text: string }) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     return katex.renderToString(data.text, {
       output: "html",
       throwOnError: true,
@@ -93,6 +95,7 @@ const Renderer = (props: { content: OutputData }) => {
     // @ts-expect-error customParsers is correct but TS doesn't know that
     customParsers,
   );
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const markup = parser.parse(props.content);
 
   return (
