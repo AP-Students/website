@@ -21,30 +21,27 @@ const SubjectSidebar = (props: Props) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
-    <div className="z-10">
-      <div className="fixed top-0 py-0 shadow sticky start-0 end-0 shadow-none">
-        <div
-          className={cn(
-            'sticky top-0 bottom-0 flex flex-col'
-          )}>
+    <div className="z-10 hidden lg:block">
+      <div className="sticky end-0 start-0 top-0 py-0 shadow-none">
+        <div className="sticky bottom-0 top-0 flex flex-col">
           <div
-            className={
-              cn('overflow-y-scroll no-bg-scrollbar w-[342px] grow bg-primary-foreground transition-all duration-300 ease-in-out scrollbar scrollbar-track-primary/10 scrollbar-thumb-primary/30 scrollbar-thumb-rounded-full',
-              isCollapsed && 'w-[80px]')}
+            className={cn(
+              "no-bg-scrollbar w-[342px] grow overflow-y-scroll bg-primary-foreground transition-all duration-300 ease-in-out scrollbar scrollbar-track-primary/10 scrollbar-thumb-primary/30 scrollbar-thumb-rounded-full",
+              isCollapsed && "w-[80px]",
+            )}
             style={{
-              overscrollBehavior: 'contain',
-            }}>
-            <aside
-              className={cn(
-                `grow flex-col w-full pb-8 pb-0 max-w-custom-xs z-10 hidden block`
-              )}>
+              overscrollBehavior: "contain",
+            }}
+          >
+            <aside className="max-w-custom-xs z-10 block w-full grow flex-col pb-0">
               <nav
                 role="navigation"
-                className="w-full pt-6 scrolling-touch h-[100vh] grow pe-0 pe-3 ps-3 pb-16 md:pt-4 pt-4 scrolling-gpu">
+                className="scrolling-touch scrolling-gpu h-[100vh] w-full grow pb-16 pe-3 ps-3 pt-4 md:pt-4"
+              >
                 <div className="flex items-center justify-between">
                   <h2
-                     className={cn(
-                      "whitespace-nowrap text-2xl font-extrabold ml-2",
+                    className={cn(
+                      "ml-2 whitespace-nowrap text-2xl font-extrabold",
                       isCollapsed && "animate-hide",
                     )}
                   >
@@ -65,7 +62,7 @@ const SubjectSidebar = (props: Props) => {
                     />
                   </Button>
                 </div>
-                <div className="flex flex-col gap-2 pl-1.5 pb-4">
+                <div className="flex flex-col gap-2 pb-4 pl-1.5">
                   <Accordion
                     className={cn(isCollapsed && "animate-hide")}
                     type="multiple"
@@ -107,9 +104,12 @@ const SidebarItem = ({ unit }: { unit: Unit }) => {
           {unit.chapters.map((chapter) => (
             <Link
               className="group mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0"
-              href={`${pathname}/${unit.title.toLowerCase().replace(/[^a-z1-9 ]+/g, "").replace(/\s/g, "-")}/${chapter.chapter}`}
+              href={`${pathname}/${unit.title
+                .toLowerCase()
+                .replace(/[^a-z1-9 ]+/g, "")
+                .replace(/\s/g, "-")}/${chapter.chapter}`}
               key={chapter.title}
-            > 
+            >
               <div className="flex size-6 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-[.75rem] text-white">
                 {unit.unit}.{chapter.chapter}
               </div>
