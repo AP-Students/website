@@ -21,35 +21,35 @@ const Page = ({ params }: { params: { slug: string } }) => {
           },
           {
             chapter: 2,
-            title: "Defining Limits and Using Limit Notation"
+            title: "Defining Limits and Using Limit Notation",
           },
           {
             chapter: 3,
-            title: "Estimating Limit Values from Graphs"
+            title: "Estimating Limit Values from Graphs",
           },
           {
             chapter: 4,
-            title: "Estimating Limit Values from Tables"
+            title: "Estimating Limit Values from Tables",
           },
           {
             chapter: 5,
-            title: "Determining Limits Using Algebraic Properties of Limits"
+            title: "Determining Limits Using Algebraic Properties of Limits",
           },
           {
             chapter: 6,
-            title: "Determining Limits Using Algebraic Manipulation"
+            title: "Determining Limits Using Algebraic Manipulation",
           },
           {
             chapter: 7,
-            title: "Selecting Procedures for Determining Limits"
+            title: "Selecting Procedures for Determining Limits",
           },
           {
             chapter: 8,
-            title: "Determining Limits Using the Squeeze Theorem"
+            title: "Determining Limits Using the Squeeze Theorem",
           },
           {
             chapter: 9,
-            title: "Connecting Multiple Representations of Limits"
+            title: "Connecting Multiple Representations of Limits",
           },
           {
             chapter: 10,
@@ -88,42 +88,42 @@ const Page = ({ params }: { params: { slug: string } }) => {
           {
             chapter: 1,
             title:
-              "Defining Average and Instantaneous Rates of Change at a Point"
+              "Defining Average and Instantaneous Rates of Change at a Point",
           },
           {
             chapter: 2,
             title:
-              "Defining the Derivative of a Function and Using Derivative Notation"
+              "Defining the Derivative of a Function and Using Derivative Notation",
           },
           {
             chapter: 3,
-            title: "Estimating Derivatives of a Function at a Point"
+            title: "Estimating Derivatives of a Function at a Point",
           },
           {
             chapter: 4,
             title:
-              "Connecting Differentiability and Continuity: Determining When Derivatives Do and Do Not Exist"
+              "Connecting Differentiability and Continuity: Determining When Derivatives Do and Do Not Exist",
           },
           {
             chapter: 5,
-            title: "Applying the Power Rule"
+            title: "Applying the Power Rule",
           },
           {
             chapter: 6,
             title:
-              "Derivative Rules: Constant, Sum, Difference, and Constant Multiple"
+              "Derivative Rules: Constant, Sum, Difference, and Constant Multiple",
           },
           {
             chapter: 7,
-            title: "Derivatives of cos x, sin x, e^x, and ln x"
+            title: "Derivatives of cos x, sin x, e^x, and ln x",
           },
           {
             chapter: 8,
-            title: "The Product Rule"
+            title: "The Product Rule",
           },
           {
             chapter: 9,
-            title: "The Quotient Rule"
+            title: "The Quotient Rule",
           },
           {
             chapter: 10,
