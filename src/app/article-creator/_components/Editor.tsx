@@ -150,11 +150,11 @@ const Editor = ({ setData }: { setData: (data: OutputData) => void }) => {
       api.saver
         .save()
         .then((outputData) => {
-          console.log("Saving successful: ", outputData);
+          console.log("Saving successful:", outputData);
           setData(outputData);
         })
         .catch((error) => {
-          console.error("Saving failed: ", error);
+          console.error("Saving failed:", error);
         });
     },
   });

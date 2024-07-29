@@ -11,9 +11,9 @@ const Accordion = AccordionPrimitive.Root;
 const AccordionItem = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Item>
->(({ className, ...props }, ref) => (
+>(({ className, ...props }, reference) => (
   <AccordionPrimitive.Item
-    ref={ref}
+    ref={reference}
     className={cn("border-b", className)}
     {...props}
   />
@@ -25,10 +25,10 @@ const AccordionTrigger = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger> & {
     variant?: "primary" | "secondary";
   }
->(({ className, children, variant = "primary", ...props }, ref) => (
+>(({ className, children, variant = "primary", ...props }, reference) => (
   <AccordionPrimitive.Header className="flex">
     <AccordionPrimitive.Trigger
-      ref={ref}
+      ref={reference}
       className={cn(
         "mr-2 flex flex-1 items-center justify-between py-4 font-medium transition-all hover:underline [&[data-state=open]_svg]:rotate-180",
         className,
@@ -56,9 +56,9 @@ AccordionTrigger.displayName = AccordionPrimitive.Trigger.displayName;
 const AccordionContent = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+>(({ className, children, ...props }, reference) => (
   <AccordionPrimitive.Content
-    ref={ref}
+    ref={reference}
     className="overflow-hidden text-base leading-normal opacity-70 transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
     {...props}
   >

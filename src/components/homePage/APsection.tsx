@@ -3,14 +3,14 @@
 import Link from "next/link";
 import React from "react";
 
-interface SectionProps {
+type SectionProperties = {
   title: string;
   numofCol: string;
   backgroundColor: string;
   courses: string[];
 }
 
-const APsection: React.FC<SectionProps> = ({
+const APsection: React.FC<SectionProperties> = ({
   title,
   courses,
   backgroundColor,
@@ -26,7 +26,7 @@ const APsection: React.FC<SectionProps> = ({
       >
         <h3 className="text-4xl font-bold text-white">{title}</h3>
         <ul
-          className={`mt-5 columns-1 space-y-4 text-lg ${listMobile(+numofCol.replace(/[^1-9]/g, ""))}`}
+          className={`mt-5 columns-1 space-y-4 text-lg ${listMobile(+numofCol.replaceAll(/[^1-9]/g, ""))}`}
         >
           {courses.map((course, index) => (
             <li key={index} className="break-inside-avoid-column">
@@ -46,10 +46,10 @@ const APsection: React.FC<SectionProps> = ({
 
 const formatCourseName = (courseName: string) => {
   return courseName
-    .replace(/AP /g, "")
+    .replaceAll('AP ', "")
     .toLowerCase()
-    .replace(/[^a-z1-9 &]+/g, "")
-    .replace(/\s+/g, "-");
+    .replaceAll(/[^ &1-9a-z]+/g, "")
+    .replaceAll(/\s+/g, "-");
 };
 
 const listMobile = (columnNumber: number) => {

@@ -8,11 +8,11 @@ import { type Subject } from "@/types";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 
-type Props = {
+type Properties = {
   title: string;
   subject: Subject;
 };
-const TableOfContents = ({ title, subject }: Props) => {
+const TableOfContents = ({ title, subject }: Properties) => {
   const router = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 

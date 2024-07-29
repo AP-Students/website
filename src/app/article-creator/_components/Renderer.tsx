@@ -62,14 +62,14 @@ const customParsers = {
       // For the first row and if withHeadings is true, use <th> tags
       if (data.withHeadings && index === 0) {
         return `<tr class="divide-x-[1px]">${row.reduce(
-          (acc, cell) => acc + `<th>${cell}</th>`,
+          (accumulator, cell) => accumulator + `<th>${cell}</th>`,
           "",
         )}</tr>`;
       }
 
       // For other rows, use <td> tags
       return `<tr class="divide-x-[1px]">${row.reduce(
-        (acc, cell) => acc + `<td>${cell}</td>`,
+        (accumulator, cell) => accumulator + `<td>${cell}</td>`,
         "",
       )}</tr>`;
     });

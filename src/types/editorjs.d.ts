@@ -18,7 +18,7 @@ declare module "editorjs-undo";
 
 declare module "editorjs-parser" {
   // Configuration Interfaces
-  interface ImageConfig {
+  type ImageConfig = {
     use: "figure" | "img";
     imgClass?: string;
     figureClass?: string;
@@ -26,23 +26,23 @@ declare module "editorjs-parser" {
     path?: "absolute";
   }
 
-  interface ParagraphConfig {
+  type ParagraphConfig = {
     pClass?: string;
   }
 
-  interface CodeConfig {
+  type CodeConfig = {
     codeBlockClass?: string;
   }
 
-  interface EmbedConfig {
+  type EmbedConfig = {
     useProvidedLength?: boolean;
   }
 
-  interface QuoteConfig {
+  type QuoteConfig = {
     applyAlignment?: boolean;
   }
 
-  interface Config {
+  type Config = {
     image?: ImageConfig;
     paragraph?: ParagraphConfig;
     code?: CodeConfig;
@@ -51,7 +51,7 @@ declare module "editorjs-parser" {
   }
 
   // Block Interfaces
-  interface BlockData {
+  type BlockData = {
     text?: string;
     level?: number;
     style?: "ordered" | "unordered";
@@ -76,7 +76,7 @@ declare module "editorjs-parser" {
     [key: string]: unknown;
   }
 
-  interface Block {
+  type Block = {
     type: string;
     data: BlockData;
   }

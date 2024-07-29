@@ -10,11 +10,11 @@ import {
 import { type Subject } from "@/types";
 import { usePathname } from "next/navigation";
 
-type Props = {
+type Properties = {
   subject: Subject;
 };
 
-const SubjectBreadcrumb = ({ subject }: Props) => {
+const SubjectBreadcrumb = ({ subject }: Properties) => {
   const router = usePathname();
 
   return (
