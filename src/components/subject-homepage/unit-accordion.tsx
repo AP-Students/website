@@ -31,7 +31,10 @@ const UnitAccordion = ({ unit }: Properties) => {
         {unit.chapters.map((chapter, index) => (
           <Link
             className="group mb-3 flex items-center gap-x-3 font-semibold last:mb-0"
-            href={`${window.location.pathname}/${unit.title.toLowerCase().replaceAll(/[^ 1-9a-z]+/g, "").replaceAll(/\s/g, "-")}/${index + 1}`}
+            href={`${window.location.pathname}/${unit.title
+              .toLowerCase()
+              .replaceAll(/[^ 1-9a-z]+/g, "")
+              .replaceAll(/\s/g, "-")}/${index + 1}`}
             key={chapter.title}
           >
             <div className="flex size-8 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-base font-bold text-white">

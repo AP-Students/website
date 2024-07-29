@@ -24,23 +24,23 @@ declare module "editorjs-parser" {
     figureClass?: string;
     figCapClass?: string;
     path?: "absolute";
-  }
+  };
 
   type ParagraphConfig = {
     pClass?: string;
-  }
+  };
 
   type CodeConfig = {
     codeBlockClass?: string;
-  }
+  };
 
   type EmbedConfig = {
     useProvidedLength?: boolean;
-  }
+  };
 
   type QuoteConfig = {
     applyAlignment?: boolean;
-  }
+  };
 
   type Config = {
     image?: ImageConfig;
@@ -48,7 +48,7 @@ declare module "editorjs-parser" {
     code?: CodeConfig;
     embed?: EmbedConfig;
     quote?: QuoteConfig;
-  }
+  };
 
   // Block Interfaces
   type BlockData = {
@@ -74,12 +74,12 @@ declare module "editorjs-parser" {
     service?: string;
     source?: string;
     [key: string]: unknown;
-  }
+  };
 
   type Block = {
     type: string;
     data: BlockData;
-  }
+  };
 
   // Utility Functions
   declare function isObject(item: unknown): boolean;

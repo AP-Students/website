@@ -16,7 +16,8 @@ const config = {
     "plugin:unicorn/recommended",
     "plugin:deprecation/recommended",
     "plugin:import/recommended",
-    "plugin:import/typescript"
+    "plugin:import/typescript",
+    "plugin:prettier/recommended"
   ],
   /**
    * Overall, the rules are set so that the code is as consistent as possible.

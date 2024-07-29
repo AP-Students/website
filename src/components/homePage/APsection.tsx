@@ -8,7 +8,7 @@ type SectionProperties = {
   numofCol: string;
   backgroundColor: string;
   courses: string[];
-}
+};
 
 const APsection: React.FC<SectionProperties> = ({
   title,
@@ -46,7 +46,7 @@ const APsection: React.FC<SectionProperties> = ({
 
 const formatCourseName = (courseName: string) => {
   return courseName
-    .replaceAll('AP ', "")
+    .replaceAll("AP ", "")
     .toLowerCase()
     .replaceAll(/[^ &1-9a-z]+/g, "")
     .replaceAll(/\s+/g, "-");

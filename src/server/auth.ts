@@ -1,10 +1,7 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import {
-  getServerSession,
-  type DefaultSession,
-  type NextAuthOptions,
-} from "next-auth";
-import { type Adapter } from "next-auth/adapters";
+import { getServerSession } from "next-auth";
+import type { DefaultSession, NextAuthOptions } from "next-auth";
+import type { Adapter } from "next-auth/adapters";
 import DiscordProvider from "next-auth/providers/discord";
 import GoogleProvider from "next-auth/providers/google";
 
@@ -18,13 +15,20 @@ import { db } from "@/server/db";
  * @see https://next-auth.js.org/getting-started/typescript#module-augmentation
  */
 declare module "next-auth" {
-  type Session = {
+  // We need to use an interface to merge with the existing `Session` type.
+  //
+  // Read this link for more info:
+  // https://www.typescriptlang.org/docs/handbook/declaration-merging.html
+  //
+  // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+  interface Session {
     user: {
       id: string;
       // ...other properties
       // role: UserRole;
     } & DefaultSession["user"];
-  } & DefaultSession
+  }
+  // & DefaultSession
 
   // interface User {
   //   // ...other properties
@@ -56,7 +60,7 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: env.GOOGLE_CLIENT_ID,
       clientSecret: env.GOOGLE_CLIENT_SECRET,
-    })
+    }),
     /**
      * ...add more providers here.
      *
