@@ -1,5 +1,6 @@
 import type { Config } from "tailwindcss";
 import { fontFamily } from "tailwindcss/defaultTheme";
+import backdropFilter from 'tailwindcss-backdrop-filter';
 
 const config = {
   darkMode: ["class"],
@@ -91,6 +92,7 @@ const config = {
       nocompatible: true,
     }),
     require("@tailwindcss/typography"),
+    backdropFilter
   ],
 } satisfies Config;
 
