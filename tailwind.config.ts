@@ -73,7 +73,7 @@ const config = {
         },
         hide: {
           from: { opacity: "1" },
-          to: { opacity: "0", display: "none", visibility: "hidden" },
+          to: { opacity: "0", position: "absolute" },
         },
       },
       animation: {
@@ -90,6 +90,7 @@ const config = {
       preferredStrategy: "pseudoelements",
       nocompatible: true,
     }),
+    require("@tailwindcss/typography"),
   ],
 } satisfies Config;
 
