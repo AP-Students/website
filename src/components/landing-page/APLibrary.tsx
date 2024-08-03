@@ -2,31 +2,31 @@ import APsection from "./APsection";
 
 const sectionData = [
   {
-    title: "Math and Computer Science",
-    numofCol: "lg:col-span-2",
+    title: "Math and CS",
+    numofCol: 2, 
     backgroundColor:
-      "#4B71FC",
+      "linear-gradient(139.26deg, #8FA7FD 21.25%, #4B71FC 90.93%)",
     courses: [
       "AP Calculus AB",
       "AP Calculus BC",
       "AP Precalculus",
       "AP Statistics",
       "AP Computer Science Principles",
-      "AP Computer Science A",
+      "AP Computer Science Applications",
     ],
   },
   {
     title: "English",
-    numofCol: "lg:col-span-1",
+    numofCol: 1,
     backgroundColor:
-      "#FC5F5F",
+      "linear-gradient(139.26deg, #FD8F8F 21.25%, #FC5F5F 90.93%)",
     courses: ["AP English Language", "AP English Literature"],
   },
   {
     title: "Sciences",
-    numofCol: "lg:col-span-3",
+    numofCol: 3,
     backgroundColor:
-      "#639D4E",
+      "linear-gradient(139.26deg, #7EB56A 21.25%, #639D4E 90.93%)",
     courses: [
       "AP Biology",
       "AP Chemistry",
@@ -39,9 +39,9 @@ const sectionData = [
   },
   {
     title: "History",
-    numofCol: "lg:col-span-1",
+    numofCol: 1,
     backgroundColor:
-      "#AC8449",
+      "linear-gradient(139.26deg, #BF9C69 21.25%, #AC8449 90.93%)",
     courses: [
       "AP European History",
       "AP US History",
@@ -50,9 +50,9 @@ const sectionData = [
   },
   {
     title: "Social Sciences",
-    numofCol: "lg:col-span-2",
+    numofCol: 2,
     backgroundColor:
-      "#178D8D",
+      "linear-gradient(139.26deg, #D2DC5B 21.25%, #C6D331 90.93%)",
     courses: [
       "AP Comparative Government",
       "AP Human Geography",
@@ -64,9 +64,9 @@ const sectionData = [
   },
   {
     title: "World Languages and Cultures",
-    numofCol: "lg:col-span-3",
+    numofCol: 3,
     backgroundColor:
-      "#6739D3",
+      "linear-gradient(139.26deg, #EDBD40 21.25%, #E5AC15 90.93%)",
     courses: [
       "AP Chinese",
       "AP French",
@@ -80,9 +80,9 @@ const sectionData = [
   },
   {
     title: "Arts",
-    numofCol: "lg:col-span-2",
+    numofCol: 2,
     backgroundColor:
-      "#CB2EE5",
+      "linear-gradient(139.26deg, #D65CEB 21.25%, #CB2EE5 90.93%)",
     courses: [
       "AP 2-D Art and Design",
       "AP 3-D Art and Design",
@@ -93,9 +93,9 @@ const sectionData = [
   },
   {
     title: "AP Capstone",
-    numofCol: "lg:col-span-1",
+    numofCol: 1,
     backgroundColor:
-      "#6DC6B9",
+      "linear-gradient(139.26deg, #9FD6CE 21.25%, #7BC7BC 90.93%)",
     courses: ["AP Research", "AP Seminar"],
   },
 ];
@@ -105,7 +105,7 @@ const APLibrary = () => {
     <>
       {sectionData.map((section) => (
         <APsection
-          key={section.title}
+          key={section.title} 
           title={section.title}
           numofCol={section.numofCol}
           backgroundColor={section.backgroundColor}
