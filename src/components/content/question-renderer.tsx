@@ -132,3 +132,45 @@ const QuestionRenderer: React.FC<Props> = ({
 };
 
 export default QuestionRenderer;
+
+
+// Heres test questions if you want to try it out
+
+// const questions = [
+//   {
+//     body: "Who was the first president of the United States?",
+//     title: "U.S. History",
+//     type: "mcq",
+//     options: [
+//       { value: "George Washington", id: "1" },
+//       { value: "John Adams", id: "2" },
+//       { value: "Samuel Jackson", id: "3" },
+//       { value: "Alexander Hamilton", id: "4" },
+//     ],
+//     correct: ["1"],
+//     course_id: '1',
+//     unit_ids: [],
+//     subunit_ids: []
+//   },
+//   {
+//     body: "Which of the following are NOT web dev languages?",
+//     title: "Computer Science",
+//     type: "multi-answer",
+//     options: [
+//       { value: "Python", id: "1" },
+//       { value: "HTML", id: "2" },
+//       { value: "Java", id: "3" },
+//       { value: "CSS", id: "4" },
+//     ],
+//     correct: ["1", "3"],
+//     course_id: '2',
+//     unit_ids: [],
+//     subunit_ids: []
+//   }
+// ];
+
+// <QuestionRenderer questions={questions} currentQuestionIndex={
+// (0 or 1, 0 is mcq, 1 is multi-answer)
+// }/>
+
+
