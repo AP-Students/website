@@ -23,27 +23,37 @@ interface Props {
 }
 
 const QuestionRenderer: React.FC<Props> = ({ questions, currentQuestionIndex }) => {
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+
   const [submitted, setSubmitted] = useState<boolean>(false);
 
   const question = questions[currentQuestionIndex]!;
 
   const handleSelectOption = (id: string) => {
-    if (!submitted && question.type === 'mcq') {
-      setSelectedOption(id);
+    if (!submitted) {
+      if (question.type === 'mcq') {
+        setSelectedOptions([id]);  // Ensure only one option can be selected at a time
+      } else {
+        setSelectedOptions(prev =>
+          prev.includes(id) ? prev.filter(optionId => optionId !== id) : [...prev, id]
+        );  // Toggle selection for multi-answer
+      }
     }
   };
+  
 
   const handleSubmit = () => {
-    if (selectedOption) {
+    if (selectedOptions.length > 0) {
       setSubmitted(true);
     }
   };
+  
 
   const isCorrect = (id: string) => {
     return question.correct.includes(id);
   };
-
+  
+  
   return (
     <div className='p-4 md:p-6 lg:p-8 max-w-5xl'>
       <div className="text-2xl font-bold markdown" dangerouslySetInnerHTML={{ __html: question.body }} />
@@ -52,16 +62,13 @@ const QuestionRenderer: React.FC<Props> = ({ questions, currentQuestionIndex }) 
           <button
           key={option.id}
           className={`flex items-center justify-center rounded-lg py-4 px-6 border
-            ${submitted ?
-              (isCorrect(option.id) ?
-                'bg-green-300 border-green-700' : // Correct option after submission
-                selectedOption === option.id ?
-                'bg-red-300 border-red-700' : // Incorrectly selected option
-                'border-gray-300') : // Other options
-              selectedOption === option.id ?
-              'bg-blue-100 border-blue-500' : // Selected but not yet submitted
-              'bg-zinc-50 border-black' // Not selected
-            }`}
+            ${submitted ? (
+              isCorrect(option.id) ?
+                (selectedOptions.includes(option.id) ? 'bg-green-300 border-green-700' : 'bg-green-100 border-green-700') :
+                (selectedOptions.includes(option.id) ? 'bg-red-300 border-red-700' : 'border-gray-300')
+            ) :
+              (selectedOptions.includes(option.id) ? 'bg-blue-100 border-blue-500' : 'bg-zinc-50 border-black')}
+            `}
           onClick={() => handleSelectOption(option.id)}
           disabled={submitted}
         >
@@ -70,7 +77,7 @@ const QuestionRenderer: React.FC<Props> = ({ questions, currentQuestionIndex }) 
         ))}
       </div>
       {!submitted && (
-        <button className="block mx-auto mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600" onClick={handleSubmit}>
+        <button className="block mx-auto mt-4 px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600" onClick={handleSubmit}>
           Submit
         </button>
       )}

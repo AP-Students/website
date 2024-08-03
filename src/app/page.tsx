@@ -10,6 +10,42 @@ import Image from "next/image";
 import Footer from "@/components/ui/footer";
 import APLibrary from "@/components/landing-page/APLibrary";
 import FAQ from "@/components/landing-page/FAQ";
+import QuestionRenderer from "@/components/content/question-renderer";
+
+
+const questions = [
+  {
+    body: "Who was the first president of the United States?",
+    title: "U.S. History",
+    type: "mcq",
+    options: [
+      { value: "George Washington", id: "1" },
+      { value: "John Adams", id: "2" },
+      { value: "Samuel Jackson", id: "3" },
+      { value: "Alexander Hamilton", id: "4" },
+    ],
+    correct: ["1"],
+    course_id: '1',
+    unit_ids: [],
+    subunit_ids: []
+  },
+  {
+    body: "Which of the following are NOT web dev languages?",
+    title: "Computer Science",
+    type: "multi-answer",
+    options: [
+      { value: "Python", id: "1" },
+      { value: "HTML", id: "2" },
+      { value: "Java", id: "3" },
+      { value: "CSS", id: "4" },
+    ],
+    correct: ["1", "3"],
+    course_id: '2',
+    unit_ids: [],
+    subunit_ids: []
+  }
+];
+
 
 export default async function Home() {
   return (
@@ -211,6 +247,9 @@ export default async function Home() {
             </Link>
           </div>
         </div>
+
+        <QuestionRenderer questions={questions} currentQuestionIndex={0} />
+
         <Footer />
       </main>
     </>
