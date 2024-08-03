@@ -1,20 +1,23 @@
 import {
-  Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
+
+// Goes in backend
+
+// If multiple questions have the same answer, the opening of the accordion breaks
 const FAQData = [
   {
     question: "What types of resources do you offer for AP students?",
     answer:
-      "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Corrupti cupiditate repellendus ea perferendis error cumque tempore impedit aperiam architecto dolorum similique numquam nobis quisquam harum corporis itaque quibusdam, laudantium tenetur laborum ipsum. Nobis hic veritatis nisi ducimus atque repellat harum!",
+      "We offer a wide range of resources for AP students, including study notes, practice exams, and helpful tips. Our resources are designed to help students prepare for AP exams and achieve their academic goals. Whether you're a first-time AP student or a seasoned AP student, we have something for you.",
   },
   {
     question: "Who creates the resources?",
     answer:
-      "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Corrupti cupiditate repellendus ea perferendis error cumque tempore impedit aperiam architecto dolorum similique numquam nobis quisquam harum corporis itaque quibusdam, laudantium tenetur laborum ipsum. Nobis hic veritatis nisi ducimus atque repellat harum!",
+      "People from all over the world have contributed to our resource library. We welcome contributions from AP students like you! Whether you have study notes, practice exams, or helpful tips to share, you can submit your content to be reviewed and added to our resource library. Join us in building a community-driven platform for AP exam preparation.",
   },
   {
     question: "How can I contribute?",

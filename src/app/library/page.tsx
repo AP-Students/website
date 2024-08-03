@@ -1,6 +1,6 @@
 import Navbar from "@/components/ui/navbar";
 import Footer from "@/components/ui/footer";
-import APLibrary from "@/components/homePage/APLibrary";
+import APLibrary from "@/components/landing-page/APLibrary";
 
 const Page = () => {
   return (
