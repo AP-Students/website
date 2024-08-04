@@ -15,7 +15,6 @@ const APsection: React.FC<SectionProps> = ({
   backgroundColor,
   numofCol,
 }) => {
-  const cols = `lg:col-span-${numofCol}`;
   return (
     <>
       <div
