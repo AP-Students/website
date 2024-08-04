@@ -1,20 +1,12 @@
 import Link from "next/link";
-import {
-  Accordion
-} from "@/components/ui/accordion";
-
+import { Accordion } from "@/components/ui/accordion";
 import { ChevronRight } from "lucide-react";
 import Navbar from "@/components/ui/navbar";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Footer from "@/components/ui/footer";
-import APLibrary from "@/components/landing-page/APLibrary";
-import FAQ from "@/components/landing-page/FAQ";
-import QuestionRenderer from "@/components/content/question-renderer";
-
-
-
-
+import APLibrary from "@/components/landingPage/APLibrary";
+import FAQ from "@/components/landingPage/FAQ";
 
 export default async function Home() {
   return (
@@ -216,8 +208,6 @@ export default async function Home() {
             </Link>
           </div>
         </div>
-
-       
 
         <Footer />
       </main>
