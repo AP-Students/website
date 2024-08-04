@@ -73,7 +73,7 @@ const config = {
         },
         hide: {
           from: { opacity: "1" },
-          to: { opacity: "0", position: "absolute" },
+          to: { opacity: "0", display: "none", visibility: "hidden" },
         },
       },
       animation: {
