@@ -4,8 +4,7 @@ const sectionData = [
   {
     title: "Math and Computer Science",
     numofCol: "lg:col-span-2",
-    backgroundColor:
-      "#4B71FC",
+    backgroundColor: "#4B71FC",
     courses: [
       "AP Calculus AB",
       "AP Calculus BC",
@@ -18,15 +17,13 @@ const sectionData = [
   {
     title: "English",
     numofCol: "lg:col-span-1",
-    backgroundColor:
-      "#FC5F5F",
+    backgroundColor: "#FC5F5F",
     courses: ["AP English Language", "AP English Literature"],
   },
   {
     title: "Sciences",
     numofCol: "lg:col-span-3",
-    backgroundColor:
-      "#639D4E",
+    backgroundColor: "#639D4E",
     courses: [
       "AP Biology",
       "AP Chemistry",
@@ -40,8 +37,7 @@ const sectionData = [
   {
     title: "History",
     numofCol: "lg:col-span-1",
-    backgroundColor:
-      "#AC8449",
+    backgroundColor: "#AC8449",
     courses: [
       "AP European History",
       "AP US History",
@@ -51,8 +47,7 @@ const sectionData = [
   {
     title: "Social Sciences",
     numofCol: "lg:col-span-2",
-    backgroundColor:
-      "#178D8D",
+    backgroundColor: "#178D8D",
     courses: [
       "AP Comparative Government",
       "AP Human Geography",
@@ -65,8 +60,7 @@ const sectionData = [
   {
     title: "World Languages and Cultures",
     numofCol: "lg:col-span-3",
-    backgroundColor:
-      "#6739D3",
+    backgroundColor: "#6739D3",
     courses: [
       "AP Chinese",
       "AP French",
@@ -81,8 +75,7 @@ const sectionData = [
   {
     title: "Arts",
     numofCol: "lg:col-span-2",
-    backgroundColor:
-      "#CB2EE5",
+    backgroundColor: "#CB2EE5",
     courses: [
       "AP 2-D Art and Design",
       "AP 3-D Art and Design",
@@ -94,8 +87,7 @@ const sectionData = [
   {
     title: "AP Capstone",
     numofCol: "lg:col-span-1",
-    backgroundColor:
-      "#6DC6B9",
+    backgroundColor: "#6DC6B9",
     courses: ["AP Research", "AP Seminar"],
   },
 ];
