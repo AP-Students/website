@@ -70,16 +70,16 @@ const CheckForUnderstanding: React.FC<Props> = ({
   };
 
   return (
-    <div className="max-w-5xl p-4 md:p-6 lg:p-8">
+    <div className="max-w-6xl p-4 md:p-6 lg:p-8 bg-primary-foreground">
       <div
-        className="markdown text-2xl font-bold"
+        className="markdown text-xl md:text-2xl lg:text-3xl font-bold"
         dangerouslySetInnerHTML={{ __html: question.body }}
       />
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {question.options.map((option) => (
           <button
             key={option.id}
-            className={`flex items-center justify-center rounded-lg border px-6 py-4
+            className={`flex items-center justify-center rounded-lg border px-6 py-4 md:text-lg lg:text-xl
             ${
               submitted
                 ? isAnswerCorrect(option.id)

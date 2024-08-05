@@ -71,20 +71,20 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
   };
 
   return (
-    <div className="max-w-5xl p-4 md:p-6 lg:p-8 bg-primary-foreground">
-      <div className="text-lg font-medium">
-        Question {currentQuestionIndex + 1}/{questions.length}
-        {showResults && ` - Score: ${score}/${questions.length} (${(score / questions.length * 100).toFixed(2)}%)`}
+    <div className="max-w-6xl p-4 md:p-6 lg:p-8 bg-primary-foreground">
+      <div className="text-lg font-medium rounded-2xl bg-primary inline-block px-2.5 py-0.5 text-zinc-50">
+        {!showResults && `${currentQuestionIndex + 1}/${questions.length}`}
+        {showResults && `Score: ${score}/${questions.length} (${(score / questions.length * 100).toFixed(2)}%)`}
       </div>
       <div
-        className="markdown text-2xl font-bold"
+        className="markdown text-xl md:text-2xl lg:text-3xl font-bold"
         dangerouslySetInnerHTML={{ __html: question.body }}
       />
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {question.options.map((option) => (
           <button
             key={option.id}
-            className={`flex items-center justify-center rounded-lg border px-6 py-4
+            className={`flex items-center justify-center rounded-lg border px-6 py-4 md:text-lg lg:text-xl
             ${
               showResults
                 ? isAnswerCorrect(option.id)
