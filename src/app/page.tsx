@@ -294,6 +294,7 @@ export default async function Home() {
         </div>
 
         <QuizRenderer questions={questions} />
+        <CheckForUnderstanding questions={questions} currentQuestionIndex={0} /> 
 
         <Footer />
       </main>
