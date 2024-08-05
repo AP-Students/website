@@ -11,84 +11,6 @@ import CheckForUnderstanding from "@/components/content/questions/check-for-unde
 import QuizRenderer from "@/components/content/questions/quiz-renderer";
 
 
-interface Option {
-  value: string;
-  id: string;
-}
-
-interface QuestionFormat {
-  body: string;
-  title: string;
-  type: "mcq" | "multi-answer";
-  options: Option[];
-  correct: string[];
-  course_id: string;
-  unit_ids: string[];
-  subunit_ids: string[];
-}
-
-const questions = [
-  {
-    body: "Who was the first president of the United States?",
-    title: "U.S. History",
-    type: "mcq",
-    options: [
-      { value: "George Washington", id: "1" },
-      { value: "John Adams", id: "2" },
-      { value: "Samuel Jackson", id: "3" },
-      { value: "Alexander Hamilton", id: "4" },
-    ],
-    correct: ["1"],
-    course_id: '1',
-    unit_ids: [],
-    subunit_ids: []
-  },
-  {
-    body: "Which of the following are NOT web development languages?",
-    title: "Computer Science",
-    type: "multi-answer",
-    options: [
-      { value: "Python", id: "1" },
-      { value: "HTML", id: "2" },
-      { value: "Java", id: "3" },
-      { value: "CSS", id: "4" },
-    ],
-    correct: ["1", "3"],
-    course_id: '2',
-    unit_ids: [],
-    subunit_ids: []
-  },
-  {
-    body: "What is the chemical symbol for water?",
-    title: "Chemistry",
-    type: "mcq",
-    options: [
-      { value: "O2", id: "1" },
-      { value: "H2O", id: "2" },
-      { value: "CO2", id: "3" },
-      { value: "H2O2", id: "4" },
-    ],
-    correct: ["2"],
-    course_id: '3',
-    unit_ids: [],
-    subunit_ids: []
-  },
-  {
-    body: "Which of these events occurred first in history?",
-    title: "World History",
-    type: "mcq",
-    options: [
-      { value: "The signing of the Magna Carta", id: "1" },
-      { value: "The fall of the Roman Empire", id: "2" },
-      { value: "The discovery of America", id: "3" },
-      { value: "The French Revolution", id: "4" },
-    ],
-    correct: ["2"],
-    course_id: '4',
-    unit_ids: [],
-    subunit_ids: []
-  }
-] as QuestionFormat[];
 
 
 export default async function Home() {
@@ -291,8 +213,7 @@ export default async function Home() {
             </Link>
           </div>
         </div>
-        <QuizRenderer questions={questions}/>
-         
+        
         <Footer />
       </main>
     </>

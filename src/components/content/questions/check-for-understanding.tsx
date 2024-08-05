@@ -136,7 +136,6 @@ export default CheckForUnderstanding;
 
 // Heres test questions if you want to try it out - put the code below in a page or else typescript will complain
 
-
 // interface Option {
 //   value: string;
 //   id: string;
@@ -214,4 +213,4 @@ export default CheckForUnderstanding;
 //     unit_ids: [],
 //     subunit_ids: []
 //   }
-// ];
+// ] as QuestionFormat[];
