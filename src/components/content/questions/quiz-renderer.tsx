@@ -71,7 +71,7 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
   };
 
   return (
-    <div className="max-w-5xl p-4 md:p-6 lg:p-8">
+    <div className="max-w-5xl p-4 md:p-6 lg:p-8 bg-primary-foreground">
       <div className="text-lg font-medium">
         Question {currentQuestionIndex + 1}/{questions.length}
         {showResults && ` - Score: ${score}/${questions.length} (${(score / questions.length * 100).toFixed(2)}%)`}
@@ -96,7 +96,7 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
                     : "border-gray-300"
                 : answers[currentQuestionIndex]?.includes(option.id)
                   ? "border-blue-500 bg-blue-100"
-                  : "border-black bg-zinc-50"
+                  : "border-primary bg-zinc-50"
             }
             `}
             onClick={() => handleSelectOption(option.id)}
@@ -118,7 +118,7 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
         )}
         {currentQuestionIndex < questions.length - 1 && (
           <button
-            className="ml-auto flex items-center rounded bg-gray-500 pl-3 pr-4 py-2 text-white hover:bg-gray-600" // Ensures the Next button is right-aligned on the first question
+            className="ml-auto flex items-center rounded bg-gray-500 pl-3 pr-4 py-2 text-white hover:bg-gray-600" 
             onClick={() => navigateQuestions(1)}
           >
             <MdNavigateNext size={24} style={{ color: "white" }} />
@@ -127,7 +127,7 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
         )}
         {!showResults && currentQuestionIndex === questions.length - 1 && (
           <button
-            className="ml-auto rounded bg-blue-500 px-6 py-2 text-white hover:bg-blue-600" // Right align the submit button on the last question
+            className="ml-auto rounded bg-blue-500 px-6 py-2 text-white hover:bg-blue-600" 
             onClick={handleSubmitTest}
           >
             Submit Test
