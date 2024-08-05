@@ -23,7 +23,7 @@ interface Props {
   currentQuestionIndex: number;
 }
 
-const QuestionRenderer: React.FC<Props> = ({
+const CheckForUnderstanding: React.FC<Props> = ({
   questions,
   currentQuestionIndex,
 }) => {
@@ -131,10 +131,27 @@ const QuestionRenderer: React.FC<Props> = ({
   );
 };
 
-export default QuestionRenderer;
+export default CheckForUnderstanding;
 
 
-// Heres test questions if you want to try it out
+// Heres test questions if you want to try it out - put the code below in a page or else typescript will complain
+
+
+// interface Option {
+//   value: string;
+//   id: string;
+// }
+
+// interface QuestionFormat {
+//   body: string;
+//   title: string;
+//   type: "mcq" | "multi-answer";
+//   options: Option[];
+//   correct: string[];
+//   course_id: string;
+//   unit_ids: string[];
+//   subunit_ids: string[];
+// }
 
 // const questions = [
 //   {
@@ -153,7 +170,7 @@ export default QuestionRenderer;
 //     subunit_ids: []
 //   },
 //   {
-//     body: "Which of the following are NOT web dev languages?",
+//     body: "Which of the following are NOT web development languages?",
 //     title: "Computer Science",
 //     type: "multi-answer",
 //     options: [
@@ -166,11 +183,35 @@ export default QuestionRenderer;
 //     course_id: '2',
 //     unit_ids: [],
 //     subunit_ids: []
+//   },
+//   {
+//     body: "What is the chemical symbol for water?",
+//     title: "Chemistry",
+//     type: "mcq",
+//     options: [
+//       { value: "O2", id: "1" },
+//       { value: "H2O", id: "2" },
+//       { value: "CO2", id: "3" },
+//       { value: "H2O2", id: "4" },
+//     ],
+//     correct: ["2"],
+//     course_id: '3',
+//     unit_ids: [],
+//     subunit_ids: []
+//   },
+//   {
+//     body: "Which of these events occurred first in history?",
+//     title: "World History",
+//     type: "mcq",
+//     options: [
+//       { value: "The signing of the Magna Carta", id: "1" },
+//       { value: "The fall of the Roman Empire", id: "2" },
+//       { value: "The discovery of America", id: "3" },
+//       { value: "The French Revolution", id: "4" },
+//     ],
+//     correct: ["2"],
+//     course_id: '4',
+//     unit_ids: [],
+//     subunit_ids: []
 //   }
 // ];
-
-// <QuestionRenderer questions={questions} currentQuestionIndex={
-// (0 or 1, 0 is mcq, 1 is multi-answer)
-// }/>
-
-
