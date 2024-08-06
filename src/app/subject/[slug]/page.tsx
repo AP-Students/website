@@ -2,10 +2,10 @@ import { Accordion } from "@/components/ui/accordion";
 import Footer from "@/components/ui/footer";
 import Navbar from "@/components/ui/navbar";
 import { type Subject } from "@/types";
-import SubjectBreadcrumb from "@/components/subject-homepage/subject-breadcrumb";
-import SubjectSidebar from "@/components/subject-homepage/subject-sidebar";
-import TableOfContents from "@/components/subject-homepage/table-of-contents";
-import UnitAccordion from "@/components/subject-homepage/unit-accordion";
+import SubjectBreadcrumb from "@/components/subjectHomepage/subject-breadcrumb";
+import SubjectSidebar from "@/components/subjectHomepage/subject-sidebar";
+import TableOfContents from "@/components/subjectHomepage/table-of-contents";
+import UnitAccordion from "@/components/subjectHomepage/unit-accordion";
 
 const Page = ({ params }: { params: { slug: string } }) => {
   const subject = {
