@@ -62,6 +62,7 @@ model User {
     accounts      Account[]
     sessions      Session[]
     posts         Post[]
+    questions     Question[]
 }
 
 model VerificationToken {
@@ -70,4 +71,26 @@ model VerificationToken {
     expires    DateTime
 
     @@unique([identifier, token])
+}
+
+model Question {
+    id          String   @id @default(uuid())
+    title       String
+    description String
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    answers     Answer[]
+
+    createdBy   User     @relation(fields: [createdById], references: [id])
+    createdById String
+}
+
+model Answer {
+    id          String   @id @default(uuid())
+    entry       String
+    correct     Boolean
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    questionId  String
+    question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }
