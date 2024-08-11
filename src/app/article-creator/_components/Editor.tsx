@@ -23,6 +23,8 @@ import MathTex from "editorjs-math";
 import Delimiter from "@editorjs/delimiter";
 import AttachesTool from "@editorjs/attaches";
 import Alert from "editorjs-alert";
+import ImageTool from '@editorjs/image'
+import LinkTool from '@editorjs/link'
 
 export const EDITOR_TOOLS: EditorConfig["tools"] = {
   header: {
@@ -61,9 +63,28 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
   },
 
   image: {
-    class: SimpleImage as unknown as ToolConstructable,
+    class: ImageTool as unknown as ToolConstructable,
+    config: {
+      endpoints: {
+        byFile: 'http://localhost:8008/uploadFile',
+        byUrl: 'http://localhost:8008/fetchUrl',
+      },
+      field: 'file',
+      types: 'image/*',
+    },
     inlineToolbar: true,
   },
+  linkTool: {
+    class: LinkTool,
+    config: {
+      endpoint: 'http://localhost:8008/fetchUrl', // Your backend endpoint
+      fetchMethod: 'POST', // Ensure the request method is POST
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    },
+  },
+
 
   table: {
     class: Table as unknown as ToolConstructable,
