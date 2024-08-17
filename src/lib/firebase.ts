@@ -9,13 +9,13 @@ console.log('API Key:', process.env.FIREBASE_API_KEY);
 
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBSeZjbdoK8mPwnknS6C-V6Tg1UtUN39ZM",
-  authDomain: "ap-students-32bbe.firebaseapp.com",
-  projectId: "ap-students-32bbe",
-  storageBucket: "ap-students-32bbe.appspot.com",
-  messagingSenderId: "938772062823",
-  appId: "1:938772062823:web:32f0b7460df2193e146ac2",
-  measurementId: "G-MLXZEHB999"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
 const app = initializeApp(firebaseConfig);
