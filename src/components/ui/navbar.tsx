@@ -1,3 +1,4 @@
+"use client";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "./button";
@@ -11,6 +12,9 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { MenuIcon } from "lucide-react";
+import { auth } from "@/lib/firebase"; // Ensure this imports your firebase.ts file
+import { signOut } from "firebase/auth";
+import { useUser } from "./useUser";
 
 const links = [
   {
@@ -34,6 +38,8 @@ const Navbar = ({
   variant?: "primary" | "secondary";
   className?: string;
 }) => {
+  const user = useUser();
+
   return (
     <>
       <div
@@ -69,13 +75,25 @@ const Navbar = ({
             variant === "primary" && "grow basis-0",
           )}
         >
-          <NavbarLink href="https://discord.com/invite/apstudents">
-            Discord
-          </NavbarLink>
+          {user ? (
+            <>
+              <span>{user.displayName || user.email}</span>
+              <img
+                src={user.photoURL}
+                alt={user.displayName}
+                style={{ width: "40px", borderRadius: "50%" }}
+              />
+              <button onClick={() => signOut(auth)}>Sign Out</button>
+            </>
+          ) : (
+            <>
+              <NavbarLink href={"/signup"}>Sign up</NavbarLink>
 
-          <Button className="text-md px-5 py-3 font-semibold text-white">
-            <Link href={"/signup"}>Sign up</Link>
-          </Button>
+              <Button className="text-md px-5 py-3 font-semibold text-white">
+                <Link href={"/login"}>Log in</Link>
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -98,6 +116,7 @@ const Navbar = ({
 };
 
 const MobileNavbar = () => {
+  const user = useUser();
   return (
     <>
       <Sheet>
@@ -131,15 +150,29 @@ const MobileNavbar = () => {
               </div>
             ))}
 
-            <div>
-              <NavbarLink href="/discord" isMobile={true}>
-                Discord
-              </NavbarLink>
-            </div>
+            {user ? (
+              <>
+                <img
+                  src={user.photoURL}
+                  alt={user.displayName}
+                  style={{ width: "40px", borderRadius: "50%" }}
+                />
+                <span>{user.displayName || user.email}</span>
+                <button onClick={() => signOut(auth)}>Sign Out</button>
+              </>
+            ) : (
+              <>
+                <div>
+                  <NavbarLink href={"/signup"} isMobile={true}>
+                    Sign up
+                  </NavbarLink>
+                </div>
 
-            <Button className="text-md mt-4 px-5 py-3 font-semibold text-white">
-              <Link href={"/signup"}>Sign up</Link>
-            </Button>
+                <Button className="text-md px-5 py-3 font-semibold text-white">
+                  <Link href={"/login"}>Log in</Link>
+                </Button>
+              </>
+            )}
           </div>
         </SheetContent>
       </Sheet>
