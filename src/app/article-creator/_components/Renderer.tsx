@@ -12,7 +12,6 @@ const customParsers = {
   code: (data: { code: string }) => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
     const code = hljs.highlightAuto(data.code).value;
-    console.log(code);
     return `<pre class="code"><code>${code}</code></pre>`;
   },
 
