@@ -1,3 +1,4 @@
+// src/pages/api/auth/callback/discord.ts
 import { NextApiRequest, NextApiResponse } from 'next';
 import axios from 'axios';
 
@@ -39,8 +40,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const user = userResponse.data;
 
-    // Now you can create or authenticate the user in Firebase
-    // res.redirect('/'); // Redirect to the home page or dashboard after successful login
+    // Instead of redirecting here, return the user data
+    res.status(200).json(user);
+
   } catch (error) {
     console.error('Error during Discord OAuth2:', error);
     res.status(500).send('An error occurred during Discord OAuth2.');
