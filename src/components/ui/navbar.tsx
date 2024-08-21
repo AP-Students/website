@@ -12,9 +12,10 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { MenuIcon } from "lucide-react";
-import { auth } from "@/lib/firebase"; // Ensure this imports your firebase.ts file
-import { signOut } from "firebase/auth";
-import { useUser } from "./useUser";
+import { getUser } from "@/components/hooks/getUser";
+import SignedInPfp from "./SignedInPfp";
+import { useEffect, useState } from "react";
+import { User } from "@/types/user";
 
 const links = [
   {
@@ -38,7 +39,17 @@ const Navbar = ({
   variant?: "primary" | "secondary";
   className?: string;
 }) => {
-  const user = useUser();
+    const [user, setUser] = useState<User | null>(null);
+  
+    useEffect(() => {
+      const fetchUser = async () => {
+        const fetchedUser = await getUser();
+        setUser(fetchedUser);
+      };
+  
+      fetchUser();
+    }, []);
+  
 
   return (
     <>
@@ -77,13 +88,7 @@ const Navbar = ({
         >
           {user ? (
             <>
-              <span>{user.displayName || user.email}</span>
-              <img
-                src={user.photoURL}
-                alt={user.displayName}
-                style={{ width: "40px", borderRadius: "50%" }}
-              />
-              <button onClick={() => signOut(auth)}>Sign Out</button>
+              <SignedInPfp />
             </>
           ) : (
             <>
@@ -116,7 +121,17 @@ const Navbar = ({
 };
 
 const MobileNavbar = () => {
-  const user = useUser();
+  const [user, setUser] = useState<User | null>(null);
+  
+    useEffect(() => {
+      const fetchUser = async () => {
+        const fetchedUser = await getUser();
+        setUser(fetchedUser);
+      };
+  
+      fetchUser();
+    }, []);
+  
   return (
     <>
       <Sheet>
@@ -151,15 +166,7 @@ const MobileNavbar = () => {
             ))}
 
             {user ? (
-              <>
-                <img
-                  src={user.photoURL}
-                  alt={user.displayName}
-                  style={{ width: "40px", borderRadius: "50%" }}
-                />
-                <span>{user.displayName || user.email}</span>
-                <button onClick={() => signOut(auth)}>Sign Out</button>
-              </>
+              <SignedInPfp />
             ) : (
               <>
                 <div>
