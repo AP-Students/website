@@ -1,11 +1,34 @@
 // src/pages/api/auth/callback/discord.ts
-import { NextApiRequest, NextApiResponse } from 'next';
+import { type NextApiRequest, type NextApiResponse } from 'next';
 import axios from 'axios';
 import { env } from "@/env.js"
 
 const DISCORD_CLIENT_ID = env.DISCORD_CLIENT_ID;
 const DISCORD_CLIENT_SECRET = env.DISCORD_CLIENT_SECRET;
 const REDIRECT_URI = env.REDIRECT_URI;
+
+interface DiscordUserResponse {
+  id: string;
+  username: string;
+  discriminator: string;
+  global_name?: string;
+  avatar?: string;
+  bot?: boolean;
+  system?: boolean;
+  mfa_enabled?: boolean;
+  banner?: boolean;
+  accent_color?: number;
+  locale?: string;
+  verified?: boolean;
+  email?: string;
+  flags?: number;
+  premium_type?: number;
+  public_flags?: number;
+  avatar_decoration_data?: {
+    asset: string;
+    sku_id: string;
+  };
+};
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const code = req.query.code as string;
@@ -18,11 +41,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const tokenResponse = await axios.post(
       'https://discord.com/api/oauth2/token',
       new URLSearchParams({
-        client_id: DISCORD_CLIENT_ID!,
-        client_secret: DISCORD_CLIENT_SECRET!,
+        client_id: DISCORD_CLIENT_ID,
+        client_secret: DISCORD_CLIENT_SECRET,
         grant_type: 'authorization_code',
         code,
-        redirect_uri: REDIRECT_URI!,
+        redirect_uri: REDIRECT_URI,
       }).toString(),
       {
         headers: {
@@ -31,9 +54,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     );
 
-    const { access_token } = tokenResponse.data;
+    const { access_token } = tokenResponse.data as { access_token: string };
 
-    const userResponse = await axios.get('https://discord.com/api/users/@me', {
+    const userResponse = await axios.get<DiscordUserResponse>('https://discord.com/api/users/@me', {
       headers: {
         Authorization: `Bearer ${access_token}`,
       },
