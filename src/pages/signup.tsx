@@ -55,7 +55,7 @@ export default function Signup() {
     const isValid = await validateForm();
     if (isValid) {
       try {
-        signUpWithEmail(username, email, password);
+        await signUpWithEmail(username, email, password);
       } catch (error: any) {
         if (error.code == "auth/email-already-in-use") {
           setErrors(["Email is already in use."]);

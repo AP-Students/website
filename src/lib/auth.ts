@@ -48,7 +48,7 @@ export const useAuthHandlers = () => {
         admin: false, // Default to non-admin; set this as needed
       });
 
-      router.push("/");
+      await router.push("/");
     } catch (error: any) {
       throw{
         code: error.code,
@@ -76,7 +76,7 @@ export const useAuthHandlers = () => {
         }  
       }
 
-      router.push("/");
+      await router.push("/");
       return userCredential;
     } catch (error: any) {
       console.log(error.code);
@@ -108,7 +108,7 @@ export const useAuthHandlers = () => {
         });
       }
 
-      router.push("/");
+      await router.push("/");
     } catch (error) {
       console.error("Error signing in with Google:", error);
     }
