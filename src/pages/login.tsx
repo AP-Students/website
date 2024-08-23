@@ -59,7 +59,7 @@ export default function Login() {
     <div
       className={`${outfit.variable} flex min-h-screen items-center justify-center bg-primary-foreground font-sans`}
     >
-      <div className="rounded-2xl bg-destructive-foreground p-8 shadow-md w-full max-w-md">
+      <div className="rounded-2xl bg-destructive-foreground p-8 shadow-sm border border-gray-400 w-full max-w-md">
         <h1 className="mb-8 text-4xl">Log in to FiveHive</h1>
 
         {errors.length > 0 && (
@@ -74,7 +74,7 @@ export default function Login() {
           <input
             type="text"
             placeholder="Email or username"
-            className="w-full p-2 border border-gray-500 rounded-xl"
+            className="w-full px-4 py-2 border border-gray-400 rounded-full"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -82,13 +82,13 @@ export default function Login() {
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Password"
-              className="w-full p-2 border border-gray-500 rounded-xl"
+              className="w-full px-4 py-2 border border-gray-400 rounded-full"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
             <button
               type="button"
-              className="absolute inset-y-0 right-0 px-3 text-sm text-gray-500"
+              className="absolute inset-y-0 right-0 px-3 text-sm text-gray-400"
               onClick={togglePasswordVisibility}
             >
               {showPassword ? <ShowPassword /> : <HidePassword />}
@@ -170,17 +170,15 @@ interface ButtonProps {
 
 function Button({ children, icon, className, execute }: ButtonProps) {
   return (
-    <div
+    <button
       onClick={execute}
-      className={`flex w-full items-center justify-center rounded-full border border-gray-500 px-4 py-2 transition-all duration-300 hover:bg-primary-foreground`}
+      className={`flex w-full items-center justify-center rounded-full border border-gray-400 px-4 py-2 transition-colors hover:bg-primary-foreground`}
     >
       <span className="px-2">{icon}</span>
-      <span className={`${className}`}>{children}</span>
-    </div>
+      <span className={className}>{children}</span>
+    </button>
   );
 }
-
-
 
 function HidePassword(){
   return (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" className="size-6">
