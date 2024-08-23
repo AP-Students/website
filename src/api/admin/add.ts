@@ -8,7 +8,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ message: 'Only POST requests are allowed' });
   }
 
-  const { uid } = req.body;
+  const { uid } = req.body as { uid: string};
 
   if (!uid) {
     return res.status(400).json({ message: 'Missing user ID' });
