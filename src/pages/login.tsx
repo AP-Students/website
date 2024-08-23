@@ -174,7 +174,7 @@ function Button({ children, icon, className, execute }: ButtonProps) {
       onClick={execute}
       className={`flex w-full items-center justify-center rounded-full border border-gray-400 px-4 py-2 transition-colors hover:bg-primary-foreground`}
     >
-      <span className="px-2">{icon}</span>
+      {icon && <span className="px-2">{icon}</span>}
       <span className={className}>{children}</span>
     </button>
   );
