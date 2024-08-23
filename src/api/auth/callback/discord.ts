@@ -1,10 +1,11 @@
 // src/pages/api/auth/callback/discord.ts
 import { NextApiRequest, NextApiResponse } from 'next';
 import axios from 'axios';
+import { env } from "@/env.js"
 
-const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
-const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
-const REDIRECT_URI = process.env.REDIRECT_URI;
+const DISCORD_CLIENT_ID = env.DISCORD_CLIENT_ID;
+const DISCORD_CLIENT_SECRET = env.DISCORD_CLIENT_SECRET;
+const REDIRECT_URI = env.REDIRECT_URI;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const code = req.query.code as string;
