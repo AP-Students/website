@@ -73,7 +73,7 @@ const SignedInPfp = () => {
       {/* Dropdown Menu */}
       {isDropdownOpen && (
         <div className="absolute right-0 mt-2 rounded-lg border border-gray-200 bg-white shadow-lg whitespace-nowrap max-w-48">
-          <div className="px-4 py-2 w-full">
+          {/* <div className="px-4 py-2 w-full">
             <span>{user.displayName || user.email}</span>
           </div>
           <hr className="border-gray-200" />
@@ -83,7 +83,7 @@ const SignedInPfp = () => {
           >
             Change Profile Picture
           </button>
-          <hr className="border-gray-200" />
+          <hr className="border-gray-200" /> */}
           <button
             onClick={() => signOutUser()}
             className="block px-4 py-2 text-left hover:bg-gray-100 w-full"   
