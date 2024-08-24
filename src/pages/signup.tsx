@@ -1,7 +1,8 @@
 import "@/styles/globals.css";
 import { Outfit } from "next/font/google";
 import { useAuthHandlers } from "@/lib/auth";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import Link from "next/link";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -67,7 +68,7 @@ export default function Signup() {
     <div
       className={`${outfit.variable} flex min-h-screen items-center justify-center bg-primary-foreground font-sans`}
     >
-      <div className="w-full max-w-md rounded-2xl bg-destructive-foreground p-8 shadow-md">
+      <div className="w-full max-w-md rounded-2xl border border-gray-300 bg-destructive-foreground p-8 shadow-sm">
         <h1 className="mb-8 text-4xl">Sign up for FiveHive</h1>
 
         {errors.length > 0 && (
@@ -82,14 +83,14 @@ export default function Signup() {
           <input
             type="text"
             placeholder="What should we call you?"
-            className="w-full rounded-xl border border-gray-500 p-2"
+            className="w-full rounded-full border border-gray-400 px-4 py-2"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
           />
           <input
             type="text"
             placeholder="Email"
-            className="w-full rounded-xl border border-gray-500 p-2"
+            className="w-full rounded-full border border-gray-400 px-4 py-2"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -97,7 +98,7 @@ export default function Signup() {
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Password"
-              className="w-full rounded-xl border border-gray-500 p-2"
+              className="w-full rounded-full border border-gray-400 px-4 py-2"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -114,7 +115,7 @@ export default function Signup() {
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Confirm Password"
-              className="w-full rounded-xl border border-gray-500 p-2"
+              className="w-full rounded-full border border-gray-400 px-4 py-2"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
@@ -124,7 +125,7 @@ export default function Signup() {
           </Button>
         </div>
 
-        <div className="my-6 border-t border-gray-500"></div>
+        <div className="my-6 border-t border-gray-400"></div>
 
         <div className="mt-8 space-y-4">
           <Button
@@ -161,6 +162,15 @@ export default function Signup() {
             Sign up with Google
           </Button>
         </div>
+
+        <div className="my-8"></div>
+
+        <div className="flex justify-center text-black">
+          <span className="pr-2">Already have an account?</span>
+          <Link className="hover:underline" href="/login">
+            Log in
+          </Link>
+        </div>
       </div>
     </div>
   );
@@ -175,13 +185,13 @@ interface ButtonProps {
 
 function Button({ children, icon, className, onClick }: ButtonProps) {
   return (
-    <div
+    <button
       onClick={onClick}
-      className={`flex w-full items-center justify-center rounded-full border border-gray-500 px-4 py-2 transition-all duration-300 hover:bg-primary-foreground`}
+      className={`flex w-full items-center justify-center rounded-full border border-gray-400 px-4 py-2 transition-colors hover:bg-primary-foreground`}
     >
-      <span className="px-2">{icon}</span>
-      <span className={`${className}`}>{children}</span>
-    </div>
+      {icon && <span className="px-2">{icon}</span>}
+      <span className={className}>{children}</span>
+    </button>
   );
 }
 
