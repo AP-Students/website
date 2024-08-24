@@ -9,8 +9,7 @@ const outfit = Outfit({
 });
 
 export default function Signup() {
-  const { signInWithGoogle, signUpWithEmail } =
-    useAuthHandlers();
+  const { signInWithGoogle, signUpWithEmail } = useAuthHandlers();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -60,7 +59,6 @@ export default function Signup() {
         if (error.code == "auth/email-already-in-use") {
           setErrors(["Email is already in use."]);
         }
-        
       }
     }
   };
