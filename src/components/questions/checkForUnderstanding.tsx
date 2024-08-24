@@ -70,9 +70,9 @@ const CheckForUnderstanding: React.FC<Props> = ({
   };
 
   return (
-    <div className="max-w-6xl p-4 md:p-6 lg:p-8 bg-primary-foreground">
+    <div className="max-w-6xl bg-primary-foreground p-4 md:p-6 lg:p-8">
       <div
-        className="markdown text-xl md:text-2xl lg:text-3xl font-bold"
+        className="markdown text-xl font-bold md:text-2xl lg:text-3xl"
         dangerouslySetInnerHTML={{ __html: question.body }}
       />
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -118,7 +118,7 @@ const CheckForUnderstanding: React.FC<Props> = ({
           </button>
 
           <button
-            className="flex items-center rounded bg-gray-500 pl-3 pr-4 py-2 text-white hover:bg-gray-600"
+            className="flex items-center rounded bg-gray-500 py-2 pl-3 pr-4 text-white hover:bg-gray-600"
             onClick={handleRetry}
           >
             <MdOutlineRefresh size={24} style={{ color: "white" }} />
@@ -132,7 +132,6 @@ const CheckForUnderstanding: React.FC<Props> = ({
 };
 
 export default CheckForUnderstanding;
-
 
 // Heres test questions if you want to try it out - put the code below in a page or else typescript will complain
 
