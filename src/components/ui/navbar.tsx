@@ -39,17 +39,16 @@ const Navbar = ({
   variant?: "primary" | "secondary";
   className?: string;
 }) => {
-    const [user, setUser] = useState<User | null>(null);
-  
-    useEffect(() => {
-      const fetchUser = async () => {
-        const fetchedUser = await getUser();
-        setUser(fetchedUser);
-      };
-  
-      fetchUser();
-    }, []);
-  
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const fetchedUser = await getUser();
+      setUser(fetchedUser);
+    };
+
+    fetchUser();
+  }, []);
 
   return (
     <>
@@ -122,16 +121,16 @@ const Navbar = ({
 
 const MobileNavbar = () => {
   const [user, setUser] = useState<User | null>(null);
-  
-    useEffect(() => {
-      const fetchUser = async () => {
-        const fetchedUser = await getUser();
-        setUser(fetchedUser);
-      };
-  
-      fetchUser();
-    }, []);
-  
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const fetchedUser = await getUser();
+      setUser(fetchedUser);
+    };
+
+    fetchUser();
+  }, []);
+
   return (
     <>
       <Sheet>

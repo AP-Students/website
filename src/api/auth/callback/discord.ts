@@ -30,16 +30,19 @@ interface DiscordUserResponse {
   };
 };
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   const code = req.query.code as string;
 
   if (!code) {
-    return res.status(400).send('Authorization code is required.');
+    return res.status(400).send("Authorization code is required.");
   }
 
   try {
     const tokenResponse = await axios.post(
-      'https://discord.com/api/oauth2/token',
+      "https://discord.com/api/oauth2/token",
       new URLSearchParams({
         client_id: DISCORD_CLIENT_ID,
         client_secret: DISCORD_CLIENT_SECRET,
@@ -49,9 +52,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }).toString(),
       {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
-      }
+      },
     );
 
     const { access_token } = tokenResponse.data as { access_token: string };
@@ -66,9 +69,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Instead of redirecting here, return the user data
     res.status(200).json(user);
-
   } catch (error) {
-    console.error('Error during Discord OAuth2:', error);
-    res.status(500).send('An error occurred during Discord OAuth2.');
+    console.error("Error during Discord OAuth2:", error);
+    res.status(500).send("An error occurred during Discord OAuth2.");
   }
 }

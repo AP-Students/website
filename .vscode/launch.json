@@ -9,14 +9,10 @@
       "request": "launch",
       "name": "Debug SignedInPfp.tsx",
       "runtimeExecutable": "ts-node-dev", // Use ts-node-dev to handle TSX files
-      "args": [
-        "${workspaceFolder}/src/components/ui/SignedInPfp.tsx"
-      ],
+      "args": ["${workspaceFolder}/src/components/ui/SignedInPfp.tsx"],
       "sourceMaps": true,
       "cwd": "${workspaceFolder}",
-      "outFiles": [
-        "${workspaceFolder}/dist/**/*.js"
-      ],
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "console": "integratedTerminal",
       "env": {
         "TS_NODE_COMPILER_OPTIONS": "{\"module\":\"commonjs\"}"

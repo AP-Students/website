@@ -50,9 +50,9 @@ export const useAuthHandlers = () => {
 
       await router.push("/");
     } catch (error: any) {
-      throw{
+      throw {
         code: error.code,
-      }
+      };
     }
   };
 
@@ -72,8 +72,8 @@ export const useAuthHandlers = () => {
       if (!userDoc.exists()) {
         console.log("User doesn't exist in Firestore");
         throw {
-          code: "auth/invalid-email"
-        }  
+          code: "auth/invalid-email",
+        };
       }
 
       await router.push("/");
