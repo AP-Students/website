@@ -34,7 +34,8 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
   const handleSelectOption = (optionId: string): void => {
     setAnswers({
       ...answers,
-      [currentQuestionIndex]: question.type === "mcq" ? [optionId] : toggleAnswer(optionId),
+      [currentQuestionIndex]:
+        question.type === "mcq" ? [optionId] : toggleAnswer(optionId),
     });
   };
 
@@ -46,9 +47,11 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
   };
 
   const navigateQuestions = (direction: number): void => {
-    setCurrentQuestionIndex(prevIndex => {
+    setCurrentQuestionIndex((prevIndex) => {
       const newIndex = prevIndex + direction;
-      return newIndex >= 0 && newIndex < questions.length ? newIndex : prevIndex;
+      return newIndex >= 0 && newIndex < questions.length
+        ? newIndex
+        : prevIndex;
     });
   };
 
@@ -57,8 +60,9 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
       const index = parseInt(key);
       const questionAnswers = questions[index]?.correct ?? [];
       const userAnswers = answers[index] ?? [];
-      const isCorrect = questionAnswers.length === userAnswers.length &&
-                        questionAnswers.every(id => userAnswers.includes(id));
+      const isCorrect =
+        questionAnswers.length === userAnswers.length &&
+        questionAnswers.every((id) => userAnswers.includes(id));
       return acc + (isCorrect ? 1 : 0);
     }, 0);
     setScore(correctCount);
@@ -71,13 +75,14 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
   };
 
   return (
-    <div className="max-w-6xl p-4 md:p-6 lg:p-8 bg-primary-foreground">
-      <div className="text-lg font-medium rounded-2xl bg-primary inline-block px-2.5 py-0.5 text-zinc-50">
+    <div className="max-w-6xl bg-primary-foreground p-4 md:p-6 lg:p-8">
+      <div className="inline-block rounded-2xl bg-primary px-2.5 py-0.5 text-lg font-medium text-zinc-50">
         {!showResults && `${currentQuestionIndex + 1}/${questions.length}`}
-        {showResults && `Score: ${score}/${questions.length} (${(score / questions.length * 100).toFixed(2)}%)`}
+        {showResults &&
+          `Score: ${score}/${questions.length} (${((score / questions.length) * 100).toFixed(2)}%)`}
       </div>
       <div
-        className="markdown text-xl md:text-2xl lg:text-3xl font-bold"
+        className="markdown text-xl font-bold md:text-2xl lg:text-3xl"
         dangerouslySetInnerHTML={{ __html: question.body }}
       />
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -106,10 +111,10 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
           </button>
         ))}
       </div>
-      <div className="flex justify-between mt-4">
+      <div className="mt-4 flex justify-between">
         {currentQuestionIndex > 0 && (
           <button
-            className="flex items-center rounded bg-gray-500 pl-3 pr-4 py-2 text-white hover:bg-gray-600"
+            className="flex items-center rounded bg-gray-500 py-2 pl-3 pr-4 text-white hover:bg-gray-600"
             onClick={() => navigateQuestions(-1)}
           >
             <MdNavigateBefore size={24} style={{ color: "white" }} />
@@ -118,7 +123,7 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
         )}
         {currentQuestionIndex < questions.length - 1 && (
           <button
-            className="ml-auto flex items-center rounded bg-gray-500 pl-3 pr-4 py-2 text-white hover:bg-gray-600" 
+            className="ml-auto flex items-center rounded bg-gray-500 py-2 pl-3 pr-4 text-white hover:bg-gray-600"
             onClick={() => navigateQuestions(1)}
           >
             <MdNavigateNext size={24} style={{ color: "white" }} />
@@ -127,7 +132,7 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
         )}
         {!showResults && currentQuestionIndex === questions.length - 1 && (
           <button
-            className="ml-auto rounded bg-blue-500 px-6 py-2 text-white hover:bg-blue-600" 
+            className="ml-auto rounded bg-blue-500 px-6 py-2 text-white hover:bg-blue-600"
             onClick={handleSubmitTest}
           >
             Submit Test
