@@ -8,7 +8,6 @@ import Footer from "@/components/ui/footer";
 import APLibrary from "@/components/landingPage/APLibrary";
 import FAQ from "@/components/landingPage/FAQ";
 
-
 export default async function Home() {
   return (
     <>

@@ -1,8 +1,5 @@
 import "@/styles/globals.css";
-
 import { Outfit } from "next/font/google";
-
-import { TRPCReactProvider } from "@/trpc/react";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -65,7 +62,7 @@ export default function RootLayout({
             `,
           }}
         />
-        <TRPCReactProvider>{children}</TRPCReactProvider>
+        {children}
       </body>
     </html>
   );

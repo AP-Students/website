@@ -1,3 +1,4 @@
+"use client";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "./button";
@@ -11,6 +12,10 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { MenuIcon } from "lucide-react";
+import { getUser } from "@/components/hooks/getUser";
+import SignedInPfp from "./SignedInPfp";
+import { useEffect, useState } from "react";
+import { User } from "@/types/user";
 
 const links = [
   {
@@ -34,6 +39,17 @@ const Navbar = ({
   variant?: "primary" | "secondary";
   className?: string;
 }) => {
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const fetchedUser = await getUser();
+      setUser(fetchedUser);
+    };
+
+    fetchUser();
+  }, []);
+
   return (
     <>
       <div
@@ -69,13 +85,19 @@ const Navbar = ({
             variant === "primary" && "grow basis-0",
           )}
         >
-          <NavbarLink href="https://discord.com/invite/apstudents">
-            Discord
-          </NavbarLink>
+          {user ? (
+            <>
+              <SignedInPfp />
+            </>
+          ) : (
+            <>
+              <NavbarLink href={"/signup"}>Sign up</NavbarLink>
 
-          <Button className="text-md px-5 py-3 font-semibold text-white">
-            <Link href={"/signup"}>Sign up</Link>
-          </Button>
+              <Button className="text-md px-5 py-3 font-semibold text-white">
+                <Link href={"/login"}>Log in</Link>
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -98,6 +120,17 @@ const Navbar = ({
 };
 
 const MobileNavbar = () => {
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const fetchedUser = await getUser();
+      setUser(fetchedUser);
+    };
+
+    fetchUser();
+  }, []);
+
   return (
     <>
       <Sheet>
@@ -131,15 +164,21 @@ const MobileNavbar = () => {
               </div>
             ))}
 
-            <div>
-              <NavbarLink href="/discord" isMobile={true}>
-                Discord
-              </NavbarLink>
-            </div>
+            {user ? (
+              <SignedInPfp />
+            ) : (
+              <>
+                <div>
+                  <NavbarLink href={"/signup"} isMobile={true}>
+                    Sign up
+                  </NavbarLink>
+                </div>
 
-            <Button className="text-md mt-4 px-5 py-3 font-semibold text-white">
-              <Link href={"/signup"}>Sign up</Link>
-            </Button>
+                <Button className="text-md px-5 py-3 font-semibold text-white">
+                  <Link href={"/login"}>Log in</Link>
+                </Button>
+              </>
+            )}
           </div>
         </SheetContent>
       </Sheet>
