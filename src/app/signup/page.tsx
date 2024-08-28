@@ -1,75 +1,98 @@
+"use client";
+
 import "@/styles/globals.css";
 import { Outfit } from "next/font/google";
 import { useAuthHandlers } from "@/lib/auth";
-import React, { useState } from "react";
+import React, { type FormEvent, useState } from "react";
 import Link from "next/link";
+import Button from "@/components/login/submitButton";
 
 const outfit = Outfit({
   subsets: ["latin"],
   variable: "--font-outfit",
 });
 
-export default function Login() {
-  const { signInWithGoogle, signInWithEmail, forgotPassword } =
-    useAuthHandlers();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+export default function Signup() {
+  const { signInWithGoogle, signUpWithEmail } = useAuthHandlers();
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
-  const validateForm = async () => {
-    const errors: string[] = [];
+  const handleSignUp = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault(); // Stop default submission effect
 
-    if (!email) {
-      errors.push("Email is required.");
+    const tempErrors = [];
+    setErrors([]); // Clear old errors
+
+    const formEle = event.currentTarget;
+    const formData = new FormData(formEle);
+
+    if (!formEle.checkValidity()){
+      formEle.reportValidity();
+      return;
     }
 
-    if (!password) {
-      errors.push("Password is required.");
-    } else if (password.length < 8) {
-      errors.push("Password must be at least 8 characters long.");
+    const formObject: Record<string, unknown>= {};
+    for (const [k,v] of formData){
+      formObject[k] = v;
     }
 
-    setErrors(errors);
-    return errors.length === 0;
-  };
+    const password = formObject.password as string;
+    const confirmPassword = formObject.confirmPassword as string;
 
-  const handleLogin = async () => {
-    const isValid = await validateForm();
-    if (isValid) {
-      try {
-        await signInWithEmail(email, password);
-      } catch (error: any) {
-        if (
-          error.code == "auth/invalid-email" ||
-          error.code == "auth/invalid-credential"
-        ) {
-          errors.push("Email doesn't exist. Please sign up to join FiveHive");
-        } else if (error.code == "auth/wrong-password") {
-          errors.push("Incorrect password.");
-        } else {
-          errors.push("An unexpected error occurred.");
-        }
+    // Check password length
+    if (password.length < 8) {
+      tempErrors.push("Password must be at least 8 characters long.");
+    }
+
+    // Check if passwords match
+    if (password !== confirmPassword) {
+      tempErrors.push("Passwords do not match.");
+    }
+
+    // Check for at least one special character and one number
+    const specialCharRegex = /[!@#$%^&*]/;
+    const numberRegex = /[0-9]/;
+
+    if (!specialCharRegex.test(password)) {
+      tempErrors.push(
+        "Password must contain at least one special character (!@#$%^&*).",
+      );
+    }
+
+    if (!numberRegex.test(password)) {
+      tempErrors.push("Password must contain at least one number.");
+    }
+
+    if (tempErrors.length > 0){
+      setErrors(tempErrors);
+      return;
+    }
+
+    try{
+      await signUpWithEmail(formObject.username as string,formObject.email as string,formObject.password as string);
+    } catch (error: any){
+      if (error.code == "auth/email-already-in-use") {
+        tempErrors.push("Email is already in use.");
       }
+      tempErrors.push(error.message || "There was an error in sign up");
+      setErrors(tempErrors);
+      console.error(errors);
     }
-
-    setErrors(errors);
-    return errors.length === 0;
   };
 
   return (
     <div
       className={`${outfit.variable} flex min-h-screen items-center justify-center bg-primary-foreground font-sans`}
     >
-      <div className="w-full max-w-md rounded-2xl border border-gray-300 bg-destructive-foreground p-8 shadow-sm">
-        <h1 className="mb-8 text-4xl">Log in to FiveHive</h1>
+      <form onSubmit={handleSignUp} className="w-full max-w-md rounded-2xl b rder border-gray-300 bg-destructive-foreground p-8 shadow-sm">
+        <h1 className="mb-8 text-4xl">Sign up for FiveHive</h1>
 
         {errors.length > 0 && (
-          <div className="mb-4 text-red-600">
+          <div className="mb-4 text-red-500">
             {errors.map((error, index) => (
-              <p key={index}>{error}</p>
+              <div key={index}>{error}</div>
             ))}
           </div>
         )}
@@ -77,41 +100,54 @@ export default function Login() {
         <div className="mb-10 space-y-4">
           <input
             type="text"
-            placeholder="Email or username"
+            placeholder="What should we call you?"
             className="w-full rounded-full border border-gray-400 px-4 py-2"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            id = "username"
+            name = "username"
+            required = {true}
+          />
+          <input
+            type="email"
+            placeholder="Email"
+            className="w-full rounded-full border border-gray-400 px-4 py-2"
+            id = "email"
+            name = "email"
+            required = {true}
           />
           <div className="relative w-full">
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Password"
               className="w-full rounded-full border border-gray-400 px-4 py-2"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              id="password"
+              name="password"
+              required = {true}
             />
             <button
               type="button"
-              className="absolute inset-y-0 right-0 px-3 text-sm text-gray-400"
+              className="absolute inset-y-0 right-0 px-3 text-sm text-gray-500"
               onClick={togglePasswordVisibility}
             >
-              {showPassword ? <ShowPassword /> : <HidePassword />}
+              {showPassword ? ShowPassword() : HidePassword()}
             </button>
           </div>
-          <div className="mb-10 text-right">
-            <button
-              className="text-sm text-gray-400 hover:underline"
-              onClick={() => forgotPassword(email)}
-            >
-              Forgot your password?
-            </button>
+
+          <div className="relative w-full">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Confirm Password"
+              className="w-full rounded-full border border-gray-400 px-4 py-2"
+              id="confirmPassword"
+              name="confirmPassword"
+              required = {true}
+            />
           </div>
-          <div onClick={handleLogin}>
-            <Button className="text-xl font-semibold">Log In</Button>
-          </div>
+          <Button className="text-xl font-semibold" type="submit">
+            Sign up
+          </Button>
         </div>
 
-        <div className="my-6 border-t border-gray-500"></div>
+        <div className="my-6 border-t border-gray-400"></div>
 
         <div className="mt-8 space-y-4">
           <Button
@@ -143,41 +179,22 @@ export default function Login() {
               </svg>
             }
             className="text-xl"
-            execute={signInWithGoogle}
+            onClick={signInWithGoogle}
           >
-            Continue with Google
+            Sign up with Google
           </Button>
         </div>
 
         <div className="my-8"></div>
 
         <div className="flex justify-center text-black">
-          <span className="pr-2">Don't have an account?</span>
-          <Link className="hover:underline" href="/signup">
-            Sign up
+          <span className="pr-2">Already have an account?</span>
+          <Link className="hover:underline" href="/login">
+            Log in
           </Link>
         </div>
-      </div>
+      </form>
     </div>
-  );
-}
-
-interface ButtonProps {
-  children: string;
-  icon?: React.ReactNode;
-  className?: string;
-  execute?: (...args: any[]) => void | Promise<void>;
-}
-
-function Button({ children, icon, className, execute }: ButtonProps) {
-  return (
-    <button
-      onClick={execute}
-      className={`flex w-full items-center justify-center rounded-full border border-gray-400 px-4 py-2 transition-colors hover:bg-primary-foreground`}
-    >
-      {icon && <span className="px-2">{icon}</span>}
-      <span className={className}>{children}</span>
-    </button>
   );
 }
 

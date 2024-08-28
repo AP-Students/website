@@ -9,7 +9,7 @@ import {
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "./firebase"; // Firestore instance
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { collection, query, where, getDocs } from "firebase/firestore";
 
 export const useAuthHandlers = () => {
@@ -48,7 +48,7 @@ export const useAuthHandlers = () => {
         admin: false, // Default to non-admin; set this as needed
       });
 
-      await router.push("/");
+      router.push("/");
     } catch (error: any) {
       throw {
         code: error.code,
@@ -76,7 +76,7 @@ export const useAuthHandlers = () => {
         };
       }
 
-      await router.push("/");
+      router.push("/");
       return userCredential;
     } catch (error: any) {
       console.log(error.code);
@@ -108,7 +108,7 @@ export const useAuthHandlers = () => {
         });
       }
 
-      await router.push("/");
+      router.push("/");
     } catch (error) {
       console.error("Error signing in with Google:", error);
     }
