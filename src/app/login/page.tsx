@@ -1,20 +1,22 @@
+"use client";
+
 import "@/styles/globals.css";
 import { Outfit } from "next/font/google";
 import { useAuthHandlers } from "@/lib/auth";
 import React, { useState } from "react";
 import Link from "next/link";
+import Button from "@/components/login/submitButton";
 
 const outfit = Outfit({
   subsets: ["latin"],
   variable: "--font-outfit",
 });
 
-export default function Signup() {
-  const { signInWithGoogle, signUpWithEmail } = useAuthHandlers();
-  const [username, setUsername] = useState("");
+export default function Login() {
+  const { signInWithGoogle, signInWithEmail, forgotPassword } =
+    useAuthHandlers();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
 
@@ -23,58 +25,54 @@ export default function Signup() {
   const validateForm = async () => {
     const errors: string[] = [];
 
-    // Check password length
-    if (password.length < 8) {
+    if (!email) {
+      errors.push("Email is required.");
+    }
+
+    if (!password) {
+      errors.push("Password is required.");
+    } else if (password.length < 8) {
       errors.push("Password must be at least 8 characters long.");
-    }
-
-    // Check if passwords match
-    if (password !== confirmPassword) {
-      errors.push("Passwords do not match.");
-    }
-
-    // Check for at least one special character and one number
-    const specialCharRegex = /[!@#$%^&*]/;
-    const numberRegex = /[0-9]/;
-
-    if (!specialCharRegex.test(password)) {
-      errors.push(
-        "Password must contain at least one special character (!@#$%^&*).",
-      );
-    }
-
-    if (!numberRegex.test(password)) {
-      errors.push("Password must contain at least one number.");
     }
 
     setErrors(errors);
     return errors.length === 0;
   };
 
-  const handleSignup = async () => {
+  const handleLogin = async () => {
     const isValid = await validateForm();
     if (isValid) {
       try {
-        await signUpWithEmail(username, email, password);
+        await signInWithEmail(email, password);
       } catch (error: any) {
-        if (error.code == "auth/email-already-in-use") {
-          setErrors(["Email is already in use."]);
+        if (
+          error.code == "auth/invalid-email" ||
+          error.code == "auth/invalid-credential"
+        ) {
+          errors.push("Email doesn't exist. Please sign up to join FiveHive");
+        } else if (error.code == "auth/wrong-password") {
+          errors.push("Incorrect password.");
+        } else {
+          errors.push("An unexpected error occurred.");
         }
       }
     }
+
+    setErrors(errors);
+    return errors.length === 0;
   };
 
   return (
     <div
       className={`${outfit.variable} flex min-h-screen items-center justify-center bg-primary-foreground font-sans`}
     >
-      <div className="w-full max-w-md rounded-2xl border border-gray-300 bg-destructive-foreground p-8 shadow-sm">
-        <h1 className="mb-8 text-4xl">Sign up for FiveHive</h1>
+      <form onSubmit={handleLogin} className="w-full max-w-md rounded-2xl border border-gray-300 bg-destructive-foreground p-8 shadow-sm">
+        <h1 className="mb-8 text-4xl">Log in to FiveHive</h1>
 
         {errors.length > 0 && (
-          <div className="mb-4 text-red-500">
+          <div className="mb-4 text-red-600">
             {errors.map((error, index) => (
-              <div key={index}>{error}</div>
+              <p key={index}>{error}</p>
             ))}
           </div>
         )}
@@ -82,14 +80,7 @@ export default function Signup() {
         <div className="mb-10 space-y-4">
           <input
             type="text"
-            placeholder="What should we call you?"
-            className="w-full rounded-full border border-gray-400 px-4 py-2"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="Email"
+            placeholder="Email or username"
             className="w-full rounded-full border border-gray-400 px-4 py-2"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -104,28 +95,26 @@ export default function Signup() {
             />
             <button
               type="button"
-              className="absolute inset-y-0 right-0 px-3 text-sm text-gray-500"
+              className="absolute inset-y-0 right-0 px-3 text-sm text-gray-400"
               onClick={togglePasswordVisibility}
             >
-              {showPassword ? ShowPassword() : HidePassword()}
+              {showPassword ? <ShowPassword /> : <HidePassword />}
             </button>
           </div>
-
-          <div className="relative w-full">
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Confirm Password"
-              className="w-full rounded-full border border-gray-400 px-4 py-2"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
+          <div className="mb-10 text-right">
+            <button
+              className="text-sm text-gray-400 hover:underline"
+              onClick={() => forgotPassword(email)}
+            >
+              Forgot your password?
+            </button>
           </div>
-          <Button className="text-xl font-semibold" onClick={handleSignup}>
-            Sign up
-          </Button>
+          <div onClick={handleLogin}>
+            <Button type="submit" className="text-xl font-semibold">Log In</Button>
+          </div>
         </div>
 
-        <div className="my-6 border-t border-gray-400"></div>
+        <div className="my-6 border-t border-gray-500"></div>
 
         <div className="mt-8 space-y-4">
           <Button
@@ -157,43 +146,25 @@ export default function Signup() {
               </svg>
             }
             className="text-xl"
-            onClick={signInWithGoogle}
+            execute={signInWithGoogle}
           >
-            Sign up with Google
+            Continue with Google
           </Button>
         </div>
 
         <div className="my-8"></div>
 
         <div className="flex justify-center text-black">
-          <span className="pr-2">Already have an account?</span>
-          <Link className="hover:underline" href="/login">
-            Log in
+          <span className="pr-2">Don't have an account?</span>
+          <Link className="hover:underline" href="/signup">
+            Sign up
           </Link>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
 
-interface ButtonProps {
-  children: string;
-  icon?: React.ReactNode;
-  className?: string;
-  onClick?: () => void;
-}
-
-function Button({ children, icon, className, onClick }: ButtonProps) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex w-full items-center justify-center rounded-full border border-gray-400 px-4 py-2 transition-colors hover:bg-primary-foreground`}
-    >
-      {icon && <span className="px-2">{icon}</span>}
-      <span className={className}>{children}</span>
-    </button>
-  );
-}
 
 function HidePassword() {
   return (
