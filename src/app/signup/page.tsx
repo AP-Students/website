@@ -16,11 +16,14 @@ export default function Signup() {
   const { signInWithGoogle, signUpWithEmail } = useAuthHandlers();
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
   const handleSignUp = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); // Stop default submission effect
+
+    setLoading(true);
 
     const tempErrors = [];
     setErrors([]); // Clear old errors
@@ -30,6 +33,7 @@ export default function Signup() {
 
     if (!formEle.checkValidity()){
       formEle.reportValidity();
+      setLoading(false);
       return;
     }
 
@@ -67,6 +71,7 @@ export default function Signup() {
 
     if (tempErrors.length > 0){
       setErrors(tempErrors);
+      setLoading(false);
       return;
     }
 
@@ -80,6 +85,7 @@ export default function Signup() {
       setErrors(tempErrors);
       console.error(errors);
     }
+    setLoading(false);
   };
 
   return (
@@ -143,7 +149,7 @@ export default function Signup() {
             />
           </div>
           <Button className="text-xl font-semibold" type="submit">
-            Sign up
+            {loading ? "Loading..." : "Sign up"}
           </Button>
         </div>
 
