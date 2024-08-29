@@ -37,6 +37,7 @@ export default function Signup() {
     return errors.length === 0;
   };
 
+
   const validatePassword = (password: string, errors: string[]) => {
     if (password.length < 8) {
       errors.push("Password must be at least 8 characters long.");

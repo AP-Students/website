@@ -2,8 +2,20 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Allow read/write access to authenticated users
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Restrict access to sensitive collections
+    match /sensitiveCollection/{document=**} {
+      allow read, write: if false; // No direct access allowed
+    }
+
+    // Allow users to access their own data only
+    match /profiles/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
