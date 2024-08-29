@@ -57,7 +57,7 @@ export default function Login() {
 
       setErrors(errors);
       return errors.length === 0;
-    }else{
+    } else {
       return false;
     }
   };
@@ -102,12 +102,12 @@ export default function Login() {
             </button>
           </div>
           <div className="mb-10 text-right">
-            <button
+            <Link
               className="text-sm text-gray-400 hover:underline"
-              onClick={() => forgotPassword(email)}
+              href="/forgot-password"
             >
               Forgot your password?
-            </button>
+            </Link>
           </div>
           <div onClick={handleLogin}>
             <Button className="text-xl font-semibold">Log In</Button>
@@ -172,7 +172,7 @@ interface ButtonProps {
   execute?: (...args: any[]) => void | Promise<void>;
 }
 
-function Button({ children, icon, className, execute }: ButtonProps) {
+export function Button({ children, icon, className, execute }: ButtonProps) {
   return (
     <button
       onClick={execute}

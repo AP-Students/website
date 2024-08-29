@@ -10,7 +10,6 @@ import {
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "./firebase"; // Firestore instance
 import { useRouter } from "next/router";
-import { collection, query, where, getDocs } from "firebase/firestore";
 
 export const useAuthHandlers = () => {
   const router = useRouter();
@@ -21,7 +20,6 @@ export const useAuthHandlers = () => {
     password: string,
   ) => {
     try {
-      // Step 1: Create the user with email and password
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -32,20 +30,18 @@ export const useAuthHandlers = () => {
       const defaultPhotoURL =
         "https://upload.wikimedia.org/wikipedia/commons/2/2c/Default_pfp.svg";
 
-      // Step 2: Update the user's profile in Firebase Authentication
       await updateProfile(user, {
         displayName: username,
         photoURL: defaultPhotoURL,
       });
 
-      // Step 3: Store additional user data in Firestore
       const userDocRef = doc(db, "users", user.uid);
       await setDoc(userDocRef, {
         uid: user.uid,
         email: user.email,
         displayName: username,
         photoURL: defaultPhotoURL,
-        admin: false, // Default to non-admin; set this as needed
+        admin: false, 
       });
 
       await router.push("/");
@@ -98,13 +94,7 @@ export const useAuthHandlers = () => {
       const userDoc = await getDoc(userDocRef);
 
       if (!userDoc.exists()) {
-        // If not, create it with default values
-        await setDoc(userDocRef, {
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          admin: false, // Default to non-admin
-        });
+        // throw error if user doesn't exist in Firestore
       }
 
       await router.push("/");
@@ -116,8 +106,28 @@ export const useAuthHandlers = () => {
   const forgotPassword = async (email: string) => {
     try {
       await sendPasswordResetEmail(auth, email);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending password reset email:", error);
+      throw{
+        code: error.code,
+        message: error.message || "An error occurred during forgot password",
+      }
+    }
+  };
+
+  const checkUserExists = async (email: string) => {
+    try {
+      const userDocRef = doc(db, "users", email);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        return true;
+      } else {
+        return false;
+      };
+    } catch (error) {
+      console.error("Error getting user:", error);
+      return false;
     }
   };
 
@@ -126,5 +136,6 @@ export const useAuthHandlers = () => {
     signInWithEmail,
     signInWithGoogle,
     forgotPassword,
+    checkUserExists,
   };
 };
