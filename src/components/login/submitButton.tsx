@@ -10,7 +10,7 @@ export default function Button({ children, icon, className, execute, type }: But
     <button
       onClick={execute}
       type={type}
-      className={`flex w-full items-center justify-center rounded-full border border-gray-400 px-4 py-2 transition-colors hover:bg-primary-foreground`}
+      className={`flex w-full items-center justify-center rounded-full border border-gray-400 px-4 py-2 transition-colors hover:bg-white`}
     >
       {icon && <span className="px-2">{icon}</span>}
       <span className={className}>{children}</span>
