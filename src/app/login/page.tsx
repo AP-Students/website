@@ -147,6 +147,7 @@ export default function Login() {
             }
             className="text-xl"
             execute={signInWithGoogle}
+            type="button"
           >
             Continue with Google
           </Button>
