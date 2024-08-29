@@ -39,7 +39,9 @@ export default function Login() {
     return errors.length === 0;
   };
 
-  const handleLogin = async () => {
+  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
     const isValid = await validateForm();
     if (isValid) {
       try {
@@ -84,6 +86,7 @@ export default function Login() {
             className="w-full rounded-full border border-gray-400 px-4 py-2"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            required
           />
           <div className="relative w-full">
             <input
@@ -92,6 +95,7 @@ export default function Login() {
               className="w-full rounded-full border border-gray-400 px-4 py-2"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              required
             />
             <button
               type="button"
@@ -109,9 +113,7 @@ export default function Login() {
               Forgot your password?
             </button>
           </div>
-          <div onClick={handleLogin}>
-            <Button type="submit" className="text-xl font-semibold">Log In</Button>
-          </div>
+          <Button type="submit" className="text-xl font-semibold">Log In</Button>
         </div>
 
         <div className="my-6 border-t border-gray-500"></div>
