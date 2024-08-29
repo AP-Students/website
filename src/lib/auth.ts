@@ -79,7 +79,6 @@ export const useAuthHandlers = () => {
       await router.push("/");
       return userCredential;
     } catch (error: any) {
-      console.log(error.code);
       throw {
         code: error.code,
         message: error.message || "An error occurred during sign-in",
