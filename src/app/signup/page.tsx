@@ -92,7 +92,7 @@ export default function Signup() {
     <div
       className={`${outfit.variable} flex min-h-screen items-center justify-center bg-primary-foreground font-sans`}
     >
-      <form onSubmit={handleSignUp} className="w-full max-w-md rounded-2xl b rder border-gray-300 bg-destructive-foreground p-8 shadow-sm">
+      <form onSubmit={handleSignUp} className="w-full max-w-md rounded-2xl border border-gray-300 bg-destructive-foreground p-8 shadow-sm">
         <h1 className="mb-8 text-4xl">Sign up for FiveHive</h1>
 
         {errors.length > 0 && (
