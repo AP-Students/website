@@ -23,17 +23,29 @@ export default function Signup() {
   const validateForm = async () => {
     const errors: string[] = [];
 
-    // Check password length
+    const isEmpty = (value: string): boolean => value.length === 0;
+
+    if (isEmpty(username)) errors.push("Username is required.");
+    if (isEmpty(email)) errors.push("Email is required.");
+    if (isEmpty(password)) errors.push("Password is required.");
+
+    if (!isEmpty(password)) {
+      validatePassword(password, errors);
+    }
+
+    setErrors(errors);
+    return errors.length === 0;
+  };
+
+  const validatePassword = (password: string, errors: string[]) => {
     if (password.length < 8) {
       errors.push("Password must be at least 8 characters long.");
     }
 
-    // Check if passwords match
-    if (password !== confirmPassword) {
+    if (password !== confirmPassword && confirmPassword.length !== 0) {
       errors.push("Passwords do not match.");
     }
 
-    // Check for at least one special character and one number
     const specialCharRegex = /[!@#$%^&*]/;
     const numberRegex = /[0-9]/;
 
@@ -46,9 +58,6 @@ export default function Signup() {
     if (!numberRegex.test(password)) {
       errors.push("Password must contain at least one number.");
     }
-
-    setErrors(errors);
-    return errors.length === 0;
   };
 
   const handleSignup = async () => {

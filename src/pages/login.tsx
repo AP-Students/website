@@ -26,7 +26,7 @@ export default function Login() {
       errors.push("Email is required.");
     }
 
-    if (!password) {
+    if (password.length === 0) {
       errors.push("Password is required.");
     } else if (password.length < 8) {
       errors.push("Password must be at least 8 characters long.");
@@ -37,6 +37,7 @@ export default function Login() {
   };
 
   const handleLogin = async () => {
+    const errors: string[] = [];
     const isValid = await validateForm();
     if (isValid) {
       try {
@@ -53,10 +54,12 @@ export default function Login() {
           errors.push("An unexpected error occurred.");
         }
       }
-    }
 
-    setErrors(errors);
-    return errors.length === 0;
+      setErrors(errors);
+      return errors.length === 0;
+    }else{
+      return false;
+    }
   };
 
   return (
