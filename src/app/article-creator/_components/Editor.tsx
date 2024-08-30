@@ -11,7 +11,6 @@ import Header from "@editorjs/header";
 import Paragraph from "@editorjs/paragraph";
 import Quote from "@editorjs/quote";
 import List from "@editorjs/list";
-import NestedList from "@editorjs/nested-list";
 import Table from "@editorjs/table";
 import CodeTool from "@editorjs/code";
 import InlineCode from "@editorjs/inline-code";
@@ -21,8 +20,8 @@ import Marker from "@editorjs/marker";
 import Underline from "@editorjs/underline";
 import MathTex from "editorjs-math";
 import Delimiter from "@editorjs/delimiter";
-import AttachesTool from "@editorjs/attaches";
 import Alert from "editorjs-alert";
+import { QuestionsAddCard } from "./custom_questions/QuestionsAddCard";
 
 export const EDITOR_TOOLS: EditorConfig["tools"] = {
   header: {
@@ -42,13 +41,9 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
     inlineToolbar: true,
   },
 
-  quote: {
-    class: Quote as unknown as ToolConstructable,
+  image: {
+    class: SimpleImage as unknown as ToolConstructable,
     inlineToolbar: true,
-    config: {
-      quotePlaceholder: "Enter a quote",
-      captionPlaceholder: "Quote's author",
-    },
   },
 
   list: {
@@ -60,9 +55,28 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
     },
   },
 
-  image: {
-    class: SimpleImage as unknown as ToolConstructable,
+  questionsAddCard: {
+    class: QuestionsAddCard as unknown as ToolConstructable,
+    shortcut: "CTRL+Q",
     inlineToolbar: true,
+  },
+
+  math: {
+    class: MathTex as unknown as ToolConstructable,
+    inlineToolbar: true,
+    shortcut: "CTRL+ALT+M",
+    toolbox: {
+      title: "LaTeX",
+    },
+  },
+
+  quote: {
+    class: Quote as unknown as ToolConstructable,
+    inlineToolbar: true,
+    config: {
+      quotePlaceholder: "Enter a quote",
+      captionPlaceholder: "Quote's author",
+    },
   },
 
   table: {
@@ -73,14 +87,14 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
     },
   },
 
-  code: {
-    class: CodeTool as unknown as ToolConstructable,
-    inlineToolbar: true,
-  },
-
   inlineCode: {
     class: InlineCode as unknown as ToolConstructable,
     shortcut: "CTRL+ALT+C",
+  },
+
+  code: {
+    class: CodeTool as unknown as ToolConstructable,
+    inlineToolbar: true,
   },
 
   Marker: {
@@ -89,15 +103,6 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
 
   underline: {
     class: Underline as unknown as ToolConstructable,
-  },
-
-  math: {
-    class: MathTex as unknown as ToolConstructable,
-    inlineToolbar: true,
-    shortcut: "CTRL+ALT+M",
-    toolbox: {
-      title: "LaTeX",
-    },
   },
 
   alert: Alert as unknown as ToolConstructable,

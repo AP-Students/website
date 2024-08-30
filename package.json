@@ -10,6 +10,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@editorjs-alert": "^1.1.4",
     "@editorjs/attaches": "^1.3.0",
     "@editorjs/code": "^2.9.0",
     "@editorjs/delimiter": "^1.4.0",
@@ -19,12 +20,15 @@
     "@editorjs/inline-code": "^1.5.0",
     "@editorjs/list": "^1.9.0",
     "@editorjs/marker": "^1.4.0",
+    "@editorjs-math": "^1.0.2",
     "@editorjs/nested-list": "^1.4.2",
     "@editorjs/paragraph": "^2.11.6",
+    "@editorjs-parser": "^1.5.3",
     "@editorjs/quote": "^2.6.0",
     "@editorjs/simple-image": "^1.6.0",
     "@editorjs/table": "^2.3.0",
     "@editorjs/underline": "^1.1.0",
+    "@editorjs-undo": "^2.0.28",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-dialog": "^1.1.1",
