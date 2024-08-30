@@ -16,37 +16,39 @@ const outfit = Outfit({
 export default function Login() {
   const { signInWithGoogle, signInWithEmail, forgotPassword } =
     useAuthHandlers();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
-  const validateForm = async () => {
-    const errors: string[] = [];
-
-    if (!email) {
-      errors.push("Email is required.");
-    }
-
-    if (!password) {
-      errors.push("Password is required.");
-    }
-
-    setErrors(errors);
-    return errors.length === 0;
-  };
-
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const isValid = await validateForm();
-    if (isValid) {
-      try {
-        await signInWithEmail(email, password);
-      } catch (error: any) {
+    setErrors([]);
+
+    const formEle = event.currentTarget;
+    const formData = new FormData(event.currentTarget);
+
+    if (!formEle.checkValidity()) {
+      formEle.reportValidity();
+      return;
+    }
+
+    const formObject: Record<string, unknown> = {};
+    for (const [k, v] of formData) {
+      formObject[k] = v;
+    }
+
+    const email = formObject.email as string;
+    const password = formObject.password as string;
+
+    const tempErrors: string[] = [];
+
+    try {
+      await signInWithEmail(email, password);
+    } catch (e: any) {
       const error = e as FirebaseAuthError;
+      switch (error.code) {
         case "auth/invalid-email":
           tempErrors.push(
             "Email doesn't exist. Please sign up to join FiveHive.",
@@ -63,15 +65,18 @@ export default function Login() {
       }
     }
 
-    setErrors(errors);
-    return errors.length === 0;
+    setErrors(tempErrors);
+    return;
   };
 
   return (
     <div
       className={`${outfit.variable} flex min-h-screen items-center justify-center bg-primary-foreground font-sans`}
     >
-      <form onSubmit={handleLogin} className="w-full max-w-md rounded-2xl border border-gray-300 bg-destructive-foreground p-8 shadow-sm">
+      <form
+        onSubmit={handleLogin}
+        className="w-full max-w-md rounded-2xl border border-gray-300 bg-destructive-foreground p-8 shadow-sm"
+      >
         <h1 className="mb-8 text-4xl">Log in to FiveHive</h1>
 
         {errors.length > 0 && (
@@ -87,8 +92,8 @@ export default function Login() {
             type="text"
             placeholder="Email or username"
             className="w-full rounded-full border border-gray-400 px-4 py-2"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            id="email"
+            name="email"
             required
           />
           <div className="relative w-full">
@@ -96,8 +101,8 @@ export default function Login() {
               type={showPassword ? "text" : "password"}
               placeholder="Password"
               className="w-full rounded-full border border-gray-400 px-4 py-2"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              id="password"
+              name="password"
               required
             />
             <button
@@ -110,6 +115,7 @@ export default function Login() {
           </div>
           <div className="mb-10 text-right">
             <button
+              type="button"
               className="text-sm text-gray-400 hover:underline"
               onClick={() => forgotPassword(email)}
             >
@@ -170,7 +176,6 @@ export default function Login() {
     </div>
   );
 }
-
 
 function HidePassword() {
   return (
