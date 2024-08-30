@@ -52,10 +52,12 @@ export default function Login() {
       const error = e as FirebaseAuthError;
       switch (error.code) {
         case "auth/invalid-email":
-        case "auth/invalid-credential":
           tempErrors.push(
             "Email doesn't exist. Please sign up to join FiveHive.",
           );
+          break;
+        case "auth/invalid-credential":
+          tempErrors.push("Incorrect password.");
           break;
         case "auth/wrong-password":
           tempErrors.push("Incorrect password.");
