@@ -31,14 +31,14 @@ export default function Signup() {
     const formEle = event.currentTarget;
     const formData = new FormData(formEle);
 
-    if (!formEle.checkValidity()){
+    if (!formEle.checkValidity()) {
       formEle.reportValidity();
       setLoading(false);
       return;
     }
 
-    const formObject: Record<string, unknown>= {};
-    for (const [k,v] of formData){
+    const formObject: Record<string, unknown> = {};
+    for (const [k, v] of formData) {
       formObject[k] = v;
     }
 
@@ -69,15 +69,19 @@ export default function Signup() {
       tempErrors.push("Password must contain at least one number.");
     }
 
-    if (tempErrors.length > 0){
+    if (tempErrors.length > 0) {
       setErrors(tempErrors);
       setLoading(false);
       return;
     }
 
-    try{
-      await signUpWithEmail(formObject.username as string,formObject.email as string,formObject.password as string);
-    } catch (error: any){
+    try {
+      await signUpWithEmail(
+        formObject.username as string,
+        formObject.email as string,
+        formObject.password as string,
+      );
+    } catch (error: any) {
       if (error.code == "auth/email-already-in-use") {
         tempErrors.push("Email is already in use.");
       }
@@ -92,7 +96,10 @@ export default function Signup() {
     <div
       className={`${outfit.variable} flex min-h-screen items-center justify-center bg-primary-foreground font-sans`}
     >
-      <form onSubmit={handleSignUp} className="w-full max-w-md rounded-2xl border border-gray-300 bg-destructive-foreground p-8 shadow-sm">
+      <form
+        onSubmit={handleSignUp}
+        className="w-full max-w-md rounded-2xl border border-gray-300 bg-destructive-foreground p-8 shadow-sm"
+      >
         <h1 className="mb-8 text-4xl">Sign up for FiveHive</h1>
 
         {errors.length > 0 && (
@@ -108,17 +115,17 @@ export default function Signup() {
             type="text"
             placeholder="What should we call you?"
             className="w-full rounded-full border border-gray-400 px-4 py-2"
-            id = "username"
-            name = "username"
-            required = {true}
+            id="username"
+            name="username"
+            required={true}
           />
           <input
             type="email"
             placeholder="Email"
             className="w-full rounded-full border border-gray-400 px-4 py-2"
-            id = "email"
-            name = "email"
-            required = {true}
+            id="email"
+            name="email"
+            required={true}
           />
           <div className="relative w-full">
             <input
@@ -127,7 +134,7 @@ export default function Signup() {
               className="w-full rounded-full border border-gray-400 px-4 py-2"
               id="password"
               name="password"
-              required = {true}
+              required={true}
             />
             <button
               type="button"
@@ -145,7 +152,7 @@ export default function Signup() {
               className="w-full rounded-full border border-gray-400 px-4 py-2"
               id="confirmPassword"
               name="confirmPassword"
-              required = {true}
+              required={true}
             />
           </div>
           <Button className="text-xl font-semibold" type="submit">
@@ -186,6 +193,7 @@ export default function Signup() {
             }
             className="text-xl"
             onClick={signInWithGoogle}
+            type="button"
           >
             Sign up with Google
           </Button>
