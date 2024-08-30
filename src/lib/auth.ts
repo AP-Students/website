@@ -17,8 +17,8 @@ export const useAuthHandlers = () => {
   const router = useRouter();
 
   const getMessageFromCode = (code: string): string | undefined => {
-    return code.split('/').pop()?.replaceAll('-',' ');
-  }
+    return code.split("/").pop()?.replaceAll("-", " ");
+  };
 
   const signUpWithEmail = async (
     username: string,
@@ -59,7 +59,10 @@ export const useAuthHandlers = () => {
       console.error(error);
       throw {
         code: error.code,
-        message: error.message || getMessageFromCode(error.code) || "There was an error in sign up",
+        message:
+          error.message ||
+          getMessageFromCode(error.code) ||
+          "There was an error in sign up",
       };
     }
   };
@@ -91,7 +94,10 @@ export const useAuthHandlers = () => {
       console.error(error);
       throw {
         code: error.code,
-        message: error.message || getMessageFromCode(error.code) || "There was an error in login",
+        message:
+          error.message ||
+          getMessageFromCode(error.code) ||
+          "There was an error in login",
       };
     }
   };
@@ -129,10 +135,13 @@ export const useAuthHandlers = () => {
     } catch (e: any) {
       const error = e as FirebaseAuthError;
       console.error("Error sending password reset email:", error);
-      throw{
+      throw {
         code: error.code,
-        message: error.message || getMessageFromCode(error.code) || "An unknown error occurred",
-      }
+        message:
+          error.message ||
+          getMessageFromCode(error.code) ||
+          "An unknown error occurred",
+      };
     }
   };
 
