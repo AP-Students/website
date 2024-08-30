@@ -6,6 +6,7 @@ import { useAuthHandlers } from "@/lib/auth";
 import React, { useState } from "react";
 import Link from "next/link";
 import Button from "@/components/login/submitButton";
+import { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -45,16 +46,20 @@ export default function Login() {
       try {
         await signInWithEmail(email, password);
       } catch (error: any) {
-        if (
-          error.code == "auth/invalid-email" ||
-          error.code == "auth/invalid-credential"
-        ) {
-          errors.push("Email doesn't exist. Please sign up to join FiveHive");
-        } else if (error.code == "auth/wrong-password") {
-          errors.push("Incorrect password.");
-        } else {
-          errors.push("An unexpected error occurred.");
-        }
+      const error = e as FirebaseAuthError;
+        case "auth/invalid-email":
+          tempErrors.push(
+            "Email doesn't exist. Please sign up to join FiveHive.",
+          );
+          break;
+        case "auth/invalid-credential":
+          tempErrors.push("");
+        case "auth/wrong-password":
+          tempErrors.push("Incorrect password.");
+          break;
+        default:
+          tempErrors.push(`An unexpected error occurred. ${error.message}.`);
+          break;
       }
     }
 

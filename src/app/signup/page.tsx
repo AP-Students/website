@@ -6,6 +6,7 @@ import { useAuthHandlers } from "@/lib/auth";
 import React, { type FormEvent, useState } from "react";
 import Link from "next/link";
 import Button from "@/components/login/submitButton";
+import { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -81,11 +82,25 @@ export default function Signup() {
         formObject.email as string,
         formObject.password as string,
       );
-    } catch (error: any) {
-      if (error.code == "auth/email-already-in-use") {
-        tempErrors.push("Email is already in use.");
+    } catch (e: any) {
+      const error = e as FirebaseAuthError;
+      switch (error.code){
+        case "auth/email-already-in-use":
+          tempErrors.push('Account with this email already exists.');
+          break;
+        case 'auth/invalid-email':
+          tempErrors.push('The email is invalid.');
+          break;
+        case 'auth/operation-not-allowed':
+          tempErrors.push('This operation was not allowed by firebase, something is wrong with the firebase app.');
+          break;
+        case 'auth/weak-password':
+          tempErrors.push('Your password is not strong enough.');
+          break;
+        default:
+          errors.push(`An unexpected error occurred. ${error.message}.`);
+          break;
       }
-      tempErrors.push(error.message || "There was an error in sign up");
       setErrors(tempErrors);
       console.error(errors);
     }
