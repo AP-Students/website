@@ -148,7 +148,7 @@ export default function Login() {
               </svg>
             }
             className="text-xl"
-            execute={signInWithGoogle}
+            onClick={signInWithGoogle}
             type="button"
           >
             Continue with Google
