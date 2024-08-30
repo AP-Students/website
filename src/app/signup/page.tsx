@@ -24,8 +24,6 @@ export default function Signup() {
   const handleSignUp = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); // Stop default submission effect
 
-    setLoading(true);
-
     const tempErrors = [];
     setErrors([]); // Clear old errors
 
@@ -34,7 +32,6 @@ export default function Signup() {
 
     if (!formEle.checkValidity()) {
       formEle.reportValidity();
-      setLoading(false);
       return;
     }
 
@@ -72,9 +69,10 @@ export default function Signup() {
 
     if (tempErrors.length > 0) {
       setErrors(tempErrors);
-      setLoading(false);
       return;
     }
+
+    setLoading(true);
 
     try {
       await signUpWithEmail(

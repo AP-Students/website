@@ -18,6 +18,7 @@ export default function Login() {
     useAuthHandlers();
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
@@ -44,6 +45,7 @@ export default function Login() {
 
     const tempErrors: string[] = [];
 
+    setLoading(true);
     try {
       await signInWithEmail(email, password);
     } catch (e: any) {
@@ -64,8 +66,8 @@ export default function Login() {
           break;
       }
     }
-
     setErrors(tempErrors);
+    setLoading(false);
     return;
   };
 
@@ -122,7 +124,9 @@ export default function Login() {
               Forgot your password?
             </button>
           </div>
-          <Button type="submit" className="text-xl font-semibold">Log In</Button>
+          <Button type="submit" className="text-xl font-semibold">
+            {loading ? "Loading..." : "Log In"}
+          </Button>
         </div>
 
         <div className="my-6 border-t border-gray-500"></div>
