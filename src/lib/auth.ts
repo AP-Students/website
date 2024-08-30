@@ -56,7 +56,7 @@ export const useAuthHandlers = () => {
       router.push("/");
     } catch (e: any) {
       const error = e as FirebaseAuthError;
-      console.log(error);
+      console.error(error);
       throw {
         code: error.code,
         message: error.message || getMessageFromCode(error.code) || "There was an error in sign up",
@@ -88,7 +88,7 @@ export const useAuthHandlers = () => {
       return userCredential;
     } catch (e: any) {
       const error = e as FirebaseAuthError;
-      console.log(error);
+      console.error(error);
       throw {
         code: error.code,
         message: error.message || getMessageFromCode(error.code) || "There was an error in login",
@@ -126,8 +126,13 @@ export const useAuthHandlers = () => {
   const forgotPassword = async (email: string) => {
     try {
       await sendPasswordResetEmail(auth, email);
-    } catch (error) {
+    } catch (e: any) {
+      const error = e as FirebaseAuthError;
       console.error("Error sending password reset email:", error);
+      throw{
+        code: error.code,
+        message: error.message || getMessageFromCode(error.code) || "An unknown error occurred",
+      }
     }
   };
 
