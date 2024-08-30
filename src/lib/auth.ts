@@ -11,9 +11,14 @@ import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "./firebase"; // Firestore instance
 import { useRouter } from "next/navigation";
 import { collection, query, where, getDocs } from "firebase/firestore";
+import { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
 
 export const useAuthHandlers = () => {
   const router = useRouter();
+
+  const getMessageFromCode = (code: string): string | undefined => {
+    return code.split('/').pop()?.replaceAll('-',' ');
+  }
 
   const signUpWithEmail = async (
     username: string,
@@ -49,9 +54,12 @@ export const useAuthHandlers = () => {
       });
 
       router.push("/");
-    } catch (error: any) {
+    } catch (e: any) {
+      const error = e as FirebaseAuthError;
+      console.log(error);
       throw {
         code: error.code,
+        message: error.message || getMessageFromCode(error.code) || "There was an error in sign up",
       };
     }
   };
@@ -78,11 +86,12 @@ export const useAuthHandlers = () => {
 
       router.push("/");
       return userCredential;
-    } catch (error: any) {
-      console.log(error.code);
+    } catch (e: any) {
+      const error = e as FirebaseAuthError;
+      console.log(error);
       throw {
         code: error.code,
-        message: error.message || "An error occurred during sign-in",
+        message: error.message || getMessageFromCode(error.code) || "There was an error in login",
       };
     }
   };
