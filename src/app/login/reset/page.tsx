@@ -16,6 +16,8 @@ const outfit = Outfit({
 export default function Login() {
   const { forgotPassword } = useAuthHandlers();
   const [errors, setErrors] = useState<string[]>([]);
+  const [email, setEmail] = useState("");
+  const [emailSent, setEmailSent] = useState(false);
 
   const resetPassword = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -55,6 +57,8 @@ export default function Login() {
           break;
       }
     }
+    setEmail(email);
+    setEmailSent(true);
     setErrors(tempErrors);
     return;
   };
@@ -67,7 +71,13 @@ export default function Login() {
         onSubmit={resetPassword}
         className="w-full max-w-md rounded-2xl border border-gray-300 bg-destructive-foreground p-8 shadow-sm"
       >
-        <h1 className="mb-8 text-4xl">Reset Password</h1>
+        <h1 className="mb-2 text-4xl">Reset Password</h1>
+
+        {emailSent && (
+          <h3 className="mb-6">
+            If user with email {email} exists, reset password link has been sent.
+          </h3>
+        )}
 
         {errors.length > 0 && (
           <div className="mb-4 text-red-600">
