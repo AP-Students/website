@@ -117,13 +117,12 @@ export default function Login() {
             </button>
           </div>
           <div className="mb-10 text-right">
-            <button
-              type="button"
+            <Link
               className="text-sm text-gray-400 hover:underline"
-              onClick={() => forgotPassword(email)}
+              href="/login/reset"
             >
               Forgot your password?
-            </button>
+            </Link>
           </div>
           <Button type="submit" className="text-xl font-semibold">
             {loading ? "Loading..." : "Log In"}
