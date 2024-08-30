@@ -7,11 +7,14 @@ import Image from "next/image";
 import Footer from "@/components/ui/footer";
 import APLibrary from "@/components/landingPage/APLibrary";
 import FAQ from "@/components/landingPage/FAQ";
+import Page from "./article-creator/page";
 
 export default async function Home() {
   return (
     <>
       <Navbar className="bg-primary-foreground" />
+      <Page />
+
       <main className="overflow-x-hidden">
         <div className="grid h-96 place-content-center gap-4 bg-primary-foreground p-4 text-center sm:p-8">
           <Link

@@ -44,11 +44,15 @@ function ArticleCreator({ className }: { className?: string }) {
         className,
       )}
     >
-      <Editor setData={setData} />
+      <div className="px-8">
+        <div className="mb-4 pb-4 opacity-50">Article:</div>
+        <Editor setData={setData} />
+      </div>
 
       <div className="px-8">
-        <div className="mb-4 pb-4 opacity-50 sm:pt-0">Output:</div>
+        <div className="mb-4 pb-4 opacity-50">Output:</div>
 
+        {/* Render the editor output */}
         <div>
           <Renderer content={data} />
         </div>

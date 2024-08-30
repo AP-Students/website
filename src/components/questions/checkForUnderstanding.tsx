@@ -1,22 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { MdOutlineRefresh } from "react-icons/md";
-
-interface Option {
-  value: string;
-  id: string;
-}
-
-interface QuestionFormat {
-  body: string;
-  title: string;
-  type: "mcq" | "multi-answer";
-  options: Option[];
-  correct: string[];
-  course_id: string;
-  unit_ids: string[];
-  subunit_ids: string[];
-}
+import { QuestionFormat } from "@/types/questions";
 
 interface Props {
   questions: QuestionFormat[];

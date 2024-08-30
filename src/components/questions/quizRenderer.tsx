@@ -1,19 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { MdNavigateNext, MdNavigateBefore } from "react-icons/md";
-
-interface Option {
-  value: string;
-  id: string;
-}
-
-interface QuestionFormat {
-  body: string;
-  title: string;
-  type: "mcq" | "multi-answer";
-  options: Option[];
-  correct: string[];
-}
+import { QuestionFormat } from "@/types/questions";
 
 interface QuizRendererProps {
   questions: QuestionFormat[];

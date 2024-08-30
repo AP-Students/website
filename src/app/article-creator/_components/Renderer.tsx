@@ -3,6 +3,8 @@ import edjsParser from "editorjs-parser";
 import katex from "katex";
 import hljs from "highlight.js";
 import "@/styles/highlightjs.css";
+import { QuestionsAddCard } from "./custom_questions/QuestionsAddCard";
+import QuestionsBlock from "@/app/article-creator/_components/custom_questions/QuestionsBlock";
 
 const customParsers = {
   alert: (data: { align: string; message: string; type: string }) => {
@@ -78,6 +80,10 @@ const customParsers = {
     const tbody = `<tbody>${rows.join("")}</tbody>`;
 
     return `<table>${thead}${tbody}</table>`;
+  },
+
+  questionsAddCard: (data: { text: string }) => {
+    return <QuestionsBlock input={true} />;
   },
 };
 
