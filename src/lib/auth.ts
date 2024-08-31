@@ -9,11 +9,16 @@ import {
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "./firebase"; // Firestore instance
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { collection, query, where, getDocs } from "firebase/firestore";
+import { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
 
 export const useAuthHandlers = () => {
   const router = useRouter();
+
+  const getMessageFromCode = (code: string): string | undefined => {
+    return code.split("/").pop()?.replaceAll("-", " ");
+  };
 
   const signUpWithEmail = async (
     username: string,
@@ -48,10 +53,16 @@ export const useAuthHandlers = () => {
         admin: false, // Default to non-admin; set this as needed
       });
 
-      await router.push("/");
-    } catch (error: any) {
+      router.push("/");
+    } catch (e: any) {
+      const error = e as FirebaseAuthError;
+      console.error(error);
       throw {
         code: error.code,
+        message:
+          error.message ||
+          getMessageFromCode(error.code) ||
+          "There was an error in sign up",
       };
     }
   };
@@ -76,13 +87,17 @@ export const useAuthHandlers = () => {
         };
       }
 
-      await router.push("/");
+      router.push("/");
       return userCredential;
-    } catch (error: any) {
-      console.log(error.code);
+    } catch (e: any) {
+      const error = e as FirebaseAuthError;
+      console.error(error);
       throw {
         code: error.code,
-        message: error.message || "An error occurred during sign-in",
+        message:
+          error.message ||
+          getMessageFromCode(error.code) ||
+          "There was an error in login",
       };
     }
   };
@@ -108,7 +123,7 @@ export const useAuthHandlers = () => {
         });
       }
 
-      await router.push("/");
+      router.push("/");
     } catch (error) {
       console.error("Error signing in with Google:", error);
     }
@@ -117,8 +132,16 @@ export const useAuthHandlers = () => {
   const forgotPassword = async (email: string) => {
     try {
       await sendPasswordResetEmail(auth, email);
-    } catch (error) {
+    } catch (e: any) {
+      const error = e as FirebaseAuthError;
       console.error("Error sending password reset email:", error);
+      throw {
+        code: error.code,
+        message:
+          error.message ||
+          getMessageFromCode(error.code) ||
+          "An unknown error occurred",
+      };
     }
   };
 
