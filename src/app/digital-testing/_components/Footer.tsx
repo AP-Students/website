@@ -1,4 +1,3 @@
-// src/app/digital-testing/_components/Footer.tsx
 import React from 'react';
 import styles from '../styles/Footer.module.css';
 interface FooterProps {

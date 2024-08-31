@@ -1,4 +1,3 @@
-// src/app/digital-testing/_components/FRQComponent.tsx
 import React from 'react';
 import styles from '../styles/frqComponent.module.css';
 

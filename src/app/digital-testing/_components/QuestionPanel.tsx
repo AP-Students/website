@@ -1,4 +1,3 @@
-// src/app/digital-testing/_components/QuestionPanel.tsx
 import React, { useState } from 'react';
 import styles from '../styles/QuestionPanel.module.css';
 

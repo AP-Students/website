@@ -1,4 +1,3 @@
-// src/app/digital-testing/_components/ArticleComponent.tsx
 import React from 'react';
 import { OutputData } from '@editorjs/editorjs';
 import styles from '../styles/ArticleComponent.module.css';

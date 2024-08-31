@@ -1,7 +1,6 @@
-// src/app/digital-testing/_components/ToolsDropdown.tsx
 import React, { useState } from 'react';
 import styles from '../styles/ToolsDropdown.module.css';
-import { FaEllipsisV } from 'react-icons/fa'; // Assuming you have react-icons installed
+import { EllipsisVertical } from 'lucide-react';
 
 const ToolsDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -11,7 +10,7 @@ const ToolsDropdown: React.FC = () => {
   return (
     <div className={styles.toolsDropdown}>
       <button className={styles.moreButton} onClick={toggleDropdown}>
-        <FaEllipsisV />
+        <EllipsisVertical />
       </button>
       {isOpen && (
         <div className={styles.dropdownMenu}>

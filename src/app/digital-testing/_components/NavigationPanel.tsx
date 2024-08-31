@@ -1,4 +1,3 @@
-// src/app/digital-testing/_components/NavigationPanel.tsx
 import React from 'react';
 import styles from '../styles/navigationPanel.module.css';
 
