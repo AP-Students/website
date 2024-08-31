@@ -89,6 +89,21 @@ importers:
       dotenv:
         specifier: ^16.4.5
         version: 16.4.5
+      editorjs-alert:
+        specifier: ^1.1.4
+        version: 1.1.4
+      editorjs-latex:
+        specifier: ^1.0.5
+        version: 1.0.5
+      editorjs-math:
+        specifier: ^1.0.2
+        version: 1.0.2
+      editorjs-parser:
+        specifier: ^1.5.3
+        version: 1.5.3
+      editorjs-undo:
+        specifier: ^2.0.28
+        version: 2.0.28
       firebase:
         specifier: ^10.13.0
         version: 10.13.0
@@ -1575,6 +1590,21 @@ packages:
   ecdsa-sig-formatter@1.0.11:
     resolution: {integrity: sha512-nagl3RYrbNv6kQkeJIpt6NJZy8twLB/2vtz6yN9Z4vRKHN4/QZJIEbqohALSgwKdnksuY3k5Addp5lg8sVoVcQ==}
 
+  editorjs-alert@1.1.4:
+    resolution: {integrity: sha512-m6w/cRxnFucC3dyfrB+DTNXw70SnJNv05AX6P3bZ8qkbzB1OAJTuaFrEKZBdN0YvEvTe1zvg3S344EkPAveemQ==}
+
+  editorjs-latex@1.0.5:
+    resolution: {integrity: sha512-qT4aQBnaXK1VA3FGRlTCVpmnf7Mj3OD5RXpfRTsQHSL/wrOsoVcXhPGvNkZm1qTAj6m7rVLXmwXqvBxURF1DBA==}
+
+  editorjs-math@1.0.2:
+    resolution: {integrity: sha512-JdK4u6tzLdr2im3wuUYqyHboa3NnpEJHjmprijqJ9uOUXCOntxeOp8C1t2C5oaGX3137Be0qWbw1+yw3shDI2w==}
+
+  editorjs-parser@1.5.3:
+    resolution: {integrity: sha512-ypc6mku0A55ycxdTHjijy/rRtQ060bwQKyEGMDPbnEglRAR/DE/4GJNdKtMGvUWNTGT6Fe25L/AoEQ5bhasQAg==}
+
+  editorjs-undo@2.0.28:
+    resolution: {integrity: sha512-7MiLdjIsPOXn8+cHDeAt2HapVklg4vcLWWkd2eMMlGI6UVtwYSjdQquDSv9752B/fOEP1C3NMF2sdiCoZV3tTA==}
+
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
@@ -2277,6 +2307,10 @@ packages:
 
   jws@4.0.0:
     resolution: {integrity: sha512-KDncfTmOZoOMTFG4mBlG0qUIOlc03fmzH+ru6RgYVZhPkyiy/92Owlt/8UEN+a4TXR1FQetfIpJE8ApdvdVxTg==}
+
+  katex@0.13.24:
+    resolution: {integrity: sha512-jZxYuKCma3VS5UuxOx/rFV1QyGSl3Uy/i0kTJF3HgQ5xMinCQVF8Zd4bMY/9aI9b9A2pjIBOsjSSm68ykTAr8w==}
+    hasBin: true
 
   katex@0.16.11:
     resolution: {integrity: sha512-RQrI8rlHY92OLf3rho/Ts8i/XvjgguEjOkO1BEXcU3N8BqPpSzBNwV/G0Ukr+P/l3ivvJUE/Fa/CwbS6HesGNQ==}
@@ -3351,6 +3385,9 @@ packages:
 
   v8-compile-cache-lib@3.0.1:
     resolution: {integrity: sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==}
+
+  vanilla-caret-js@1.1.0:
+    resolution: {integrity: sha512-vl3R4Xjqb+xnM0gYyg+wcqWGYwKKnkz58Yj29/FQB+w+yP7R8IR1DGoJnDIs05moEZiGlQUTabPMoEtnQNcrpQ==}
 
   varname@2.0.3:
     resolution: {integrity: sha512-+DofT9mJAUALhnr9ipZ5Z2icwaEZ7DAajOZT4ffXy3MQqnXtG3b7atItLQEJCkfcJTOf9WcsywneOEibD4eqJg==}
@@ -5057,6 +5094,22 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
+  editorjs-alert@1.1.4: {}
+
+  editorjs-latex@1.0.5:
+    dependencies:
+      katex: 0.16.11
+
+  editorjs-math@1.0.2:
+    dependencies:
+      katex: 0.13.24
+
+  editorjs-parser@1.5.3: {}
+
+  editorjs-undo@2.0.28:
+    dependencies:
+      vanilla-caret-js: 1.1.0
+
   ee-first@1.1.1: {}
 
   emoji-regex@8.0.0: {}
@@ -6101,6 +6154,10 @@ snapshots:
       jwa: 2.0.0
       safe-buffer: 5.2.1
     optional: true
+
+  katex@0.13.24:
+    dependencies:
+      commander: 8.3.0
 
   katex@0.16.11:
     dependencies:
@@ -7187,6 +7244,8 @@ snapshots:
       uuid: 3.3.2
 
   v8-compile-cache-lib@3.0.1: {}
+
+  vanilla-caret-js@1.1.0: {}
 
   varname@2.0.3: {}
 
