@@ -130,7 +130,7 @@ export default function Signup() {
             className="w-full rounded-full border border-gray-400 px-4 py-2"
             id="username"
             name="username"
-            required={true}
+            required
           />
           <input
             type="email"
@@ -138,7 +138,7 @@ export default function Signup() {
             className="w-full rounded-full border border-gray-400 px-4 py-2"
             id="email"
             name="email"
-            required={true}
+            required
           />
           <div className="relative w-full">
             <input
@@ -147,7 +147,7 @@ export default function Signup() {
               className="w-full rounded-full border border-gray-400 px-4 py-2"
               id="password"
               name="password"
-              required={true}
+              required
             />
             <button
               type="button"
@@ -165,7 +165,7 @@ export default function Signup() {
               className="w-full rounded-full border border-gray-400 px-4 py-2"
               id="confirmPassword"
               name="confirmPassword"
-              required={true}
+              required
             />
           </div>
           <Button className="text-xl font-semibold" type="submit">
