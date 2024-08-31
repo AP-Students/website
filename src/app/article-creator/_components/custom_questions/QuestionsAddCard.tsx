@@ -4,7 +4,8 @@ import {
   ToolConfig,
 } from "@editorjs/editorjs";
 import ReactDOM from "react-dom/client";
-import QuestionsBlock from "./QuestionsBlock";
+import { QuestionsInput } from "./QuestionInstance";
+import { questionInstanceId } from "../Renderer"; 
 
 //@ts-expect-error
 export class QuestionsAddCard implements BlockToolConstructable {
@@ -32,7 +33,8 @@ export class QuestionsAddCard implements BlockToolConstructable {
     const wrapper = document.createElement("div");
     wrapper.classList.add("custom-question-tool");
     const root = ReactDOM.createRoot(wrapper);
-    root.render(<QuestionsBlock input={true} />);
+    root.render(<QuestionsInput instanceId={questionInstanceId.toString()} />);
+    console.log("questionInstanceId:", questionInstanceId); 
     return wrapper;
   }
 

@@ -1,10 +1,13 @@
-import { type OutputData } from "@editorjs/editorjs";
+import { ToolConstructable, type OutputData } from "@editorjs/editorjs";
 import edjsParser from "editorjs-parser";
 import katex from "katex";
 import hljs from "highlight.js";
 import "@/styles/highlightjs.css";
-import { QuestionsAddCard } from "./custom_questions/QuestionsAddCard";
-import QuestionsBlock from "@/app/article-creator/_components/custom_questions/QuestionsBlock";
+import { useEffect, useRef } from "react";
+import { createRoot } from "react-dom/client";
+import { QuestionsOutput } from "./custom_questions/QuestionInstance";
+
+export let questionInstanceId = 0; // Global variable to keep track of the instance ID
 
 const customParsers = {
   alert: (data: { align: string; message: string; type: string }) => {
@@ -83,11 +86,30 @@ const customParsers = {
   },
 
   questionsAddCard: (data: { text: string }) => {
-    return <QuestionsBlock input={true} />;
+    return `<div class="questions-block-placeholder"></div>`;
   },
 };
 
 const Renderer = (props: { content: OutputData }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      // Select the placeholder div and render the React component
+      const placeholder = containerRef.current.querySelector(
+        ".questions-block-placeholder",
+      );
+
+      if (placeholder) {
+        const root = createRoot(placeholder);
+        root.render(
+          <QuestionsOutput instanceId={questionInstanceId.toString()} />,
+        );
+        console.log("questionInstanceId:", questionInstanceId); 
+      }
+    }
+  }, [props.content]);
+
   if (!props.content) return null;
 
   const parser = new edjsParser(
@@ -105,6 +127,7 @@ const Renderer = (props: { content: OutputData }) => {
 
   return (
     <article
+      ref={containerRef}
       className="prose before:prose-code:content-none after:prose-code:content-none"
       dangerouslySetInnerHTML={{
         __html: markup,
