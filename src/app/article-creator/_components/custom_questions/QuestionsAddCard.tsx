@@ -5,12 +5,13 @@ import {
 } from "@editorjs/editorjs";
 import ReactDOM from "react-dom/client";
 import { QuestionsInput } from "./QuestionInstance";
-import { questionInstanceId } from "../Renderer"; 
+import { incrementQuestionInstanceId, getQuestionInstanceId } from "./instanceIDManager";
 
 //@ts-expect-error
 export class QuestionsAddCard implements BlockToolConstructable {
   private config: ToolConfig;
   private data: any;
+  private instanceId: string;
 
   /**
    * Constructor for the QuestionsAddCard tool.
@@ -20,6 +21,10 @@ export class QuestionsAddCard implements BlockToolConstructable {
   constructor({ data, config }: BlockToolConstructorOptions<any, any>) {
     this.data = data;
     this.config = config;
+
+    // Increment instance ID only when the component is created, not on re-render
+    incrementQuestionInstanceId();
+    this.instanceId = getQuestionInstanceId().toString();
   }
 
   static get toolbox() {
@@ -33,8 +38,8 @@ export class QuestionsAddCard implements BlockToolConstructable {
     const wrapper = document.createElement("div");
     wrapper.classList.add("custom-question-tool");
     const root = ReactDOM.createRoot(wrapper);
-    root.render(<QuestionsInput instanceId={questionInstanceId.toString()} />);
-    console.log("questionInstanceId:", questionInstanceId); 
+    root.render(<QuestionsInput instanceId={this.instanceId} />);
+    console.log("questionInstanceId on render:", this.instanceId); 
     return wrapper;
   }
 

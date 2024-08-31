@@ -6,8 +6,7 @@ import "@/styles/highlightjs.css";
 import { useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { QuestionsOutput } from "./custom_questions/QuestionInstance";
-
-export let questionInstanceId = 0; // Global variable to keep track of the instance ID
+import { getQuestionInstanceId } from "./custom_questions/instanceIDManager";
 
 const customParsers = {
   alert: (data: { align: string; message: string; type: string }) => {
@@ -92,6 +91,7 @@ const customParsers = {
 
 const Renderer = (props: { content: OutputData }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const instanceId = getQuestionInstanceId().toString();
 
   useEffect(() => {
     if (containerRef.current) {
@@ -103,9 +103,9 @@ const Renderer = (props: { content: OutputData }) => {
       if (placeholder) {
         const root = createRoot(placeholder);
         root.render(
-          <QuestionsOutput instanceId={questionInstanceId.toString()} />,
+          <QuestionsOutput instanceId={instanceId.toString()} />,
         );
-        console.log("questionInstanceId:", questionInstanceId); 
+        console.log("questionInstanceId:", instanceId); 
       }
     }
   }, [props.content]);
