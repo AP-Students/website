@@ -8,6 +8,7 @@ import { createRoot } from "react-dom/client";
 import { QuestionsOutput } from "./custom_questions/QuestionInstance";
 import { getQuestionInstanceId } from "./custom_questions/instanceIDManager";
 
+let instanceId = getQuestionInstanceId().toString();
 const customParsers = {
   alert: (data: { align: string; message: string; type: string }) => {
     return `<div class="cdx-alert cdx-alert-align-${data.align} cdx-alert-${data.type}"><div class="cdx-alert__message" contenteditable="true" data-placeholder="Type here..." data-empty="false">${data.message}</div></div>`;
@@ -85,19 +86,21 @@ const customParsers = {
   },
 
   questionsAddCard: (data: { text: string }) => {
-    return `<div class="questions-block-placeholder"></div>`;
+    instanceId = getQuestionInstanceId().toString();
+    console.log("instanceId inital:", instanceId);
+    return `<div class="questions-block-${instanceId}"></div>`;
   },
 };
 
 const Renderer = (props: { content: OutputData }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const instanceId = getQuestionInstanceId().toString();
 
   useEffect(() => {
     if (containerRef.current) {
       // Select the placeholder div and render the React component
+      console.log("instanceId on render:", instanceId);
       const placeholder = containerRef.current.querySelector(
-        ".questions-block-placeholder",
+        `.questions-block-${instanceId}`,  
       );
 
       if (placeholder) {
@@ -105,7 +108,6 @@ const Renderer = (props: { content: OutputData }) => {
         root.render(
           <QuestionsOutput instanceId={instanceId.toString()} />,
         );
-        console.log("questionInstanceId:", instanceId); 
       }
     }
   }, [props.content]);

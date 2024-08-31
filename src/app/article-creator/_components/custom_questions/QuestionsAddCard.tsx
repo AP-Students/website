@@ -23,8 +23,8 @@ export class QuestionsAddCard implements BlockToolConstructable {
     this.config = config;
 
     // Increment instance ID only when the component is created, not on re-render
-    incrementQuestionInstanceId();
     this.instanceId = getQuestionInstanceId().toString();
+    incrementQuestionInstanceId();
   }
 
   static get toolbox() {
@@ -39,7 +39,8 @@ export class QuestionsAddCard implements BlockToolConstructable {
     wrapper.classList.add("custom-question-tool");
     const root = ReactDOM.createRoot(wrapper);
     root.render(<QuestionsInput instanceId={this.instanceId} />);
-    console.log("questionInstanceId on render:", this.instanceId); 
+    console.log("questionInstanceId input:", this.instanceId);
+
     return wrapper;
   }
 
