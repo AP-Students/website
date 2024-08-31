@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -16,9 +17,11 @@ const links = [
   },
 ];
 
-export default function Footer() {
+export default function Footer({ className }: { className?: string }) {
   return (
-    <footer className="mx-auto max-w-6xl p-8 text-white lg:px-8">
+    <footer
+      className={cn("mx-auto max-w-6xl p-8 text-white lg:px-8", className)}
+    >
       <div className="flex flex-col justify-between gap-y-6 sm:flex-row sm:items-center">
         <Link href={"/"}>
           <Image src={"/logo.svg"} alt="AProjectLogo" width={98} height={34} />

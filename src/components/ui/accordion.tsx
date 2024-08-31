@@ -22,19 +22,32 @@ AccordionItem.displayName = "AccordionItem";
 
 const AccordionTrigger = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger>
->(({ className, children, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger> & {
+    variant?: "primary" | "secondary";
+  }
+>(({ className, children, variant = "primary", ...props }, ref) => (
   <AccordionPrimitive.Header className="flex">
     <AccordionPrimitive.Trigger
       ref={ref}
       className={cn(
-        "flex flex-1 items-center justify-between py-4 font-medium transition-all hover:underline [&[data-state=open]>svg]:rotate-180",
+        "mr-2 flex flex-1 items-center justify-between py-4 font-medium transition-all hover:underline [&[data-state=open]_svg]:rotate-180",
         className,
       )}
       {...props}
     >
-      {children}
-      <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
+      {variant === "primary" && (
+        <>
+          {children}
+          <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
+        </>
+      )}
+
+      {variant === "secondary" && (
+        <div className="flex flex-1 items-center gap-x-1.5">
+          <ChevronDown className="h-4 w-4 shrink-0 stroke-primary/50 transition-transform duration-200" />
+          {children}
+        </div>
+      )}
     </AccordionPrimitive.Trigger>
   </AccordionPrimitive.Header>
 ));
