@@ -1,8 +1,6 @@
-/* src/app/digital-testing/_components/ArticleComponent.module.css */
 .article {
-    padding: 20px;
-    background: #fff;
-    overflow-y: auto;
-    height: calc(100vh - 60px); 
-  }
-  
+  padding: 20px;
+  background: #fff;
+  overflow-y: auto;
+  height: calc(100vh - 60px);
+}
