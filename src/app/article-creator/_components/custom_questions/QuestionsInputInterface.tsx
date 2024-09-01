@@ -83,6 +83,7 @@ const QuestionsInputInterface: React.FC<Props> = ({ questions, setQuestions }) =
             <input
               type="text"
               value={question.correct.join(",")}
+              placeholder="Enter correct answer(s) separated by no spaced commas (eg: 1,3)"   
               onChange={(e) =>
                 updateQuestion(qIndex, {
                   ...question,
