@@ -1,6 +1,5 @@
 import React from 'react';
 import { OutputData } from '@editorjs/editorjs';
-import styles from '../styles/ArticleComponent.module.css';
 
 interface ArticleComponentProps {
   content: OutputData;
@@ -8,7 +7,7 @@ interface ArticleComponentProps {
 
 const ArticleComponent: React.FC<ArticleComponentProps> = ({ content }) => {
   return (
-    <div className={styles.article}>
+    <div className="p-5 bg-white overflow-y-auto h-[calc(100vh-52px-70px)]">
       {/* Render the article content here */}
       <div dangerouslySetInnerHTML={{ __html: content.blocks.map(block => block.data.text).join('<br/>') }} />
     </div>

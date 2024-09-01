@@ -1,21 +1,20 @@
 "use client";
-import React, { useState } from 'react';
-import Header from './_components/Header';
-import ArticleComponent from './_components/ArticleComponent';
-import QuestionPanel from './_components/QuestionPanel';
-import ToolsDropdown from './_components/ToolsDropdown';
-import Footer from './_components/Footer';
-import { OutputData } from '@editorjs/editorjs';
-import styles from './styles/page.module.css';
+import React, { useState } from "react";
+import Header from "./_components/Header";
+import ArticleComponent from "./_components/ArticleComponent";
+import QuestionPanel from "./_components/QuestionPanel";
+import ToolsDropdown from "./_components/ToolsDropdown";
+import Footer from "./_components/Footer";
+import { OutputData } from "@editorjs/editorjs";
 
 // Random sample articles
 const sampleArticles: OutputData[] = [
   {
     blocks: [
       {
-        type: 'paragraph',
+        type: "paragraph",
         data: {
-          text: 'Paris is the capital city of France. (EXAMPLE article or document)',
+          text: "Paris is the capital city of France. (EXAMPLE article or document)",
         },
       },
     ],
@@ -23,13 +22,13 @@ const sampleArticles: OutputData[] = [
   {
     blocks: [
       {
-        type: 'paragraph',
+        type: "paragraph",
         data: {
-          text: 'Tokyo is the capital city of Japan. (EXAMPLE article or document)',
+          text: "Tokyo is the capital city of Japan. (EXAMPLE article or document)",
         },
       },
     ],
-  }
+  },
   // SHOULD BE DYNAMIC > GET FROM DATABASE
 ];
 
@@ -38,14 +37,14 @@ const questions = [
   {
     question: "What is the capital of France?",
     options: ["Paris", "London", "Rome", "Berlin"],
-    answer: ""
+    answer: "",
   },
   {
     question: "What is the capital of Japan?",
     options: ["Tokyo", "Kyoto", "Osaka", "Hiroshima"],
-    answer: ""
-  }
-   // SHOULD BE DYNAMIC > GET FROM DATABASE
+    answer: "",
+  },
+  // SHOULD BE DYNAMIC > GET FROM DATABASE
 ];
 
 const DigitalTestingPage: React.FC = () => {
@@ -72,7 +71,7 @@ const DigitalTestingPage: React.FC = () => {
   };
 
   const handleReview = () => {
-    // Implement "Mark for Review" 
+    // Implement "Mark for Review"
   };
 
   const toggleTools = () => {
@@ -80,14 +79,17 @@ const DigitalTestingPage: React.FC = () => {
   };
 
   return (
-    <div className={styles.page}>
-      <Header />
-      <ToolsDropdown isVisible={showTools} onClose={() => setShowTools(false)} />
-      <div className={styles.content}>
-        <div className={styles.leftColumn}>
+    <div className="flex h-screen flex-col">
+      <Header
+        examName="AP Calculus Exam"
+        moduleName="Module 1"
+        timeRemaining={45 * 60}
+      />
+      <div className="flex flex-1 overflow-hidden pt-[52px]">
+        <div className="flex-1 overflow-y-auto border-r-2 border-gray-300">
           <ArticleComponent content={sampleArticles[currentArticleIndex]} />
         </div>
-        <div className={styles.rightColumn}>
+        <div className="flex flex-1 flex-col p-5">
           <QuestionPanel
             question={questions[currentQuestionIndex].question}
             options={questions[currentQuestionIndex].options}

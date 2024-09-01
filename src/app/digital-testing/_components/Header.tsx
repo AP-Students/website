@@ -1,20 +1,34 @@
-import React from 'react';
-import ToolsDropdown from './ToolsDropdown'; 
-import styles from '../styles/Header.module.css';
+import React from "react";
+import ToolsDropdown from "./ToolsDropdown";
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  examName: string;
+  moduleName: string;
+  timeRemaining: number;
+}
+
+const Header: React.FC<HeaderProps> = ({
+  examName,
+  moduleName,
+  timeRemaining,
+}) => {
   return (
-    <header className={styles.header}>
-      <div className={styles.headerContent}>
-        <div className={styles.examInfo}>
-          <span>AP Calculus Exam</span>
-          <span>Module 1</span>
+    <header className="fixed left-0 top-0 z-[1000] flex w-full items-center justify-between border-b-2 border-gray-300 p-2.5">
+      <div className="flex w-full items-center justify-between">
+        <div className="flex-1">
+          {examName} - {moduleName}
         </div>
-        <div className={styles.timer}>00:45:00</div>
-        <div className={styles.userInfo}>
-          <text>John Doe</text> 
-          <text>ID: 123456</text>
+        <div className="flex-1 text-center text-xl font-bold">
+          {Math.floor(timeRemaining / 3600)
+            .toString()
+            .padStart(2, "0")}
+          :
+          {Math.floor((timeRemaining % 3600) / 60)
+            .toString()
+            .padStart(2, "0")}
+          :{(timeRemaining % 60).toString().padStart(2, "0")}
         </div>
+        <div className="flex-1 p-2.5"></div>
         <ToolsDropdown /> {/* SWITCH TO ACTUAL TOOLS */}
       </div>
     </header>
