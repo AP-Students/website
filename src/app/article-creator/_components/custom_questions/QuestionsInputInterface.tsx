@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { QuestionFormat } from "@/types/questions";
 
 interface Props {
@@ -8,7 +8,12 @@ interface Props {
   setQuestions: (questions: QuestionFormat[]) => void;
 }
 
-const QuestionsInputInterface: React.FC<Props> = ({ questions, setQuestions }) => {
+const QuestionsInputInterface: React.FC<Props> = ({
+  questions,
+  setQuestions,
+}) => {
+  const [error, setError] = useState<string>("");
+
   const addQuestion = () => {
     setQuestions([
       ...questions,
@@ -33,12 +38,32 @@ const QuestionsInputInterface: React.FC<Props> = ({ questions, setQuestions }) =
   const removeQuestion = (index: number) => {
     const newQuestions = questions.filter((_, i) => i !== index);
     setQuestions(newQuestions);
+    setError("");
   };
 
   const updateQuestion = (index: number, updatedQuestion: QuestionFormat) => {
     const newQuestions = [...questions];
     newQuestions[index] = updatedQuestion;
     setQuestions(newQuestions);
+  };
+
+  const validateCorrectAnswer = (
+    value: string,
+    type: "mcq" | "multi-answer",
+  ) => {
+    let errorMessage = "";
+    if (type === "mcq") {
+      if (!/^\d$/.test(value)) {
+        errorMessage = "Only a single number is allowed for MCQ.";
+      }
+    } else {
+      if (!/^\d(,\d){0,7}$/.test(value) || value.length > 8) {
+        errorMessage =
+          "Only numbers separated by commas are allowed, max length 8.";
+      }
+    }
+    setError(errorMessage);
+    return errorMessage === "";
   };
 
   return (
@@ -82,16 +107,27 @@ const QuestionsInputInterface: React.FC<Props> = ({ questions, setQuestions }) =
             <label>Correct Answer(s):</label>
             <input
               type="text"
-              value={question.correct.join(",")}
-              placeholder="Enter correct answer(s) separated by no spaced commas (eg: 1,3)"   
-              onChange={(e) =>
+              value={question.correct.join(",")} // Convert array back to string for input display
+              placeholder={
+                question.type === "mcq"
+                  ? "Enter the correct answer. (eg 1)"
+                  : "Enter correct answer(s) separated by no spaced commas (eg: 1,3)"
+              }
+              onChange={(e) => {
+                const inputValue = e.target.value;
+
+                const correctAnswers = inputValue
+                  .split(",")
+                  .map((answer) => answer.trim());
                 updateQuestion(qIndex, {
                   ...question,
-                  correct: e.target.value.split(","),
-                })
-              }
+                  correct: correctAnswers,
+                });
+                validateCorrectAnswer(inputValue, question.type);
+              }}
               className="w-full border p-2"
             />
+            {error && <div className="text-red-500">{error}</div>}
           </div>
           <div className="flex items-center">
             <label className="mr-2">Display Number of Answers: </label>
@@ -109,7 +145,7 @@ const QuestionsInputInterface: React.FC<Props> = ({ questions, setQuestions }) =
           </div>
           <button
             type="button"
-            className="mt-4 bg-red-500 text-white border border-red-500 rounded-md px-2 py-1  hover:bg-white hover:text-red-500"
+            className="mt-4 rounded-md border border-red-500 bg-red-500 px-2 py-1 text-white  hover:bg-white hover:text-red-500"
             onClick={() => removeQuestion(qIndex)}
           >
             Delete Question
@@ -119,7 +155,7 @@ const QuestionsInputInterface: React.FC<Props> = ({ questions, setQuestions }) =
 
       <button
         type="button"
-        className="mt-4 bg-green-500 p-2 text-white border border-green-500 rounded-md px-2 py-1 hover:bg-white hover:text-green-500"
+        className="mt-4 rounded-md border border-green-500 bg-green-500 p-2 px-2 py-1 text-white hover:bg-white hover:text-green-500"
         onClick={addQuestion}
       >
         Add Question
