@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { QuestionFormat } from "@/types/questions";
 
-import CheckForUnderstanding from "@/components/questions/CheckForUnderstanding";
-import QuizRenderer from "@/components/questions/QuizRenderer";
+import CheckForUnderstanding from "@/components/questions/checkForUnderstanding";
+import QuizRenderer from "@/components/questions/quizRenderer";
 import QuestionsInputInterface from "./QuestionsInputInterface";
 
 const useSyncedQuestions = (instanceId: string) => {
