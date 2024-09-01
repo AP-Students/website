@@ -94,7 +94,6 @@ const Renderer = (props: { content: OutputData }) => {
 
   useEffect(() => {
     if (containerRef.current) {
-      console.log("Rendering questions...");
       // Select the placeholder div and render the React component
       for (const block of props.content.blocks) {
         if (block.type === "questionsAddCard") {

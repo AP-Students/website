@@ -39,8 +39,6 @@ export class QuestionsAddCard implements BlockToolConstructable {
     wrapper.classList.add("custom-question-tool");
     const root = ReactDOM.createRoot(wrapper);
     root.render(<QuestionsInput instanceId={this.instanceId} />);
-    console.log("questionInstanceId input:", this.instanceId);
-
     return wrapper;
   }
 
