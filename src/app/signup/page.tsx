@@ -1,8 +1,12 @@
+"use client";
+
 import "@/styles/globals.css";
 import { Outfit } from "next/font/google";
 import { useAuthHandlers } from "@/lib/auth";
-import React, { useState } from "react";
+import React, { type FormEvent, useState } from "react";
 import Link from "next/link";
+import Button from "@/components/login/submitButton";
+import { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -11,74 +15,104 @@ const outfit = Outfit({
 
 export default function Signup() {
   const { signInWithGoogle, signUpWithEmail } = useAuthHandlers();
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
-  const validateForm = async () => {
-    const errors: string[] = [];
+  const handleSignUp = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault(); // Stop default submission effect
 
-    const isEmpty = (value: string): boolean => value.length === 0;
+    const tempErrors = [];
+    setErrors([]); // Clear old errors
 
-    if (isEmpty(username)) errors.push("Username is required.");
-    if (isEmpty(email)) errors.push("Email is required.");
-    if (isEmpty(password)) errors.push("Password is required.");
+    const formEle = event.currentTarget;
+    const formData = new FormData(formEle);
 
-    if (!isEmpty(password)) {
-      validatePassword(password, errors);
+    if (!formEle.checkValidity()) {
+      formEle.reportValidity();
+      return;
     }
 
-    setErrors(errors);
-    return errors.length === 0;
-  };
+    const formObject: Record<string, unknown> = {};
+    for (const [k, v] of formData) {
+      formObject[k] = v;
+    }
 
+    const password = formObject.password as string;
+    const confirmPassword = formObject.confirmPassword as string;
 
-  const validatePassword = (password: string, errors: string[]) => {
+    // Check password length
     if (password.length < 8) {
-      errors.push("Password must be at least 8 characters long.");
+      tempErrors.push("Password must be at least 8 characters long.");
     }
 
-    if (password !== confirmPassword && confirmPassword.length !== 0) {
-      errors.push("Passwords do not match.");
+    // Check if passwords match
+    if (password !== confirmPassword) {
+      tempErrors.push("Passwords do not match.");
     }
 
+    // Check for at least one special character and one number
     const specialCharRegex = /[!@#$%^&*]/;
     const numberRegex = /[0-9]/;
 
     if (!specialCharRegex.test(password)) {
-      errors.push(
+      tempErrors.push(
         "Password must contain at least one special character (!@#$%^&*).",
       );
     }
 
     if (!numberRegex.test(password)) {
-      errors.push("Password must contain at least one number.");
+      tempErrors.push("Password must contain at least one number.");
     }
-  };
 
-  const handleSignup = async () => {
-    const isValid = await validateForm();
-    if (isValid) {
-      try {
-        await signUpWithEmail(username, email, password);
-      } catch (error: any) {
-        if (error.code == "auth/email-already-in-use") {
-          setErrors(["Email is already in use."]);
-        }
-      }
+    if (tempErrors.length > 0) {
+      setErrors(tempErrors);
+      return;
     }
+
+    setLoading(true);
+
+    try {
+      await signUpWithEmail(
+        formObject.username as string,
+        formObject.email as string,
+        formObject.password as string,
+      );
+    } catch (e: any) {
+      const error = e as FirebaseAuthError;
+      switch (error.code){
+        case "auth/email-already-in-use":
+          tempErrors.push('Account with this email already exists.');
+          break;
+        case 'auth/invalid-email':
+          tempErrors.push('The email is invalid.');
+          break;
+        case 'auth/operation-not-allowed':
+          tempErrors.push('This operation was not allowed by firebase, something is wrong with the firebase app.');
+          break;
+        case 'auth/weak-password':
+          tempErrors.push('Your password is not strong enough.');
+          break;
+        default:
+          errors.push(`An unexpected error occurred. ${error.message}.`);
+          break;
+      }
+      setErrors(tempErrors);
+      console.error(errors);
+    }
+    setLoading(false);
   };
 
   return (
     <div
       className={`${outfit.variable} flex min-h-screen items-center justify-center bg-primary-foreground font-sans`}
     >
-      <div className="w-full max-w-md rounded-2xl border border-gray-300 bg-destructive-foreground p-8 shadow-sm">
+      <form
+        onSubmit={handleSignUp}
+        className="w-full max-w-md rounded-2xl border border-gray-300 bg-destructive-foreground p-8 shadow-sm"
+      >
         <h1 className="mb-8 text-4xl">Sign up for FiveHive</h1>
 
         {errors.length > 0 && (
@@ -94,23 +128,26 @@ export default function Signup() {
             type="text"
             placeholder="What should we call you?"
             className="w-full rounded-full border border-gray-400 px-4 py-2"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            id="username"
+            name="username"
+            required
           />
           <input
-            type="text"
+            type="email"
             placeholder="Email"
             className="w-full rounded-full border border-gray-400 px-4 py-2"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            id="email"
+            name="email"
+            required
           />
           <div className="relative w-full">
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Password"
               className="w-full rounded-full border border-gray-400 px-4 py-2"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              id="password"
+              name="password"
+              required
             />
             <button
               type="button"
@@ -126,12 +163,13 @@ export default function Signup() {
               type={showPassword ? "text" : "password"}
               placeholder="Confirm Password"
               className="w-full rounded-full border border-gray-400 px-4 py-2"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              id="confirmPassword"
+              name="confirmPassword"
+              required
             />
           </div>
-          <Button className="text-xl font-semibold" onClick={handleSignup}>
-            Sign up
+          <Button className="text-xl font-semibold" type="submit">
+            {loading ? "Loading..." : "Sign up"}
           </Button>
         </div>
 
@@ -168,6 +206,7 @@ export default function Signup() {
             }
             className="text-xl"
             onClick={signInWithGoogle}
+            type="button"
           >
             Sign up with Google
           </Button>
@@ -181,27 +220,8 @@ export default function Signup() {
             Log in
           </Link>
         </div>
-      </div>
+      </form>
     </div>
-  );
-}
-
-interface ButtonProps {
-  children: string;
-  icon?: React.ReactNode;
-  className?: string;
-  onClick?: () => void;
-}
-
-function Button({ children, icon, className, onClick }: ButtonProps) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex w-full items-center justify-center rounded-full border border-gray-400 px-4 py-2 transition-colors hover:bg-primary-foreground`}
-    >
-      {icon && <span className="px-2">{icon}</span>}
-      <span className={className}>{children}</span>
-    </button>
   );
 }
 

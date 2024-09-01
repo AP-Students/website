@@ -1,8 +1,12 @@
+"use client";
+
 import "@/styles/globals.css";
 import { Outfit } from "next/font/google";
 import { useAuthHandlers } from "@/lib/auth";
 import React, { useState } from "react";
 import Link from "next/link";
+import Button from "@/components/login/submitButton";
+import { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -10,63 +14,72 @@ const outfit = Outfit({
 });
 
 export default function Login() {
-  const { signInWithGoogle, signInWithEmail, forgotPassword } =
+  const { signInWithGoogle, signInWithEmail } =
     useAuthHandlers();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
-  const validateForm = async () => {
-    const errors: string[] = [];
+  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
 
-    if (!email) {
-      errors.push("Email is required.");
+    setErrors([]);
+
+    const formEle = event.currentTarget;
+    const formData = new FormData(event.currentTarget);
+
+    if (!formEle.checkValidity()) {
+      formEle.reportValidity();
+      return;
     }
 
-    if (password.length === 0) {
-      errors.push("Password is required.");
-    } else if (password.length < 8) {
-      errors.push("Password must be at least 8 characters long.");
+    const formObject: Record<string, unknown> = {};
+    for (const [k, v] of formData) {
+      formObject[k] = v;
     }
 
-    setErrors(errors);
-    return errors.length === 0;
-  };
+    const email = formObject.email as string;
+    const password = formObject.password as string;
 
-  const handleLogin = async () => {
-    const errors: string[] = [];
-    const isValid = await validateForm();
-    if (isValid) {
-      try {
-        await signInWithEmail(email, password);
-      } catch (error: any) {
-        if (
-          error.code == "auth/invalid-email" ||
-          error.code == "auth/invalid-credential"
-        ) {
-          errors.push("Email doesn't exist. Please sign up to join FiveHive");
-        } else if (error.code == "auth/wrong-password") {
-          errors.push("Incorrect password.");
-        } else {
-          errors.push("An unexpected error occurred.");
-        }
+    const tempErrors: string[] = [];
+
+    setLoading(true);
+    try {
+      await signInWithEmail(email, password);
+    } catch (e: any) {
+      const error = e as FirebaseAuthError;
+      switch (error.code) {
+        case "auth/invalid-email":
+          tempErrors.push(
+            "Email doesn't exist. Please sign up to join FiveHive.",
+          );
+          break;
+        case "auth/invalid-credential":
+          tempErrors.push("Incorrect password.");
+          break;
+        case "auth/wrong-password":
+          tempErrors.push("Incorrect password.");
+          break;
+        default:
+          tempErrors.push(`An unexpected error occurred. ${error.message}.`);
+          break;
       }
-
-      setErrors(errors);
-      return errors.length === 0;
-    } else {
-      return false;
     }
+    setErrors(tempErrors);
+    setLoading(false);
+    return;
   };
 
   return (
     <div
       className={`${outfit.variable} flex min-h-screen items-center justify-center bg-primary-foreground font-sans`}
     >
-      <div className="w-full max-w-md rounded-2xl border border-gray-300 bg-destructive-foreground p-8 shadow-sm">
+      <form
+        onSubmit={handleLogin}
+        className="w-full max-w-md rounded-2xl border border-gray-300 bg-destructive-foreground p-8 shadow-sm"
+      >
         <h1 className="mb-8 text-4xl">Log in to FiveHive</h1>
 
         {errors.length > 0 && (
@@ -82,16 +95,18 @@ export default function Login() {
             type="text"
             placeholder="Email or username"
             className="w-full rounded-full border border-gray-400 px-4 py-2"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            id="email"
+            name="email"
+            required
           />
           <div className="relative w-full">
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Password"
               className="w-full rounded-full border border-gray-400 px-4 py-2"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              id="password"
+              name="password"
+              required
             />
             <button
               type="button"
@@ -104,14 +119,14 @@ export default function Login() {
           <div className="mb-10 text-right">
             <Link
               className="text-sm text-gray-400 hover:underline"
-              href="/forgot-password"
+              href="/login/reset"
             >
               Forgot your password?
             </Link>
           </div>
-          <div onClick={handleLogin}>
-            <Button className="text-xl font-semibold">Log In</Button>
-          </div>
+          <Button type="submit" className="text-xl font-semibold">
+            {loading ? "Loading..." : "Log In"}
+          </Button>
         </div>
 
         <div className="my-6 border-t border-gray-500"></div>
@@ -146,7 +161,8 @@ export default function Login() {
               </svg>
             }
             className="text-xl"
-            execute={signInWithGoogle}
+            onClick={signInWithGoogle}
+            type="button"
           >
             Continue with Google
           </Button>
@@ -160,27 +176,8 @@ export default function Login() {
             Sign up
           </Link>
         </div>
-      </div>
+      </form>
     </div>
-  );
-}
-
-interface ButtonProps {
-  children: string;
-  icon?: React.ReactNode;
-  className?: string;
-  execute?: (...args: any[]) => void | Promise<void>;
-}
-
-export function Button({ children, icon, className, execute }: ButtonProps) {
-  return (
-    <button
-      onClick={execute}
-      className={`flex w-full items-center justify-center rounded-full border border-gray-400 px-4 py-2 transition-colors hover:bg-primary-foreground`}
-    >
-      {icon && <span className="px-2">{icon}</span>}
-      <span className={className}>{children}</span>
-    </button>
   );
 }
 
