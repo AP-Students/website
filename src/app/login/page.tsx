@@ -14,8 +14,7 @@ const outfit = Outfit({
 });
 
 export default function Login() {
-  const { signInWithGoogle, signInWithEmail } =
-    useAuthHandlers();
+  const { signInWithGoogle, signInWithEmail } = useAuthHandlers();
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
