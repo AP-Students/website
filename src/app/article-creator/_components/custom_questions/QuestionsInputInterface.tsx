@@ -54,12 +54,12 @@ const QuestionsInputInterface: React.FC<Props> = ({
     let errorMessage = "";
     if (type === "mcq") {
       if (!/^\d$/.test(value)) {
-        errorMessage = "Only a single number is allowed for MCQ.";
+        errorMessage = "Only a single number is allowed for MCQ. (eg 1)";
       }
     } else {
       if (!/^\d(,\d){0,7}$/.test(value) || value.length > 8) {
         errorMessage =
-          "Only numbers separated by commas are allowed, max length 8.";
+          "Only numbers separated by commas are allowed, max correct questions is 4. (eg 1,2,4)";
       }
     }
     setError(errorMessage);
