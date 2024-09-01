@@ -21,6 +21,10 @@ const CheckForUnderstanding: React.FC<Props> = ({
   const handleSelectOption = (id: string) => {
     const numAnswers = question.correct.length;
     if (!submitted) {
+      if (numAnswers === 1){
+        setSelectedOptions([id]);
+        return;
+      }
       if (selectedOptions.includes(id)) {
         setSelectedOptions(selectedOptions.filter((oid) => oid !== id));
         return;
