@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React from "react";
 import clsx from "clsx";
+import type { Question } from "../page";
 
 interface QuestionPanelProps {
-  question: string;
-  options: string[];
+  question: Question;
   attachments: any[];
+  saveSelection: (selected: number | null) => void;
 }
 
 function LetterCircle({
@@ -28,31 +29,28 @@ function LetterCircle({
   );
 }
 
-const QuestionPanel: React.FC<QuestionPanelProps> = ({ question, options }) => {
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
-
-  const handleOptionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSelectedOption(event.target.value);
-  };
-
+const QuestionPanel: React.FC<QuestionPanelProps> = ({
+  question,
+  saveSelection,
+}) => {
   return (
     <>
-      <div className="mb-4 text-lg">{question}</div>
+      <div className="my-4 text-lg">{question.statement}</div>
       <ol className="grid gap-4">
-        {options.map((option, index) => (
+        {question.options.map((option, index) => (
           <li key={index}>
-            <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-black p-2 has-[:checked]:-m-[4px] has-[:checked]:border-4 has-[:checked]:border-[#3075c1]">
+            <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-black p-2 has-[:checked]:-m-[3px] has-[:checked]:border-4 has-[:checked]:border-[#3075c1]">
               <LetterCircle
                 letter={String.fromCharCode(65 + index)}
-                checked={selectedOption === option}
+                checked={question.selected === index}
               />
               <input
                 type="radio"
                 id={`option-${index}`}
                 name="options"
                 value={option}
-                checked={selectedOption === option}
-                onChange={handleOptionChange}
+                checked={question.selected === index}
+                onChange={() => saveSelection(index)}
                 hidden
               />
               {option}

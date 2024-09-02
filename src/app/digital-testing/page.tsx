@@ -6,6 +6,7 @@ import QuestionPanel from "./_components/QuestionPanel";
 import ToolsDropdown from "./_components/ToolsDropdown";
 import Footer from "./_components/Footer";
 import { OutputData } from "@editorjs/editorjs";
+import { Bookmark } from "lucide-react";
 
 // Random sample articles
 const sampleArticles: OutputData[] = [
@@ -33,45 +34,66 @@ const sampleArticles: OutputData[] = [
 ];
 
 // RANDOM SAMPLE QUESTION
-const questions = [
+export interface Question {
+  documentIndex: number;
+  statement: string;
+  options: string[];
+  answer: string;
+  bookmarked: boolean;
+  selected: number | null;
+}
+
+const questionsData: Question[] = [
   {
-    question: "What is the capital of France?",
+    documentIndex: 0,
+    statement: "What is the capital of France?",
     options: ["Paris", "London", "Rome", "Berlin"],
     answer: "",
+    bookmarked: false,
+    selected: null,
   },
   {
-    question: "What is the capital of Japan?",
+    documentIndex: 1,
+    statement: "What is the capital of Japan?",
     options: ["Tokyo", "Kyoto", "Osaka", "Hiroshima"],
     answer: "",
+    bookmarked: false,
+    selected: null,
   },
   // SHOULD BE DYNAMIC > GET FROM DATABASE
 ];
 
 const DigitalTestingPage: React.FC = () => {
+  const [questions, setQuestions] = useState(questionsData);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [currentArticleIndex, setCurrentArticleIndex] = useState(0);
   const [showTools, setShowTools] = useState(false);
+
+  const saveSelection = (selected: number | null) => {
+    questions[currentQuestionIndex]!.selected = selected;
+    setQuestions([...questions]);
+  };
 
   const handleNext = () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
-      if (currentArticleIndex < sampleArticles.length - 1) {
-        setCurrentArticleIndex(currentArticleIndex + 1);
-      }
     }
   };
 
   const handlePrevious = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
-      if (currentArticleIndex > 0) {
-        setCurrentArticleIndex(currentArticleIndex - 1);
-      }
     }
   };
 
   const handleReview = () => {
     // Implement "Mark for Review"
+    // TODO: pass setCurrentQuestionIndex to Footer and use popup in Footer
+  };
+
+  const toggleBookmark = () => {
+    questions[currentQuestionIndex]!.bookmarked =
+      !questions[currentQuestionIndex]!.bookmarked;
+    setQuestions([...questions]);
   };
 
   const toggleTools = () => {
@@ -87,13 +109,34 @@ const DigitalTestingPage: React.FC = () => {
       />
       <div className="flex flex-1 overflow-hidden pt-[52px]">
         <div className="flex-1 overflow-y-auto border-r-2 border-gray-300">
-          <ArticleComponent content={sampleArticles[currentArticleIndex]} />
+          <ArticleComponent
+            content={
+              sampleArticles[questions[currentQuestionIndex]!.documentIndex]
+            }
+          />
         </div>
         <div className="flex flex-1 flex-col p-5">
+          <div className="flex h-9 items-center gap-2 bg-gray-200">
+            <p className="flex h-full items-center bg-black px-3.5 text-lg font-bold tabular-nums text-white">
+              {currentQuestionIndex + 1}
+            </p>
+            <button className="flex" onClick={toggleBookmark}>
+              {questions[currentQuestionIndex]?.bookmarked ? (
+                <>
+                  <Bookmark className="mr-1 inline fill-black" /> Bookmarked
+                </>
+              ) : (
+                <>
+                  <Bookmark className="mr-1 inline fill-white" /> Mark for
+                  Review
+                </>
+              )}
+            </button>
+          </div>
           <QuestionPanel
-            question={questions[currentQuestionIndex].question}
-            options={questions[currentQuestionIndex].options}
+            question={questions[currentQuestionIndex]!}
             attachments={[]}
+            saveSelection={saveSelection}
           />
         </div>
       </div>
