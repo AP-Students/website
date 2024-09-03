@@ -5,7 +5,7 @@ import {
 } from "@editorjs/editorjs";
 import ReactDOM from "react-dom/client";
 import { QuestionsInput } from "./QuestionInstance";
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 
 //@ts-expect-error
 export class QuestionsAddCard implements BlockToolConstructable {
@@ -21,10 +21,7 @@ export class QuestionsAddCard implements BlockToolConstructable {
   constructor({ data, config }: BlockToolConstructorOptions<any, any>) {
     this.data = data;
     this.config = config;
-
-   // Use existing UUID from data or generate a new one if not provided
-   this.instanceId = data.instanceId || uuidv4();
-   this.data = data;
+    this.instanceId = data.instanceId || uuidv4();
   }
 
   static get toolbox() {

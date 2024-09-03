@@ -13,6 +13,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheckCircle } from "@fortawesome/free-solid-svg-icons";
 
 // All AP classes sorted alphabetically
+// This should be subject; Extracted from db and made dynamic given the ap class
+// Will implement later when the admin page is established
 const apClasses = [
   "AP 2-D Art and Design",
   "AP 3-D Art and Design",
@@ -57,6 +59,7 @@ const apClasses = [
 
 function ArticleCreator({ className }: { className?: string }) {
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
+  const [selectedClass, setSelectedClass] = useState<string>("");
   const [data, setData] = useState<OutputData>({
     time: Date.now(),
     blocks: [
@@ -169,22 +172,35 @@ function ArticleCreator({ className }: { className?: string }) {
               {filteredClasses.map((apClass) => (
                 <li
                   key={apClass}
-                  className="cursor-pointer rounded-md p-2 hover:bg-gray-200"
-                  onClick={() => handleTitleSelect(apClass)}
+                  className={`cursor-pointer rounded-md p-2 hover:bg-gray-200 ${
+                    selectedClass === apClass ? "bg-gray-300" : ""
+                  }`} // Add conditional class
+                  onClick={() => setSelectedClass(apClass)} // Store the selected class
                 >
                   {apClass}
                 </li>
               ))}
             </ul>
-            <button
-              className="mt-3 rounded-md bg-red-500 p-2 text-white hover:bg-red-600"
-              onClick={() => setShowDropdown(false)}
-            >
-              Close
-            </button>
+
+            {/* Save Button for Confirming the Selection */}
+            <div className="mt-3 flex justify-between">
+              <button
+                className="rounded-md bg-green-500 p-2 text-white hover:bg-green-600"
+                onClick={() => handleTitleSelect(selectedClass)} // Use the selected class
+              >
+                Save
+              </button>
+              <button
+                className="rounded-md bg-red-500 p-2 text-white hover:bg-red-600"
+                onClick={() => setShowDropdown(false)}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
+
       <div
         className={cn(
           "grid grid-cols-1 divide-y-2 sm:grid-cols-2 sm:divide-x-2 sm:divide-y-0",

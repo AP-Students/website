@@ -6,6 +6,7 @@ import "@/styles/highlightjs.css";
 import { useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { QuestionsOutput } from "./custom_questions/QuestionInstance";
+import { QuestionFormat } from "@/types/questions";
 
 const customParsers = {
   alert: (data: { align: string; message: string; type: string }) => {
@@ -83,8 +84,9 @@ const customParsers = {
     return `<table>${thead}${tbody}</table>`;
   },
 
-  questionsAddCard: (data: { instanceId: string }) => {
+  questionsAddCard: (data: { instanceId: string; content: QuestionFormat }) => {
     const instanceUUID = data.instanceId; 
+    const content = JSON.stringify(data.content);
     return `<div class="questions-block-${instanceUUID}"></div>`;
   },
 };
