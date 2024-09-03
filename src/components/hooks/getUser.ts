@@ -1,6 +1,7 @@
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase"; 
 import { User as FirebaseUser } from "firebase/auth";
 import { User } from "@/types/user";
+import { doc, getDoc } from "firebase/firestore"; 
 
 export const getUser = async (): Promise<User | null> => {
   return new Promise<User | null>((resolve, reject) => {
@@ -8,15 +9,22 @@ export const getUser = async (): Promise<User | null> => {
       async (firebaseUser: FirebaseUser | null) => {
         if (firebaseUser) {
           try {
-            const idTokenResult = await firebaseUser.getIdTokenResult();
-            const mappedUser: User = {
-              uid: firebaseUser.uid,
-              displayName: firebaseUser.displayName || undefined,
-              email: firebaseUser.email || "",
-              photoURL: firebaseUser.photoURL || undefined,
-              admin: !!idTokenResult.claims.admin || false,
-            };
-            resolve(mappedUser);
+            const userDocRef = doc(db, "users", firebaseUser.uid);
+            const userDoc = await getDoc(userDocRef);
+
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              const mappedUser: User = {
+                uid: firebaseUser.uid,
+                displayName: userData?.displayName || firebaseUser.displayName || undefined,
+                email: userData?.email || firebaseUser.email || "",
+                photoURL: userData?.photoURL || firebaseUser.photoURL || undefined,
+                admin: userData?.admin || false, 
+              };
+              resolve(mappedUser);
+            } else {
+              resolve(null);
+            }
           } catch (error) {
             reject(error);
           }
@@ -25,7 +33,7 @@ export const getUser = async (): Promise<User | null> => {
         }
         unsubscribe();
       },
-      reject,
+      reject
     );
   });
 };

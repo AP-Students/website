@@ -166,13 +166,25 @@ const Editor = ({ setData }: { setData: (data: OutputData) => void }) => {
 
   useEffect(() => {
     return () => {
-      editor && editor.destroy();
+      // Check if the editor exists and is not already destroyed
+      if (editor) {
+        // Alternatively, you could remove the container div or handle cleanup differently
+        const editorContainer = document.getElementById("editor-container");
+        if (editorContainer) {
+          editorContainer.innerHTML = ""; // This removes all child nodes
+        }
+
+        // If you still want to call destroy for cleanup, ensure it is safe to do so
+        if (typeof editor.destroy === "function") {
+          editor.destroy();
+        }
+      }
     };
   }, [editor]);
 
   return (
     <div className="flex flex-col gap-y-4">
-      <div className="mx-4 opacity-50">Article:</div>
+      <div className="opacity-50">Input:</div>
       <div className="prose w-full" id="editorjs"></div>
     </div>
   );

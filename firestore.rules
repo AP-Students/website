@@ -7,10 +7,9 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Restrict access to sensitive collections
-    match /sensitiveCollection/{document=**} {
-      allow read, write: if false; // No direct access allowed
-    }
+    match /pages/{document=**} {
+  		allow read, write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.admin == true;
+		}
 
     // Allow users to access their own data only
     match /profiles/{userId} {

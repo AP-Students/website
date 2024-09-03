@@ -1,16 +1,22 @@
 import admin from "firebase-admin";
-import { env } from "@/env.js"
+import serviceAccountKey from "@/lib/serviceAccountKey.json";
 
-const serviceAccount = JSON.parse(
-  env.FIREBASE_SERVICE_ACCOUNT_KEY,
-) as admin.ServiceAccount;
+const serviceAccount = serviceAccountKey.private_key;
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    databaseURL: "https://<your-project-id>.firebaseio.com",
-  });
-}
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
 
-export const auth = admin.auth();
-export const db = admin.firestore();
+// Function to set custom claims
+const setCustomClaims = async (uid: string) => {
+  try {
+    // Set custom user claims
+    await admin.auth().setCustomUserClaims(uid, { admin: true });
+    console.log(`Custom claims set successfully for user: ${uid}`);
+  } catch (error) {
+    console.error('Error setting custom claims:', error);
+  }
+};
+
+// Example usage
+setCustomClaims('DxMgvV6dWYOM6PmBShujOvLm52'); 
