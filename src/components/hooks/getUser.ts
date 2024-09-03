@@ -16,10 +16,10 @@ export const getUser = async (): Promise<User | null> => {
               const userData = userDoc.data();
               const mappedUser: User = {
                 uid: firebaseUser.uid,
-                displayName: userData?.displayName || firebaseUser.displayName || undefined,
-                email: userData?.email || firebaseUser.email || "",
+                displayName: userData.displayName || firebaseUser.displayName || undefined,
+                email: userData.email || firebaseUser.email || "",
                 photoURL: userData?.photoURL || firebaseUser.photoURL || undefined,
-                admin: userData?.admin || false, 
+                admin: userData.admin || false, 
               };
               resolve(mappedUser);
             } else {

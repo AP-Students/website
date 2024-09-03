@@ -53,7 +53,7 @@ export default function Login() {
           tempErrors.push("No user with this email exists");
           break;
         default:
-          tempErrors.push(`An unexpected error occurred. ${error.message}.`);
+          tempErrors.push(`An unexpected error occurred.`);
           break;
       }
     }

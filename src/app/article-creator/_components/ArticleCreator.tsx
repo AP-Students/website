@@ -5,8 +5,8 @@ import { type OutputData } from "@editorjs/editorjs";
 import Renderer from "./Renderer";
 import Editor from "./Editor";
 import { cn } from "@/lib/utils";
-import { auth, db } from "@/lib/firebase";
-import { addDoc, collection } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { doc, setDoc } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 import { getUser } from "@/components/hooks/getUser";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -129,8 +129,11 @@ function ArticleCreator({ className }: { className?: string }) {
 
     try {
       if (user && user.admin) {
-        const docRef = await addDoc(collection(db, "pages"), newArticle);
-        alert(`Article saved with ID: ${docRef.id}`);
+        const customDocId = uuidv4();
+        const docRef = doc(db, "page", formattedTitle);
+        await setDoc(docRef, newArticle);
+
+        alert(`Article saved: ${docRef.id}`);
       } else {
         alert("User is not authorized to perform this action.");
       }
@@ -174,8 +177,8 @@ function ArticleCreator({ className }: { className?: string }) {
                   key={apClass}
                   className={`cursor-pointer rounded-md p-2 hover:bg-gray-200 ${
                     selectedClass === apClass ? "bg-gray-300" : ""
-                  }`} // Add conditional class
-                  onClick={() => setSelectedClass(apClass)} // Store the selected class
+                  }`} 
+                  onClick={() => setSelectedClass(apClass)} 
                 >
                   {apClass}
                 </li>

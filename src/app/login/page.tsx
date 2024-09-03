@@ -62,7 +62,7 @@ export default function Login() {
           tempErrors.push("Incorrect password.");
           break;
         default:
-          tempErrors.push(`An unexpected error occurred. ${error.message}.`);
+          tempErrors.push(`An unexpected error occurred.`);
           break;
       }
     }

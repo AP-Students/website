@@ -52,7 +52,7 @@ export const useAuthHandlers = () => {
       router.push("/");
     } catch (e: any) {
       const error = e as FirebaseAuthError;
-      console.error(error);
+      
       throw {
         code: error.code,
         message:

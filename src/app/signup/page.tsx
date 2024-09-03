@@ -98,7 +98,7 @@ export default function Signup() {
           tempErrors.push("Your password is not strong enough.");
           break;
         default:
-          errors.push(`An unexpected error occurred. ${error.message}.`);
+          errors.push(`An unexpected error occurred.`);
           break;
       }
       setErrors(tempErrors);

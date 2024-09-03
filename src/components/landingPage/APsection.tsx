@@ -1,4 +1,4 @@
-// Component for the different sections dividing the AP courses
+"use client";
 import Link from "next/link";
 import React from "react";
 
@@ -15,6 +15,9 @@ const APsection: React.FC<SectionProps> = ({
   backgroundColor,
   numofCol,
 }) => {
+  const domainName = window.location.origin;
+  const currentPath = window.location.pathname;
+
   return (
     <>
       <div
@@ -30,7 +33,7 @@ const APsection: React.FC<SectionProps> = ({
           {courses.map((course, index) => (
             <li key={index} className="break-inside-avoid-column">
               <Link
-                href={`/subject/${formatCourseName(course)}`}
+                href={`${domainName}/${currentPath}/subject/${formatCourseName(course)}`}
                 className="hover:underline"
               >
                 {course}

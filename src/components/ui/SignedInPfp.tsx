@@ -5,10 +5,10 @@ import React, { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase";
 import { User } from "@/types/user";
 import { getUser } from "@/components/hooks/getUser";
+import Link from "next/link";
 
 const SignedInPfp = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +39,7 @@ const SignedInPfp = () => {
     console.log("user", user);
     console.log("Changing profile picture...");
   };
+
 
   return (
     <div className="relative">
@@ -84,6 +85,16 @@ const SignedInPfp = () => {
             Change Profile Picture
           </button>
           <hr className="border-gray-200" /> */}
+        
+          {
+            user.admin && (
+            <button
+              className="block w-full px-4 py-2 text-left hover:bg-gray-100"
+            >
+              <Link href="/admin">Admin Dashboard</Link>
+            </button>
+          )}
+
           <button
             onClick={() => signOutUser()}
             className="block w-full px-4 py-2 text-left hover:bg-gray-100"
