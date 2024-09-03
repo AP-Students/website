@@ -111,6 +111,7 @@ function ArticleCreator({ className }: { className?: string }) {
     const user = await getUser();
 
     const formattedTitle = selectedTitle
+      .replace(/AP /g, "")
       .toLowerCase()
       .replace(/[^a-z1-9 ]+/g, "")
       .replace(/\s/g, "-");
@@ -125,7 +126,6 @@ function ArticleCreator({ className }: { className?: string }) {
 
     try {
       if (user && user.admin) {
-        console.log("User is admin");
         const docRef = await addDoc(collection(db, "pages"), newArticle);
         alert(`Article saved with ID: ${docRef.id}`);
       } else {
@@ -135,20 +135,20 @@ function ArticleCreator({ className }: { className?: string }) {
       console.error("Error adding document: ", error);
     }
 
-    setShowDropdown(false); // Hide the dropdown after saving
+    setShowDropdown(false);
   };
 
   return (
     <>
       <button
-        className="group relative mt-4 flex items-center rounded-md bg-green-500 p-2 text-white hover:bg-green-600 ml-auto"
+        className="group relative ml-auto mt-4 flex items-center rounded-md bg-green-500 p-2 text-white hover:bg-green-600"
         onClick={handleSave}
       >
         <FontAwesomeIcon icon={faCheckCircle} />
 
         {/* Tooltip */}
         <span className="absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 transform whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white group-hover:flex">
-          Send content to the users
+          Submit content
         </span>
       </button>
       {/* Modal for Selecting AP Class */}
