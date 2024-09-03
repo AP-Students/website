@@ -6,28 +6,26 @@ import {
 import ReactDOM from "react-dom/client";
 import { QuestionsInput } from "./QuestionInstance";
 import { v4 as uuidv4 } from "uuid";
+import { QuestionFormat } from "@/types/questions";
 
 //@ts-expect-error
 export class QuestionsAddCard implements BlockToolConstructable {
   private config: ToolConfig;
   private data: any;
   public instanceId: string;
+  private questions: QuestionFormat[];
 
-  /**
-   * Constructor for the QuestionsAddCard tool.
-   *
-   * @param {BlockToolConstructorOptions<any, any>} options - Configuration options passed from Editor.js
-   */
   constructor({ data, config }: BlockToolConstructorOptions<any, any>) {
     this.data = data;
     this.config = config;
     this.instanceId = data.instanceId || uuidv4();
+    this.questions = [];
   }
 
   static get toolbox() {
     return {
       title: "Questions",
-      icon: "?", // You can use an SVG or any other icon
+      icon: "?", 
     };
   }
 
@@ -39,9 +37,17 @@ export class QuestionsAddCard implements BlockToolConstructable {
     return wrapper;
   }
 
-  save(blockContent: HTMLElement): { instanceId: string } {
-    return {
+  save(blockContent: HTMLElement): { instanceId: string; questions: QuestionFormat[] } {
+    // Load questions from localStorage or initialize to an empty array
+    const storageKey = `questions_${this.instanceId}`;
+    const savedQuestions = localStorage.getItem(storageKey);
+    this.questions = savedQuestions ? JSON.parse(savedQuestions) : this.data.questions;
+
+    const saveData = {
       instanceId: this.instanceId,
+      questions: this.questions,
     };
+
+    return saveData;
   }
 }
