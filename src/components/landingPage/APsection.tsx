@@ -1,4 +1,3 @@
-"use client";
 import Link from "next/link";
 import React from "react";
 
@@ -15,8 +14,6 @@ const APsection: React.FC<SectionProps> = ({
   backgroundColor,
   numofCol,
 }) => {
-  const domainName = window.location.origin;
-  const currentPath = window.location.pathname;
 
   return (
     <>
@@ -33,7 +30,7 @@ const APsection: React.FC<SectionProps> = ({
           {courses.map((course, index) => (
             <li key={index} className="break-inside-avoid-column">
               <Link
-                href={`${domainName}/${currentPath}/subject/${formatCourseName(course)}`}
+                href={`/subject/${formatCourseName(course)}`}
                 className="hover:underline"
               >
                 {course}

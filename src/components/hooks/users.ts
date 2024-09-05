@@ -39,7 +39,6 @@ export const getUser = async (): Promise<User | null> => {
 };
 
 
-
 // Fetch all users from Firestore
 export const getAllUsers = async (): Promise<User[]> => {
   try {

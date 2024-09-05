@@ -1,11 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { getAllUsers, updateUserRole } from "@/components/hooks/users";
 import { User } from "@/types/user";
 
 export const useUserManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Function to fetch all users
   const fetchUsers = async () => {
@@ -24,9 +22,7 @@ export const useUserManagement = () => {
       setUsers(sortedUsers);
     } catch (error) {
       console.error("Error fetching users:", error);
-    } finally {
-      setIsLoading(false);
-    }
+    } 
   };
 
   // Function to handle role changes
@@ -39,7 +35,7 @@ export const useUserManagement = () => {
       try {
         await updateUserRole(selectedUser.uid, newRole);
         alert(`Role updated to ${newRole} for ${selectedUser.displayName}`);
-        fetchUsers(); // Re-fetch users to update the list
+        fetchUsers(); 
       } catch (error) {
         console.error("Error updating user role:", error);
         alert("Failed to update user role.");
@@ -53,5 +49,5 @@ export const useUserManagement = () => {
     fetchUsers();
   }, []);
 
-  return { users, isLoading, handleRoleChange };
+  return { users, handleRoleChange };
 };
