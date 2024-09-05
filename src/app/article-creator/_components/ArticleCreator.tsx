@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { db } from "@/lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
-import { getUser } from "@/components/hooks/getUser";
+import { getUser } from "@/components/hooks/users";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheckCircle } from "@fortawesome/free-solid-svg-icons";
 
@@ -128,7 +128,7 @@ function ArticleCreator({ className }: { className?: string }) {
     };
 
     try {
-      if (user && user.admin) {
+      if (user && user.access === "admin") {
         const customDocId = uuidv4();
         const docRef = doc(db, "page", formattedTitle);
         await setDoc(docRef, newArticle);

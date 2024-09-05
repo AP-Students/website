@@ -189,7 +189,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
         // } else {
         //   console.error("No such document!");
         //   setError("Subject not found. Thats probably us, not you.");
-        // }
+        // }  
 
         const data = mockData[params.slug.toLowerCase()];
         if (data) {

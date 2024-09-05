@@ -4,7 +4,7 @@ import { signOut } from "firebase/auth";
 import React, { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase";
 import { User } from "@/types/user";
-import { getUser } from "@/components/hooks/getUser";
+import { getUser } from "@/components/hooks/users";
 import Link from "next/link";
 
 const SignedInPfp = () => {
@@ -87,7 +87,7 @@ const SignedInPfp = () => {
           <hr className="border-gray-200" /> */}
         
           {
-            user.admin && (
+            user.access === "admin" && (
             <button
               className="block w-full px-4 py-2 text-left hover:bg-gray-100"
             >

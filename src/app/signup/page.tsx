@@ -14,7 +14,7 @@ const outfit = Outfit({
 });
 
 export default function Signup() {
-  const { signInWithGoogle, signUpWithEmail } = useAuthHandlers();
+  const { signInWithGoogle, signUpWithGoogle, signUpWithEmail  } = useAuthHandlers();
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -207,7 +207,7 @@ export default function Signup() {
               </svg>
             }
             className="text-xl"
-            onClick={signInWithGoogle}
+            onClick={signUpWithGoogle}
             type="button"
           >
             Sign up with Google

@@ -12,7 +12,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { MenuIcon } from "lucide-react";
-import { getUser } from "@/components/hooks/getUser";
+import { getUser } from "@/components/hooks/users";
 import SignedInPfp from "./SignedInPfp";
 import { useEffect, useState } from "react";
 import { User } from "@/types/user";
