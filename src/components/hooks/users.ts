@@ -1,7 +1,13 @@
-import { auth, db } from "@/lib/firebase"; 
+import { auth, db } from "@/lib/firebase";
 import { User as FirebaseUser } from "firebase/auth";
 import { User } from "@/types/user";
-import { collection, doc, getDoc, getDocs, updateDoc } from "firebase/firestore"; 
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  updateDoc,
+} from "firebase/firestore";
 
 export const getUser = async (): Promise<User | null> => {
   return new Promise<User | null>((resolve, reject) => {
@@ -16,10 +22,12 @@ export const getUser = async (): Promise<User | null> => {
               const userData = userDoc.data();
               const mappedUser: User = {
                 uid: firebaseUser.uid,
-                displayName: userData.displayName || firebaseUser.displayName || undefined,
+                displayName:
+                  userData.displayName || firebaseUser.displayName || undefined,
                 email: userData.email || firebaseUser.email || "",
-                photoURL: userData?.photoURL || firebaseUser.photoURL || undefined,
-                access: userData.access || "user", 
+                photoURL:
+                  userData?.photoURL || firebaseUser.photoURL || undefined,
+                access: userData.access || "user",
               };
               resolve(mappedUser);
             } else {
@@ -33,20 +41,19 @@ export const getUser = async (): Promise<User | null> => {
         }
         unsubscribe();
       },
-      reject
+      reject,
     );
   });
 };
-
 
 // Fetch all users from Firestore
 export const getAllUsers = async (): Promise<User[]> => {
   try {
     const usersCollection = collection(db, "users");
     const usersSnapshot = await getDocs(usersCollection);
-    const usersList: User[] = usersSnapshot.docs.map(doc => ({
+    const usersList: User[] = usersSnapshot.docs.map((doc) => ({
       uid: doc.id,
-      ...(doc.data() as Omit<User, 'uid'>)
+      ...(doc.data() as Omit<User, "uid">),
     }));
     return usersList;
   } catch (error) {
@@ -56,15 +63,23 @@ export const getAllUsers = async (): Promise<User[]> => {
 };
 
 // Update user role in Firestore
-export const updateUserRole = async (uid: string, newRole: "member" | "user"): Promise<void> => {
-  try {
-    const userDocRef = doc(db, "users", uid);
-    await updateDoc(userDocRef, {
-      access: newRole
-    });
-    console.log(`User role updated successfully for UID: ${uid}`);
-  } catch (error) {
-    console.error("Error updating user role:", error);
-    throw error;
+export const updateUserRole = async (
+  authUser: User | null,
+  uid: string,
+  newRole: "member" | "user",
+): Promise<void> => {
+  if (authUser && authUser.access === "admin") {
+    try {
+      const userDocRef = doc(db, "users", uid);
+      await updateDoc(userDocRef, {
+        access: newRole,
+      });
+      console.log(`User role updated successfully for UID: ${uid}`);
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      throw error;
+    }
+  } else {
+    return;
   }
 };

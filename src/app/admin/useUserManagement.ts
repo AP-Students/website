@@ -2,40 +2,41 @@ import { useState, useEffect } from "react";
 import { getAllUsers, updateUserRole } from "@/components/hooks/users";
 import { User } from "@/types/user";
 
-export const useUserManagement = () => {
+export const useUserManagement = (authUser: User | null) => {
   const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Function to fetch all users
   const fetchUsers = async () => {
-    try {
-      const fetchedUsers = await getAllUsers();
-      const sortedUsers = fetchedUsers.sort((a: User, b: User) => {
-        const domainA = a.email.split("@")[1];
-        const domainB = b.email.split("@")[1];
-
-        if (domainA === "fivehive.org" && domainB !== "fivehive.org") return -1;
-        if (domainA !== "fivehive.org" && domainB === "fivehive.org") return 1;
-        if (domainA === "gmail.com" && domainB !== "gmail.com") return -1;
-        if (domainA !== "gmail.com" && domainB === "gmail.com") return 1;
-        return a.email.localeCompare(b.email);
-      });
-      setUsers(sortedUsers);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-    } 
+    if (authUser && authUser.access === "admin") {
+      try {
+        const fetchedUsers = await getAllUsers();
+        setUsers(fetchedUsers);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      console.warn("Unauthorized access attempt to fetch users.");
+      setIsLoading(false);
+    }
   };
 
-  // Function to handle role changes
-  const handleRoleChange = async (selectedUser: User) => {
-    const newRole = prompt(
-      `Which role would you like to give ${selectedUser.displayName}?`,
-      "member or user"
-    );
+  useEffect(() => {
+    fetchUsers();
+  }, [authUser]); 
+
+  const handleRoleChange = async (selectedUser: User, newRole: "member" | "user") => {
+    if (!authUser || authUser.access !== "admin") {
+      console.error("Unauthorized role change attempt.");
+      return;
+    }
+    
     if (newRole === "member" || newRole === "user") {
       try {
-        await updateUserRole(selectedUser.uid, newRole);
+        await updateUserRole(authUser, selectedUser.uid, newRole);
         alert(`Role updated to ${newRole} for ${selectedUser.displayName}`);
-        fetchUsers(); 
+        fetchUsers(); // Re-fetch users to update the list
       } catch (error) {
         console.error("Error updating user role:", error);
         alert("Failed to update user role.");
@@ -45,9 +46,5 @@ export const useUserManagement = () => {
     }
   };
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  return { users, handleRoleChange };
+  return { users, isLoading, handleRoleChange };
 };
