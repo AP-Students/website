@@ -1,8 +1,12 @@
-import { type OutputData } from "@editorjs/editorjs";
+import { ToolConstructable, type OutputData } from "@editorjs/editorjs";
 import edjsParser from "editorjs-parser";
 import katex from "katex";
 import hljs from "highlight.js";
 import "@/styles/highlightjs.css";
+import { useEffect, useRef } from "react";
+import { createRoot } from "react-dom/client";
+import { QuestionsOutput } from "./custom_questions/QuestionInstance";
+import { QuestionFormat } from "@/types/questions";
 
 const customParsers = {
   alert: (data: { align: string; message: string; type: string }) => {
@@ -79,9 +83,37 @@ const customParsers = {
 
     return `<table>${thead}${tbody}</table>`;
   },
+
+  questionsAddCard: (data: { instanceId: string; content: QuestionFormat }) => {
+    const instanceUUID = data.instanceId; 
+    const content = JSON.stringify(data.content);
+    return `<div class="questions-block-${instanceUUID}"></div>`;
+  },
 };
 
 const Renderer = (props: { content: OutputData }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      // Select the placeholder div and render the React component
+      for (const block of props.content.blocks) {
+        if (block.type === "questionsAddCard") {
+          const instanceId = block.data.instanceId;
+          const placeholder = containerRef.current.querySelector(
+            `.questions-block-${instanceId}`,
+          );
+
+        if (placeholder) {
+          const root = createRoot(placeholder);
+          root.render(
+            <QuestionsOutput instanceId={instanceId.toString()} />,
+          );
+        }
+      }
+    }
+  }}, [props.content]);
+
   if (!props.content) return null;
 
   const parser = new edjsParser(
@@ -99,6 +131,7 @@ const Renderer = (props: { content: OutputData }) => {
 
   return (
     <article
+      ref={containerRef}
       className="prose before:prose-code:content-none after:prose-code:content-none"
       dangerouslySetInnerHTML={{
         __html: markup,

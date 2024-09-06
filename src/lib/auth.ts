@@ -10,7 +10,6 @@ import {
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "./firebase"; // Firestore instance
 import { useRouter } from "next/navigation";
-import { collection, query, where, getDocs } from "firebase/firestore";
 import { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
 
 export const useAuthHandlers = () => {
@@ -26,7 +25,6 @@ export const useAuthHandlers = () => {
     password: string,
   ) => {
     try {
-      // Step 1: Create the user with email and password
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -37,26 +35,24 @@ export const useAuthHandlers = () => {
       const defaultPhotoURL =
         "https://upload.wikimedia.org/wikipedia/commons/2/2c/Default_pfp.svg";
 
-      // Step 2: Update the user's profile in Firebase Authentication
       await updateProfile(user, {
         displayName: username,
         photoURL: defaultPhotoURL,
       });
 
-      // Step 3: Store additional user data in Firestore
       const userDocRef = doc(db, "users", user.uid);
       await setDoc(userDocRef, {
         uid: user.uid,
         email: user.email,
         displayName: username,
         photoURL: defaultPhotoURL,
-        admin: false, // Default to non-admin; set this as needed
+        admin: false, 
       });
 
       router.push("/");
     } catch (e: any) {
       const error = e as FirebaseAuthError;
-      console.error(error);
+      
       throw {
         code: error.code,
         message:
@@ -114,13 +110,9 @@ export const useAuthHandlers = () => {
       const userDoc = await getDoc(userDocRef);
 
       if (!userDoc.exists()) {
-        // If not, create it with default values
-        await setDoc(userDocRef, {
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          admin: false, // Default to non-admin
-        });
+        throw {
+          code: "auth/invalid-email",
+        };
       }
 
       router.push("/");

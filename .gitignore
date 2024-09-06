@@ -15,6 +15,7 @@ next-env.d.ts
 
 # database
 /lib/firebase.ts
+src/lib/serviceAccountKey.json
 
 # production
 /build

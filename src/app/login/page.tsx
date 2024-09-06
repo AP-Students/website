@@ -14,8 +14,7 @@ const outfit = Outfit({
 });
 
 export default function Login() {
-  const { signInWithGoogle, signInWithEmail, forgotPassword } =
-    useAuthHandlers();
+  const { signInWithGoogle, signInWithEmail } = useAuthHandlers();
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -63,7 +62,7 @@ export default function Login() {
           tempErrors.push("Incorrect password.");
           break;
         default:
-          tempErrors.push(`An unexpected error occurred. ${error.message}.`);
+          tempErrors.push(`An unexpected error occurred.`);
           break;
       }
     }

@@ -1,14 +1,20 @@
+"use client";
+
 import { Accordion } from "@/components/ui/accordion";
 import Footer from "@/components/ui/footer";
 import Navbar from "@/components/ui/navbar";
+import { db } from "@/lib/firebase";
 import { type Subject } from "@/types";
 import SubjectBreadcrumb from "@/components/subjectHomepage/subject-breadcrumb";
 import SubjectSidebar from "@/components/subjectHomepage/subject-sidebar";
 import TableOfContents from "@/components/subjectHomepage/table-of-contents";
 import UnitAccordion from "@/components/subjectHomepage/unit-accordion";
+import { useEffect, useState } from "react";
+import { doc, getDoc } from "firebase/firestore";
 
-const Page = ({ params }: { params: { slug: string } }) => {
-  const subject = {
+// mock data
+const mockData: Record<string, Subject> = {
+  "calculus-ab": {
     title: "AP Calculus AB",
     units: [
       {
@@ -133,7 +139,83 @@ const Page = ({ params }: { params: { slug: string } }) => {
         ],
       },
     ],
-  } as Subject;
+  },
+  "statistics": {
+    title: "AP Statistics",
+    units: [
+      {
+        unit: 1,
+        title: "Introduction to Probability",
+        chapters: [
+          {
+            chapter: 1,
+            title: "Probability and Random Variables",
+          },
+          {
+            chapter: 2,
+            title: "Probability Spaces and Events",
+          },
+          {
+            chapter: 3,
+            title: "Conditional Probability",
+          },
+          {
+            chapter: 4,
+            title: "Independence and Dependence",
+          },
+        ],
+      },
+    ],
+  },
+};
+
+
+const Page = ({ params }: { params: { slug: string } }) => {
+
+  const [subject, setSubject] = useState<Subject | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchSubject = async () => {
+      try {
+        // // Reference to the document in Firestore using the slug
+        // const docRef = doc(db, "subjects", params.slug);
+        // const docSnap = await getDoc(docRef);
+
+        // if (docSnap.exists()) {
+        //   // Convert Firestore document data to Subject type
+        //   setSubject(docSnap.data() as Subject);
+        // } else {
+        //   console.error("No such document!");
+        //   setError("Subject not found. Thats probably us, not you.");
+        // }
+
+        const data = mockData[params.slug.toLowerCase()];
+        if (data) {
+          setSubject(data);
+        } else {
+          console.error("No data found for slug:", params.slug);
+          setError("Subject not found. That's probably us, not you.");
+        }
+      } catch (error) {
+        console.error("Error fetching subject data:", error);
+        setError("Failed to fetch subject data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSubject();
+  }, [params.slug]);
+
+  if (loading) {
+    return <div className="flex min-h-screen items-center justify-center text-3xl">Loading...</div>; 
+  }
+
+  if (error || !subject) {
+    return <div className="flex min-h-screen items-center justify-center text-3xl">{error}</div>; 
+  }
 
   return (
     <div className="relative flex min-h-screen">
