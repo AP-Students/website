@@ -74,7 +74,6 @@ export const updateUserRole = async (
       await updateDoc(userDocRef, {
         access: newRole,
       });
-      console.log(`User role updated successfully for UID: ${uid}`);
     } catch (error) {
       console.error("Error updating user role:", error);
       throw error;

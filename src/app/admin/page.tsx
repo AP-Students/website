@@ -6,6 +6,7 @@ import { User } from "@/types/user";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUserManagement } from "./useUserManagement";
+import useAdminAuth from "@/components/hooks/useAdminAuth";
 
 const apClasses = [
   "AP 2-D Art and Design",
@@ -62,7 +63,7 @@ const Page = () => {
 
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null); // Store selected user for modal
+  const [selectedUser, setSelectedUser] = useState<User | null>(null); 
   const router = useRouter();
 
   // Filter AP classes based on search term
@@ -126,7 +127,7 @@ const Page = () => {
 
           {state.user.access === "admin" && (
             <>
-              <p className="w-full text-pretty text-lg opacity-70 lg:text-xl">
+              <p className="w-full text-pretty text-lg opacity-70 sm:text-lg lg:text-xl">
                 Change the role of a user
               </p>
               <div className="my-4 rounded-2xl border-2 p-4">
@@ -147,12 +148,16 @@ const Page = () => {
                     {users!.map((u) => (
                       <li
                         key={u.uid}
-                        className="cursor-pointer rounded-md border p-4 shadow-md hover:bg-gray-200"
+                        className="grid cursor-pointer grid-cols-1 gap-4 rounded-md border p-4 text-center shadow-md hover:bg-gray-200 md:grid-cols-2 lg:grid-cols-3"
                         onClick={() => openModal(u)} // Open modal on click
                       >
-                        <div className="font-bold">{u.displayName}</div>
-                        <div>{u.email}</div>
-                        <div className="text-sm text-gray-500">{u.access}</div>
+                        <div className="hidden font-bold lg:block">
+                          {u.displayName}
+                        </div>
+                        <div className="font-normal md:font-bold lg:font-normal">
+                          {u.email}
+                        </div>
+                        <div className="font-bold">{u.access}</div>
                       </li>
                     ))}
                   </ul>
@@ -161,7 +166,7 @@ const Page = () => {
             </>
           )}
 
-          <p className="w-full text-pretty text-lg opacity-70 lg:text-xl">
+          <p className="w-full text-pretty text-lg opacity-70 sm:text-lg lg:text-xl">
             Select AP Class for Title
           </p>
           <div className="my-4 rounded-2xl border-2 p-4">
@@ -232,7 +237,7 @@ const Page = () => {
               </button>
             </div>
             <button
-              className="mt-4 text-gray-500 underline"
+              className="mt-4 text-gray-500 underline min-w-full text-center"
               onClick={closeModal}
             >
               Cancel
