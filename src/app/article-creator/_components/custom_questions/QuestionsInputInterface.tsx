@@ -20,7 +20,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
       {
         body: "",
         title: "",
-        type: "mcq",
+        displayNumAnswers: true,
         options: [
           { value: "", id: "1" },
           { value: "", id: "2" },
@@ -129,21 +129,19 @@ const QuestionsInputInterface: React.FC<Props> = ({
             />
             {error && <div className="text-red-500">{error}</div>}
           </div>
-          <div>
-            <label>Question Type:</label>
-            <select
-              value={question.type}
+          <div className="flex items-center">
+            <label className="mr-2">Display Number of Answers: </label>
+            <input
+              type="checkbox"
+              checked={question.displayNumAnswers}
               onChange={(e) =>
                 updateQuestion(qIndex, {
                   ...question,
-                  type: e.target.value as "mcq" | "multi-answer",
+                  displayNumAnswers: e.target.checked,
                 })
               }
-              className="w-full border p-2"
-            >
-              <option value="mcq">MCQ</option>
-              <option value="multi-answer">Multi-Answer</option>
-            </select>
+              className="border p-2"
+            />
           </div>
           <button
             type="button"

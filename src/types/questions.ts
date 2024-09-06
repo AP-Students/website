@@ -6,7 +6,7 @@ export interface Option {
 export interface QuestionFormat {
   body: string;
   title: string;
-  type: "mcq" | "multi-answer";
+  displayNumAnswers: boolean;
   options: Option[];
   correct: string[];
   course_id: string;
