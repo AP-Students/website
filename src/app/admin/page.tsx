@@ -6,7 +6,6 @@ import { User } from "@/types/user";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUserManagement } from "./useUserManagement";
-import useAdminAuth from "@/components/hooks/useAdminAuth";
 
 const apClasses = [
   "AP 2-D Art and Design",

@@ -1,5 +1,5 @@
 import { auth, db } from "@/lib/firebase";
-import { User as FirebaseUser } from "firebase/auth";
+import { User as FirebaseUser, getAuth } from "firebase/auth";
 import { User } from "@/types/user";
 import {
   collection,
@@ -17,7 +17,6 @@ export const getUser = async (): Promise<User | null> => {
           try {
             const userDocRef = doc(db, "users", firebaseUser.uid);
             const userDoc = await getDoc(userDocRef);
-
             if (userDoc.exists()) {
               const userData = userDoc.data();
               const mappedUser: User = {

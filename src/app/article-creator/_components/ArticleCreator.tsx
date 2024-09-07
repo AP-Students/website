@@ -147,7 +147,7 @@ function ArticleCreator({ className }: { className?: string }) {
   return (
     <>
       <button
-        className="group relative ml-auto mt-4 flex items-center rounded-md bg-green-500 p-2 text-white hover:bg-green-600"
+        className="group relative ml-auto md:mr-4 lg:mr-8 mt-4 flex items-center rounded-md bg-green-500 p-2 text-white hover:bg-green-600"
         onClick={handleSave}
       >
         <FontAwesomeIcon icon={faCheckCircle} />

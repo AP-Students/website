@@ -1,5 +1,4 @@
 "use client";
-
 import { Accordion } from "@/components/ui/accordion";
 import Footer from "@/components/ui/footer";
 import Navbar from "@/components/ui/navbar";
@@ -171,7 +170,7 @@ const mockData: Record<string, Subject> = {
 
 
 const Page = ({ params }: { params: { slug: string } }) => {
-
+  
   const [subject, setSubject] = useState<Subject | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
