@@ -9,161 +9,64 @@ import { User } from "@/types/user";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
+
+const apClasses = [
+  "AP 2-D Art and Design",
+  "AP 3-D Art and Design",
+  "AP Art History",
+  "AP Biology",
+  "AP Calculus AB",
+  "AP Calculus BC",
+  "AP Chemistry",
+  "AP Chinese",
+  "AP Comparative Government",
+  "AP Computer Science A",
+  "AP Computer Science Principles",
+  "AP Drawing",
+  "AP English Language",
+  "AP English Literature",
+  "AP Environmental Science",
+  "AP European History",
+  "AP French",
+  "AP German",
+  "AP Human Geography",
+  "AP Italian",
+  "AP Japanese",
+  "AP Latin",
+  "AP Macroeconomics",
+  "AP Microeconomics",
+  "AP Music Theory",
+  "AP Physics 1",
+  "AP Physics 2",
+  "AP Physics C: E&M",
+  "AP Physics C: Mechanics",
+  "AP Precalculus",
+  "AP Psychology",
+  "AP Research",
+  "AP Seminar",
+  "AP Spanish Language",
+  "AP Spanish Literature",
+  "AP Statistics",
+  "AP US History",
+  "AP United States Government",
+  "AP World History: Modern",
+].sort();
+
 // set empty data if non-existent
-const mockData: Record<string, Subject> = {
-  "calculus-ab": {
-    title: "AP Calculus AB",
-    units: [
-      {
-        unit: 1,
-        title: "Limits and Continuity",
-        chapters: [
-          {
-            chapter: 1,
-            title: "Introducing Calculus: Can Change Occur at an Instant?",
-          },
-          {
-            chapter: 2,
-            title: "Defining Limits and Using Limit Notation",
-          },
-          {
-            chapter: 3,
-            title: "Estimating Limit Values from Graphs",
-          },
-          {
-            chapter: 4,
-            title: "Estimating Limit Values from Tables",
-          },
-          {
-            chapter: 5,
-            title: "Determining Limits Using Algebraic Properties of Limits",
-          },
-          {
-            chapter: 6,
-            title: "Determining Limits Using Algebraic Manipulation",
-          },
-          {
-            chapter: 7,
-            title: "Selecting Procedures for Determining Limits",
-          },
-          {
-            chapter: 8,
-            title: "Determining Limits Using the Squeeze Theorem",
-          },
-          {
-            chapter: 9,
-            title: "Connecting Multiple Representations of Limits",
-          },
-          {
-            chapter: 10,
-            title: "Exploring Types of Discontinuities",
-          },
-          {
-            chapter: 11,
-            title: "Defining Continuity at a Point",
-          },
-          {
-            chapter: 12,
-            title: "Confirming Continuity over an Interval",
-          },
-          {
-            chapter: 13,
-            title: "Removing Discontinuities",
-          },
-          {
-            chapter: 14,
-            title: "Connecting Infinite Limits and Vertical Asymptotes",
-          },
-          {
-            chapter: 15,
-            title: "Connecting Limits at Infinity and Horizontal Asymptotes",
-          },
-          {
-            chapter: 16,
-            title: "Working with the Intermediate Value Theorem (IVT)",
-          },
-        ],
-      },
-      {
-        unit: 2,
-        title: "Differentiation: Definition and Basic Derivative Rules",
-        chapters: [
-          {
-            chapter: 1,
-            title:
-              "Defining Average and Instantaneous Rates of Change at a Point",
-          },
-          {
-            chapter: 2,
-            title:
-              "Defining the Derivative of a Function and Using Derivative Notation",
-          },
-          {
-            chapter: 3,
-            title: "Estimating Derivatives of a Function at a Point",
-          },
-          {
-            chapter: 4,
-            title:
-              "Connecting Differentiability and Continuity: Determining When Derivatives Do and Do Not Exist",
-          },
-          {
-            chapter: 5,
-            title: "Applying the Power Rule",
-          },
-          {
-            chapter: 6,
-            title:
-              "Derivative Rules: Constant, Sum, Difference, and Constant Multiple",
-          },
-          {
-            chapter: 7,
-            title: "Derivatives of cos x, sin x, e^x, and ln x",
-          },
-          {
-            chapter: 8,
-            title: "The Product Rule",
-          },
-          {
-            chapter: 9,
-            title: "The Quotient Rule",
-          },
-          {
-            chapter: 10,
-            title:
-              "Finding the Derivatives of Tangent, Cotangent, Secant, and/or Cosecant Functions",
-          },
-        ],
-      },
-    ],
-  },
-  statistics: {
-    title: "AP Statistics",
-    units: [
-      {
-        unit: 1,
-        title: "Introduction to Probability",
-        chapters: [
-          {
-            chapter: 1,
-            title: "Probability and Random Variables",
-          },
-          {
-            chapter: 2,
-            title: "Probability Spaces and Events",
-          },
-          {
-            chapter: 3,
-            title: "Conditional Probability",
-          },
-          {
-            chapter: 4,
-            title: "Independence and Dependence",
-          },
-        ],
-      },
-    ],
-  },
+const emptyData: Subject = {
+  title: "",
+  units: [
+    {
+      unit: 1,
+      title: "",
+      chapters: [
+        {
+          chapter: 1,
+          title: "",
+        },
+      ],
+    },
+  ],
 };
 
 const Page = ({ params }: { params: { slug: string } }) => {
@@ -174,41 +77,31 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
   useEffect(() => {
     const fetchUser = async () => {
-      try{
+      try {
         const fetchedUser = await getUser();
         setUser(fetchedUser);
-      }catch(error){
+      } catch (error) {
         console.error("Error fetching user:", error);
       }
     };
 
     fetchUser();
   }, []);
-  
+
   useEffect(() => {
     const fetchSubject = async () => {
       try {
-        // if (user && (user?.access === "admin" || user?.access === "member")) { 
-        //   // Reference to the document in Firestore using the slug
-        //   const docRef = doc(db, "subjects", params.slug);
-        //   const docSnap = await getDoc(docRef);
-
-        //   if (docSnap.exists()) {
-        //     // Convert Firestore document data to Subject type
-        //     setSubject(docSnap.data() as Subject);
-        //   } else {
-        //     setSubject(null);
-        //   }
-        // }else{
-        //   setError("Failed to fetch subject data. Lol");
-        // }
-
-        const data = mockData[params.slug.toLowerCase()];
-        if (data) {
-          setSubject(data);
-        } else {
-          console.error("No data found for slug:", params.slug);
-          setError("Subject not found. That's probably us, not you.");
+        if (user && (user?.access === "admin" || user?.access === "member")) {
+          // Reference to the document in Firestore using the slug
+          const docRef = doc(db, "subjects", params.slug);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            // Convert Firestore document data to Subject type
+            setSubject(docSnap.data() as Subject);
+          } else {
+            emptyData.title = apClasses.find((apClass) => apClass.replace(/AP /g, "").toLowerCase().replace(/[^a-z1-9 ]+/g, "").replace(/\s/g, "-") === params.slug) || "";
+            setSubject(emptyData);
+          }
         }
       } catch (error) {
         console.log("Error fetching subject data:", error);
@@ -239,14 +132,14 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
   const handleSave = async () => {
     try {
-      if (user && (user?.access === "admin" || user?.access === "member")) { 
-      console.log("Saving...", subject);    
-      // Save to Firestore
-      await setDoc(doc(db, "subjects", params.slug), subject);
+      if (user && (user?.access === "admin" || user?.access === "member")) {
 
-      setSubject(subject);
-      }else{
-        console.error("Error saving new unit and chapter:", error);  
+        // Save to Firestore
+        await setDoc(doc(db, "subjects", params.slug), subject);
+
+        setSubject(subject);
+      } else {
+        console.error("Error saving new unit and chapter:", error);
       }
     } catch (error) {
       console.error("Error saving new unit and chapter:", error);
