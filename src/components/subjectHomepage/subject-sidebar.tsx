@@ -18,6 +18,7 @@ type Props = {
 const SubjectSidebar = (props: Props) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [units, setUnits] = useState(props.subject.units);
+  const [editingUnit, setEditingUnit] = useState<number | null>(null);
   const [editingChapter, setEditingChapter] = useState<{
     unitIndex: number | null;
     chapterIndex: number | null;
@@ -26,14 +27,19 @@ const SubjectSidebar = (props: Props) => {
   const [newUnitTitle, setNewUnitTitle] = useState<string>("");
 
   // UseRef for the input to auto-focus when editing
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const chapterInputRef = useRef<HTMLInputElement | null>(null);
+  const unitInputRef = useRef<HTMLInputElement | null>(null);
 
   // Auto-focus the input when editingChapter changes
   useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
+    if (chapterInputRef.current) {
+      chapterInputRef.current.focus();
     }
-  }, [editingChapter]);
+
+    if (unitInputRef.current) {
+      unitInputRef.current.focus();
+    }
+  }, [editingChapter, editingUnit]);
 
   // Handle adding a new chapter
   const addChapter = (unitIndex: number) => {
@@ -47,17 +53,6 @@ const SubjectSidebar = (props: Props) => {
     const updatedUnits = [...units];
     updatedUnits[unitIndex]?.chapters.push(newChapter);
     setUnits(updatedUnits);
-  };
-
-  // Handle adding a new unit
-  const addUnit = () => {
-    const newUnit = {
-      unit: units.length + 1,
-      title: newUnitTitle || `Unit ${units.length + 1}`,
-      chapters: [],
-    };
-    setUnits([...units, newUnit]);
-    setNewUnitTitle(""); // Reset new unit title
   };
 
   // Handle editing a chapter's title
@@ -76,6 +71,32 @@ const SubjectSidebar = (props: Props) => {
   const deleteChapter = (unitIndex: number, chapterIndex: number) => {
     const updatedUnits = [...units];
     updatedUnits[unitIndex]?.chapters.splice(chapterIndex, 1);
+    setUnits(updatedUnits);
+  };
+
+  // Handle adding a new unit
+  const addUnit = () => {
+    const newUnit = {
+      unit: units.length + 1,
+      title: newUnitTitle || `Unit ${units.length + 1}`,
+      chapters: [],
+    };
+    setUnits([...units, newUnit]);
+    setNewUnitTitle(""); // Reset new unit title
+  };
+
+  // Handle editing a unit's title
+  const editUnitTitle = (unitIndex: number, newTitle: string) => {
+    const updatedUnits = [...units];
+    updatedUnits[unitIndex]!.title = newTitle;
+    setUnits(updatedUnits);
+    setEditingUnit(null);
+  };
+
+  // Handle unit delete
+  const deleteUnit = (unitIndex: number) => {
+    const updatedUnits = [...units];
+    updatedUnits.splice(unitIndex, 1);
     setUnits(updatedUnits);
   };
 
@@ -127,13 +148,47 @@ const SubjectSidebar = (props: Props) => {
               value={unit.title}
               key={unit.title}
             >
+              {/* Edit & Delete icons for unit */}
+              {isAdmin === "/admin" && (
+                <div className="opacity-0transition-opacity absolute right-0 z-10 flex gap-1 bg-primary-foreground duration-300 group-hover:opacity-100">
+                  <Edit
+                    className="z-20 cursor-pointer hover:text-blue-500"
+                    onClick={() => {
+                      setEditingUnit(unitIndex);
+                    }}
+                  />
+                  <Trash
+                    className="z-20 cursor-pointer hover:text-red-500"
+                    onClick={() => {
+                      deleteUnit(unitIndex);
+                    }}
+                  />
+                </div>
+              )}
+
               <AccordionTrigger
-                className="flex justify-between pb-1.5 text-left text-lg font-semibold hover:no-underline"
+                className="flex justify-center pb-1.5 text-left text-lg font-semibold hover:no-underline"
                 variant="secondary"
               >
-                <span className="truncate">
-                  Unit {unit.unit} - {unit.title}
-                </span>
+                {editingUnit === unitIndex ? (
+                  <input
+                    className="w-52 truncate font-medium group-hover:underline"
+                    defaultValue={unit.title}
+                    ref={unitInputRef}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        editUnitTitle(unitIndex, e.currentTarget.value);
+                      }
+                    }}
+                    onBlur={(e) =>
+                      editUnitTitle(unitIndex, e.currentTarget.value)
+                    }
+                  />
+                ) : (
+                  <span>
+                    Unit {unit.unit} - {unit.title}
+                  </span>
+                )}
               </AccordionTrigger>
 
               <AccordionContent className="flex flex-col gap-x-2 pb-0 pl-3">
@@ -154,7 +209,7 @@ const SubjectSidebar = (props: Props) => {
                         <input
                           className="w-52 truncate font-medium group-hover:underline"
                           defaultValue={chapter.title}
-                          ref={inputRef}  
+                          ref={chapterInputRef}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
                               editChapterTitle(
