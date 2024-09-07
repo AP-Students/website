@@ -112,7 +112,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
     };
 
     fetchSubject();
-  }, [user, params.slug]);
+  }, [user]);
 
   if (loading) {
     return (
