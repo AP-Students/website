@@ -50,7 +50,7 @@ const Page = () => {
     fetchUser();
   }, [router]);
 
-  const { users, handleRoleChange } = useUserManagement(state.user);
+  const { users, error, handleRoleChange } = useUserManagement(state.user);
 
   const openModal = (user: User) => {
     setSelectedUser(user);
@@ -105,11 +105,11 @@ const Page = () => {
                     }
                   />
                   <ul className="class-list max-h-60 overflow-y-auto">
-                    {users!.map((u) => (
+                    {error && users!.map((u) => ( // If error, it will show error message. Otherwise, it will show users
                       <li
                         key={u.uid}
                         className="grid cursor-pointer grid-cols-1 gap-4 rounded-md border p-4 text-center shadow-md hover:bg-gray-200 md:grid-cols-2 lg:grid-cols-3"
-                        onClick={() => openModal(u)} // Open modal on click
+                        onClick={() => openModal(u)} 
                       >
                         <div className="hidden font-bold lg:block">
                           {u.displayName}

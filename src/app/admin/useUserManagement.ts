@@ -5,6 +5,7 @@ import { User } from "@/types/user";
 export const useUserManagement = (authUser: User | null) => {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchUsers = async () => {
     if (authUser && authUser.access === "admin") {
@@ -12,7 +13,7 @@ export const useUserManagement = (authUser: User | null) => {
         const fetchedUsers = await getAllUsers();
         setUsers(fetchedUsers);
       } catch (error) {
-        console.error("Error fetching users:", error);
+        setError("Error fetching users.");
       } finally {
         setIsLoading(false);
       }
@@ -39,7 +40,7 @@ export const useUserManagement = (authUser: User | null) => {
       try {
         await updateUserRole(authUser, selectedUser.uid, newRole);
         alert(`Role updated to ${newRole} for ${selectedUser.displayName}`);
-        fetchUsers(); // Re-fetch users to update the list
+        fetchUsers();
       } catch (error) {
         console.error("Error updating user role:", error);
         alert("Failed to update user role.");
@@ -49,5 +50,5 @@ export const useUserManagement = (authUser: User | null) => {
     }
   };
 
-  return { users, isLoading, handleRoleChange };
+  return { users, isLoading, error, handleRoleChange };
 };

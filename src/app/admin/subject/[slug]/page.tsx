@@ -85,10 +85,10 @@ const Page = ({ params }: { params: { slug: string } }) => {
       if (user && (user?.access === "admin" || user?.access === "member")) {
         // Save to Firestore
         await setDoc(doc(db, "subjects", params.slug), subject);
-
         setSubject(subject);
+        alert("Subject units and chapters saved.");
       } else {
-        console.error("Error saving new unit and chapter:", error);
+        alert("Subject units and chapters failed to save.");
       }
     } catch (error) {
       console.error("Error saving new unit and chapter:", error);
