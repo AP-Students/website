@@ -1,5 +1,6 @@
 import "@/styles/globals.css";
 import { Outfit } from "next/font/google";
+import RootLayoutClient from "./RootLayoutClient";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -62,8 +63,7 @@ export default function RootLayout({
             `,
           }}
         />
-        
-        {children}
+        <RootLayoutClient>{children}</RootLayoutClient>
       </body>
     </html>
   );

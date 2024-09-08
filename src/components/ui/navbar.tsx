@@ -3,7 +3,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "./button";
 import { cn } from "@/lib/utils";
-
 import {
   Sheet,
   SheetContent,
@@ -12,12 +11,10 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { MenuIcon } from "lucide-react";
-import { getUser } from "@/components/hooks/users";
 import SignedInPfp from "./SignedInPfp";
-import { useEffect, useState } from "react";
-import { User } from "@/types/user";
+import { useUser } from "../hooks/UserContext";
 
-
+const { user } = useUser();
 
 const links = [
   {
@@ -41,16 +38,6 @@ const Navbar = ({
   variant?: "primary" | "secondary";
   className?: string;
 }) => {
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const fetchedUser = await getUser();
-      setUser(fetchedUser);
-    };
-
-    fetchUser();
-  }, []);
 
   return (
     <>
@@ -122,16 +109,6 @@ const Navbar = ({
 };
 
 const MobileNavbar = () => {
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const fetchedUser = await getUser();
-      setUser(fetchedUser);
-    };
-
-    fetchUser();
-  }, []);
 
   return (
     <>

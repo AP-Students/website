@@ -1,32 +1,21 @@
 "use client";
 import ArticleCreator from "@/app/article-creator/_components/ArticleCreator";
-import { getUser } from "@/components/hooks/users";
+import { useUser } from "@/components/hooks/UserContext";
 import Footer from "@/components/ui/footer";
 import Navbar from "@/components/ui/navbar";
-import { User } from "@/types/user";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const Page = ({ params }: { params: { slug: string } }) => {
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-
+  const { user, loading, error } = useUser();
+  
   const pathParts = window.location.pathname.split("/").slice(-2);
   const formattedTitle = `Unit ${pathParts[1]?.charAt(0).toUpperCase() + pathParts[1]!.slice(1)}: ${pathParts[0]?.charAt(0).toUpperCase() + pathParts[0]!.slice(1)}`.replace(/-/g, " ");  
+  
+  const router = useRouter();
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const fetchedUser = await getUser();
-        setUser(fetchedUser);
-        setLoading(false);
-      } catch (error) {
-        setError("Error fetching user, please try again.");
-      }
-    };
-
-    fetchUser();
-  }, []);
+  if(!user || user?.access === "user"){ 
+    router.push("/");
+  }
 
   if (loading) {
     return (

@@ -1,56 +1,15 @@
 "use client";
-import { getUser } from "@/components/hooks/users";
+import { useUser } from "@/components/hooks/UserContext";
 import SubjectSidebar from "@/components/subjectHomepage/subject-sidebar";
 import Footer from "@/components/ui/footer";
 import Navbar from "@/components/ui/navbar";
 import { db } from "@/lib/firebase";
 import { Subject } from "@/types";
-import { User } from "@/types/user";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
+import apClassesData from '@/app/admin/apClasses.json';
 
-
-const apClasses = [
-  "AP 2-D Art and Design",
-  "AP 3-D Art and Design",
-  "AP Art History",
-  "AP Biology",
-  "AP Calculus AB",
-  "AP Calculus BC",
-  "AP Chemistry",
-  "AP Chinese",
-  "AP Comparative Government",
-  "AP Computer Science A",
-  "AP Computer Science Principles",
-  "AP Drawing",
-  "AP English Language",
-  "AP English Literature",
-  "AP Environmental Science",
-  "AP European History",
-  "AP French",
-  "AP German",
-  "AP Human Geography",
-  "AP Italian",
-  "AP Japanese",
-  "AP Latin",
-  "AP Macroeconomics",
-  "AP Microeconomics",
-  "AP Music Theory",
-  "AP Physics 1",
-  "AP Physics 2",
-  "AP Physics C: E&M",
-  "AP Physics C: Mechanics",
-  "AP Precalculus",
-  "AP Psychology",
-  "AP Research",
-  "AP Seminar",
-  "AP Spanish Language",
-  "AP Spanish Literature",
-  "AP Statistics",
-  "AP US History",
-  "AP United States Government",
-  "AP World History: Modern",
-].sort();
+const apClasses = apClassesData.apClasses;
 
 // set empty data if non-existent
 const emptyData: Subject = {
@@ -71,32 +30,15 @@ const emptyData: Subject = {
 
 const Page = ({ params }: { params: { slug: string } }) => {
   const [subject, setSubject] = useState<Subject | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const fetchedUser = await getUser();
-        setUser(fetchedUser);
-      } catch (error) {
-        console.error("Error fetching user:", error);
-      }
-    };
-
-    fetchUser();
-  }, []);
+  const { user, loading, error, setError, setLoading } = useUser();
 
   useEffect(() => {
     const fetchSubject = async () => {
       try {
         if (user && (user?.access === "admin" || user?.access === "member")) {
-          // Reference to the document in Firestore using the slug
           const docRef = doc(db, "subjects", params.slug);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
-            // Convert Firestore document data to Subject type
             setSubject(docSnap.data() as Subject);
           } else {
             emptyData.title = apClasses.find((apClass) => apClass.replace(/AP /g, "").toLowerCase().replace(/[^a-z1-9 ]+/g, "").replace(/\s/g, "-") === params.slug) || "";

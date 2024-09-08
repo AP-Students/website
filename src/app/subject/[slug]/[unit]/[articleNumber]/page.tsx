@@ -12,32 +12,15 @@ import { getUser } from "@/components/hooks/users";
 import { User } from "@/types/user";
 import Renderer from "@/app/article-creator/_components/Renderer";
 import { Content } from "@/types/content";
+import { useUser } from "@/components/hooks/UserContext";
 
 const Page = ({ params }: { params: { slug: string } }) => {
   const [subject, setSubject] = useState<Subject | null>(null);
   const [content, setContent] = useState<Content | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-
+  const { user, loading, error, setError, setLoading } = useUser();
 
   const pathParts = window.location.pathname.split("/").slice(-2);
   const formattedTitle = `Unit ${pathParts[1]?.charAt(0).toUpperCase() + pathParts[1]!.slice(1)}: ${pathParts[0]?.charAt(0).toUpperCase() + pathParts[0]!.slice(1)}`.replace(/-/g, " ");  
- 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const fetchedUser = await getUser();
-        setUser(fetchedUser);
-        setLoading(false);
-      } catch (error) {
-        setError("Error fetching user, please try again.");
-      }
-    };
-
-    fetchUser();
-  }, []);
-
 
   useEffect(() => {
     const fetchSubject = async () => {
@@ -50,7 +33,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
             // Convert Firestore document data to Subject type
             setSubject(subjectDocSnap.data() as Subject);
           } else{
-            
+
           }
 
           const pathParts = window.location.pathname.split("/").slice(-3);

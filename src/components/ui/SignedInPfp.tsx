@@ -1,32 +1,14 @@
 "use client";
 
 import { signOut } from "firebase/auth";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { auth } from "@/lib/firebase";
-import { User } from "@/types/user";
-import { getUser } from "@/components/hooks/users";
 import Link from "next/link";
+import { useUser } from "../hooks/UserContext";
 
 const SignedInPfp = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const fetchedUser = await getUser();
-        setUser(fetchedUser);
-      } catch (err) {
-        setError((err as Error).message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, []);
+  const { user, loading, error } = useUser();
 
   if (loading) return <div>Loading...</div>;
   if (!user || error) return null;
