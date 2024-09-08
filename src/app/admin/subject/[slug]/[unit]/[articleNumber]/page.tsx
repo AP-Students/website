@@ -10,12 +10,12 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 const Page = ({ params }: { params: { slug: string } }) => {
-  
-  const title = window.location.pathname.split("/")[4];
-
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
+
+  const pathParts = window.location.pathname.split("/").slice(-2);
+  const formattedTitle = `Unit ${pathParts[1]?.charAt(0).toUpperCase() + pathParts[1]!.slice(1)}: ${pathParts[0]?.charAt(0).toUpperCase() + pathParts[0]!.slice(1)}`.replace(/-/g, " ");  
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -54,7 +54,9 @@ const Page = ({ params }: { params: { slug: string } }) => {
       <div className="relative flex grow flex-col">
         <div className="relative mt-[5.5rem] flex min-h-screen justify-between gap-x-16 px-10 xl:px-20">
           <div className="grow">
-            <h1 className="flex justify-center py-8 text-5xl font-black"></h1>
+            <h1 className="flex justify-center py-8 text-5xl font-black">
+              {formattedTitle}
+            </h1>
             <ArticleCreator className="mt-4 grow" />
           </div>
         </div>

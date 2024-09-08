@@ -117,11 +117,11 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
   },
 };
 
-const Editor = ({ setData }: { setData: (data: OutputData) => void }) => {
+const Editor = ({ setData, content }: { setData: (data: OutputData) => void, content: OutputData }) => {
   const { editor, isEditorReady } = useEditor({
     holder: "editorjs",
     tools: EDITOR_TOOLS,
-    data: {
+    data: content ||  {
       time: Date.now(),
       blocks: [
         {

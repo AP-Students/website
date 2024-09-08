@@ -10,6 +10,9 @@ import TableOfContents from "@/components/subjectHomepage/table-of-contents";
 import UnitAccordion from "@/components/subjectHomepage/unit-accordion";
 import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
+import { getUser } from "@/components/hooks/users";
+import { User } from "@/types/user";
+import Link from "next/link";
 
 // mock data
 const mockData: Record<string, Subject> = {
@@ -139,7 +142,7 @@ const mockData: Record<string, Subject> = {
       },
     ],
   },
-  "statistics": {
+  statistics: {
     title: "AP Statistics",
     units: [
       {
@@ -168,34 +171,45 @@ const mockData: Record<string, Subject> = {
   },
 };
 
-
 const Page = ({ params }: { params: { slug: string } }) => {
-  
   const [subject, setSubject] = useState<Subject | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [notAuthenticated, setNotAuthenticated] = useState<boolean>(false);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const fetchedUser = await getUser();
+        setUser(fetchedUser);
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   useEffect(() => {
     const fetchSubject = async () => {
       try {
-        // // Reference to the document in Firestore using the slug
-        // const docRef = doc(db, "subjects", params.slug);
-        // const docSnap = await getDoc(docRef);
+        if (user) {
+          // Reference to the document in Firestore using the slug
+          const docRef = doc(db, "pages", params.slug);
+          const docSnap = await getDoc(docRef);
 
-        // if (docSnap.exists()) {
-        //   // Convert Firestore document data to Subject type
-        //   setSubject(docSnap.data() as Subject);
-        // } else {
-        //   console.error("No such document!");
-        //   setError("Subject not found. Thats probably us, not you.");
-        // }  
-
-        const data = mockData[params.slug.toLowerCase()];
-        if (data) {
-          setSubject(data);
-        } else {
-          console.error("No data found for slug:", params.slug);
-          setError("Subject not found. That's probably us, not you.");
+          console.log("docSnap", docSnap.data());
+          console.log("params.slug", params.slug);
+          if (docSnap.exists()) {
+            // Convert Firestore document data to Subject type
+            setSubject(docSnap.data() as Subject);
+          } else {
+            console.error("No such document!");
+            setError("Subject not found. Thats probably us, not you.");
+          }
+        }else{
+          setNotAuthenticated(true);
         }
       } catch (error) {
         console.error("Error fetching subject data:", error);
@@ -206,15 +220,47 @@ const Page = ({ params }: { params: { slug: string } }) => {
     };
 
     fetchSubject();
-  }, [params.slug]);
+  }, [user]);
 
   if (loading) {
-    return <div className="flex min-h-screen items-center justify-center text-3xl">Loading...</div>; 
+    return (
+      <div className="flex min-h-screen items-center justify-center text-3xl">
+        Loading...
+      </div>
+    );
+  }
+
+  if (notAuthenticated) {
+    return (
+      <div className="flex flex-col min-h-screen items-center justify-center text-3xl">
+        <span className="mb-4">Log in or sign up to view this subject.</span>
+
+        <Link
+          href="/login"
+          className="rounded-md text-xl text-blue-500 py-2 hover:underline"
+        >
+          Log in for FiveHive to view this subject.
+        </Link>
+
+        <Link
+          href="/signup"
+          className="rounded-md text-xl text-blue-500 py-2 hover:underline"
+        >
+          Sign up for FiveHive to view this subject.
+        </Link>
+      </div>
+    );
   }
 
   if (error || !subject) {
-    return <div className="flex min-h-screen items-center justify-center text-3xl">{error}</div>; 
+    return (
+      <div className="flex min-h-screen items-center justify-center text-3xl">
+        {error}
+      </div>
+    );
   }
+  
+
 
   return (
     <div className="relative flex min-h-screen">
