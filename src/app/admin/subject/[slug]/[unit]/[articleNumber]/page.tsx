@@ -3,10 +3,7 @@ import ArticleCreator from "@/app/article-creator/_components/ArticleCreator";
 import { getUser } from "@/components/hooks/users";
 import Footer from "@/components/ui/footer";
 import Navbar from "@/components/ui/navbar";
-import { db } from "@/lib/firebase";
-import { Subject } from "@/types";
 import { User } from "@/types/user";
-import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 const Page = ({ params }: { params: { slug: string } }) => {
@@ -50,7 +47,6 @@ const Page = ({ params }: { params: { slug: string } }) => {
   return (
     <div className="relative flex grow flex-col">
       <Navbar className="w-full px-10 xl:px-20" variant="secondary" />
-
       <div className="relative flex grow flex-col">
         <div className="relative mt-[5.5rem] flex min-h-screen justify-between gap-x-16 px-10 xl:px-20">
           <div className="grow">

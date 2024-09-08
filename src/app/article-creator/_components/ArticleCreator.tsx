@@ -24,7 +24,22 @@ function ArticleCreator({ className }: { className?: string }) {
           text: "Enter title here...",
           level: 1,
         },
-      }
+      },
+      {
+        id: "y5P_E6yFAY",
+        type: "header",
+        data: {
+          text: "Enter a subheader...",
+          level: 2,
+        },
+      },
+      {
+        id: "R0mt9g_qT4",
+        type: "paragraph",
+        data: {
+          text: "This is some text...",
+        },
+      },
     ],
     version: "2.30.2",
   });
@@ -65,7 +80,6 @@ function ArticleCreator({ className }: { className?: string }) {
         const user = await getUser();
         if (user && (user?.access === "admin" || user?.access === "member")) {
           const pathParts = window.location.pathname.split("/").slice(-3);
-          // Reference to the document in Firestore using the slug
           const docRef = doc(db, "pages", pathParts.join("-"));
           const docSnap = await getDoc(docRef);
           setInitialData(docSnap.data()?.data as OutputData);
@@ -96,7 +110,7 @@ function ArticleCreator({ className }: { className?: string }) {
     const newArticle = {
       id: uuidv4(),
       createdAt: new Date(),
-      creator: user!.uid,
+      creator: user!,
       title: pathParts.join("/"),
       data,
     };
