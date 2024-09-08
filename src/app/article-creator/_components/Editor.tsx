@@ -184,7 +184,7 @@ const Editor = ({ setData }: { setData: (data: OutputData) => void }) => {
 
   return (
     <div className="flex flex-col gap-y-4">
-      <div className="opacity-50">Input:</div>
+      <h2 className="opacity-50">Editor:</h2>
       <div className="prose w-full" id="editorjs"></div>
     </div>
   );
