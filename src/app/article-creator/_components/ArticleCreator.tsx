@@ -9,8 +9,7 @@ import { db } from "@/lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 import { getUser } from "@/components/hooks/getUser";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheckCircle } from "@fortawesome/free-solid-svg-icons";
+import { CloudUpload } from "lucide-react";
 
 // All AP classes sorted alphabetically
 // This should be subject; Extracted from db and made dynamic given the ap class
@@ -147,15 +146,10 @@ function ArticleCreator({ className }: { className?: string }) {
   return (
     <>
       <button
-        className="group relative ml-auto mt-4 flex items-center rounded-md bg-green-500 p-2 text-white hover:bg-green-600"
+        className="ml-auto mt-4 flex items-center rounded-md bg-blue-500 px-3 py-2 text-white hover:bg-blue-600"
         onClick={handleSave}
       >
-        <FontAwesomeIcon icon={faCheckCircle} />
-
-        {/* Tooltip */}
-        <span className="absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 transform whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white group-hover:flex">
-          Submit content
-        </span>
+        <CloudUpload className="mr-2 inline" /> Save Article
       </button>
       {/* Modal for Selecting AP Class */}
       {showDropdown && (
@@ -171,14 +165,14 @@ function ArticleCreator({ className }: { className?: string }) {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <ul className="class-list max-h-40 overflow-y-auto">
+            <ul className="class-list max-h-80 overflow-y-auto">
               {filteredClasses.map((apClass) => (
                 <li
                   key={apClass}
                   className={`cursor-pointer rounded-md p-2 hover:bg-gray-200 ${
                     selectedClass === apClass ? "bg-gray-300" : ""
-                  }`} 
-                  onClick={() => setSelectedClass(apClass)} 
+                  }`}
+                  onClick={() => setSelectedClass(apClass)}
                 >
                   {apClass}
                 </li>
@@ -188,16 +182,16 @@ function ArticleCreator({ className }: { className?: string }) {
             {/* Save Button for Confirming the Selection */}
             <div className="mt-3 flex justify-between">
               <button
-                className="rounded-md bg-green-500 p-2 text-white hover:bg-green-600"
+                className="rounded-md bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
                 onClick={() => handleTitleSelect(selectedClass)} // Use the selected class
               >
                 Save
               </button>
               <button
-                className="rounded-md bg-red-500 p-2 text-white hover:bg-red-600"
+                className="rounded-md bg-gray-500 px-4 py-2 text-white hover:bg-gray-600"
                 onClick={() => setShowDropdown(false)}
               >
-                Close
+                Cancel
               </button>
             </div>
           </div>
@@ -215,12 +209,8 @@ function ArticleCreator({ className }: { className?: string }) {
         </div>
 
         <div className="px-8">
-          <div className="mb-4 pb-4 opacity-50">Output:</div>
-
-          {/* Render the editor output */}
-          <div>
-            <Renderer content={data} />
-          </div>
+          <h2 className="pb-8 opacity-50">Preview:</h2>
+          <Renderer content={data} />
         </div>
       </div>
     </>
