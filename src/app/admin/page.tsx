@@ -6,48 +6,9 @@ import { User } from "@/types/user";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUserManagement } from "./useUserManagement";
+import apClassesData from './apClasses.json';
 
-const apClasses = [
-  "AP 2-D Art and Design",
-  "AP 3-D Art and Design",
-  "AP Art History",
-  "AP Biology",
-  "AP Calculus AB",
-  "AP Calculus BC",
-  "AP Chemistry",
-  "AP Chinese",
-  "AP Comparative Government",
-  "AP Computer Science A",
-  "AP Computer Science Principles",
-  "AP Drawing",
-  "AP English Language",
-  "AP English Literature",
-  "AP Environmental Science",
-  "AP European History",
-  "AP French",
-  "AP German",
-  "AP Human Geography",
-  "AP Italian",
-  "AP Japanese",
-  "AP Latin",
-  "AP Macroeconomics",
-  "AP Microeconomics",
-  "AP Music Theory",
-  "AP Physics 1",
-  "AP Physics 2",
-  "AP Physics C: E&M",
-  "AP Physics C: Mechanics",
-  "AP Precalculus",
-  "AP Psychology",
-  "AP Research",
-  "AP Seminar",
-  "AP Spanish Language",
-  "AP Spanish Literature",
-  "AP Statistics",
-  "AP US History",
-  "AP United States Government",
-  "AP World History: Modern",
-].sort();
+const apClasses = apClassesData.apClasses;
 
 const Page = () => {
   const [state, setState] = useState<{

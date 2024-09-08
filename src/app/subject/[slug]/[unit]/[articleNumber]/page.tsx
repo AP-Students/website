@@ -49,14 +49,18 @@ const Page = ({ params }: { params: { slug: string } }) => {
           if (subjectDocSnap.exists()) {
             // Convert Firestore document data to Subject type
             setSubject(subjectDocSnap.data() as Subject);
-          } 
+          } else{
+            
+          }
 
           const pathParts = window.location.pathname.split("/").slice(-3);
           const pageDocRef = doc(db, "pages", pathParts.join("-"));
           const pageDocSnap = await getDoc(pageDocRef);
           if (pageDocSnap.exists()) {
             setContent(pageDocSnap.data() as Content);
-          } 
+          } else{
+
+          }
         }
       } catch (error) {
         console.log("Error fetching subject data:", error);
