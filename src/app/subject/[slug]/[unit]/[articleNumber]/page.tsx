@@ -32,6 +32,9 @@ const Page = ({ params }: { params: { slug: string } }) => {
           const subjectDocRef = doc(db, "subjects", params.slug);
           const subjectDocSnap = await getDoc(subjectDocRef);
           if (subjectDocSnap.exists()) {
+            // Since this is a slug, if user navigates onto another subject page and null, then  
+            // navigates back to a page and not null, then the error will still remain. So we need to remove the error
+            setError(null);
             // Convert Firestore document data to Subject type
             setSubject(subjectDocSnap.data() as Subject);
           } else {
@@ -42,6 +45,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
           const pageDocRef = doc(db, "pages", pathParts.join("-"));
           const pageDocSnap = await getDoc(pageDocRef);
           if (pageDocSnap.exists()) {
+            setError(null);
             setContent(pageDocSnap.data() as Content);
           } else{
             setError("Content not found. That's probably us, not you.");

@@ -101,6 +101,7 @@ const SubjectSidebar = (props: Props) => {
   };
 
   const pathname = window.location.pathname;
+  console.log("pathname", pathname);
   const isAdmin = pathname.split("/").includes("admin") ? "/admin" : "";
 
   return (
@@ -231,6 +232,7 @@ const SubjectSidebar = (props: Props) => {
                         <Link
                           className="group flex items-center gap-x-1.5 text-sm font-medium last:mb-0 hover:underline"
                           // If user is on article pathway, having the slice doesn't prevent unintended appending of the article link
+                          // All the functions used to make links work as expected
                           href={`${pathname.split("/").slice(0, 3).join("/")}/${unit.title
                             .toLowerCase()
                             .replace(/[^a-z1-9 ]+/g, "")
