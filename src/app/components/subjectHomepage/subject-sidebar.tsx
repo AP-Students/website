@@ -23,7 +23,7 @@ const SubjectSidebar = (props: Props) => {
     unitIndex: number | null;
     chapterIndex: number | null;
   }>({ unitIndex: null, chapterIndex: null });
-
+  let sliceNum = 3;
   const [newUnitTitle, setNewUnitTitle] = useState<string>("");
 
   // UseRef for the input to auto-focus when editing
@@ -101,8 +101,8 @@ const SubjectSidebar = (props: Props) => {
   };
 
   const pathname = window.location.pathname;
-  console.log("pathname", pathname);
   const isAdmin = pathname.split("/").includes("admin") ? "/admin" : "";
+  isAdmin && sliceNum++;
 
   return (
     <div
@@ -233,7 +233,7 @@ const SubjectSidebar = (props: Props) => {
                           className="group flex items-center gap-x-1.5 text-sm font-medium last:mb-0 hover:underline"
                           // If user is on article pathway, having the slice doesn't prevent unintended appending of the article link
                           // All the functions used to make links work as expected
-                          href={`${pathname.split("/").slice(0, 3).join("/")}/${unit.title
+                          href={`${pathname.split("/").slice(0, sliceNum).join("/")}/${unit.title
                             .toLowerCase()
                             .replace(/[^a-z1-9 ]+/g, "")
                             .replace(/\s/g, "-")}/${chapter.chapter}`}

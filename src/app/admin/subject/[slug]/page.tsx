@@ -113,6 +113,10 @@ const Page = ({ params }: { params: { slug: string } }) => {
                 you can create new units and chapters.
               </h2>
 
+              <h2 className="min-w-full py-8 text-center text-2xl font-black">
+                DO NOT CLICK THE LINKS OR LEAVE THE PAGE BEFORE SAVING OR YOU WILL LOSE YOUR CHANGES.
+              </h2>
+
               <div className="flex min-w-full justify-center">
                 <button
                   onClick={handleSave}
