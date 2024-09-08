@@ -230,7 +230,8 @@ const SubjectSidebar = (props: Props) => {
                       ) : (
                         <Link
                           className="group flex items-center gap-x-1.5 text-sm font-medium last:mb-0 hover:underline"
-                          href={`${pathname}/${unit.title
+                          // If user is on article pathway, having the slice doesn't prevent unintended appending of the article link
+                          href={`${pathname.split("/").slice(0, 3).join("/")}/${unit.title
                             .toLowerCase()
                             .replace(/[^a-z1-9 ]+/g, "")
                             .replace(/\s/g, "-")}/${chapter.chapter}`}

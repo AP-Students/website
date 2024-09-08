@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { useUserManagement } from "./useUserManagement";
 import apClassesData from "./apClasses.json";
 import { useUser } from "../components/hooks/UserContext";
-import { set } from "zod";
 
 const apClasses = apClassesData.apClasses;
 
@@ -36,14 +35,6 @@ const Page = () => {
     setIsModalOpen(false);
     setSelectedUser(null);
   };
-
-  if (isLoadingUser) {
-    return (
-      <div className="flex min-h-screen items-center justify-center text-3xl">
-        Loading...
-      </div>
-    );
-  }
 
   if (!user || user.access === "user") {
     router.push("/");

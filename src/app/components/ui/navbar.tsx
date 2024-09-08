@@ -14,8 +14,6 @@ import { MenuIcon } from "lucide-react";
 import SignedInPfp from "./SignedInPfp";
 import { useUser } from "../hooks/UserContext";
 
-const { user } = useUser();
-
 const links = [
   {
     name: "library",
@@ -38,6 +36,8 @@ const Navbar = ({
   variant?: "primary" | "secondary";
   className?: string;
 }) => {
+  const { user } = useUser();
+
   return (
     <>
       <div
@@ -108,6 +108,8 @@ const Navbar = ({
 };
 
 const MobileNavbar = () => {
+  const { user } = useUser();
+
   return (
     <>
       <Sheet>

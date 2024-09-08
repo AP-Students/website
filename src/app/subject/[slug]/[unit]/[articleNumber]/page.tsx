@@ -35,6 +35,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
             // Convert Firestore document data to Subject type
             setSubject(subjectDocSnap.data() as Subject);
           } else {
+            setError("Subject not found. That's probably us, not you.");
           }
 
           const pathParts = window.location.pathname.split("/").slice(-3);
@@ -42,7 +43,8 @@ const Page = ({ params }: { params: { slug: string } }) => {
           const pageDocSnap = await getDoc(pageDocRef);
           if (pageDocSnap.exists()) {
             setContent(pageDocSnap.data() as Content);
-          } else {
+          } else{
+            setError("Content not found. That's probably us, not you.");
           }
         }
       } catch (error) {
