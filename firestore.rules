@@ -28,10 +28,16 @@ service cloud.firestore {
     match /users/{document=**} {
       allow read, write: if isAdmin();
     }
-
-    // Pages can be accessed by members and admins
+		
+    // Subjects and pages can be accessed by members and admins
+    match /subjects/{document=**} {
+    	allow read: if isAuthenticated();
+      allow write: if isMemberOrAdmin();
+    }
+    
     match /pages/{document=**} {
-      allow read, write: if isMemberOrAdmin();
+    	allow read: if isAuthenticated();
+      allow write: if isMemberOrAdmin();
     }
 
     // Allow users to access and write to their own profiles
