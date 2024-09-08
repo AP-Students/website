@@ -3,19 +3,21 @@ import ArticleCreator from "@/app/article-creator/_components/ArticleCreator";
 import { useUser } from "@/app/components/hooks/UserContext";
 import Footer from "@/app/components/ui/footer";
 import Navbar from "@/app/components/ui/navbar";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 const Page = ({ params }: { params: { slug: string } }) => {
   const { user, loading, error } = useUser();
+  const router = useRouter();
+  const pathname = usePathname();
 
-  const pathParts = window.location.pathname.split("/").slice(-2);
+  // Using link to format unique title (eg, limits-and-continuity-1)
+  const pathParts = pathname.split("/").slice(-2);
   const formattedTitle =
     `Unit ${pathParts[1]?.charAt(0).toUpperCase() + pathParts[1]!.slice(1)}: ${pathParts[0]?.charAt(0).toUpperCase() + pathParts[0]!.slice(1)}`.replace(
       /-/g,
       " ",
     );
 
-  const router = useRouter();
 
   if (!user || user?.access === "user") {
     router.push("/");
