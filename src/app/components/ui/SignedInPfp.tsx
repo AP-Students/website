@@ -10,7 +10,7 @@ const SignedInPfp = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { user, loading, error } = useUser();
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div>Loading...</div>; 
   if (!user || error) return null;
 
   const toggleDropdown = () => {

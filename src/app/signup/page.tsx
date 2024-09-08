@@ -5,7 +5,7 @@ import { Outfit } from "next/font/google";
 import { useAuthHandlers } from "@/lib/auth";
 import React, { type FormEvent, useState } from "react";
 import Link from "next/link";
-import Button from "@/components/login/submitButton";
+import Button from "@/app/components/login/submitButton";
 import { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
 
 const outfit = Outfit({
@@ -14,7 +14,8 @@ const outfit = Outfit({
 });
 
 export default function Signup() {
-  const { signInWithGoogle, signUpWithGoogle, signUpWithEmail  } = useAuthHandlers();
+  const { signInWithGoogle, signUpWithGoogle, signUpWithEmail } =
+    useAuthHandlers();
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);

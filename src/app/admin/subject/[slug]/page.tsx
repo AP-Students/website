@@ -1,13 +1,13 @@
 "use client";
-import { useUser } from "@/components/hooks/UserContext";
-import SubjectSidebar from "@/components/subjectHomepage/subject-sidebar";
-import Footer from "@/components/ui/footer";
-import Navbar from "@/components/ui/navbar";
+import { useUser } from "@/app/components/hooks/UserContext";
+import SubjectSidebar from "@/app/components/subjectHomepage/subject-sidebar";
+import Footer from "@/app/components/ui/footer";
+import Navbar from "@/app/components/ui/navbar";
 import { db } from "@/lib/firebase";
 import { Subject } from "@/types";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import apClassesData from '@/app/admin/apClasses.json';
+import apClassesData from "@/app/admin/apClasses.json";
 
 const apClasses = apClassesData.apClasses;
 
@@ -41,7 +41,15 @@ const Page = ({ params }: { params: { slug: string } }) => {
           if (docSnap.exists()) {
             setSubject(docSnap.data() as Subject);
           } else {
-            emptyData.title = apClasses.find((apClass) => apClass.replace(/AP /g, "").toLowerCase().replace(/[^a-z1-9 ]+/g, "").replace(/\s/g, "-") === params.slug) || "";
+            emptyData.title =
+              apClasses.find(
+                (apClass) =>
+                  apClass
+                    .replace(/AP /g, "")
+                    .toLowerCase()
+                    .replace(/[^a-z1-9 ]+/g, "")
+                    .replace(/\s/g, "-") === params.slug,
+              ) || "";
             setSubject(emptyData);
           }
         }
@@ -75,7 +83,6 @@ const Page = ({ params }: { params: { slug: string } }) => {
   const handleSave = async () => {
     try {
       if (user && (user?.access === "admin" || user?.access === "member")) {
-
         // Save to Firestore
         await setDoc(doc(db, "subjects", params.slug), subject);
 

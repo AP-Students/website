@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
-import { getUser } from "@/components/hooks/users";
+import { getUser } from "@/app/components/hooks/users";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheckCircle } from "@fortawesome/free-solid-svg-icons";
 
@@ -145,12 +145,12 @@ function ArticleCreator({ className }: { className?: string }) {
           Submit content
         </span>
       </button>
-      
+
       {showDropdown && (
         <div className="modal fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="modal-content z-60 rounded-md bg-white p-4">
             {/* Save Button for Confirming the Selection */}
-            <div className="mt-3 flex justify-between min-w-36">
+            <div className="mt-3 flex min-w-36 justify-between">
               <button
                 className="rounded-md bg-green-500 p-2 text-white hover:bg-green-600"
                 onClick={() => handleTitleSelect()}

@@ -1,12 +1,12 @@
 "use client";
-import Navbar from "@/components/ui/navbar";
-import Footer from "@/components/ui/footer";
-import { getUser } from "@/components/hooks/users";
+import Navbar from "@/app/components/ui/navbar";
+import Footer from "@/app/components/ui/footer";
+import { getUser } from "@/app/components/hooks/users";
 import { User } from "@/types/user";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUserManagement } from "./useUserManagement";
-import apClassesData from './apClasses.json';
+import apClassesData from "./apClasses.json";
 
 const apClasses = apClassesData.apClasses;
 
@@ -23,7 +23,7 @@ const Page = () => {
 
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null); 
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const router = useRouter();
 
   // Filter AP classes based on search term
@@ -197,7 +197,7 @@ const Page = () => {
               </button>
             </div>
             <button
-              className="mt-4 text-gray-500 underline min-w-full text-center"
+              className="mt-4 min-w-full text-center text-gray-500 underline"
               onClick={closeModal}
             >
               Cancel

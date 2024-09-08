@@ -5,8 +5,8 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
+} from "@/app/components/ui/accordion";
+import { Button } from "@/app/components/ui/button";
 import { type Subject, type Unit } from "@/types";
 import { cn } from "@/lib/utils";
 import Link from "next/link";

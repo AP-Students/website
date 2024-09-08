@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { QuestionFormat } from "@/types/questions";
 
-import CheckForUnderstanding from "@/components/questions/checkForUnderstanding";
-import QuizRenderer from "@/components/questions/quizRenderer";
+import CheckForUnderstanding from "@/app/components/questions/checkForUnderstanding";
+import QuizRenderer from "@/app/components/questions/quizRenderer";
 import QuestionsInputInterface from "./QuestionsInputInterface";
 
 const useSyncedQuestions = (instanceId: string) => {
@@ -50,7 +50,9 @@ const useSyncedQuestions = (instanceId: string) => {
   return { questions, setQuestions };
 };
 
-export const QuestionsInput: React.FC<{ instanceId: string }> = ({ instanceId }) => {
+export const QuestionsInput: React.FC<{ instanceId: string }> = ({
+  instanceId,
+}) => {
   const { questions, setQuestions } = useSyncedQuestions(instanceId);
 
   return (
@@ -63,7 +65,9 @@ export const QuestionsInput: React.FC<{ instanceId: string }> = ({ instanceId })
   );
 };
 
-export const QuestionsOutput: React.FC<{ instanceId: string }> = ({ instanceId }) => {
+export const QuestionsOutput: React.FC<{ instanceId: string }> = ({
+  instanceId,
+}) => {
   const { questions } = useSyncedQuestions(instanceId);
 
   return (

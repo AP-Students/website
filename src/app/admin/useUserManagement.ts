@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getAllUsers, updateUserRole } from "@/components/hooks/users";
+import { getAllUsers, updateUserRole } from "@/app/components/hooks/users";
 import { User } from "@/types/user";
 
 export const useUserManagement = (authUser: User | null) => {
@@ -24,14 +24,17 @@ export const useUserManagement = (authUser: User | null) => {
 
   useEffect(() => {
     fetchUsers();
-  }, [authUser]); 
+  }, [authUser]);
 
-  const handleRoleChange = async (selectedUser: User, newRole: "member" | "user") => {
+  const handleRoleChange = async (
+    selectedUser: User,
+    newRole: "member" | "user",
+  ) => {
     if (!authUser || authUser.access !== "admin") {
       console.error("Unauthorized role change attempt.");
       return;
     }
-    
+
     if (newRole === "member" || newRole === "user") {
       try {
         await updateUserRole(authUser, selectedUser.uid, newRole);

@@ -9,7 +9,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet";
+} from "@/app/components/ui/sheet";
 import { MenuIcon } from "lucide-react";
 import SignedInPfp from "./SignedInPfp";
 import { useUser } from "../hooks/UserContext";
@@ -38,7 +38,6 @@ const Navbar = ({
   variant?: "primary" | "secondary";
   className?: string;
 }) => {
-
   return (
     <>
       <div
@@ -109,7 +108,6 @@ const Navbar = ({
 };
 
 const MobileNavbar = () => {
-
   return (
     <>
       <Sheet>

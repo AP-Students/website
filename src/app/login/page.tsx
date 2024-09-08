@@ -5,7 +5,7 @@ import { Outfit } from "next/font/google";
 import { useAuthHandlers } from "@/lib/auth";
 import React, { useState } from "react";
 import Link from "next/link";
-import Button from "@/components/login/submitButton";
+import Button from "@/app/components/login/submitButton";
 import { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
 
 const outfit = Outfit({

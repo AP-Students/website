@@ -1,16 +1,16 @@
 "use client";
-import { Accordion } from "@/components/ui/accordion";
-import Footer from "@/components/ui/footer";
-import Navbar from "@/components/ui/navbar";
+import { Accordion } from "@/app/components/ui/accordion";
+import Footer from "@/app/components/ui/footer";
+import Navbar from "@/app/components/ui/navbar";
 import { db } from "@/lib/firebase";
 import { type Subject } from "@/types";
-import SubjectBreadcrumb from "@/components/subjectHomepage/subject-breadcrumb";
-import SubjectSidebar from "@/components/subjectHomepage/subject-sidebar";
-import TableOfContents from "@/components/subjectHomepage/table-of-contents";
-import UnitAccordion from "@/components/subjectHomepage/unit-accordion";
+import SubjectBreadcrumb from "@/app/components/subjectHomepage/subject-breadcrumb";
+import SubjectSidebar from "@/app/components/subjectHomepage/subject-sidebar";
+import TableOfContents from "@/app/components/subjectHomepage/table-of-contents";
+import UnitAccordion from "@/app/components/subjectHomepage/unit-accordion";
 import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
-import { getUser } from "@/components/hooks/users";
+import { getUser } from "@/app/components/hooks/users";
 import { User } from "@/types/user";
 import Link from "next/link";
 
@@ -55,12 +55,11 @@ const Page = ({ params }: { params: { slug: string } }) => {
         setLoading(false);
       }
     };
-  
+
     if (user !== undefined) {
       fetchSubject();
     }
   }, [user]);
-  
 
   if (loading) {
     return (
