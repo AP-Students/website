@@ -85,11 +85,6 @@ const DigitalTestingPage: React.FC = () => {
     }
   };
 
-  const handleReview = () => {
-    // Implement "Mark for Review"
-    // TODO: pass setCurrentQuestionIndex to Footer and use popup in Footer
-  };
-
   const toggleBookmark = () => {
     questions[currentQuestionIndex]!.bookmarked =
       !questions[currentQuestionIndex]!.bookmarked;
@@ -143,8 +138,9 @@ const DigitalTestingPage: React.FC = () => {
       <Footer
         onNext={handleNext}
         onPrevious={handlePrevious}
-        onReview={handleReview}
-        progress={`Question ${currentQuestionIndex + 1} of ${questions.length}`}
+        goToQuestion={setCurrentQuestionIndex}
+        currentQuestionIndex={currentQuestionIndex}
+        questions={questions}
       />
     </div>
   );
