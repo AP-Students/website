@@ -176,7 +176,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [notAuthenticated, setNotAuthenticated] = useState<boolean>(false);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null | undefined>(undefined);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -196,20 +196,15 @@ const Page = ({ params }: { params: { slug: string } }) => {
       try {
         if (user) {
           // Reference to the document in Firestore using the slug
-          const docRef = doc(db, "pages", params.slug);
+          const docRef = doc(db, "subjects", params.slug);
           const docSnap = await getDoc(docRef);
-
-          console.log("docSnap", docSnap.data());
-          console.log("params.slug", params.slug);
           if (docSnap.exists()) {
-            // Convert Firestore document data to Subject type
             setSubject(docSnap.data() as Subject);
           } else {
-            console.error("No such document!");
-            setError("Subject not found. Thats probably us, not you.");
+            setError("Subject not found. That's probably us, not you.");
           }
-        }else{
-          setNotAuthenticated(true);
+        } else {
+          setNotAuthenticated(true); // Trigger not authenticated state if user is null
         }
       } catch (error) {
         console.error("Error fetching subject data:", error);
@@ -218,9 +213,12 @@ const Page = ({ params }: { params: { slug: string } }) => {
         setLoading(false);
       }
     };
-
-    fetchSubject();
+  
+    if (user !== undefined) {
+      fetchSubject();
+    }
   }, [user]);
+  
 
   if (loading) {
     return (
@@ -232,19 +230,19 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
   if (notAuthenticated) {
     return (
-      <div className="flex flex-col min-h-screen items-center justify-center text-3xl">
+      <div className="flex min-h-screen flex-col items-center justify-center text-3xl">
         <span className="mb-4">Log in or sign up to view this subject.</span>
 
         <Link
           href="/login"
-          className="rounded-md text-xl text-blue-500 py-2 hover:underline"
+          className="rounded-md py-2 text-xl text-blue-500 hover:underline"
         >
           Log in for FiveHive to view this subject.
         </Link>
 
         <Link
           href="/signup"
-          className="rounded-md text-xl text-blue-500 py-2 hover:underline"
+          className="rounded-md py-2 text-xl text-blue-500 hover:underline"
         >
           Sign up for FiveHive to view this subject.
         </Link>
@@ -259,8 +257,6 @@ const Page = ({ params }: { params: { slug: string } }) => {
       </div>
     );
   }
-  
-
 
   return (
     <div className="relative flex min-h-screen">
