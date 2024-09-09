@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
-import { getUser } from "@/app/components/hooks/users";
+import { getUser } from "@/components/hooks/users";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheckCircle } from "@fortawesome/free-solid-svg-icons";
 
@@ -104,7 +104,6 @@ function ArticleCreator({ className }: { className?: string }) {
 
   const handleTitleSelect = async () => {
     const user = await getUser();
-    console.log("user", user);
     const pathParts = window.location.pathname.split("/").slice(-3);
 
     const newArticle = {

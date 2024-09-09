@@ -2,7 +2,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/app/components/ui/accordion";
+} from "@/components/ui/accordion";
 
 // Goes in backend
 

@@ -3,7 +3,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/app/components/ui/accordion";
+} from "@/components/ui/accordion";
 import { type Unit } from "@/types";
 import Link from "next/link";
 

@@ -1,21 +1,23 @@
 "use client";
-import Footer from "@/app/components/ui/footer";
-import Navbar from "@/app/components/ui/navbar";
+import Footer from "@/components/ui/footer";
+import Navbar from "@/components/ui/navbar";
 import { db } from "@/lib/firebase";
 import { type Subject } from "@/types";
-import SubjectBreadcrumb from "@/app/components/subjectHomepage/subject-breadcrumb";
-import SubjectSidebar from "@/app/components/subjectHomepage/subject-sidebar";
-import TableOfContents from "@/app/components/subjectHomepage/table-of-contents";
+import SubjectBreadcrumb from "@/components/subjectHomepage/subject-breadcrumb";
+import SubjectSidebar from "@/components/subjectHomepage/subject-sidebar";
+import TableOfContents from "@/components/subjectHomepage/table-of-contents";
 import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import Renderer from "@/app/article-creator/_components/Renderer";
 import { Content } from "@/types/content";
-import { useUser } from "@/app/components/hooks/UserContext";
+import { useUser } from "@/components/hooks/UserContext";
 
 const Page = ({ params }: { params: { slug: string } }) => {
   const [subject, setSubject] = useState<Subject | null>(null);
   const [content, setContent] = useState<Content | null>(null);
   const { user, loading, error, setError, setLoading } = useUser();
+  // Clear errors incase they exist from other pages
+  setError(null);
 
   const pathParts = window.location.pathname.split("/").slice(-2);
   const formattedTitle =
@@ -32,7 +34,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
           const subjectDocRef = doc(db, "subjects", params.slug);
           const subjectDocSnap = await getDoc(subjectDocRef);
           if (subjectDocSnap.exists()) {
-            // Since this is a slug, if user navigates onto another subject page and null, then  
+            // Since this is a slug, if user navigates onto another subject page and null, then
             // navigates back to a page and not null, then the error will still remain. So we need to remove the error
             setError(null);
             // Convert Firestore document data to Subject type
@@ -47,7 +49,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
           if (pageDocSnap.exists()) {
             setError(null);
             setContent(pageDocSnap.data() as Content);
-          } else{
+          } else {
             setError("Content not found. That's probably us, not you.");
           }
         }

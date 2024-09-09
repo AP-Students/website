@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { Button } from "@/app/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { type Subject } from "@/types";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";

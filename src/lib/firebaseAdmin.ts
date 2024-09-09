@@ -12,7 +12,6 @@ const setCustomClaims = async (uid: string) => {
   try {
     // Set custom user claims
     await admin.auth().setCustomUserClaims(uid, { admin: true });
-    console.log(`Custom claims set successfully for user: ${uid}`);
   } catch (error) {
     console.error('Error setting custom claims:', error);
   }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getAllUsers, updateUserRole } from "@/app/components/hooks/users";
+import { getAllUsers, updateUserRole } from "@/components/hooks/users";
 import { User } from "@/types/user";
 
 export const useUserManagement = (authUser: User | null) => {

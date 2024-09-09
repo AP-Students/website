@@ -1,12 +1,12 @@
 "use client";
-import Navbar from "@/app/components/ui/navbar";
-import Footer from "@/app/components/ui/footer";
+import Navbar from "@/components/ui/navbar";
+import Footer from "@/components/ui/footer";
 import { User } from "@/types/user";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUserManagement } from "./useUserManagement";
 import apClassesData from "./apClasses.json";
-import { useUser } from "../components/hooks/UserContext";
+import { useUser } from "../../components/hooks/UserContext";
 
 const apClasses = apClassesData.apClasses;
 
@@ -14,7 +14,6 @@ const Page = () => {
   const { user } = useUser();
   const [searchTermAPClasses, setSearchTermAPClasses] = useState<string>("");
   const [searchTermUsers, setSearchTermUsers] = useState<string>("");
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const router = useRouter();
@@ -63,26 +62,29 @@ const Page = () => {
                     className="mb-3 w-full rounded-md border p-2"
                     placeholder="Search for a user..."
                     value={searchTermUsers}
-                    onChange={(e) =>
-                      setSearchTermUsers(e.target.value)
-                    }
+                    onChange={(e) => setSearchTermUsers(e.target.value)}
                   />
                   <ul className="class-list max-h-60 overflow-y-auto">
-                    {error && users!.map((u) => ( // If error, it will show error message. Otherwise, it will show users
-                      <li
-                        key={u.uid}
-                        className="grid cursor-pointer grid-cols-1 gap-4 rounded-md border p-4 text-center shadow-md hover:bg-gray-200 md:grid-cols-2 lg:grid-cols-3"
-                        onClick={() => openModal(u)} 
-                      >
-                        <div className="hidden font-bold lg:block">
-                          {u.displayName}
-                        </div>
-                        <div className="font-normal md:font-bold lg:font-normal">
-                          {u.email}
-                        </div>
-                        <div className="font-bold">{u.access}</div>
-                      </li>
-                    ))}
+                    {!error &&
+                      users!.map(
+                        (
+                          u, // If error, it will show error message. Otherwise, it will show users
+                        ) => (
+                          <li
+                            key={u.uid}
+                            className="grid cursor-pointer grid-cols-1 gap-4 rounded-md border p-4 text-center shadow-md hover:bg-gray-200 md:grid-cols-2 lg:grid-cols-3"
+                            onClick={() => openModal(u)}
+                          >
+                            <div className="hidden font-bold lg:block">
+                              {u.displayName}
+                            </div>
+                            <div className="font-normal md:font-bold lg:font-normal">
+                              {u.email}
+                            </div>
+                            <div className="font-bold">{u.access}</div>
+                          </li>
+                        ),
+                      )}
                   </ul>
                 </div>
               </div>
@@ -99,9 +101,7 @@ const Page = () => {
                 className="mb-3 w-full rounded-md border p-2"
                 placeholder="Search for a class..."
                 value={searchTermAPClasses}
-                onChange={(e) =>
-                 setSearchTermAPClasses(e.target.value)
-                }
+                onChange={(e) => setSearchTermAPClasses(e.target.value)}
               />
               <ul className="class-list max-h-60 overflow-y-auto">
                 {filteredClasses.map((apClass: string) => (

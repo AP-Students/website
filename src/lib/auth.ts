@@ -77,7 +77,6 @@ export const useAuthHandlers = () => {
       const userDoc = await getDoc(userDocRef);
 
       if (!userDoc.exists()) {
-        console.log("User doesn't exist in Firestore");
         throw {
           code: "auth/invalid-email",
         };

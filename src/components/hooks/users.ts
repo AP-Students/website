@@ -13,30 +13,30 @@ export const getUser = async (): Promise<User | null> => {
   return new Promise<User | null>((resolve, reject) => {
     const unsubscribe = auth.onAuthStateChanged(
       async (firebaseUser: FirebaseUser | null) => {
-        if (firebaseUser) {
-          try {
-            const userDocRef = doc(db, "users", firebaseUser.uid);
-            const userDoc = await getDoc(userDocRef);
-            if (userDoc.exists()) {
-              const userData = userDoc.data();
-              const mappedUser: User = {
-                uid: firebaseUser.uid,
-                displayName:
-                  userData.displayName || firebaseUser.displayName || undefined,
-                email: userData.email || firebaseUser.email || "",
-                photoURL:
-                  userData?.photoURL || firebaseUser.photoURL || undefined,
-                access: userData.access || "user",
-              };
-              resolve(mappedUser);
-            } else {
-              resolve(null);
-            }
-          } catch (error) {
-            reject(error);
-          }
-        } else {
+        if (firebaseUser === null) {
           resolve(null);
+        } 
+
+        try {
+          const userDocRef = doc(db, "users", firebaseUser!.uid);
+          const userDoc = await getDoc(userDocRef);
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            const mappedUser: User = {
+              uid: firebaseUser!.uid,
+              displayName:
+                userData.displayName || firebaseUser!.displayName || undefined,
+              email: userData.email || firebaseUser!.email || "",
+              photoURL:
+                userData?.photoURL || firebaseUser!.photoURL || undefined,
+              access: userData.access || "user",
+            };
+            resolve(mappedUser);
+          } else {
+            resolve(null);
+          }
+        } catch (error) {
+          reject(error);
         }
         unsubscribe();
       },
@@ -67,17 +67,17 @@ export const updateUserRole = async (
   uid: string,
   newRole: "member" | "user",
 ): Promise<void> => {
-  if (authUser && authUser.access === "admin") {
-    try {
-      const userDocRef = doc(db, "users", uid);
-      await updateDoc(userDocRef, {
-        access: newRole,
-      });
-    } catch (error) {
-      console.error("Error updating user role:", error);
-      throw error;
-    }
-  } else {
+  if (!authUser || authUser.access !== "admin") {
     return;
+  } 
+  
+  try {
+    const userDocRef = doc(db, "users", uid);
+    await updateDoc(userDocRef, {
+      access: newRole,
+    });
+  } catch (error) {
+    console.error("Error updating user role:", error);
+    throw error;
   }
 };

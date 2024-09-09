@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { Accordion } from "@/app/components/ui/accordion";
+import { Accordion } from "@/components/ui/accordion";
 import { ChevronRight } from "lucide-react";
-import Navbar from "@/app/components/ui/navbar";
-import { Button } from "@/app/components/ui/button";
+import Navbar from "@/components/ui/navbar";
+import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import Footer from "@/app/components/ui/footer";
-import APLibrary from "@/app/components/landingPage/APLibrary";
-import FAQ from "@/app/components/landingPage/FAQ";
+import Footer from "@/components/ui/footer";
+import APLibrary from "@/components/landingPage/APLibrary";
+import FAQ from "@/components/landingPage/FAQ";
 
 export default async function Home() {
   return (

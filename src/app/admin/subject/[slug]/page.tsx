@@ -1,8 +1,8 @@
 "use client";
-import { useUser } from "@/app/components/hooks/UserContext";
-import SubjectSidebar from "@/app/components/subjectHomepage/subject-sidebar";
-import Footer from "@/app/components/ui/footer";
-import Navbar from "@/app/components/ui/navbar";
+import { useUser } from "@/components/hooks/UserContext";
+import SubjectSidebar from "@/components/subjectHomepage/subject-sidebar";
+import Footer from "@/components/ui/footer";
+import Navbar from "@/components/ui/navbar";
 import { db } from "@/lib/firebase";
 import { Subject } from "@/types";
 import { doc, getDoc, setDoc } from "firebase/firestore";
@@ -31,6 +31,7 @@ const emptyData: Subject = {
 const Page = ({ params }: { params: { slug: string } }) => {
   const [subject, setSubject] = useState<Subject | null>(null);
   const { user, loading, error, setError, setLoading } = useUser();
+  setError(null);
 
   useEffect(() => {
     const fetchSubject = async () => {
@@ -41,6 +42,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
           if (docSnap.exists()) {
             setSubject(docSnap.data() as Subject);
           } else {
+            // If subject doesn't exist, use dyanmic link as title and set empty data title to it, then save as subject
             emptyData.title =
               apClasses.find(
                 (apClass) =>
@@ -114,7 +116,8 @@ const Page = ({ params }: { params: { slug: string } }) => {
               </h2>
 
               <h2 className="min-w-full py-8 text-center text-2xl font-black">
-                DO NOT CLICK THE LINKS OR LEAVE THE PAGE BEFORE SAVING OR YOU WILL LOSE YOUR CHANGES.
+                DO NOT CLICK THE LINKS OR LEAVE THE PAGE BEFORE SAVING OR YOU
+                WILL LOSE YOUR CHANGES.
               </h2>
 
               <div className="flex min-w-full justify-center">
