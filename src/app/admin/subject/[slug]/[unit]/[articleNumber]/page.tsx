@@ -8,7 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 const Page = ({ params }: { params: { slug: string } }) => {
   const { user, loading, error, setError } = useUser();
   // Clear errors incase they exist from other pages
-  setError(null);
+  
   const router = useRouter();
   const pathname = usePathname();
 

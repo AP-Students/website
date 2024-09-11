@@ -71,9 +71,12 @@ const SignedInPfp = () => {
           <hr className="border-gray-200" /> */}
 
             {user.access === "admin" && (
-              <button className="block w-full px-4 py-2 text-left hover:bg-gray-100">
-                <Link href="/admin">Admin Dashboard</Link>
-              </button>
+              <Link
+                className="block w-full px-4 py-2 text-left hover:bg-gray-100"
+                href="/admin"
+              >
+                Admin Dashboard
+              </Link>
             )}
 
             <button

@@ -50,6 +50,10 @@ export const useAuthHandlers = () => {
       });
 
       router.push("/");
+      // Allows time for db to store user, then refreshes page to reload user and replace sign up + login page. 
+      setTimeout(() => {
+        router.refresh();
+      }, 500);
     } catch (e: any) {
       const error = e as FirebaseAuthError;
 
@@ -83,6 +87,9 @@ export const useAuthHandlers = () => {
       }
 
       router.push("/");
+      setTimeout(() => {
+        router.refresh();
+      }, 500);
       return userCredential;
     } catch (e: any) {
       const error = e as FirebaseAuthError;
@@ -115,6 +122,9 @@ export const useAuthHandlers = () => {
       });
 
       router.push("/");
+      setTimeout(() => {
+        router.refresh();
+      }, 500);
     } catch (e: any) {
       const error = e as FirebaseAuthError;
       throw {
@@ -145,6 +155,10 @@ export const useAuthHandlers = () => {
       }
 
       router.push("/");
+      setTimeout(() => {
+        router.refresh();
+      }, 500);
+      
     } catch (error) {
     }
   };

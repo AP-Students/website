@@ -25,7 +25,7 @@ export const useUserManagement = (authUser: User | null) => {
 
   useEffect(() => {
     fetchUsers();
-  }, [authUser]);
+  }, []);
 
   const handleRoleChange = async (
     selectedUser: User,

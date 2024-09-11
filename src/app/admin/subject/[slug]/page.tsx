@@ -31,9 +31,10 @@ const emptyData: Subject = {
 const Page = ({ params }: { params: { slug: string } }) => {
   const [subject, setSubject] = useState<Subject | null>(null);
   const { user, loading, error, setError, setLoading } = useUser();
-  setError(null);
+  // setError(null);
 
   useEffect(() => {
+
     const fetchSubject = async () => {
       try {
         if (user && (user?.access === "admin" || user?.access === "member")) {
@@ -55,14 +56,15 @@ const Page = ({ params }: { params: { slug: string } }) => {
             setSubject(emptyData);
           }
         }
-      } catch (error) {
+        
+      } 
+      catch (error) {
         console.log("Error fetching subject data:", error);
         setError("Failed to fetch subject data.");
       } finally {
         setLoading(false);
       }
     };
-
     fetchSubject();
   }, [user]);
 

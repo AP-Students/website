@@ -23,7 +23,7 @@ const SubjectSidebar = (props: Props) => {
     unitIndex: number | null;
     chapterIndex: number | null;
   }>({ unitIndex: null, chapterIndex: null });
-  let sliceNum = 3;
+  const [sliceNum, setSliceNum] = useState(3);
   const [newUnitTitle, setNewUnitTitle] = useState<string>("");
 
   // UseRef for the input to auto-focus when editing
@@ -99,10 +99,11 @@ const SubjectSidebar = (props: Props) => {
     updatedUnits.splice(unitIndex, 1);
     setUnits(updatedUnits);
   };
-
+  // Get pathname for firebase retrieval
   const pathname = window.location.pathname;
+  // isAdmin is needed for checking if user can add, edit, or delete units and chapters but also for the slice number that edits the pathname and therefore, title.
   const isAdmin = pathname.split("/").includes("admin") ? "/admin" : "";
-  isAdmin && sliceNum++;
+  isAdmin && setSliceNum(sliceNum + 1);
 
   return (
     <div
