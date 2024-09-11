@@ -42,6 +42,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
             setSubject(docSnap.data() as Subject);
+            console.log("subject", subject);
           } else {
             // If subject doesn't exist, use dyanmic link as title and set empty data title to it, then save as subject
             emptyData.title =
@@ -59,7 +60,6 @@ const Page = ({ params }: { params: { slug: string } }) => {
         
       } 
       catch (error) {
-        console.log("Error fetching subject data:", error);
         setError("Failed to fetch subject data.");
       } finally {
         setLoading(false);

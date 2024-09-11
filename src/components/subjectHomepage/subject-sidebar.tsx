@@ -103,7 +103,9 @@ const SubjectSidebar = (props: Props) => {
   const pathname = window.location.pathname;
   // isAdmin is needed for checking if user can add, edit, or delete units and chapters but also for the slice number that edits the pathname and therefore, title.
   const isAdmin = pathname.split("/").includes("admin") ? "/admin" : "";
-  isAdmin && setSliceNum(sliceNum + 1);
+  useEffect(() => {
+    isAdmin && setSliceNum(sliceNum + 1);
+  },[isAdmin]);
 
   return (
     <div
