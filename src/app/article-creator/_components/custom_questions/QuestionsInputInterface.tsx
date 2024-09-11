@@ -2,13 +2,14 @@
 
 import React, { useState } from "react";
 import { QuestionFormat } from "@/types/questions";
+import { FaTrash } from "react-icons/fa"; 
 
 interface Props {
   questions: QuestionFormat[];
   setQuestions: (questions: QuestionFormat[]) => void;
 }
 
-const QuestionsInputInterface: React.FC<Props> = ({
+const   QuestionsInputInterface: React.FC<Props> = ({
   questions,
   setQuestions,
 }) => {
@@ -47,6 +48,21 @@ const QuestionsInputInterface: React.FC<Props> = ({
     setQuestions(newQuestions);
   };
 
+  const addOption = (qIndex: number) => {
+    const newQuestions = [...questions];
+    const newOptions = [...newQuestions[qIndex]!.options, { value: "", id: Date.now().toString() }];
+    newQuestions[qIndex]!.options = newOptions;
+    setQuestions(newQuestions);
+  };
+
+  const deleteOption = (qIndex: number, oIndex: number) => {
+    const newQuestions = [...questions];
+    const newOptions = newQuestions[qIndex]!.options.filter((_, index) => index !== oIndex);
+    newQuestions[qIndex]!.options = newOptions;
+    setQuestions(newQuestions);
+  };
+  
+
   const validateCorrectAnswer = (
     value: string,
     type: "mcq" | "multi-answer",
@@ -81,10 +97,11 @@ const QuestionsInputInterface: React.FC<Props> = ({
               className="w-full border p-2"
             />
           </div>
+
           <div>
             <label>Options:</label>
             {question.options.map((option, oIndex) => (
-              <div key={oIndex}>
+              <div key={oIndex} className="flex items-center mb-2">
                 <input
                   type="text"
                   value={option.value}
@@ -98,11 +115,26 @@ const QuestionsInputInterface: React.FC<Props> = ({
                       });
                     }
                   }}
-                  className="w-full border p-2"
+                  className="w-full border p-2 mr-2"
                 />
+                <button
+                  type="button"
+                  onClick={() => deleteOption(qIndex, oIndex)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <FaTrash />
+                </button>
               </div>
             ))}
+            <button
+              type="button"
+              onClick={() => addOption(qIndex)}
+              className="text-green-500 hover:text-green-700 inline-flex items-center"
+            >
+              <span className="mr-1">+</span> Add Option
+            </button>
           </div>
+
           <div>
             <label>Correct Answer(s):</label>
             <input
@@ -129,6 +161,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
             />
             {error && <div className="text-red-500">{error}</div>}
           </div>
+
           <div>
             <label>Question Type:</label>
             <select
@@ -145,9 +178,10 @@ const QuestionsInputInterface: React.FC<Props> = ({
               <option value="multi-answer">Multi-Answer</option>
             </select>
           </div>
+
           <button
             type="button"
-            className="mt-4 rounded-md border border-red-500 bg-red-500 px-2 py-1 text-white  hover:bg-white hover:text-red-500"
+            className="mt-4 rounded-md border border-red-500 bg-red-500 px-2 py-1 text-white hover:bg-white hover:text-red-500"
             onClick={() => removeQuestion(qIndex)}
           >
             Delete Question
