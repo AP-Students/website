@@ -4,19 +4,16 @@ import { MdOutlineRefresh } from "react-icons/md";
 import { QuestionFormat } from "@/types/questions";
 
 interface Props {
-  questions: QuestionFormat[];
-  currentQuestionIndex: number;
+  question: QuestionFormat;
 }
 
 const CheckForUnderstanding: React.FC<Props> = ({
-  questions,
-  currentQuestionIndex,
+  question,
 }) => {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [submitted, setSubmitted] = useState<boolean>(false);
 
-  const question = questions[currentQuestionIndex]!;
 
   const handleSelectOption = (id: string) => {
     if (!submitted) {
@@ -99,7 +96,7 @@ const CheckForUnderstanding: React.FC<Props> = ({
             className={`rounded px-6 py-2 text-white ${isCorrect ? "bg-green-500" : "bg-red-500"}`}
             disabled
           >
-            {isCorrect ? "Correct" : "Incorrect"}
+            {isCorrect ? "Correct" : "Incorrect"} {question.explanation && ` - ${question.explanation}`}
           </button>
 
           <button

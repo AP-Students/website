@@ -29,6 +29,7 @@ const   QuestionsInputInterface: React.FC<Props> = ({
           { value: "", id: "4" },
         ],
         correct: [],
+        explanation: "", 
         course_id: "",
         unit_ids: [],
         subunit_ids: [],
@@ -160,6 +161,18 @@ const   QuestionsInputInterface: React.FC<Props> = ({
               className="w-full border p-2"
             />
             {error && <div className="text-red-500">{error}</div>}
+          </div>
+
+          <div>
+            <label>Explanation:</label>
+            <textarea
+              value={question.explanation}
+              onChange={(e) =>
+                updateQuestion(qIndex, { ...question, explanation: e.target.value })
+              }
+              className="w-full border p-2"
+              placeholder="Enter the explanation for the answer here (optional)..." 
+            />
           </div>
 
           <div>

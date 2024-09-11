@@ -73,7 +73,7 @@ export const QuestionsOutput: React.FC<{ instanceId: string }> = ({
   return (
     <div className="mt-8">
       {questions.length === 1 ? (
-        <CheckForUnderstanding questions={questions} currentQuestionIndex={0} />
+        <CheckForUnderstanding question={questions[0]!} />
       ) : (
         <QuizRenderer questions={questions} />
       )}
