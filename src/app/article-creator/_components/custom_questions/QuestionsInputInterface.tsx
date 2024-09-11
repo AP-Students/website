@@ -95,7 +95,7 @@ const   QuestionsInputInterface: React.FC<Props> = ({
               onChange={(e) =>
                 updateQuestion(qIndex, { ...question, body: e.target.value })
               }
-              className="w-full border p-2"
+              className="w-full border p-2 "
             />
           </div>
 
@@ -148,7 +148,6 @@ const   QuestionsInputInterface: React.FC<Props> = ({
               }
               onChange={(e) => {
                 const inputValue = e.target.value;
-
                 const correctAnswers = inputValue
                   .split(",")
                   .map((answer) => answer.trim());
@@ -165,7 +164,7 @@ const   QuestionsInputInterface: React.FC<Props> = ({
 
           <div>
             <label>Explanation:</label>
-            <textarea
+            <input
               value={question.explanation}
               onChange={(e) =>
                 updateQuestion(qIndex, { ...question, explanation: e.target.value })

@@ -47,7 +47,7 @@ const Page = () => {
       <div className="mx-auto mt-12 flex max-w-6xl flex-col px-8 pb-8 ">
         <div className="mb-6 flex flex-col gap-1">
           <h1 className="text-balance text-left text-5xl font-extrabold lg:text-6xl">
-            Admin dashboard
+            Admin Dashboard
           </h1>
 
           {user.access === "admin" && (
