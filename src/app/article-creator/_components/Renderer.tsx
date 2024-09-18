@@ -100,8 +100,7 @@ const Renderer = (props: { content: OutputData }) => {
     if (containerRef.current) {
       // Select the placeholder div and render the React component
       for (const block of props.content.blocks) {
-        console.log("Processing block:", block);
-        
+
         if (block.type === "questionsAddCard") {
           const instanceId = block.data.instanceId;
           const placeholder = containerRef.current.querySelector(

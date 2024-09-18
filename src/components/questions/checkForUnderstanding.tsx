@@ -86,7 +86,13 @@ const renderContent = useCallback((content: questionInput[]) => {
 
     // Check if it's an image type and render an image
     if (item.type === 'image') {
+      console.log("Question:", question);
+      console.log("Item:", item);
+      console.log("Image type:", item.value);
+
       const imageUrl = URL.createObjectURL(item.value);
+      console.log("Image URL:", imageUrl);
+
       return (
         <div key={index} className="my-2">
           <img src={imageUrl} alt="Uploaded image" className="max-w-full h-auto" />
@@ -96,7 +102,11 @@ const renderContent = useCallback((content: questionInput[]) => {
 
     // Check if it's an audio type and render an audio element
     if (item.type === 'audio') {
+      console.log("Audio type:", item.value);
+
       const audioUrl = URL.createObjectURL(item.value);
+      console.log("Audio URL:", audioUrl);
+
       return (
         <div key={index} className="my-2">
           <audio controls>

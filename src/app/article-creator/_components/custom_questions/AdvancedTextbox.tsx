@@ -58,6 +58,7 @@ export default function AdvancedTextbox({ questions, qIndex, setQuestions }: Pro
       // Add an image block
       const newImageBlock: questionInput = { type: "image", value: file };
       questions[qIndex]?.body.push(newImageBlock);
+      console.log("Questions:", questions);
     } else if (file?.type.startsWith("audio/")) {
       // Add an audio block
       const newAudioBlock: questionInput = { type: "audio", value: file };
@@ -79,6 +80,7 @@ export default function AdvancedTextbox({ questions, qIndex, setQuestions }: Pro
         onKeyDown={handleKeyDown}
         onDrop={handleFileDrop}
         onDragEnter={handleDrag}
+        placeholder="Type or drag and drop here...latex syntax starts and ends with $$ (eg: $$e^{i\pi} + 1 = 0$$)"
       />
       {dragActive && (
         <div

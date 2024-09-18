@@ -48,7 +48,7 @@ const useSyncedQuestions = (instanceId: string) => {
   }, [storageKey]);
 
   return { questions, setQuestions };
-};
+  };
 
 export const QuestionsInput: React.FC<{ instanceId: string }> = ({
   instanceId,
