@@ -13,14 +13,14 @@ const useSyncedQuestions = (instanceId: string) => {
       ? JSON.parse(savedQuestions)
       : [
           {
-            body: "",
+            body: [],
             title: "",
             type: "mcq",
             options: [
-              { value: "", id: "1" },
-              { value: "", id: "2" },
-              { value: "", id: "3" },
-              { value: "", id: "4" },
+              { value: [""], id: "1" },
+              { value: [""], id: "2" },
+              { value: [""], id: "3" },
+              { value: [""], id: "4" },
             ],
             correct: [],
             course_id: "",
@@ -53,7 +53,7 @@ const useSyncedQuestions = (instanceId: string) => {
 export const QuestionsInput: React.FC<{ instanceId: string }> = ({
   instanceId,
 }) => {
-  const { questions, setQuestions } = useSyncedQuestions(instanceId);
+  const { questions, setQuestions } = useSyncedQuestions(instanceId); 
 
   return (
     <div>

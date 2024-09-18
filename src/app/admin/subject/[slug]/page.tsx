@@ -31,7 +31,7 @@ const emptyData: Subject = {
 const Page = ({ params }: { params: { slug: string } }) => {
   const [subject, setSubject] = useState<Subject | null>(null);
   const { user, loading, error, setError, setLoading } = useUser();
-  // setError(null);
+  
 
   useEffect(() => {
 

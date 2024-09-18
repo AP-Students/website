@@ -1,4 +1,4 @@
-import { ToolConstructable, type OutputData } from "@editorjs/editorjs";
+import { type OutputData } from "@editorjs/editorjs"; 
 import edjsParser from "editorjs-parser";
 import katex from "katex";
 import hljs from "highlight.js";
@@ -100,6 +100,8 @@ const Renderer = (props: { content: OutputData }) => {
     if (containerRef.current) {
       // Select the placeholder div and render the React component
       for (const block of props.content.blocks) {
+        console.log("Processing block:", block);
+        
         if (block.type === "questionsAddCard") {
           const instanceId = block.data.instanceId;
           const placeholder = containerRef.current.querySelector(

@@ -3,13 +3,14 @@
 import React, { useState } from "react";
 import { QuestionFormat } from "@/types/questions";
 import { FaTrash } from "react-icons/fa"; 
+import AdvancedTextbox from "./AdvancedTextbox";
 
 interface Props {
   questions: QuestionFormat[];
   setQuestions: (questions: QuestionFormat[]) => void;
 }
 
-const   QuestionsInputInterface: React.FC<Props> = ({
+const QuestionsInputInterface: React.FC<Props> = ({
   questions,
   setQuestions,
 }) => {
@@ -19,7 +20,7 @@ const   QuestionsInputInterface: React.FC<Props> = ({
     setQuestions([
       ...questions,
       {
-        body: "",
+        body: [],
         title: "",
         type: "mcq",
         options: [
@@ -80,7 +81,7 @@ const   QuestionsInputInterface: React.FC<Props> = ({
       }
     }
     setError(errorMessage);
-    return errorMessage === "";
+    return errorMessage === ""; 
   };
 
   return (
@@ -89,13 +90,10 @@ const   QuestionsInputInterface: React.FC<Props> = ({
         <div key={qIndex} className="mb-4 rounded border p-4">
           <div>
             <label>{"Question: " + (qIndex + 1)}</label>
-            <input
-              type="text"
-              value={question.body}
-              onChange={(e) =>
-                updateQuestion(qIndex, { ...question, body: e.target.value })
-              }
-              className="w-full border p-2 "
+            <AdvancedTextbox 
+              questions={questions}
+              setQuestions={setQuestions}
+              qIndex={qIndex}
             />
           </div>
 
@@ -132,7 +130,7 @@ const   QuestionsInputInterface: React.FC<Props> = ({
               onClick={() => addOption(qIndex)}
               className="text-green-500 hover:text-green-700 inline-flex items-center"
             >
-              <span className="mr-1">+</span> Add Option
+              <span className="mr-1">+</span> Add Option  
             </button>
           </div>
 

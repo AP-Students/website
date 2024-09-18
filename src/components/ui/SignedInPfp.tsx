@@ -9,8 +9,6 @@ import { UserProvider, useUser } from "../hooks/UserContext";
 const SignedInPfp = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { user, loading, error, setError } = useUser();
-  // Clear errors incase they exist from other pages
-  setError(null);
 
   if (loading) return <div>Loading...</div>;
   if (!user || error) return null;

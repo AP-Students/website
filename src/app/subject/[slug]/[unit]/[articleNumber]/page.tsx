@@ -33,8 +33,6 @@ const Page = ({ params }: { params: { slug: string } }) => {
           const subjectDocRef = doc(db, "subjects", params.slug);
           const subjectDocSnap = await getDoc(subjectDocRef);
           
-          // Clear errors incase they exist from other pages
-          setError(null);
           if (subjectDocSnap.exists()) {
             // Convert Firestore document data to Subject type
             setSubject(subjectDocSnap.data() as Subject);

@@ -1,5 +1,6 @@
 "use client";
 import ArticleCreator from "@/app/article-creator/_components/ArticleCreator";
+import AdvancedTextbox from "@/app/article-creator/_components/custom_questions/AdvancedTextbox";
 import { useUser } from "@/components/hooks/UserContext";
 import Footer from "@/components/ui/footer";
 import Navbar from "@/components/ui/navbar";
@@ -7,9 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 const Page = ({ params }: { params: { slug: string } }) => {
-  const { user, loading, error, setError } = useUser();
-  // // Clear errors incase they exist from other pages
-  // setError(null);
+  const { user, loading, error} = useUser();
 
   const router = useRouter();
   const pathname = usePathname();

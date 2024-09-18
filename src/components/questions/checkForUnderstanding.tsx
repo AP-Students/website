@@ -1,7 +1,8 @@
 "use client";
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { MdOutlineRefresh } from "react-icons/md";
-import { QuestionFormat } from "@/types/questions";
+import { questionInput, QuestionFormat } from "@/types/questions";
+import katex from "katex";
 
 interface Props {
   question: QuestionFormat;
@@ -51,12 +52,69 @@ const CheckForUnderstanding: React.FC<Props> = ({
     setIsCorrect(null);
   };
 
+  
+const renderContent = useCallback((content: questionInput[]) => {
+  if (!Array.isArray(content) || content.length === 0) {
+    // Guard Clause
+    return '';
+  }
+
+  return content.map((item: questionInput, index: number) => {
+    // Check if it's a text type and apply the LaTeX logic for text
+    if (item.type === 'text') {
+      const textValue = item.value;
+      return textValue.split('\n').map((line, lineIndex) => {
+        if (line.startsWith('$$') && line.endsWith('$$')) {
+          const latex = line.slice(2, -2);
+          return (
+            <div key={`${index}-${lineIndex}`} className="my-2">
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: katex.renderToString(latex, { throwOnError: false }),
+                }}
+              />
+            </div>
+          );
+        }
+        return (
+          <div key={`${index}-${lineIndex}`}>
+            {line}
+          </div>
+        );
+      });
+    }
+
+    // Check if it's an image type and render an image
+    if (item.type === 'image') {
+      const imageUrl = URL.createObjectURL(item.value);
+      return (
+        <div key={index} className="my-2">
+          <img src={imageUrl} alt="Uploaded image" className="max-w-full h-auto" />
+        </div>
+      );
+    }
+
+    // Check if it's an audio type and render an audio element
+    if (item.type === 'audio') {
+      const audioUrl = URL.createObjectURL(item.value);
+      return (
+        <div key={index} className="my-2">
+          <audio controls>
+            <source src={audioUrl} type={item.value.type} />
+            Your browser does not support the audio element.
+          </audio>
+        </div>
+      );
+    }
+
+    return null; // Return null if the type doesn't match any expected types
+  });
+}, [question.body, question.options]);
+
+
   return (
     <div className="max-w-6xl bg-primary-foreground p-4 md:p-6 lg:p-8">
-      <div
-        className="markdown text-xl font-bold md:text-2xl lg:text-3xl"
-        dangerouslySetInnerHTML={{ __html: question.body }}
-      />
+      <div className="markdown text-xl font-bold md:text-2xl lg:text-3xl">{renderContent(question.body)}</div>
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {question.options.map((option) => (
           <button
