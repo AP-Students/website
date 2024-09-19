@@ -21,7 +21,7 @@ const   QuestionsInputInterface: React.FC<Props> = ({
       {
         body: "",
         title: "",
-        type: "mcq",
+        displayNumAnswers: true,
         options: [
           { value: "", id: "1" },
           { value: "", id: "2" },
