@@ -1,20 +1,17 @@
 "use client";
-import React, { useCallback, useState } from "react";
+import React, { useState } from "react";
 import { MdOutlineRefresh } from "react-icons/md";
-import { questionInput, QuestionFormat } from "@/types/questions";
-import katex from "katex";
+import { QuestionFormat } from "@/types/questions";
+import { RenderContent } from "@/app/article-creator/_components/custom_questions/RenderContent";
 
 interface Props {
   question: QuestionFormat;
 }
 
-const CheckForUnderstanding: React.FC<Props> = ({
-  question,
-}) => {
+const CheckForUnderstanding: React.FC<Props> = ({ question }) => {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [submitted, setSubmitted] = useState<boolean>(false);
-
 
   const handleSelectOption = (id: string) => {
     if (!submitted) {
@@ -52,79 +49,76 @@ const CheckForUnderstanding: React.FC<Props> = ({
     setIsCorrect(null);
   };
 
+  // const renderContent = useCallback(
+  //   (content: questionInput) => {
+  //     const [elements, setElements] = useState<JSX.Element[]>([]); // Array to collect all the elements
+
+  //     // Render text and LaTeX content
+  //     if (content.value) {
+  //       content.value.split("$@").forEach((line, lineIndex) => {
+  //         // Convert to LaTeX syntax
+  //         if (line.startsWith("$") && line.endsWith("$")) {
+  //           elements.push(
+  //             <div key={`latex-${lineIndex}`} className="my-2">
+  //               <div
+  //                 dangerouslySetInnerHTML={{
+  //                   __html: katex.renderToString(line, {
+  //                     throwOnError: false,
+  //                   }),
+  //                 }}
+  //               />
+  //             </div>
+  //           );
+  //         } else {
+  //           // Render regular text
+  //           elements.push(<div key={`text-${lineIndex}`}>{line}</div>);
+  //         }
+  //       });
+  //     }
   
-const renderContent = useCallback((content: questionInput[]) => {
-  if (!Array.isArray(content) || content.length === 0) {
-    // Guard Clause
-    return '';
-  }
+  //     // Handle file content (image/audio)
+  //     if (content.fileKey) {
+  //       getFileFromIndexedDB(content.fileKey).then((file) => {
+  //         //@ts-ignore - file is an object incasing file, not the file iteself
+  //         if (file && file.file) {
+  //           //@ts-ignore - file is an object incasing file, not the file iteself
+  //           const fileURL = URL.createObjectURL(file.file); 
+  
+  //           if (content.fileKey?.startsWith("image/")) {
+  //             console.log("fileURL", fileURL);  
+  //             elements.push(
+  //               <div key={content.fileKey} className="my-2">
+  //                 <img src={fileURL} alt="Uploaded image" className="h-auto max-w-full" />
+  //               </div>
+  //             );
+  //           } else if (content.fileKey?.startsWith("audio/")) {
+  //             elements.push(
+  //               <div key={content.fileKey} className="my-2">
+  //                 <audio controls>
+  //                   <source src={fileURL} type="audio/mpeg" />
+  //                   Your browser does not support the audio element.
+  //                 </audio>
+  //               </div>
+  //             );
+  //           }
 
-  return content.map((item: questionInput, index: number) => {
-    // Check if it's a text type and apply the LaTeX logic for text
-    if (item.type === 'text') {
-      const textValue = item.value;
-      return textValue.split('\n').map((line, lineIndex) => {
-        if (line.startsWith('$$') && line.endsWith('$$')) {
-          const latex = line.slice(2, -2);
-          return (
-            <div key={`${index}-${lineIndex}`} className="my-2">
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: katex.renderToString(latex, { throwOnError: false }),
-                }}
-              />
-            </div>
-          );
-        }
-        return (
-          <div key={`${index}-${lineIndex}`}>
-            {line}
-          </div>
-        );
-      });
-    }
-
-    // Check if it's an image type and render an image
-    if (item.type === 'image') {
-      console.log("Question:", question);
-      console.log("Item:", item);
-      console.log("Image type:", item.value);
-
-      const imageUrl = URL.createObjectURL(item.value);
-      console.log("Image URL:", imageUrl);
-
-      return (
-        <div key={index} className="my-2">
-          <img src={imageUrl} alt="Uploaded image" className="max-w-full h-auto" />
-        </div>
-      );
-    }
-
-    // Check if it's an audio type and render an audio element
-    if (item.type === 'audio') {
-      console.log("Audio type:", item.value);
-
-      const audioUrl = URL.createObjectURL(item.value);
-      console.log("Audio URL:", audioUrl);
-
-      return (
-        <div key={index} className="my-2">
-          <audio controls>
-            <source src={audioUrl} type={item.value.type} />
-            Your browser does not support the audio element.
-          </audio>
-        </div>
-      );
-    }
-
-    return null; // Return null if the type doesn't match any expected types
-  });
-}, [question.body, question.options]);
-
+  //           // URL.revokeObjectURL(fileURL);
+  //         }
+  //       });
+  //     }
+  
+  //     // Return all the elements inside a single parent div
+  //     console.log("elements", elements);
+  //     return <div>{elements}</div>;
+  //   },
+  //   [question.body, question.options, question.explanation]
+  // );
 
   return (
     <div className="max-w-6xl bg-primary-foreground p-4 md:p-6 lg:p-8">
-      <div className="markdown text-xl font-bold md:text-2xl lg:text-3xl">{renderContent(question.body)}</div>
+      <div className="markdown text-xl font-bold md:text-2xl lg:text-3xl">
+        <RenderContent content={question.body} />
+      </div>
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {question.options.map((option) => (
           <button
@@ -147,7 +141,7 @@ const renderContent = useCallback((content: questionInput[]) => {
             onClick={() => handleSelectOption(option.id)}
             disabled={submitted}
           >
-            {option.value}
+            <RenderContent content={option.value} />
           </button>
         ))}
       </div>
@@ -164,7 +158,8 @@ const renderContent = useCallback((content: questionInput[]) => {
             className={`rounded px-6 py-2 text-white ${isCorrect ? "bg-green-500" : "bg-red-500"}`}
             disabled
           >
-            {isCorrect ? "Correct" : "Incorrect"} {question.explanation && ` - ${question.explanation}`}
+            {isCorrect ? "Correct" : "Incorrect"}{" "}
+            {question.explanation && ` - ${question.explanation}`}
           </button>
 
           <button

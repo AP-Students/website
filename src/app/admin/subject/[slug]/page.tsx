@@ -42,7 +42,6 @@ const Page = ({ params }: { params: { slug: string } }) => {
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
             setSubject(docSnap.data() as Subject);
-            console.log("subject", subject);
           } else {
             // If subject doesn't exist, use dyanmic link as title and set empty data title to it, then save as subject
             emptyData.title =

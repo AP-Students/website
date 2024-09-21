@@ -1,17 +1,16 @@
-export type questionInput =
-  | { type: "text"; value: string }
-  | { type: "image"; value: File }
-  | { type: "audio"; value: File };
+export type questionInput = {
+  value: string;
+  fileKey?: string;
+}
 
 export interface Option {
-  // value: questionInput[];
-  value: string;
+  value: questionInput;
   id: string;
 }
 
 export interface QuestionFormat {
   title: string;
-  body: questionInput[];
+  body: questionInput;
   type: "mcq" | "multi-answer";
   options: Option[];
   correct: string[];

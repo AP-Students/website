@@ -155,7 +155,6 @@ const Editor = ({ setData, content }: { setData: (data: OutputData) => void, con
       api.saver
         .save()
         .then((outputData) => {
-          console.log("Saving successful: ", outputData);
           setData(outputData);
         })
         .catch((error) => {

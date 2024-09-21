@@ -36,7 +36,6 @@ const Page = ({ params }: { params: { slug: string } }) => {
           if (subjectDocSnap.exists()) {
             // Convert Firestore document data to Subject type
             setSubject(subjectDocSnap.data() as Subject);
-            console.log("subject", subject);
           } else {
             setError("Subject not found. That's probably us, not you.");
           }
@@ -51,7 +50,6 @@ const Page = ({ params }: { params: { slug: string } }) => {
           }
         }
       } catch (error) {
-        console.log("Error fetching subject data:", error);
         setError("Failed to fetch subject data.");
       } finally {
         setLoading(false);

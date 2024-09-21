@@ -33,7 +33,7 @@ const useSyncedQuestions = (instanceId: string) => {
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(questions));
   }, [questions, storageKey]);
-
+  
   // Clean up local storage on component unmount or page unload
   useEffect(() => {
     const handleUnload = () => {
@@ -48,12 +48,12 @@ const useSyncedQuestions = (instanceId: string) => {
   }, [storageKey]);
 
   return { questions, setQuestions };
-  };
+};
 
 export const QuestionsInput: React.FC<{ instanceId: string }> = ({
   instanceId,
 }) => {
-  const { questions, setQuestions } = useSyncedQuestions(instanceId); 
+  const { questions, setQuestions } = useSyncedQuestions(instanceId);
 
   return (
     <div>
