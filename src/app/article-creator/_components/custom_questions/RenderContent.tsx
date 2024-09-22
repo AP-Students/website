@@ -1,11 +1,46 @@
 import React, { useState, useEffect, useCallback } from "react";
 import katex from "katex";
 import { questionInput } from "@/types/questions";
-import { getFileFromIndexedDB } from "./AdvancedTextbox";
 
 interface Props {
   content: questionInput;
 }
+
+// Utility to retrieve a file from IndexedDB based on unique ID
+export function getFileFromIndexedDB(name: string): Promise<File | null> {
+    return new Promise((resolve) => {
+      const dbRequest = indexedDB.open("mediaFilesDB", 1);
+  
+      dbRequest.onsuccess = () => {
+        const db = dbRequest.result;
+        const transaction = db.transaction("mediaFiles", "readonly");
+        const objectStore = transaction.objectStore("mediaFiles");
+  
+        // Use the same unique ID to retrieve the file
+        const uniqueId = `file_${name}`;
+        const fileRequest = objectStore.get(uniqueId); // Fetch file by its unique ID
+  
+        fileRequest.onsuccess = () => {
+          const fileBlob = fileRequest.result;
+          if (fileBlob) {
+            resolve(fileBlob); // Return the file directly
+          } else {
+            resolve(null); // Return null if no file found
+          }
+        };
+  
+        fileRequest.onerror = () => {
+          console.error("Error retrieving file from IndexedDB");
+          resolve(null);
+        };
+      };
+  
+      dbRequest.onerror = (error) => {
+        console.error("Error opening IndexedDB:", error);
+        resolve(null);
+      };
+    });
+  }
 
 export const RenderContent: React.FC<Props> = ({ content }) => {
   const [elements, setElements] = useState<JSX.Element[]>([]);
@@ -17,12 +52,13 @@ export const RenderContent: React.FC<Props> = ({ content }) => {
     if (content.value) {
       content.value.split("$@").forEach((line, lineIndex) => {
         // Convert to LaTeX syntax
-        if (line.startsWith("$") && line.endsWith("$")) {
+        
+        if (line.endsWith("$")) {
           tempElements.push(
             <div key={`latex-${lineIndex}`} className="my-2">
               <div
                 dangerouslySetInnerHTML={{
-                  __html: katex.renderToString(line, {
+                  __html: katex.renderToString(line.slice(1, -1), {
                     throwOnError: false,
                   }),
                 }}

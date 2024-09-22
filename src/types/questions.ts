@@ -14,7 +14,7 @@ export interface QuestionFormat {
   type: "mcq" | "multi-answer";
   options: Option[];
   correct: string[];
-  explanation: string;
+  explanation: questionInput;
   course_id: string;
   unit_ids: string[];
   subunit_ids: string[];

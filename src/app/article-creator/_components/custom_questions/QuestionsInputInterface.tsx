@@ -37,7 +37,9 @@ const QuestionsInputInterface: React.FC<Props> = ({
           { value: { value: "" }, id: "4" },
         ],
         correct: [],
-        explanation: "",
+        explanation: {
+          value: "",
+        },
         course_id: "",
         unit_ids: [],
         subunit_ids: [],
@@ -61,9 +63,12 @@ const QuestionsInputInterface: React.FC<Props> = ({
     const newQuestions = [...questions];
     const newOptions = [
       ...newQuestions[qIndex]!.options,
-      { value: {
-        "value": "",
-      }, id: Date.now().toString() },
+      {
+        value: {
+          value: "",
+        },
+        id: Date.now().toString(),
+      },
     ];
     newQuestions[qIndex]!.options = newOptions;
     setQuestions(newQuestions);
@@ -106,6 +111,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
             <AdvancedTextbox
               questions={questions}
               setQuestions={setQuestions}
+              origin={"body"}
               qIndex={qIndex}
             />
           </div>
@@ -113,22 +119,14 @@ const QuestionsInputInterface: React.FC<Props> = ({
           <div>
             <label>Options:</label>
             {question.options.map((option, oIndex) => (
-              <div key={oIndex} className="mb-2 flex items-center">
-                {/* Change this to advanced textbox later options */}
-                <input
-                  type="text"
-                  value={option.value.value}
-                  onChange={(e) => {
-                    const newOptions = [...question.options];
-                    if (newOptions[oIndex]) {
-                      newOptions[oIndex].value.value = e.target.value;
-                      updateQuestion(qIndex, {
-                        ...question,
-                        options: newOptions,
-                      });
-                    }
-                  }}
-                  className="mr-2 w-full border p-2"
+              <div key={oIndex} className="mb-2 flex min-w-full items-center">
+                <AdvancedTextbox
+                  questions={questions}
+                  setQuestions={setQuestions}
+                  origin={"option"}
+                  qIndex={qIndex}
+                  oIndex={oIndex}
+                  placeholder="Enter option here..."
                 />
                 <button
                   type="button"
@@ -176,15 +174,11 @@ const QuestionsInputInterface: React.FC<Props> = ({
 
           <div>
             <label>Explanation:</label>
-            <input
-              value={question.explanation}
-              onChange={(e) =>
-                updateQuestion(qIndex, {
-                  ...question,
-                  explanation: e.target.value,
-                })
-              }
-              className="w-full border p-2"
+            <AdvancedTextbox
+              questions={questions}
+              setQuestions={setQuestions}
+              origin={"explanation"}
+              qIndex={qIndex}
               placeholder="Enter the explanation for the answer here (optional)..."
             />
           </div>

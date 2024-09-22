@@ -49,71 +49,6 @@ const CheckForUnderstanding: React.FC<Props> = ({ question }) => {
     setIsCorrect(null);
   };
 
-  // const renderContent = useCallback(
-  //   (content: questionInput) => {
-  //     const [elements, setElements] = useState<JSX.Element[]>([]); // Array to collect all the elements
-
-  //     // Render text and LaTeX content
-  //     if (content.value) {
-  //       content.value.split("$@").forEach((line, lineIndex) => {
-  //         // Convert to LaTeX syntax
-  //         if (line.startsWith("$") && line.endsWith("$")) {
-  //           elements.push(
-  //             <div key={`latex-${lineIndex}`} className="my-2">
-  //               <div
-  //                 dangerouslySetInnerHTML={{
-  //                   __html: katex.renderToString(line, {
-  //                     throwOnError: false,
-  //                   }),
-  //                 }}
-  //               />
-  //             </div>
-  //           );
-  //         } else {
-  //           // Render regular text
-  //           elements.push(<div key={`text-${lineIndex}`}>{line}</div>);
-  //         }
-  //       });
-  //     }
-  
-  //     // Handle file content (image/audio)
-  //     if (content.fileKey) {
-  //       getFileFromIndexedDB(content.fileKey).then((file) => {
-  //         //@ts-ignore - file is an object incasing file, not the file iteself
-  //         if (file && file.file) {
-  //           //@ts-ignore - file is an object incasing file, not the file iteself
-  //           const fileURL = URL.createObjectURL(file.file); 
-  
-  //           if (content.fileKey?.startsWith("image/")) {
-  //             console.log("fileURL", fileURL);  
-  //             elements.push(
-  //               <div key={content.fileKey} className="my-2">
-  //                 <img src={fileURL} alt="Uploaded image" className="h-auto max-w-full" />
-  //               </div>
-  //             );
-  //           } else if (content.fileKey?.startsWith("audio/")) {
-  //             elements.push(
-  //               <div key={content.fileKey} className="my-2">
-  //                 <audio controls>
-  //                   <source src={fileURL} type="audio/mpeg" />
-  //                   Your browser does not support the audio element.
-  //                 </audio>
-  //               </div>
-  //             );
-  //           }
-
-  //           // URL.revokeObjectURL(fileURL);
-  //         }
-  //       });
-  //     }
-  
-  //     // Return all the elements inside a single parent div
-  //     console.log("elements", elements);
-  //     return <div>{elements}</div>;
-  //   },
-  //   [question.body, question.options, question.explanation]
-  // );
-
   return (
     <div className="max-w-6xl bg-primary-foreground p-4 md:p-6 lg:p-8">
       <div className="markdown text-xl font-bold md:text-2xl lg:text-3xl">
@@ -153,21 +88,20 @@ const CheckForUnderstanding: React.FC<Props> = ({ question }) => {
           Submit
         </button>
       ) : (
-        <div className="sm: mt-4 flex justify-center gap-4">
+        <div className= {`mt-4 flex justify-center gap-4 flex-col items-center`}>  
           <button
             className={`rounded px-6 py-2 text-white ${isCorrect ? "bg-green-500" : "bg-red-500"}`}
             disabled
           >
-            {isCorrect ? "Correct" : "Incorrect"}{" "}
-            {question.explanation && ` - ${question.explanation}`}
+            {isCorrect ? "Correct" : "Incorrect"}
+            {question.explanation && <RenderContent content={question.explanation} />}
           </button>
 
           <button
-            className="flex items-center rounded bg-gray-500 py-2 pl-3 pr-4 text-white hover:bg-gray-600"
+            className={`flex justify-center items-center rounded bg-gray-500 py-2 pl-3 pr-4 text-white hover:bg-gray-600 max-w-[50%]`}
             onClick={handleRetry}
           >
             <MdOutlineRefresh size={24} style={{ color: "white" }} />
-
             <span>Retry</span>
           </button>
         </div>

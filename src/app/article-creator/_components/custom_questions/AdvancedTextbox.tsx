@@ -1,11 +1,15 @@
 import React, { useRef, useCallback, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
-import { QuestionFormat } from "@/types/questions";
+import { QuestionFormat, questionInput } from "@/types/questions";
+import { QuestionsInput } from "./QuestionInstance";
 
 interface Props {
   questions: QuestionFormat[];
   setQuestions: (questions: QuestionFormat[]) => void;
+  origin: "body" | "option" | "explanation";
   qIndex: number;
+  placeholder?: string;
+  oIndex?: number | undefined;
 }
 
 // Utility to store a file in IndexedDB with a unique key for each instance
@@ -32,45 +36,12 @@ function storeFileInIndexedDB(name: string, file: File) {
   };
 }
 
-// Utility to retrieve a file from IndexedDB based on unique ID
-export function getFileFromIndexedDB(name: string): Promise<File | null> {
-  return new Promise((resolve) => {
-    const dbRequest = indexedDB.open("mediaFilesDB", 1);
-
-    dbRequest.onsuccess = () => {
-      const db = dbRequest.result;
-      const transaction = db.transaction("mediaFiles", "readonly");
-      const objectStore = transaction.objectStore("mediaFiles");
-
-      // Use the same unique ID to retrieve the file
-      const uniqueId = `file_${name}`;
-      const fileRequest = objectStore.get(uniqueId); // Fetch file by its unique ID
-
-      fileRequest.onsuccess = () => {
-        const fileBlob = fileRequest.result;
-        if (fileBlob) {
-          resolve(fileBlob); // Return the file directly
-        } else {
-          resolve(null); // Return null if no file found
-        }
-      };
-
-      fileRequest.onerror = () => {
-        console.error("Error retrieving file from IndexedDB");
-        resolve(null);
-      };
-    };
-
-    dbRequest.onerror = (error) => {
-      console.error("Error opening IndexedDB:", error);
-      resolve(null);
-    };
-  });
-}
-
 export default function AdvancedTextbox({
   questions,
   qIndex,
+  origin,
+  placeholder,
+  oIndex,
   setQuestions,
 }: Props) {
   const [dragActive, setDragActive] = useState(false);
@@ -107,12 +78,33 @@ export default function AdvancedTextbox({
     setCurrentText(newText);
     // Clone the current question to avoid direct mutation
     const updatedQuestions = [...questions];
-    const updatedQuestion: QuestionFormat = {
-      ...questions[qIndex]!,
-      body: { ...questions[qIndex]!.body, value: newText }, // Clone body
-    };
-
-    updatedQuestions[qIndex] = updatedQuestion;
+    if (origin === "body" || origin === "explanation") {
+      const updatedQuestion: QuestionFormat = {
+        ...questions[qIndex]!,
+        [origin]: {
+          ...(questions[qIndex] ? [origin] : QuestionsInput),
+          value: newText,
+        }, // Clone body
+      };
+      updatedQuestions[qIndex] = updatedQuestion;
+    } 
+    else if (origin === "option" && oIndex !== undefined) { // oIndex !== undefined because 0 is falsy
+      const updatedQuestion: QuestionFormat = {
+        ...questions[qIndex]!,
+        options: [
+          ...questions[qIndex]!.options.slice(0, oIndex),
+          {
+            value: {
+              value: newText,
+            },
+            id: questions[qIndex]!.options[oIndex]!.id,
+          },
+          ...questions[qIndex]!.options.slice(oIndex + 1),
+        ],
+      };
+      updatedQuestions[qIndex] = updatedQuestion;
+    }
+    
     setQuestions(updatedQuestions); // Update state immutably
   };
 
@@ -127,7 +119,23 @@ export default function AdvancedTextbox({
 
       const updatedQuestions = [...questions];
       const updatedQuestion: QuestionFormat = { ...questions[qIndex]! };
-      updatedQuestion.body.fileKey = `${file.type}-${file.lastModified}`;
+
+      if (origin === "body") {
+        const questionInput: questionInput = { ...updatedQuestion.body };
+        questionInput.fileKey = `${file.type}-${file.lastModified}`;
+        updatedQuestion.body = questionInput;
+      } else if (origin === "option" && oIndex !== undefined) {
+        // Update a specific option by oIndex
+        const optionInput: questionInput = { ...updatedQuestion.options[oIndex]!.value };
+        optionInput.fileKey = `${file.type}-${file.lastModified}`;
+        updatedQuestion.options[oIndex]!.value = optionInput; // Update only the specified option 
+
+        console.log("updatedQuestion", updatedQuestion);
+      } else if (origin === "explanation") {
+        const questionInput: questionInput = { ...updatedQuestion.explanation };
+        questionInput.fileKey = `${file.type}-${file.lastModified}`;
+        updatedQuestion.explanation = questionInput;
+      }
       updatedQuestions[qIndex] = updatedQuestion;
 
       setQuestions(updatedQuestions);
@@ -146,7 +154,7 @@ export default function AdvancedTextbox({
         onKeyDown={handleKeyDown}
         onDrop={handleFileDrop}
         onDragEnter={handleDrag}
-        placeholder="Type or drag and drop here...latex syntax starts and ends with $!$ (eg: $@$e^{i\pi} + 1 = 0$@$)"
+        placeholder={placeholder || "Type or drag and drop here...latex syntax starts with $@ and ends with $ (eg: $@e^{i\pi} + 1 = 0$)"} 
       />
       {dragActive && (
         <div
