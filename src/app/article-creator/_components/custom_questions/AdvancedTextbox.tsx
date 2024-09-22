@@ -154,7 +154,7 @@ export default function AdvancedTextbox({
         onKeyDown={handleKeyDown}
         onDrop={handleFileDrop}
         onDragEnter={handleDrag}
-        placeholder={placeholder || "Type or drag and drop here...latex syntax starts with $@ and ends with $ (eg: $@e^{i\pi} + 1 = 0$)"} 
+        placeholder={placeholder || "Type or drag and drop here (only 1 file allowed). Latex syntax starts with $@ and ends with $ (eg: $@e^{i\pi} + 1 = 0$)"}  
       />
       {dragActive && (
         <div
