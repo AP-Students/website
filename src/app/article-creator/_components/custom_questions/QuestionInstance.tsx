@@ -50,7 +50,9 @@ const useSyncedQuestions = (instanceId: string) => {
   return { questions, setQuestions };
 };
 
-export const QuestionsInput: React.FC<{ instanceId: string }> = ({ instanceId }) => {
+export const QuestionsInput: React.FC<{ instanceId: string }> = ({
+  instanceId,
+}) => {
   const { questions, setQuestions } = useSyncedQuestions(instanceId);
 
   return (
@@ -63,13 +65,15 @@ export const QuestionsInput: React.FC<{ instanceId: string }> = ({ instanceId })
   );
 };
 
-export const QuestionsOutput: React.FC<{ instanceId: string }> = ({ instanceId }) => {
+export const QuestionsOutput: React.FC<{ instanceId: string }> = ({
+  instanceId,
+}) => {
   const { questions } = useSyncedQuestions(instanceId);
 
   return (
     <div className="mt-8">
       {questions.length === 1 ? (
-        <CheckForUnderstanding questions={questions} currentQuestionIndex={0} />
+        <CheckForUnderstanding question={questions[0]!} />
       ) : (
         <QuizRenderer questions={questions} />
       )}

@@ -37,7 +37,8 @@
     "**/*.cjs",
     "**/*.js",
     ".next/types/**/*.ts",
-    "src/types/editorjs.d.ts"
+    "src/types/editorjs.d.ts",
+    "src/middleware.ts"
   ],
   "exclude": ["node_modules"]
 }

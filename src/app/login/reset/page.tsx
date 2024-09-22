@@ -75,7 +75,8 @@ export default function Login() {
 
         {emailSent && (
           <h3 className="mb-6 mt-3 text-green-600">
-            If user with email {email} exists, reset password link has been sent.
+            If user with email {email} exists, reset password link has been
+            sent.
           </h3>
         )}
 

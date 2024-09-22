@@ -91,6 +91,8 @@ const customParsers = {
   },
 };
 
+const rootMap = new Map<Element, any>();
+
 const Renderer = (props: { content: OutputData }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -105,10 +107,18 @@ const Renderer = (props: { content: OutputData }) => {
           );
 
         if (placeholder) {
-          const root = createRoot(placeholder);
-          root.render(
-            <QuestionsOutput instanceId={instanceId.toString()} />,
-          );
+          let root = rootMap.get(placeholder);
+
+            // If no root exists for this placeholder, create one and store it
+            if (!root) {
+              root = createRoot(placeholder);
+              rootMap.set(placeholder, root);
+            }
+
+            // Use the existing or newly created root to render
+            root.render(
+              <QuestionsOutput instanceId={instanceId.toString()} />
+            );
         }
       }
     }

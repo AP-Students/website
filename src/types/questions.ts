@@ -9,6 +9,7 @@ export interface QuestionFormat {
   displayNumAnswers: boolean;
   options: Option[];
   correct: string[];
+  explanation: string, 
   course_id: string;
   unit_ids: string[];
   subunit_ids: string[];

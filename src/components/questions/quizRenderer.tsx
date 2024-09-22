@@ -99,6 +99,14 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
           </button>
         ))}
       </div>
+
+      {showResults && question.explanation && (
+        <div className="mt-4 p-3 border bg-green-100 rounded-md">
+          <strong>Explanation:</strong> {question.explanation}
+        </div>
+      )}
+
+
       <div className="mt-4 flex justify-between">
         {currentQuestionIndex > 0 && (
           <button
