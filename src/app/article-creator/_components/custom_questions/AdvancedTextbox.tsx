@@ -2,6 +2,8 @@ import React, { useRef, useCallback, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { QuestionFormat, questionInput } from "@/types/questions";
 import { QuestionsInput } from "./QuestionInstance";
+import { FaTrash } from "react-icons/fa";
+import { set } from "zod";
 
 interface Props {
   questions: QuestionFormat[];
@@ -36,6 +38,30 @@ function storeFileInIndexedDB(name: string, file: File) {
   };
 }
 
+// Utility to remove a file from IndexedDB and revoke object URL
+function deleteFileFromIndexedDB(name: string) {
+  return new Promise<void>((resolve, reject) => {
+    const dbRequest = indexedDB.open("mediaFilesDB", 1);
+
+    dbRequest.onsuccess = () => {
+      const db = dbRequest.result;
+      const transaction = db.transaction("mediaFiles", "readwrite");
+      const objectStore = transaction.objectStore("mediaFiles");
+
+      const deleteRequest = objectStore.delete(`file_${name}`);
+
+      deleteRequest.onsuccess = () => {
+        resolve();
+      };
+
+      deleteRequest.onerror = () => {
+        console.error(`Failed to delete file ${name} from IndexedDB`);
+        reject();
+      };
+    };
+  });
+}
+
 export default function AdvancedTextbox({
   questions,
   qIndex,
@@ -46,6 +72,7 @@ export default function AdvancedTextbox({
 }: Props) {
   const [dragActive, setDragActive] = useState(false);
   const [currentText, setCurrentText] = useState<string>("");
+  const [fileExists, setFileExists] = useState<boolean>(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -84,6 +111,7 @@ export default function AdvancedTextbox({
         [origin]: {
           ...(questions[qIndex] ? [origin] : QuestionsInput),
           value: newText,
+          fileKey: questions[qIndex]?.body.fileKey, // Keep the file key if it exists
         }, // Clone body
       };
       updatedQuestions[qIndex] = updatedQuestion;
@@ -96,6 +124,7 @@ export default function AdvancedTextbox({
           {
             value: {
               value: newText,
+              fileKey: questions[qIndex]!.options[oIndex]!.value.fileKey,
             },
             id: questions[qIndex]!.options[oIndex]!.id,
           },
@@ -124,17 +153,18 @@ export default function AdvancedTextbox({
         const questionInput: questionInput = { ...updatedQuestion.body };
         questionInput.fileKey = `${file.type}-${file.lastModified}`;
         updatedQuestion.body = questionInput;
+        setFileExists(true);
       } else if (origin === "option" && oIndex !== undefined) {
         // Update a specific option by oIndex
         const optionInput: questionInput = { ...updatedQuestion.options[oIndex]!.value };
         optionInput.fileKey = `${file.type}-${file.lastModified}`;
         updatedQuestion.options[oIndex]!.value = optionInput; // Update only the specified option 
-
-        console.log("updatedQuestion", updatedQuestion);
+        setFileExists(true);
       } else if (origin === "explanation") {
         const questionInput: questionInput = { ...updatedQuestion.explanation };
         questionInput.fileKey = `${file.type}-${file.lastModified}`;
         updatedQuestion.explanation = questionInput;
+        setFileExists(true);
       }
       updatedQuestions[qIndex] = updatedQuestion;
 
@@ -143,6 +173,27 @@ export default function AdvancedTextbox({
 
     setDragActive(false);
   };
+
+  const handleDeleteFile = () => {
+    const updatedQuestions = [...questions];
+    const updatedQuestion: QuestionFormat = { ...questions[qIndex]! };
+
+    if (origin === "body" || origin === "explanation") {
+      const questionInput: questionInput = { ...updatedQuestion.body };
+      deleteFileFromIndexedDB(questionInput.fileKey!); 
+      questionInput.fileKey = undefined; 
+      updatedQuestion[origin] = questionInput; 
+    } else if (origin === "option" && oIndex !== undefined) {
+      const optionInput: questionInput = { ...updatedQuestion.options[oIndex]!.value };
+      deleteFileFromIndexedDB(optionInput.fileKey!); 
+      optionInput.fileKey = undefined; 
+      updatedQuestion.options[oIndex]!.value = optionInput;
+    }
+
+    updatedQuestions[qIndex] = updatedQuestion;
+    setQuestions(updatedQuestions);
+    setFileExists(false);
+  }
 
   return (
     <div className="relative">
@@ -156,6 +207,15 @@ export default function AdvancedTextbox({
         onDragEnter={handleDrag}
         placeholder={placeholder || "Type or drag and drop here (only 1 file allowed). Latex syntax starts with $@ and ends with $ (eg: $@e^{i\pi} + 1 = 0$)"}  
       />
+      {fileExists && (
+        <button
+          type="button"
+          className="absolute right-2 top-2 text-red-500 hover:text-red-700"
+          onClick={handleDeleteFile}
+        >
+          <FaTrash />
+        </button>
+      )}
       {dragActive && (
         <div
           className="absolute inset-0 h-full w-full rounded-lg border-2 border-dashed border-primary bg-primary/10"

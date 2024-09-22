@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { MdNavigateNext, MdNavigateBefore } from "react-icons/md";
 import { QuestionFormat } from "@/types/questions";
-import { RenderContent } from "@/app/article-creator/_components/custom_questions/RenderContent";
+import { RenderContent } from "@/app/article-creator/_components/custom_questions/RenderAdvancedTextbox";
 
 interface QuizRendererProps {
   questions: QuestionFormat[];

@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { MdOutlineRefresh } from "react-icons/md";
 import { QuestionFormat } from "@/types/questions";
-import { RenderContent } from "@/app/article-creator/_components/custom_questions/RenderContent";
+import { RenderContent } from "@/app/article-creator/_components/custom_questions/RenderAdvancedTextbox";
 
 interface Props {
   question: QuestionFormat;
@@ -88,17 +88,19 @@ const CheckForUnderstanding: React.FC<Props> = ({ question }) => {
           Submit
         </button>
       ) : (
-        <div className= {`mt-4 flex justify-center gap-4 flex-col items-center`}>  
+        <div className={`mt-4 flex flex-col items-center justify-center gap-4`}>
           <button
             className={`rounded px-6 py-2 text-white ${isCorrect ? "bg-green-500" : "bg-red-500"}`}
             disabled
           >
             {isCorrect ? "Correct" : "Incorrect"}
-            {question.explanation && <RenderContent content={question.explanation} />}
+            {question.explanation && (
+              <RenderContent content={question.explanation} />
+            )}
           </button>
 
           <button
-            className={`flex justify-center items-center rounded bg-gray-500 py-2 pl-3 pr-4 text-white hover:bg-gray-600 max-w-[50%]`}
+            className={`flex max-w-[50%] items-center justify-center rounded bg-gray-500 py-2 pl-3 pr-4 text-white hover:bg-gray-600`}
             onClick={handleRetry}
           >
             <MdOutlineRefresh size={24} style={{ color: "white" }} />
