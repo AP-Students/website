@@ -1,6 +1,7 @@
 export type questionInput = {
   value: string;
   fileKey?: string;
+  fileURL?: string;
 }
 
 export interface Option {

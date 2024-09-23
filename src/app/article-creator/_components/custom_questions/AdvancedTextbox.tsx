@@ -3,7 +3,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { QuestionFormat, questionInput } from "@/types/questions";
 import { QuestionsInput } from "./QuestionInstance";
 import { FaTrash } from "react-icons/fa";
-import { set } from "zod";
 
 interface Props {
   questions: QuestionFormat[];
