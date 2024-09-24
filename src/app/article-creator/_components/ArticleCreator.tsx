@@ -15,22 +15,6 @@ import { faCheckCircle } from "@fortawesome/free-solid-svg-icons";
 import { getFileFromIndexedDB } from "./custom_questions/RenderAdvancedTextbox";
 import { QuestionFormat } from "@/types/questions";
 
-// Type guard function to check if an object matches the QuestionFormat interface
-function isQuestionFormat(obj: any): obj is QuestionFormat {
-  return (
-    typeof obj === "object" &&
-    obj !== null &&
-    typeof obj.title === "string" &&
-    typeof obj.body === "object" &&
-    typeof obj.body.value === "string" &&
-    Array.isArray(obj.options) &&
-    typeof obj.type === "string" &&
-    Array.isArray(obj.correct) &&
-    Array.isArray(obj.unit_ids) &&
-    Array.isArray(obj.subunit_ids)
-  );
-}
-
 function ArticleCreator({ className }: { className?: string }) {
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
   const [initialData, setInitialData] = useState<OutputData>({
@@ -104,8 +88,8 @@ function ArticleCreator({ className }: { className?: string }) {
           setInitialData(docSnap.data()?.data as OutputData);
           setData(docSnap.data()?.data as OutputData);
         }
-      } catch (error) {
-        console.log("Error fetching subject data:", error);
+      } catch (error: any) {
+        console.log("Error fetching subject data:", error.message);
       }
     };
 
@@ -151,95 +135,97 @@ function ArticleCreator({ className }: { className?: string }) {
           questions.map(async (question: QuestionFormat) => {
             let updatedQuestion = { ...question };
             const storage = getStorage();
-
-            console.log("original question is", updatedQuestion);
-
+        
+        
+            // Create an array of promises for the body, options, and explanation uploads
+            const uploadPromises: Promise<any>[] = [];
+        
             // Handle body fileKey
             if (updatedQuestion.body?.fileKey) {
-              const fileObj = await getFileFromIndexedDB(
-                updatedQuestion.body.fileKey,
-              );
-              // @ts-ignore - file is an object containing ID and file
-              const file = fileObj.file;
-
-              if (file && file instanceof File) {
-                const storageRef = ref(storage, `${question.body.fileKey}`);
-
-                const snapshot = await uploadBytes(storageRef, file);
-                const downloadURL = await getDownloadURL(snapshot.ref);
-
-                console.log("Snapshot is", snapshot);
-                console.log("Download URL is", downloadURL);
-
-                updatedQuestion = {
-                  ...question,
-                  body: {
-                    ...question.body,
-                    fileURL: downloadURL,
-                  },
-                };
-
-                console.log("updatedQuestion is", updatedQuestion);
-              }
-            }
-
-            // Handle options with fileKeys
-            const updatedOptions = await Promise.all(
-              question.options.map(async (option) => {
-                if (option.value.fileKey) {
-                  const fileObj = await getFileFromIndexedDB(
-                    option.value.fileKey,
-                  );
-                  // @ts-ignore - file is an object containing ID and file
-                  const file = fileObj.file;
-
+              uploadPromises.push(
+                (async () => {
+                  const fileObj = await getFileFromIndexedDB(updatedQuestion.body.fileKey!);
+                  // @ts-ignore - fileObj is obj with id and file
+                  const file = fileObj?.file;
+        
                   if (file && file instanceof File) {
-                    const storageRef = ref(storage, `${option.value.fileKey}`);
+                    const storageRef = ref(storage, `${question.body.fileKey}`);
                     const snapshot = await uploadBytes(storageRef, file);
                     const downloadURL = await getDownloadURL(snapshot.ref);
-
-                    return {
-                      ...option,
-                      value: {
-                        ...option.value,
+        
+                    updatedQuestion = {
+                      ...updatedQuestion,
+                      body: {
+                        ...updatedQuestion.body,
                         fileURL: downloadURL,
                       },
                     };
+        
                   }
+                })()
+              );
+            }
+        
+            // Handle options with fileKeys (batching file uploads for options)
+            const updatedOptionsPromises = question.options.map(async (option) => {
+              if (option.value.fileKey) {
+                const fileObj = await getFileFromIndexedDB(option.value.fileKey);
+                // @ts-ignore - fileObj is obj with id and file
+                const file = fileObj?.file;
+        
+                if (file && file instanceof File) {
+                  const storageRef = ref(storage, `${option.value.fileKey}`);
+                  const snapshot = await uploadBytes(storageRef, file);
+                  const downloadURL = await getDownloadURL(snapshot.ref);
+        
+                  return {
+                    ...option,
+                    value: {
+                      ...option.value,
+                      fileURL: downloadURL,
+                    },
+                  };
                 }
-                return option; // Return the original option if no fileKey
-              }),
+              }
+              return option; // Return the original option if no fileKey
+            });
+        
+            // Add the options uploads to the uploadPromises
+            uploadPromises.push(
+              Promise.all(updatedOptionsPromises).then((updatedOptions) => {
+                updatedQuestion.options = updatedOptions;
+              })
             );
-
-            updatedQuestion.options = updatedOptions;
-
+        
             // Handle explanation fileKey
             if (question.explanation?.fileKey) {
-              const fileObj = await getFileFromIndexedDB(
-                question.explanation.fileKey,
+              uploadPromises.push(
+                (async () => {
+                  const fileObj = await getFileFromIndexedDB(question.explanation.fileKey!);
+                  // @ts-ignore - fileObj is obj with id and file
+                  const file = fileObj?.file;
+        
+                  if (file && file instanceof File) {
+                    const storageRef = ref(storage, `${question.explanation.fileKey}`);
+                    const snapshot = await uploadBytes(storageRef, file);
+                    const downloadURL = await getDownloadURL(snapshot.ref);
+        
+                    updatedQuestion.explanation = {
+                      ...question.explanation,
+                      fileURL: downloadURL,
+                    };
+        
+                  }
+                })()
               );
-              // @ts-ignore - file is an object containing ID and file
-              const file = fileObj.file;
-
-              if (file && file instanceof File) {
-                const storageRef = ref(
-                  storage,
-                  `${question.explanation.fileKey}`,
-                );
-                const snapshot = await uploadBytes(storageRef, file);
-                const downloadURL = await getDownloadURL(snapshot.ref);
-
-                updatedQuestion.explanation = {
-                  ...question.explanation,
-                  fileURL: downloadURL,
-                };
-              }
             }
-
-            console.log("updated question is", updatedQuestion);
-
+        
+            // Wait for all file uploads to complete
+            await Promise.all(uploadPromises);
+        
+        
             return updatedQuestion;
-          }),
+          })
         );
       };
 
@@ -260,7 +246,6 @@ function ArticleCreator({ className }: { className?: string }) {
       // Convert updatedData back to an object
       const updatedDataObj = Object.fromEntries(updatedData);
 
-      console.log("updatedDataObj are", updatedDataObj);
 
       // Save the updated article with file URLs to Firestore
       newArticle.data = updatedDataObj;

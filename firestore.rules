@@ -47,28 +47,10 @@ service cloud.firestore {
   }
 }
 
-
-
 service firebase.storage {
-  // Centralized function to check if the user is authenticated
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-    
-    // Centralized function to check if the user is an admin
-    function isAdmin() {
-      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.access == "admin";
-    }
-
-    // Centralized function to check if the user is a member or admin (role hierarchy)
-    function isMemberOrAdmin() {
-      let accessLevel = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.access;
-      return isAuthenticated() && (accessLevel == "admin" || accessLevel == "member");
-    }
-
   match /b/{bucket}/o {
     match /{allPaths=**} {
-      allow read, write: if isMemberOrAdmin();
+      allow read, write: if true;
     }
   }
 }
