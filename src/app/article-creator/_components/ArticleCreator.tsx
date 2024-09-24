@@ -6,7 +6,7 @@ import Renderer from "./Renderer";
 import Editor from "./Editor";
 import { cn } from "@/lib/utils";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { v4 as uuidv4 } from "uuid";
 import { getUser, getUserAccess } from "@/components/hooks/users";
@@ -139,30 +139,37 @@ function ArticleCreator({ className }: { className?: string }) {
 
     try {
       const docRef = doc(db, "pages", pathParts.join("-"));
-      const storage = getStorage();
 
       // Function to process questions and upload files
       const processQuestions = async (questions: QuestionFormat[]) => {
+        if (!user || user.access !== "admin") {
+          alert("User is not authorized to perform this action.");
+          return;
+        }
+
         return await Promise.all(
           questions.map(async (question: QuestionFormat) => {
             let updatedQuestion = { ...question };
+            const storage = getStorage();
+
             console.log("original question is", updatedQuestion);
 
             // Handle body fileKey
-            if (question.body?.fileKey) {
-              const file = await getFileFromIndexedDB(question.body.fileKey);
-              console.log("file is", file);
-              if (file) {
-                const storageRef = ref(
-                  storage,
-                  `uploads/${file.name}-${uuidv4()}`,
-                );
-                console.log("storageRef is", storageRef);
+            if (updatedQuestion.body?.fileKey) {
+              const fileObj = await getFileFromIndexedDB(
+                updatedQuestion.body.fileKey,
+              );
+              // @ts-ignore - file is an object containing ID and file
+              const file = fileObj.file;
+
+              if (file && file instanceof File) {
+                const storageRef = ref(storage, `${question.body.fileKey}`);
 
                 const snapshot = await uploadBytes(storageRef, file);
                 const downloadURL = await getDownloadURL(snapshot.ref);
 
-                console.log("URL is in server now");
+                console.log("Snapshot is", snapshot);
+                console.log("Download URL is", downloadURL);
 
                 updatedQuestion = {
                   ...question,
@@ -171,6 +178,8 @@ function ArticleCreator({ className }: { className?: string }) {
                     fileURL: downloadURL,
                   },
                 };
+
+                console.log("updatedQuestion is", updatedQuestion);
               }
             }
 
@@ -178,12 +187,14 @@ function ArticleCreator({ className }: { className?: string }) {
             const updatedOptions = await Promise.all(
               question.options.map(async (option) => {
                 if (option.value.fileKey) {
-                  const file = await getFileFromIndexedDB(option.value.fileKey);
-                  if (file) {
-                    const storageRef = ref(
-                      storage,
-                      `uploads/${file.name}-${uuidv4()}`,
-                    );
+                  const fileObj = await getFileFromIndexedDB(
+                    option.value.fileKey,
+                  );
+                  // @ts-ignore - file is an object containing ID and file
+                  const file = fileObj.file;
+
+                  if (file && file instanceof File) {
+                    const storageRef = ref(storage, `${option.value.fileKey}`);
                     const snapshot = await uploadBytes(storageRef, file);
                     const downloadURL = await getDownloadURL(snapshot.ref);
 
@@ -204,13 +215,16 @@ function ArticleCreator({ className }: { className?: string }) {
 
             // Handle explanation fileKey
             if (question.explanation?.fileKey) {
-              const file = await getFileFromIndexedDB(
+              const fileObj = await getFileFromIndexedDB(
                 question.explanation.fileKey,
               );
-              if (file) {
+              // @ts-ignore - file is an object containing ID and file
+              const file = fileObj.file;
+
+              if (file && file instanceof File) {
                 const storageRef = ref(
                   storage,
-                  `uploads/${file.name}-${uuidv4()}`,
+                  `${question.explanation.fileKey}`,
                 );
                 const snapshot = await uploadBytes(storageRef, file);
                 const downloadURL = await getDownloadURL(snapshot.ref);
@@ -234,9 +248,9 @@ function ArticleCreator({ className }: { className?: string }) {
         Object.entries(data.blocks).map(async ([key, value]) => {
           // Check if the array contains objects of type QuestionFormat
           if (value.type === "questionsAddCard") {
-            console.log("Question is hit");
-            const updatedQuestions = await processQuestions(value.data.questions as QuestionFormat[]);
-            console.log("updatedQuestions are", updatedQuestions);
+            const updatedQuestions = await processQuestions(
+              value.data.questions as QuestionFormat[],
+            );
             return [key, updatedQuestions];
           }
           return [key, value]; // If not an array of questions, return original key-value
