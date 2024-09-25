@@ -52,7 +52,6 @@ export const RenderContent: React.FC<Props> = ({ content }) => {
     if (content.value) {
       content.value.split("$@").forEach((line, lineIndex) => {
         // Convert to LaTeX syntax
-        
         if (line.endsWith("$")) {
           tempElements.push(
             <div key={`latex-${lineIndex}`} className="my-2">
@@ -76,6 +75,7 @@ export const RenderContent: React.FC<Props> = ({ content }) => {
 
   // Function to handle file content rendering
   const renderFileContent = useCallback(() => {
+    // See if the file is stored in IndexedDB (cached) first, then check if we can pull from Firebase Storage
     if (content.fileKey) {
       getFileFromIndexedDB(content.fileKey).then((file) => {
         // @ts-ignore - file is an object incasing file, not the file iteself
@@ -112,7 +112,31 @@ export const RenderContent: React.FC<Props> = ({ content }) => {
           };
         }
       });
-    }
+    }else if(content.fileURL) {
+      // Set elements to the fileURL directly 
+      if (content.fileKey!.startsWith("image/")) {
+        setElements((prev) => [
+          ...prev,
+          <div key={content.fileKey} className="my-2">
+            <img
+              src={content.fileURL}
+              alt="Uploaded image"
+              className="h-auto max-w-full"
+            />
+          </div>,
+        ]);
+      } else if (content.fileKey!.startsWith("audio/")) {
+        setElements((prev) => [
+          ...prev,
+          <div key={content.fileKey} className="my-2">
+            <audio controls>
+              <source src={content.fileURL} type="audio/mpeg" />
+              Your browser does not support the audio element.
+            </audio>
+          </div>,
+        ]);
+      }
+    } 
   }, [content.fileKey]);
 
   // useEffect to trigger rendering of text and file content

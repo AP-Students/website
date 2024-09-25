@@ -1,12 +1,11 @@
 "use client";
-
 import React, { useEffect, useState } from "react";
 import { type OutputData } from "@editorjs/editorjs";
 import Renderer from "./Renderer";
 import Editor from "./Editor";
 import { cn } from "@/lib/utils";
 import { db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { v4 as uuidv4 } from "uuid";
 import { getUser, getUserAccess } from "@/components/hooks/users";
@@ -108,7 +107,7 @@ function ArticleCreator({ className }: { className?: string }) {
     const user = await getUser();
     const pathParts = window.location.pathname.split("/").slice(-3);
 
-    if (!user || user.access !== "admin") {
+    if (!user || (user.access !== "admin" && user.access !== "member")) {
       alert("User is not authorized to perform this action.");
       return;
     }
@@ -135,24 +134,25 @@ function ArticleCreator({ className }: { className?: string }) {
           questions.map(async (question: QuestionFormat) => {
             let updatedQuestion = { ...question };
             const storage = getStorage();
-        
-        
+
             // Create an array of promises for the body, options, and explanation uploads
             const uploadPromises: Promise<any>[] = [];
-        
+
             // Handle body fileKey
             if (updatedQuestion.body?.fileKey) {
               uploadPromises.push(
                 (async () => {
-                  const fileObj = await getFileFromIndexedDB(updatedQuestion.body.fileKey!);
+                  const fileObj = await getFileFromIndexedDB(
+                    updatedQuestion.body.fileKey!,
+                  );
                   // @ts-ignore - fileObj is obj with id and file
                   const file = fileObj?.file;
-        
+
                   if (file && file instanceof File) {
                     const storageRef = ref(storage, `${question.body.fileKey}`);
                     const snapshot = await uploadBytes(storageRef, file);
                     const downloadURL = await getDownloadURL(snapshot.ref);
-        
+
                     updatedQuestion = {
                       ...updatedQuestion,
                       body: {
@@ -160,72 +160,78 @@ function ArticleCreator({ className }: { className?: string }) {
                         fileURL: downloadURL,
                       },
                     };
-        
                   }
-                })()
+                })(),
               );
             }
-        
+
             // Handle options with fileKeys (batching file uploads for options)
-            const updatedOptionsPromises = question.options.map(async (option) => {
-              if (option.value.fileKey) {
-                const fileObj = await getFileFromIndexedDB(option.value.fileKey);
-                // @ts-ignore - fileObj is obj with id and file
-                const file = fileObj?.file;
-        
-                if (file && file instanceof File) {
-                  const storageRef = ref(storage, `${option.value.fileKey}`);
-                  const snapshot = await uploadBytes(storageRef, file);
-                  const downloadURL = await getDownloadURL(snapshot.ref);
-        
-                  return {
-                    ...option,
-                    value: {
-                      ...option.value,
-                      fileURL: downloadURL,
-                    },
-                  };
+            const updatedOptionsPromises = question.options.map(
+              async (option) => {
+                if (option.value.fileKey) {
+                  const fileObj = await getFileFromIndexedDB(
+                    option.value.fileKey,
+                  );
+                  // @ts-ignore - fileObj is obj with id and file
+                  const file = fileObj?.file;
+
+                  if (file && file instanceof File) {
+                    const storageRef = ref(storage, `${option.value.fileKey}`);
+                    const snapshot = await uploadBytes(storageRef, file);
+                    const downloadURL = await getDownloadURL(snapshot.ref);
+
+                    return {
+                      ...option,
+                      value: {
+                        ...option.value,
+                        fileURL: downloadURL,
+                      },
+                    };
+                  }
                 }
-              }
-              return option; // Return the original option if no fileKey
-            });
-        
+                return option; // Return the original option if no fileKey
+              },
+            );
+
             // Add the options uploads to the uploadPromises
             uploadPromises.push(
               Promise.all(updatedOptionsPromises).then((updatedOptions) => {
                 updatedQuestion.options = updatedOptions;
-              })
+              }),
             );
-        
+
             // Handle explanation fileKey
             if (question.explanation?.fileKey) {
               uploadPromises.push(
                 (async () => {
-                  const fileObj = await getFileFromIndexedDB(question.explanation.fileKey!);
+                  const fileObj = await getFileFromIndexedDB(
+                    question.explanation.fileKey!,
+                  );
                   // @ts-ignore - fileObj is obj with id and file
                   const file = fileObj?.file;
-        
+
                   if (file && file instanceof File) {
-                    const storageRef = ref(storage, `${question.explanation.fileKey}`);
+                    const storageRef = ref(
+                      storage,
+                      `${question.explanation.fileKey}`,
+                    );
                     const snapshot = await uploadBytes(storageRef, file);
                     const downloadURL = await getDownloadURL(snapshot.ref);
-        
+
                     updatedQuestion.explanation = {
                       ...question.explanation,
                       fileURL: downloadURL,
                     };
-        
                   }
-                })()
+                })(),
               );
             }
-        
+
             // Wait for all file uploads to complete
             await Promise.all(uploadPromises);
-        
-        
+
             return updatedQuestion;
-          })
+          }),
         );
       };
 
@@ -237,24 +243,20 @@ function ArticleCreator({ className }: { className?: string }) {
             const updatedQuestions = await processQuestions(
               value.data.questions as QuestionFormat[],
             );
-            return [key, updatedQuestions];
+            value.data.questions = updatedQuestions;
+            return value;
           }
-          return [key, value]; // If not an array of questions, return original key-value
+          return value; // If not an array of questions, return original value
         }),
       );
 
-      // Convert updatedData back to an object
-      const updatedDataObj = Object.fromEntries(updatedData);
-
-
-      // Save the updated article with file URLs to Firestore
-      newArticle.data = updatedDataObj;
-      // await setDoc(docRef, newArticle);
+      // @ts-ignore - blocks is an Array
+      newArticle.data.blocks = updatedData;
+      await setDoc(docRef, newArticle);
 
       alert(`Article saved: ${docRef.id}`);
     } catch (error) {
       alert("Error saving article.");
-      console.error("Error adding document: ", error);
     }
 
     setShowDropdown(false);

@@ -1,11 +1,11 @@
-import React, { useRef, useCallback, useState } from "react";
+import React, { useRef, useCallback, useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { QuestionFormat, questionInput } from "@/types/questions";
 import { QuestionsInput } from "./QuestionInstance";
 import { FaTrash } from "react-icons/fa";
 
 interface Props {
-  questions: QuestionFormat[];
+  questions: QuestionFormat[]; 
   setQuestions: (questions: QuestionFormat[]) => void;
   origin: "body" | "option" | "explanation";
   qIndex: number;
@@ -69,10 +69,31 @@ export default function AdvancedTextbox({
   oIndex,
   setQuestions,
 }: Props) {
+  const question = questions[qIndex]
   const [dragActive, setDragActive] = useState(false);
   const [currentText, setCurrentText] = useState<string>("");
   const [fileExists, setFileExists] = useState<boolean>(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Initialize currentText and fileExists when question gets loaded from db if any
+  useEffect(() => {
+    if (origin === "option" && oIndex !== undefined) {
+      if(question!.options[oIndex] && question!.options[oIndex]!.value && question!.options[oIndex]!.value.value) {
+        setCurrentText(question!.options[oIndex]!.value.value) 
+      };
+
+      if(question!.options[oIndex] && question!.options[oIndex]!.value && question!.options[oIndex]!.value.fileKey) {
+        setFileExists(true) 
+      };
+    } else if (origin === "body" || origin === "explanation") {
+      if(question![origin] && question![origin].value) { 
+        setCurrentText(question![origin].value) 
+      };
+      if(question![origin] && question![origin].fileKey) { 
+        setFileExists(true) 
+      };
+    }
+  }, [question]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Keys are being handled by EditorJS rather than default behavior, so we need to block the EditorJS behavior
@@ -106,28 +127,28 @@ export default function AdvancedTextbox({
     const updatedQuestions = [...questions];
     if (origin === "body" || origin === "explanation") {
       const updatedQuestion: QuestionFormat = {
-        ...questions[qIndex]!,
+        ...question!,
         [origin]: {
-          ...(questions[qIndex] ? [origin] : QuestionsInput),
+          ...(question ? [origin] : QuestionsInput),
           value: newText,
-          fileKey: questions[qIndex]?.body.fileKey, // Keep the file key if it exists
+          fileKey: question?.body.fileKey, // Keep the file key if it exists
         }, // Clone body
       };
       updatedQuestions[qIndex] = updatedQuestion;
     } 
     else if (origin === "option" && oIndex !== undefined) { // oIndex !== undefined because 0 is falsy
       const updatedQuestion: QuestionFormat = {
-        ...questions[qIndex]!,
+        ...question!,
         options: [
-          ...questions[qIndex]!.options.slice(0, oIndex),
+          ...question!.options.slice(0, oIndex),
           {
             value: {
               value: newText,
-              fileKey: questions[qIndex]!.options[oIndex]!.value.fileKey,
+              fileKey: question!.options[oIndex]!.value.fileKey,
             },
-            id: questions[qIndex]!.options[oIndex]!.id,
+            id: question!.options[oIndex]!.id,
           },
-          ...questions[qIndex]!.options.slice(oIndex + 1),
+          ...question!.options.slice(oIndex + 1),
         ],
       };
       updatedQuestions[qIndex] = updatedQuestion;
@@ -146,7 +167,7 @@ export default function AdvancedTextbox({
       storeFileInIndexedDB(`${file.type}-${file.lastModified}`, file);
 
       const updatedQuestions = [...questions];
-      const updatedQuestion: QuestionFormat = { ...questions[qIndex]! };
+      const updatedQuestion: QuestionFormat = { ...question! };
 
       if (origin === "body") {
         const questionInput: questionInput = { ...updatedQuestion.body };
@@ -175,7 +196,7 @@ export default function AdvancedTextbox({
 
   const handleDeleteFile = () => {
     const updatedQuestions = [...questions];
-    const updatedQuestion: QuestionFormat = { ...questions[qIndex]! };
+    const updatedQuestion: QuestionFormat = { ...question! };
 
     if (origin === "body" || origin === "explanation") {
       const questionInput: questionInput = { ...updatedQuestion.body };

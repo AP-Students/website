@@ -37,8 +37,7 @@ export const getUserAccess = async (): Promise<string | null> => {
 };
 
 export const getUser = async (): Promise<User | null> => {
-  // Check if cached user exists
-  const now = Date.now();
+  
   if (cachedUser && isCacheValid()) {
     // Update the access property if the user is already cached
     const newAccess = await getUserAccess();

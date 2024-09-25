@@ -30,6 +30,25 @@ const useSyncedQuestions = (instanceId: string) => {
         ];
   });
 
+  // Effect to update questions when localStorage is modified via the custom event
+  useEffect(() => {
+    const handleStorageUpdate = () => {
+      console.log("handleStorageUpdate");
+      const updatedQuestions = localStorage.getItem(storageKey);
+      if (updatedQuestions) {
+        setQuestions(JSON.parse(updatedQuestions));
+      }
+    };
+
+    // Listen for custom event triggered by QuestionsAddCard
+    window.addEventListener("questionsUpdated", handleStorageUpdate);
+
+    // Clean up event listener on component unmount
+    return () => {
+      window.removeEventListener("questionsUpdated", handleStorageUpdate);
+    };
+  }, [storageKey]);
+
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(questions));
   }, [questions, storageKey]);

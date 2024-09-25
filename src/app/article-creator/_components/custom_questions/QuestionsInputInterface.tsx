@@ -14,6 +14,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
   questions,
   setQuestions,
 }) => {
+  
   const [error, setError] = useState<string>("");
 
   const addQuestion = () => {
