@@ -41,10 +41,10 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
     inlineToolbar: true,
   },
 
-  // image: {
-  //   class: SimpleImage as unknown as ToolConstructable,
-  //   inlineToolbar: true,
-  // },
+  image: {
+    class: SimpleImage as unknown as ToolConstructable,
+    inlineToolbar: true,
+  },
 
   list: {
     class: List as unknown as ToolConstructable,
@@ -161,6 +161,7 @@ const Editor = ({ setData, content }: { setData: (data: OutputData) => void, con
           console.error("Saving failed: ", error);
         });
     },
+    
   });
 
   useEffect(() => {

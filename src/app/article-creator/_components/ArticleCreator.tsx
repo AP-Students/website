@@ -125,7 +125,7 @@ function ArticleCreator({ className }: { className?: string }) {
 
       // Function to process questions and upload files
       const processQuestions = async (questions: QuestionFormat[]) => {
-        if (!user || user.access !== "admin") {
+        if (!user || (user.access !== "admin" && user.access !== "member")) {
           alert("User is not authorized to perform this action.");
           return;
         }

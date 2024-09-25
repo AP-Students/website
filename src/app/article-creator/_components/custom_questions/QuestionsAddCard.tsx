@@ -90,7 +90,6 @@ export class QuestionsAddCard implements BlockToolConstructable {
     const root = ReactDOM.createRoot(wrapper);
     // Repropagate questions and set the state
     this.repropagateQuestions().then((questionsFromDb) => {
-      console.log("questionsFromDb:", questionsFromDb);
       this.questions = questionsFromDb;
     });
 

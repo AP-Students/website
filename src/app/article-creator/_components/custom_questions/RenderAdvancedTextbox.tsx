@@ -78,11 +78,11 @@ export const RenderContent: React.FC<Props> = ({ content }) => {
     // See if the file is stored in IndexedDB (cached) first, then check if we can pull from Firebase Storage
     if (content.fileKey) {
       getFileFromIndexedDB(content.fileKey).then((file) => {
-        // @ts-ignore - file is an object incasing file, not the file iteself
+        // @ts-ignore - file is an object incasing file, not the file itself
         if (file && file.file) {
-        // @ts-ignore - file is an object incasing file, not the file iteself
+        // @ts-ignore - file is an object incasing file, not the file itself
           const fileURL = URL.createObjectURL(file.file);
-
+          
           if (content.fileKey!.startsWith("image/")) {
             setElements((prev) => [
               ...prev,
