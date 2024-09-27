@@ -2,8 +2,9 @@
 
 import React, { useState } from "react";
 import { QuestionFormat } from "@/types/questions";
-import { FaTrash } from "react-icons/fa";
+import { Trash, CirclePlus } from "lucide-react";
 import AdvancedTextbox from "./AdvancedTextbox";
+import { Input } from "@/components/ui/input";
 
 interface Props {
   questions: QuestionFormat[];
@@ -14,7 +15,6 @@ const QuestionsInputInterface: React.FC<Props> = ({
   questions,
   setQuestions,
 }) => {
-  
   const [error, setError] = useState<string>("");
 
   const addQuestion = () => {
@@ -117,10 +117,20 @@ const QuestionsInputInterface: React.FC<Props> = ({
             />
           </div>
 
-          <div>
-            <label>Options:</label>
+          <div className="my-4">
+            <span className="text-lg font-bold">Options</span>
             {question.options.map((option, oIndex) => (
-              <div key={oIndex} className="mb-2 flex min-w-full items-center">
+              <div key={oIndex} className="mb-2 min-w-full">
+                <div className="flex justify-between">
+                  Option {oIndex + 1}
+                  <button
+                    type="button"
+                    onClick={() => deleteOption(qIndex, oIndex)}
+                    className="text-red-500 hover:text-red-600"
+                  >
+                    <Trash size={20} />
+                  </button>
+                </div>
                 <AdvancedTextbox
                   questions={questions}
                   setQuestions={setQuestions}
@@ -129,63 +139,59 @@ const QuestionsInputInterface: React.FC<Props> = ({
                   oIndex={oIndex}
                   placeholder="Enter option here..."
                 />
-                <button
-                  type="button"
-                  onClick={() => deleteOption(qIndex, oIndex)}
-                  className="text-red-500 hover:text-red-700"
-                >
-                  <FaTrash />
-                </button>
               </div>
             ))}
             <button
               type="button"
               onClick={() => addOption(qIndex)}
-              className="inline-flex items-center text-green-500 hover:text-green-700"
+              className="flex items-center text-green-500 hover:text-green-600"
             >
-              <span className="mr-1">+</span> Add Option
+              Add option <CirclePlus className="ml-1 inline" />
             </button>
           </div>
 
-          <div>
-            <label>Correct Answer(s):</label>
-            <input
-              type="text"
-              value={question.correct.join(",")} // Convert array back to string for input display
-              placeholder={
-                question.type === "mcq"
-                  ? "Enter the correct answer. (eg 1)"
-                  : "Enter correct answer(s) separated by no spaced commas (eg: 1,3)"
-              }
-              onChange={(e) => {
-                const inputValue = e.target.value;
-                const correctAnswers = inputValue
-                  .split(",")
-                  .map((answer) => answer.trim());
-                updateQuestion(qIndex, {
-                  ...question,
-                  correct: correctAnswers,
-                });
-                validateCorrectAnswer(inputValue, question.type);
-              }}
-              className="w-full border p-2"
-            />
+          <div className="my-4">
+            <div className="flex items-center gap-2">
+              <label htmlFor="correctAnswer">Correct answer(s)</label>
+              <Input
+                id="correctAnswer"
+                type="text"
+                value={question.correct.join(",")} // Convert array back to string for input display
+                placeholder={
+                  question.type === "mcq" ? "Example: 1" : "Example: 1,3"
+                }
+                onChange={(e) => {
+                  const inputValue = e.target.value;
+                  const correctAnswers = inputValue
+                    .split(",")
+                    .map((answer) => answer.trim());
+                  updateQuestion(qIndex, {
+                    ...question,
+                    correct: correctAnswers,
+                  });
+                  validateCorrectAnswer(inputValue, question.type);
+                }}
+                className="w-fit grow"
+              />
+            </div>
             {error && <div className="text-red-500">{error}</div>}
           </div>
 
-          <div>
-            <label>Explanation:</label>
-            <AdvancedTextbox
-              questions={questions}
-              setQuestions={setQuestions}
-              origin={"explanation"}
-              qIndex={qIndex}
-              placeholder="Enter the explanation for the answer here (optional)..."
-            />
+          <div className="my-4">
+            <label>
+              Explanation (optional)
+              <AdvancedTextbox
+                questions={questions}
+                setQuestions={setQuestions}
+                origin={"explanation"}
+                qIndex={qIndex}
+                placeholder="Explain the answer here..."
+              />
+            </label>
           </div>
 
           <div>
-            <label>Question Type:</label>
+            <label>Question type:</label>
             <select
               value={question.type}
               onChange={(e) =>
@@ -203,20 +209,20 @@ const QuestionsInputInterface: React.FC<Props> = ({
 
           <button
             type="button"
-            className="mt-4 rounded-md border border-red-500 bg-red-500 px-2 py-1 text-white hover:bg-white hover:text-red-500"
+            className="mt-4 rounded-md border border-red-500 bg-red-500 px-3 py-1 text-white transition-colors hover:bg-white hover:text-red-500"
             onClick={() => removeQuestion(qIndex)}
           >
-            Delete Question
+            Delete question
           </button>
         </div>
       ))}
 
       <button
         type="button"
-        className="mt-4 rounded-md border border-green-500 bg-green-500 p-2 px-2 py-1 text-white hover:bg-white hover:text-green-500"
+        className="rounded-md border border-green-500 bg-green-500 px-3 py-1 text-white transition-colors hover:bg-white hover:text-green-500"
         onClick={addQuestion}
       >
-        Add Question
+        Add question
       </button>
     </div>
   );

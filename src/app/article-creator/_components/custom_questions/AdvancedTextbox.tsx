@@ -2,7 +2,7 @@ import React, { useRef, useCallback, useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { QuestionFormat, questionInput } from "@/types/questions";
 import { QuestionsInput } from "./QuestionInstance";
-import { FaUpload, FaTrash } from "react-icons/fa";
+import { Paperclip, Trash } from "lucide-react";
 import { deleteObject, getStorage, ref } from "firebase/storage";
 import { getUser } from "@/components/hooks/users";
 
@@ -210,7 +210,7 @@ export default function AdvancedTextbox({
 
     try {
       console.log(storageRef);
-      if(!storageRef) return;
+      if (!storageRef) return;
       await deleteObject(storageRef);
       console.log(`File ${fileKey} deleted successfully from storage.`);
     } catch (error) {
@@ -253,7 +253,7 @@ export default function AdvancedTextbox({
     <div className="relative">
       <Textarea
         ref={textareaRef}
-        className="h-40 w-full resize-none focus:outline-none"
+        className="h-20 w-full focus:outline-none"
         value={currentText}
         onChange={handleTextChange}
         onKeyDown={handleKeyDown}
@@ -275,18 +275,18 @@ export default function AdvancedTextbox({
       <div className="mt-2 flex space-x-2">
         <button
           type="button"
-          className="rounded bg-blue-500 px-3 py-1 text-white hover:bg-blue-600"
+          className="flex items-center rounded-md bg-blue-500 px-3 py-1 text-white transition-colors hover:bg-blue-600"
           onClick={handleUploadClick}
         >
-          Upload File <FaUpload className="ml-1 inline" />
+          Add file <Paperclip className="ml-1 inline" />
         </button>
         {fileExists && (
           <button
             type="button"
-            className="rounded bg-red-500 px-3 py-1 text-white hover:bg-red-600"
+            className="flex items-center rounded-md bg-red-500 px-3 py-1 text-white transition-colors hover:bg-red-600"
             onClick={handleDeleteFile}
           >
-            Delete File <FaTrash className="ml-1 inline" />
+            Delete file <Trash className="ml-1 inline" />
           </button>
         )}
       </div>
