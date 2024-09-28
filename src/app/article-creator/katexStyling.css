@@ -1,4 +1,7 @@
 .custom-katex .katex, .custom-katex .katex * {
   color: black !important; /* Set all LaTeX content to black */
-  border: black !important; /* Force the fraction bar to be black */
+}
+
+.katex .frac-line {
+    border: 0.1px solid black !important; /* Force the fraction bar to be black */
 }
