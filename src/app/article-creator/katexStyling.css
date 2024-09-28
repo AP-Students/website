@@ -1,19 +1,4 @@
 .custom-katex .katex, .custom-katex .katex * {
   color: black !important; /* Set all LaTeX content to black */
-}
-
-.katex .frac-line {
-    border: 0.1px solid black !important; /* Force the fraction bar to be black */
-}
-
-.custom-katex .katex .frac {
-  color: black !important; /* Set fractions to black */
-}
-
-.custom-katex .katex .numerator {
-  color: black !important; /* Set numerator to black */
-}
-
-.custom-katex .katex .denominator {
-  color: black !important; /* Set denominator to black */
+  border: black !important; /* Force the fraction bar to be black */
 }
