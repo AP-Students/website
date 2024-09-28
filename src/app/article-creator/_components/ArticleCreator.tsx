@@ -14,6 +14,31 @@ import { faCheckCircle } from "@fortawesome/free-solid-svg-icons";
 import { getFileFromIndexedDB } from "./custom_questions/RenderAdvancedTextbox";
 import { QuestionFormat } from "@/types/questions";
 
+const revertTableObjectToArray = (data: OutputData) => {
+  const table = data.blocks.find((block) => block.type === "table");
+  if (table) {
+    const contentAsObject = table.data.content as Record<string, any[]>;
+    console.log("hits here");  
+
+    // Convert the object (with keys like row0, row1, ...) back to an array of arrays
+    const contentAsArray = Object.keys(contentAsObject)
+      .sort()  // Ensure the rows are in correct order, just in case
+      .map((key) => contentAsObject[key]);
+
+      console.log("contentAsArray:", contentAsArray);
+    // Update the data to replace the object back with an array
+    data.blocks[data.blocks.indexOf(table)] = {
+      ...table,
+      data: {
+        ...table.data,
+        content: contentAsArray,
+      },
+    };
+  }
+};
+
+
+
 function ArticleCreator({ className }: { className?: string }) {
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
   const [initialData, setInitialData] = useState<OutputData>({
@@ -84,8 +109,13 @@ function ArticleCreator({ className }: { className?: string }) {
           const pathParts = window.location.pathname.split("/").slice(-3);
           const docRef = doc(db, "pages", pathParts.join("-"));
           const docSnap = await getDoc(docRef);
-          setInitialData(docSnap.data()?.data as OutputData);
-          setData(docSnap.data()?.data as OutputData);
+          const data = docSnap.data()?.data as OutputData;
+          revertTableObjectToArray(data);
+
+          console.log("Data:", data);
+
+          setInitialData(data);
+          setData(data);
         }
       } catch (error: any) {
         console.log("Error fetching subject data:", error.message);
@@ -235,6 +265,20 @@ function ArticleCreator({ className }: { className?: string }) {
         );
       };
 
+      const processTable = async (tableData: any) => { // tableData is an object with a content property that is an array of arrays.
+        const table = tableData.content as any[][];  
+        console.log("Table:", table);
+        
+        const tableAsObject = table.reduce((acc, row, index) => {
+          acc[`row${index}`] = row;
+          return acc;
+        }, {} as Record<string, any[]>); 
+      
+        console.log("Converted table:", tableAsObject);
+        return tableAsObject;
+      };
+      
+
       // Traverse through data to find QuestionFormat[] arrays
       const updatedData = await Promise.all(
         Object.entries(data.blocks).map(async ([key, value]) => {
@@ -246,16 +290,27 @@ function ArticleCreator({ className }: { className?: string }) {
             value.data.questions = updatedQuestions;
             return value;
           }
+
+          if(value.type === "table") {
+            const updatedTable = await processTable(value.data);
+            value.data.content = updatedTable;
+            return value;
+          }
+
+
           return value; // If not an array of questions, return original value
         }),
       );
 
       // @ts-ignore - blocks is an Array
       newArticle.data.blocks = updatedData;
+      console.log("newArticle:", newArticle);
       await setDoc(docRef, newArticle);
 
       alert(`Article saved: ${docRef.id}`);
     } catch (error) {
+      console.error("Error saving article:", error);
+      
       alert("Error saving article.");
     }
 

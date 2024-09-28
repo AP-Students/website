@@ -16,7 +16,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
   // Using link to format unique title (eg, limits-and-continuity-1)
   const pathParts = pathname.split("/").slice(-2);
   const formattedTitle =
-    `Unit ${pathParts[1]?.charAt(0).toUpperCase() + pathParts[1]!.slice(1)}: ${pathParts[0]?.charAt(0).toUpperCase() + pathParts[0]!.slice(1)}`.replace(
+    `Lesson ${pathParts[1]?.charAt(0).toUpperCase() + pathParts[1]!.slice(1)} of ${pathParts[0]?.charAt(0).toUpperCase() + pathParts[0]!.slice(1)}`.replace(
       /-/g,
       " ",
     );

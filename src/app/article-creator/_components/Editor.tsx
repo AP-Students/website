@@ -180,7 +180,7 @@ const Editor = ({ setData, content }: { setData: (data: OutputData) => void, con
         }
       }
     };
-  }, [editor]);
+  }, [editor]); 
 
   return (
     <div className="flex flex-col gap-y-4">
