@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import katex from "katex";
 import { questionInput } from "@/types/questions";
+import "@/app/article-creator/katexStyling.css";
 
 interface Props {
   content: questionInput;
@@ -54,10 +55,10 @@ export const RenderContent: React.FC<Props> = ({ content }) => {
         // Convert to LaTeX syntax
         if (line.endsWith("$")) {
           tempElements.push(
-            <div key={`latex-${lineIndex}`} className="my-2">
+            <div key={`latex-${lineIndex}`} style={{ color: 'black !important' }} className="my-2 custom-katex">
               <div
                 dangerouslySetInnerHTML={{
-                  __html: katex.renderToString(line.slice(1, -1), {
+                  __html: katex.renderToString(line.slice(0, -1), {
                     throwOnError: false,
                   }),
                 }}
