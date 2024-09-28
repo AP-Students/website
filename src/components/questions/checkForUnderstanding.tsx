@@ -14,15 +14,22 @@ const CheckForUnderstanding: React.FC<Props> = ({ question }) => {
   const [submitted, setSubmitted] = useState<boolean>(false);
 
   const handleSelectOption = (id: string) => {
+    const numAnswers = question.correct.length;
     if (!submitted) {
-      if (question.type === "mcq") {
-        setSelectedOptions([id]); // Ensure only one option can be selected at a time
+      if (numAnswers === 1){
+        setSelectedOptions([id]);
+        return;
+      }
+      if (selectedOptions.includes(id)) {
+        setSelectedOptions(selectedOptions.filter((oid) => oid !== id));
+        return;
+      }
+      if (question.displayNumAnswers) {
+        if (numAnswers > selectedOptions.length) {
+          setSelectedOptions([id, ...selectedOptions]);
+        }
       } else {
-        setSelectedOptions((prev) =>
-          prev.includes(id)
-            ? prev.filter((optionId) => optionId !== id)
-            : [...prev, id],
-        ); // Toggle selection for multi-answer
+        setSelectedOptions([id, ...selectedOptions]);
       }
     }
   };
@@ -31,10 +38,8 @@ const CheckForUnderstanding: React.FC<Props> = ({ question }) => {
     if (selectedOptions.length > 0) {
       setSubmitted(true);
       const allCorrect =
-        question.type === "mcq"
-          ? question.correct.includes(selectedOptions[0]!)
-          : question.correct.length === selectedOptions.length &&
-            question.correct.every((id) => selectedOptions.includes(id));
+        question.correct.length === selectedOptions.length &&
+        question.correct.every((id) => selectedOptions.includes(id));
       setIsCorrect(allCorrect);
     }
   };
@@ -51,6 +56,7 @@ const CheckForUnderstanding: React.FC<Props> = ({ question }) => {
 
   return (
     <div className="max-w-6xl bg-primary-foreground p-4 md:p-6 lg:p-8">
+
       <div className="markdown text-xl font-bold md:text-2xl lg:text-3xl">
         <RenderContent content={question.body} />
       </div>
