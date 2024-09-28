@@ -47,6 +47,7 @@ service cloud.firestore {
   }
 }
 
+
 service firebase.storage {
   match /b/{bucket}/o {
     match /{allPaths=**} {
