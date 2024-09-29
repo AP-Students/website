@@ -1,6 +1,5 @@
 "use client";
 import ArticleCreator from "@/app/article-creator/_components/ArticleCreator";
-import AdvancedTextbox from "@/app/article-creator/_components/custom_questions/AdvancedTextbox";
 import { useUser } from "@/components/hooks/UserContext";
 import Footer from "@/components/ui/footer";
 import Navbar from "@/components/ui/navbar";

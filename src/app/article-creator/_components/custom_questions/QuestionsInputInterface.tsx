@@ -21,11 +21,11 @@ const QuestionsInputInterface: React.FC<Props> = ({
     setQuestions([
       ...questions,
       {
+        title: "",
         body: {
           value: "",
         },
-        title: "",
-        displayNumAnswers: true,
+        type: "mcq",
         options: [
           {
             value: {

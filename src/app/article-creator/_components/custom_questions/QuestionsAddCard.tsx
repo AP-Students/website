@@ -10,6 +10,7 @@ import { QuestionFormat } from "@/types/questions";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { getUser } from "@/components/hooks/users";
+import { getKey } from "../ArticleCreator";
 
 //@ts-expect-error
 export class QuestionsAddCard implements BlockToolConstructable {
@@ -34,6 +35,7 @@ export class QuestionsAddCard implements BlockToolConstructable {
 
   // Function to repropagate the questions with parsed data and file URLs
   private async repropagateQuestions() {
+    const key = getKey();
     const user = await getUser();  
 
     if(user && (user.access !== "admin" && user.access !== "member")) {
@@ -45,7 +47,8 @@ export class QuestionsAddCard implements BlockToolConstructable {
     
     try {
       // Load questions from Firestore, if available
-      const docRef = doc(db, "pages", "calculus-ab-limits-and-continuity-1");
+      const docRef = doc(db, "pages", key);  // reference needs to be from subject...how do I get that?
+      console.log("docRef:", docRef);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {

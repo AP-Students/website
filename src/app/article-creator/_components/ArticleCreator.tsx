@@ -18,14 +18,12 @@ const revertTableObjectToArray = (data: OutputData) => {
   const table = data.blocks.find((block) => block.type === "table");
   if (table) {
     const contentAsObject = table.data.content as Record<string, any[]>;
-    console.log("hits here");  
 
     // Convert the object (with keys like row0, row1, ...) back to an array of arrays
     const contentAsArray = Object.keys(contentAsObject)
       .sort()  // Ensure the rows are in correct order, just in case
       .map((key) => contentAsObject[key]);
 
-      console.log("contentAsArray:", contentAsArray);
     // Update the data to replace the object back with an array
     data.blocks[data.blocks.indexOf(table)] = {
       ...table,
@@ -35,6 +33,12 @@ const revertTableObjectToArray = (data: OutputData) => {
       },
     };
   }
+};
+
+export const getKey = () => {
+  const pathParts = window.location.pathname.split("/").slice(-3);
+  const key = pathParts.join("-");
+  return key;
 };
 
 
@@ -106,8 +110,8 @@ function ArticleCreator({ className }: { className?: string }) {
       try {
         const userAccess = await getUserAccess();
         if (userAccess && (userAccess === "admin" || userAccess === "member")) {
-          const pathParts = window.location.pathname.split("/").slice(-3);
-          const docRef = doc(db, "pages", pathParts.join("-"));
+          const key = getKey(); 
+          const docRef = doc(db, "pages", key);
           const docSnap = await getDoc(docRef);
           const data = docSnap.data()?.data as OutputData;
           revertTableObjectToArray(data);
@@ -267,14 +271,12 @@ function ArticleCreator({ className }: { className?: string }) {
 
       const processTable = async (tableData: any) => { // tableData is an object with a content property that is an array of arrays.
         const table = tableData.content as any[][];  
-        console.log("Table:", table);
         
         const tableAsObject = table.reduce((acc, row, index) => {
           acc[`row${index}`] = row;
           return acc;
         }, {} as Record<string, any[]>); 
       
-        console.log("Converted table:", tableAsObject);
         return tableAsObject;
       };
       
@@ -304,7 +306,6 @@ function ArticleCreator({ className }: { className?: string }) {
 
       // @ts-ignore - blocks is an Array
       newArticle.data.blocks = updatedData;
-      console.log("newArticle:", newArticle);
       await setDoc(docRef, newArticle);
 
       alert(`Article saved: ${docRef.id}`);

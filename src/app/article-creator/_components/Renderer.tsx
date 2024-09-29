@@ -7,6 +7,7 @@ import { useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { QuestionsOutput } from "./custom_questions/QuestionInstance";
 import { QuestionFormat } from "@/types/questions";
+import "@/app/article-creator/katexStyling.css";
 
 const customParsers = {
   alert: (data: { align: string; message: string; type: string }) => {
@@ -97,6 +98,8 @@ const Renderer = (props: { content: OutputData }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    console.log("Renderer props:", props);
+
     if (containerRef.current) {
       // Select the placeholder div and render the React component
       for (const block of props.content.blocks) {

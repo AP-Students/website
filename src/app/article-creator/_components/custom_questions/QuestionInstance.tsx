@@ -35,6 +35,7 @@ const useSyncedQuestions = (instanceId: string) => {
     const handleStorageUpdate = () => {
       const updatedQuestions = localStorage.getItem(storageKey);
       if (updatedQuestions) {
+        console.log("Updated questions:", JSON.parse(updatedQuestions));
         setQuestions(JSON.parse(updatedQuestions));
       }
     };

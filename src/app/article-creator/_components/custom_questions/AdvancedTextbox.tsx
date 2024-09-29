@@ -209,10 +209,8 @@ export default function AdvancedTextbox({
     const storageRef = ref(storage, fileKey);
 
     try {
-      console.log(storageRef);
       if (!storageRef) return;
       await deleteObject(storageRef);
-      console.log(`File ${fileKey} deleted successfully from storage.`);
     } catch (error) {
       console.error(`Error deleting file ${fileKey} from storage:`, error);
       // You might want to handle specific error codes here
