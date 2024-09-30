@@ -88,6 +88,7 @@ export const QuestionsOutput: React.FC<{ instanceId: string }> = ({
   instanceId,
 }) => {
   const { questions } = useSyncedQuestions(instanceId);
+  console.log("Questions:", questions);
 
   return (
     <div className="mt-8">

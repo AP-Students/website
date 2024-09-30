@@ -1,7 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { type OutputData } from "@editorjs/editorjs";
-import Renderer from "./Renderer";
 import Editor from "./Editor";
 import { cn } from "@/lib/utils";
 import { db } from "@/lib/firebase";
@@ -13,8 +12,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheckCircle } from "@fortawesome/free-solid-svg-icons";
 import { getFileFromIndexedDB } from "./custom_questions/RenderAdvancedTextbox";
 import { QuestionFormat } from "@/types/questions";
+import Renderer from "./Renderer";
 
-const revertTableObjectToArray = (data: OutputData) => {
+export const revertTableObjectToArray = (data: OutputData) => {
   const table = data.blocks.find((block) => block.type === "table");
   if (table) {
     const contentAsObject = table.data.content as Record<string, any[]>;

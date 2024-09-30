@@ -23,7 +23,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
     if ((!user || user?.access === "user") && !loading) {
       router.push("/");
     }
-  }, [user]);
+  }, [user]); 
 
   if (loading) {
     return (
@@ -31,7 +31,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
         Loading...
       </div>
     );
-  }
+  } 
 
   if (error) {
     return (
