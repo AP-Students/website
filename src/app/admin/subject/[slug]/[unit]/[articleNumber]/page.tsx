@@ -7,9 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 const Page = ({ params }: { params: { slug: string } }) => {
-  const { user, loading, error, setError } = useUser();
-  // // Clear errors incase they exist from other pages
-  // setError(null);
+  const { user, loading, error} = useUser();
 
   const router = useRouter();
   const pathname = usePathname();
@@ -17,7 +15,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
   // Using link to format unique title (eg, limits-and-continuity-1)
   const pathParts = pathname.split("/").slice(-2);
   const formattedTitle =
-    `Unit ${pathParts[1]?.charAt(0).toUpperCase() + pathParts[1]!.slice(1)}: ${pathParts[0]?.charAt(0).toUpperCase() + pathParts[0]!.slice(1)}`.replace(
+    `Lesson ${pathParts[1]?.charAt(0).toUpperCase() + pathParts[1]!.slice(1)} of ${pathParts[0]?.charAt(0).toUpperCase() + pathParts[0]!.slice(1)}`.replace(
       /-/g,
       " ",
     );
@@ -25,7 +23,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
     if ((!user || user?.access === "user") && !loading) {
       router.push("/");
     }
-  }, [user]);
+  }, [user]); 
 
   if (loading) {
     return (
@@ -33,7 +31,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
         Loading...
       </div>
     );
-  }
+  } 
 
   if (error) {
     return (

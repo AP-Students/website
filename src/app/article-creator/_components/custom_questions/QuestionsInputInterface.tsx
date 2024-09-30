@@ -2,14 +2,16 @@
 
 import React, { useState } from "react";
 import { QuestionFormat } from "@/types/questions";
-import { FaTrash } from "react-icons/fa"; 
+import { Trash, CirclePlus } from "lucide-react";
+import AdvancedTextbox from "./AdvancedTextbox";
+import { Input } from "@/components/ui/input";
 
 interface Props {
   questions: QuestionFormat[];
   setQuestions: (questions: QuestionFormat[]) => void;
 }
 
-const   QuestionsInputInterface: React.FC<Props> = ({
+const QuestionsInputInterface: React.FC<Props> = ({
   questions,
   setQuestions,
 }) => {
@@ -19,17 +21,26 @@ const   QuestionsInputInterface: React.FC<Props> = ({
     setQuestions([
       ...questions,
       {
-        body: "",
         title: "",
-        displayNumAnswers: true,
+        body: {
+          value: "",
+        },
+        type: "mcq",
         options: [
-          { value: "", id: "1" },
-          { value: "", id: "2" },
-          { value: "", id: "3" },
-          { value: "", id: "4" },
+          {
+            value: {
+              value: "",
+            },
+            id: "1",
+          },
+          { value: { value: "" }, id: "2" },
+          { value: { value: "" }, id: "3" },
+          { value: { value: "" }, id: "4" },
         ],
         correct: [],
-        explanation: "", 
+        explanation: {
+          value: "",
+        },
         course_id: "",
         unit_ids: [],
         subunit_ids: [],
@@ -51,18 +62,27 @@ const   QuestionsInputInterface: React.FC<Props> = ({
 
   const addOption = (qIndex: number) => {
     const newQuestions = [...questions];
-    const newOptions = [...newQuestions[qIndex]!.options, { value: "", id: Date.now().toString() }];
+    const newOptions = [
+      ...newQuestions[qIndex]!.options,
+      {
+        value: {
+          value: "",
+        },
+        id: Date.now().toString(),
+      },
+    ];
     newQuestions[qIndex]!.options = newOptions;
     setQuestions(newQuestions);
   };
 
   const deleteOption = (qIndex: number, oIndex: number) => {
     const newQuestions = [...questions];
-    const newOptions = newQuestions[qIndex]!.options.filter((_, index) => index !== oIndex);
+    const newOptions = newQuestions[qIndex]!.options.filter(
+      (_, index) => index !== oIndex,
+    );
     newQuestions[qIndex]!.options = newOptions;
     setQuestions(newQuestions);
   };
-  
 
   const validateCorrectAnswer = (
     value: string,
@@ -89,93 +109,89 @@ const   QuestionsInputInterface: React.FC<Props> = ({
         <div key={qIndex} className="mb-4 rounded border p-4">
           <div>
             <label>{"Question: " + (qIndex + 1)}</label>
-            <input
-              type="text"
-              value={question.body}
-              onChange={(e) =>
-                updateQuestion(qIndex, { ...question, body: e.target.value })
-              }
-              className="w-full border p-2 "
+            <AdvancedTextbox
+              questions={questions}
+              setQuestions={setQuestions}
+              origin={"body"}
+              qIndex={qIndex}
             />
           </div>
 
-          <div>
-            <label>Options:</label>
+          <div className="my-4">
+            <span className="text-lg font-bold">Options</span>
             {question.options.map((option, oIndex) => (
-              <div key={oIndex} className="flex items-center mb-2">
-                <input
-                  type="text"
-                  value={option.value}
-                  onChange={(e) => {
-                    const newOptions = [...question.options];
-                    if (newOptions[oIndex]) {
-                      newOptions[oIndex].value = e.target.value;
-                      updateQuestion(qIndex, {
-                        ...question,
-                        options: newOptions,
-                      });
-                    }
-                  }}
-                  className="w-full border p-2 mr-2"
+              <div key={oIndex} className="mb-2 min-w-full">
+                <div className="flex justify-between">
+                  Option {oIndex + 1}
+                  <button
+                    type="button"
+                    onClick={() => deleteOption(qIndex, oIndex)}
+                    className="text-red-500 hover:text-red-600"
+                  >
+                    <Trash size={20} />
+                  </button>
+                </div>
+                <AdvancedTextbox
+                  questions={questions}
+                  setQuestions={setQuestions}
+                  origin={"option"}
+                  qIndex={qIndex}
+                  oIndex={oIndex}
+                  placeholder="Enter option here..."
                 />
-                <button
-                  type="button"
-                  onClick={() => deleteOption(qIndex, oIndex)}
-                  className="text-red-500 hover:text-red-700"
-                >
-                  <FaTrash />
-                </button>
               </div>
             ))}
             <button
               type="button"
               onClick={() => addOption(qIndex)}
-              className="text-green-500 hover:text-green-700 inline-flex items-center"
+              className="flex items-center text-green-500 hover:text-green-600"
             >
-              <span className="mr-1">+</span> Add Option
+              Add option <CirclePlus className="ml-1 inline" />
             </button>
           </div>
 
-          <div>
-            <label>Correct Answer(s):</label>
-            <input
-              type="text"
-              value={question.correct.join(",")} // Convert array back to string for input display
-              placeholder={
-                question.type === "mcq"
-                  ? "Enter the correct answer. (eg 1)"
-                  : "Enter correct answer(s) separated by no spaced commas (eg: 1,3)"
-              }
-              onChange={(e) => {
-                const inputValue = e.target.value;
-                const correctAnswers = inputValue
-                  .split(",")
-                  .map((answer) => answer.trim());
-                updateQuestion(qIndex, {
-                  ...question,
-                  correct: correctAnswers,
-                });
-                validateCorrectAnswer(inputValue, question.type);
-              }}
-              className="w-full border p-2"
-            />
+          <div className="my-4">
+            <div className="flex items-center gap-2">
+              <label htmlFor="correctAnswer">Correct answer(s)</label>
+              <Input
+                id="correctAnswer"
+                type="text"
+                value={question.correct.join(",")} // Convert array back to string for input display
+                placeholder={
+                  question.type === "mcq" ? "Example: 1" : "Example: 1,3"
+                }
+                onChange={(e) => {
+                  const inputValue = e.target.value;
+                  const correctAnswers = inputValue
+                    .split(",")
+                    .map((answer) => answer.trim());
+                  updateQuestion(qIndex, {
+                    ...question,
+                    correct: correctAnswers,
+                  });
+                  validateCorrectAnswer(inputValue, question.type);
+                }}
+                className="w-fit grow"
+              />
+            </div>
             {error && <div className="text-red-500">{error}</div>}
           </div>
 
-          <div>
-            <label>Explanation:</label>
-            <input
-              value={question.explanation}
-              onChange={(e) =>
-                updateQuestion(qIndex, { ...question, explanation: e.target.value })
-              }
-              className="w-full border p-2"
-              placeholder="Enter the explanation for the answer here (optional)..." 
-            />
+          <div className="my-4">
+            <label>
+              Explanation (optional)
+              <AdvancedTextbox
+                questions={questions}
+                setQuestions={setQuestions}
+                origin={"explanation"}
+                qIndex={qIndex}
+                placeholder="Explain the answer here..."
+              />
+            </label>
           </div>
 
           <div>
-            <label>Question Type:</label>
+            <label>Question type:</label>
             <select
               value={question.type}
               onChange={(e) =>
@@ -193,20 +209,20 @@ const   QuestionsInputInterface: React.FC<Props> = ({
 
           <button
             type="button"
-            className="mt-4 rounded-md border border-red-500 bg-red-500 px-2 py-1 text-white hover:bg-white hover:text-red-500"
+            className="mt-4 rounded-md border border-red-500 bg-red-500 px-3 py-1 text-white transition-colors hover:bg-white hover:text-red-500"
             onClick={() => removeQuestion(qIndex)}
           >
-            Delete Question
+            Delete question
           </button>
         </div>
       ))}
 
       <button
         type="button"
-        className="mt-4 rounded-md border border-green-500 bg-green-500 p-2 px-2 py-1 text-white hover:bg-white hover:text-green-500"
+        className="rounded-md border border-green-500 bg-green-500 px-3 py-1 text-white transition-colors hover:bg-white hover:text-green-500"
         onClick={addQuestion}
       >
-        Add Question
+        Add question
       </button>
     </div>
   );

@@ -21,6 +21,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchUser = async () => {
     try {
       setLoading(true);
+      setError(null);
       const fetchedUser = await getUser();
       if(fetchedUser) {
         setUser(fetchedUser);

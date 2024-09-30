@@ -7,6 +7,10 @@ import ReactDOM from "react-dom/client";
 import { QuestionsInput } from "./QuestionInstance";
 import { v4 as uuidv4 } from "uuid";
 import { QuestionFormat } from "@/types/questions";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { getUser } from "@/components/hooks/users";
+import { getKey } from "../ArticleCreator";
 
 //@ts-expect-error
 export class QuestionsAddCard implements BlockToolConstructable {
@@ -33,6 +37,7 @@ export class QuestionsAddCard implements BlockToolConstructable {
     const wrapper = document.createElement("div");
     wrapper.classList.add("custom-question-tool");
     const root = ReactDOM.createRoot(wrapper);
+
     root.render(<QuestionsInput instanceId={this.instanceId} />);
     return wrapper;
   }

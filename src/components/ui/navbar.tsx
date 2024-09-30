@@ -82,9 +82,11 @@ const Navbar = ({
               <>
                 <NavbarLink href={"/signup"}>Sign up</NavbarLink>
 
-                <Button className="text-md px-5 py-3 font-semibold text-white">
-                  <Link href={"/login"}>Log in</Link>
-                </Button>
+                <Link href={"/login"}>
+                  <Button className="text-md px-5 py-3 font-semibold text-white">
+                    Log in
+                  </Button>
+                </Link>
               </>
             )}
           </div>

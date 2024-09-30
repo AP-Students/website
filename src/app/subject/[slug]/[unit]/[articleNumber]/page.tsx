@@ -8,15 +8,19 @@ import SubjectSidebar from "@/components/subjectHomepage/subject-sidebar";
 import TableOfContents from "@/components/subjectHomepage/table-of-contents";
 import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
-import Renderer from "@/app/article-creator/_components/Renderer";
 import { Content } from "@/types/content";
 import { useUser } from "@/components/hooks/UserContext";
+import {
+  getKey,
+  revertTableObjectToArray,
+} from "@/app/article-creator/_components/ArticleCreator";
+import { OutputData } from "@editorjs/editorjs";
+import Renderer from "@/app/article-creator/_components/Renderer";
 
 const Page = ({ params }: { params: { slug: string } }) => {
   const [subject, setSubject] = useState<Subject | null>(null);
   const [content, setContent] = useState<Content | null>(null);
   const { user, loading, error, setError, setLoading } = useUser();
-  
 
   const pathParts = window.location.pathname.split("/").slice(-2);
   const formattedTitle =
@@ -32,28 +36,29 @@ const Page = ({ params }: { params: { slug: string } }) => {
           // Reference to the document in Firestore using the slug
           const subjectDocRef = doc(db, "subjects", params.slug);
           const subjectDocSnap = await getDoc(subjectDocRef);
-          
-          // Clear errors incase they exist from other pages
-          setError(null);
+
           if (subjectDocSnap.exists()) {
             // Convert Firestore document data to Subject type
             setSubject(subjectDocSnap.data() as Subject);
-            console.log("subject", subject);
           } else {
             setError("Subject not found. That's probably us, not you.");
           }
 
-          const pathParts = window.location.pathname.split("/").slice(-3);
-          const pageDocRef = doc(db, "pages", pathParts.join("-"));
+          const key = getKey();
+          const pageDocRef = doc(db, "pages", key);
           const pageDocSnap = await getDoc(pageDocRef);
+
           if (pageDocSnap.exists()) {
+            const data = pageDocSnap.data()?.data as OutputData;
+            revertTableObjectToArray(data);
+            pageDocSnap.data()!.data = data;
             setContent(pageDocSnap.data() as Content);
+            console.log("Content:", pageDocSnap.data());
           } else {
             setError("Content not found. That's probably us, not you.");
           }
         }
       } catch (error) {
-        console.log("Error fetching subject data:", error);
         setError("Failed to fetch subject data.");
       } finally {
         setLoading(false);

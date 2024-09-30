@@ -1,19 +1,26 @@
-export interface Option {
+export type questionInput = {
   value: string;
+  fileKey?: string;
+  fileURL?: string;
+}
+
+export interface Option {
+  value: questionInput;
   id: string;
 }
 
 export interface QuestionFormat {
-  body: string;
   title: string;
-  displayNumAnswers: boolean;
+  body: questionInput;
+  type: "mcq" | "multi-answer";
   options: Option[];
   correct: string[];
-  explanation: string, 
+  explanation: questionInput;
   course_id: string;
   unit_ids: string[];
   subunit_ids: string[];
 }
+
 
 export interface Props {
   questions: QuestionFormat[];

@@ -1,16 +1,47 @@
 "use client";
-
 import React, { useEffect, useState } from "react";
 import { type OutputData } from "@editorjs/editorjs";
-import Renderer from "./Renderer";
 import Editor from "./Editor";
 import { cn } from "@/lib/utils";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { v4 as uuidv4 } from "uuid";
-import { getUser } from "@/components/hooks/users";
+import { getUser, getUserAccess } from "@/components/hooks/users";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheckCircle } from "@fortawesome/free-solid-svg-icons";
+import { getFileFromIndexedDB } from "./custom_questions/RenderAdvancedTextbox";
+import { QuestionFormat } from "@/types/questions";
+import Renderer from "./Renderer";
+
+export const revertTableObjectToArray = (data: OutputData) => {
+  const table = data.blocks.find((block) => block.type === "table");
+  if (table) {
+    const contentAsObject = table.data.content as Record<string, any[]>;
+
+    // Convert the object (with keys like row0, row1, ...) back to an array of arrays
+    const contentAsArray = Object.keys(contentAsObject)
+      .sort()  // Ensure the rows are in correct order, just in case
+      .map((key) => contentAsObject[key]);
+
+    // Update the data to replace the object back with an array
+    data.blocks[data.blocks.indexOf(table)] = {
+      ...table,
+      data: {
+        ...table.data,
+        content: contentAsArray,
+      },
+    };
+  }
+};
+
+export const getKey = () => {
+  const pathParts = window.location.pathname.split("/").slice(-3);
+  const key = pathParts.join("-");
+  return key;
+};
+
+
 
 function ArticleCreator({ className }: { className?: string }) {
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
@@ -77,16 +108,21 @@ function ArticleCreator({ className }: { className?: string }) {
   useEffect(() => {
     const fetchSubject = async () => {
       try {
-        const user = await getUser();
-        if (user && (user?.access === "admin" || user?.access === "member")) {
-          const pathParts = window.location.pathname.split("/").slice(-3);
-          const docRef = doc(db, "pages", pathParts.join("-"));
+        const userAccess = await getUserAccess();
+        if (userAccess && (userAccess === "admin" || userAccess === "member")) {
+          const key = getKey(); 
+          const docRef = doc(db, "pages", key);
           const docSnap = await getDoc(docRef);
-          setInitialData(docSnap.data()?.data as OutputData);
-          setData(docSnap.data()?.data as OutputData);
+          const data = docSnap.data()?.data as OutputData;
+          revertTableObjectToArray(data);
+
+          console.log("Data:", data);
+
+          setInitialData(data);
+          setData(data);
         }
-      } catch (error) {
-        console.log("Error fetching subject data:", error);
+      } catch (error: any) {
+        console.log("Error fetching subject data:", error.message);
       }
     };
 
@@ -101,10 +137,14 @@ function ArticleCreator({ className }: { className?: string }) {
 
     setShowDropdown(true); // Show the dropdown to select the title
   };
-
   const handleTitleSelect = async () => {
     const user = await getUser();
     const pathParts = window.location.pathname.split("/").slice(-3);
+
+    if (!user || (user.access !== "admin" && user.access !== "member")) {
+      alert("User is not authorized to perform this action.");
+      return;
+    }
 
     const newArticle = {
       id: uuidv4(),
@@ -115,17 +155,164 @@ function ArticleCreator({ className }: { className?: string }) {
     };
 
     try {
-      if (user && user.access === "admin") {
-        const docRef = doc(db, "pages", pathParts.join("-"));
-        await setDoc(docRef, newArticle);
+      const docRef = doc(db, "pages", pathParts.join("-"));
 
-        alert(`Article saved: ${docRef.id}`);
-      } else {
-        alert("User is not authorized to perform this action.");
-      }
+      // Function to process questions and upload files
+      const processQuestions = async (questions: QuestionFormat[]) => {
+        if (!user || (user.access !== "admin" && user.access !== "member")) {
+          alert("User is not authorized to perform this action.");
+          return;
+        }
+
+        return await Promise.all(
+          questions.map(async (question: QuestionFormat) => {
+            let updatedQuestion = { ...question };
+            const storage = getStorage();
+
+            // Create an array of promises for the body, options, and explanation uploads
+            const uploadPromises: Promise<any>[] = [];
+
+            // Handle body fileKey
+            if (updatedQuestion.body?.fileKey) {
+              uploadPromises.push(
+                (async () => {
+                  const fileObj = await getFileFromIndexedDB(
+                    updatedQuestion.body.fileKey!,
+                  );
+                  // @ts-ignore - fileObj is obj with id and file
+                  const file = fileObj?.file;
+
+                  if (file && file instanceof File) {
+                    const storageRef = ref(storage, `${question.body.fileKey}`);
+                    const snapshot = await uploadBytes(storageRef, file);
+                    const downloadURL = await getDownloadURL(snapshot.ref);
+
+                    updatedQuestion = {
+                      ...updatedQuestion,
+                      body: {
+                        ...updatedQuestion.body,
+                        fileURL: downloadURL,
+                      },
+                    };
+                  }
+                })(),
+              );
+            }
+
+            // Handle options with fileKeys (batching file uploads for options)
+            const updatedOptionsPromises = question.options.map(
+              async (option) => {
+                if (option.value.fileKey) {
+                  const fileObj = await getFileFromIndexedDB(
+                    option.value.fileKey,
+                  );
+                  // @ts-ignore - fileObj is obj with id and file
+                  const file = fileObj?.file;
+
+                  if (file && file instanceof File) {
+                    const storageRef = ref(storage, `${option.value.fileKey}`);
+                    const snapshot = await uploadBytes(storageRef, file);
+                    const downloadURL = await getDownloadURL(snapshot.ref);
+
+                    return {
+                      ...option,
+                      value: {
+                        ...option.value,
+                        fileURL: downloadURL,
+                      },
+                    };
+                  }
+                }
+                return option; // Return the original option if no fileKey
+              },
+            );
+
+            // Add the options uploads to the uploadPromises
+            uploadPromises.push(
+              Promise.all(updatedOptionsPromises).then((updatedOptions) => {
+                updatedQuestion.options = updatedOptions;
+              }),
+            );
+
+            // Handle explanation fileKey
+            if (question.explanation?.fileKey) {
+              uploadPromises.push(
+                (async () => {
+                  const fileObj = await getFileFromIndexedDB(
+                    question.explanation.fileKey!,
+                  );
+                  // @ts-ignore - fileObj is obj with id and file
+                  const file = fileObj?.file;
+
+                  if (file && file instanceof File) {
+                    const storageRef = ref(
+                      storage,
+                      `${question.explanation.fileKey}`,
+                    );
+                    const snapshot = await uploadBytes(storageRef, file);
+                    const downloadURL = await getDownloadURL(snapshot.ref);
+
+                    updatedQuestion.explanation = {
+                      ...question.explanation,
+                      fileURL: downloadURL,
+                    };
+                  }
+                })(),
+              );
+            }
+
+            // Wait for all file uploads to complete
+            await Promise.all(uploadPromises);
+
+            return updatedQuestion;
+          }),
+        );
+      };
+
+      const processTable = async (tableData: any) => { // tableData is an object with a content property that is an array of arrays.
+        const table = tableData.content as any[][];  
+        
+        const tableAsObject = table.reduce((acc, row, index) => {
+          acc[`row${index}`] = row;
+          return acc;
+        }, {} as Record<string, any[]>); 
+      
+        return tableAsObject;
+      };
+      
+
+      // Traverse through data to find QuestionFormat[] arrays
+      const updatedData = await Promise.all(
+        Object.entries(data.blocks).map(async ([key, value]) => {
+          // Check if the array contains objects of type QuestionFormat
+          if (value.type === "questionsAddCard") {
+            const updatedQuestions = await processQuestions(
+              value.data.questions as QuestionFormat[],
+            );
+            value.data.questions = updatedQuestions;
+            return value;
+          }
+
+          if(value.type === "table") {
+            const updatedTable = await processTable(value.data);
+            value.data.content = updatedTable;
+            return value;
+          }
+
+
+          return value; // If not an array of questions, return original value
+        }),
+      );
+
+      // @ts-ignore - blocks is an Array
+      newArticle.data.blocks = updatedData;
+      await setDoc(docRef, newArticle);
+
+      alert(`Article saved: ${docRef.id}`);
     } catch (error) {
+      console.error("Error saving article:", error);
+      
       alert("Error saving article.");
-      console.error("Error adding document: ", error);
     }
 
     setShowDropdown(false);

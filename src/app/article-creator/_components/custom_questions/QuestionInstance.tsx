@@ -13,14 +13,14 @@ const useSyncedQuestions = (instanceId: string) => {
       ? JSON.parse(savedQuestions)
       : [
           {
-            body: "",
+            body: [],
             title: "",
             displayNumAnswers: true,
             options: [
-              { value: "", id: "1" },
-              { value: "", id: "2" },
-              { value: "", id: "3" },
-              { value: "", id: "4" },
+              { value: [""], id: "1" },
+              { value: [""], id: "2" },
+              { value: [""], id: "3" },
+              { value: [""], id: "4" },
             ],
             correct: [],
             course_id: "",
@@ -30,10 +30,29 @@ const useSyncedQuestions = (instanceId: string) => {
         ];
   });
 
+  // Effect to update questions when localStorage is modified via the custom event
+  useEffect(() => {
+    const handleStorageUpdate = () => {
+      const updatedQuestions = localStorage.getItem(storageKey);
+      if (updatedQuestions) {
+        console.log("Updated questions:", JSON.parse(updatedQuestions));
+        setQuestions(JSON.parse(updatedQuestions));
+      }
+    };
+
+    // Listen for custom event triggered by QuestionsAddCard
+    window.addEventListener("questionsUpdated", handleStorageUpdate);
+
+    // Clean up event listener on component unmount
+    return () => {
+      window.removeEventListener("questionsUpdated", handleStorageUpdate);
+    };
+  }, [storageKey]);
+
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(questions));
   }, [questions, storageKey]);
-
+  
   // Clean up local storage on component unmount or page unload
   useEffect(() => {
     const handleUnload = () => {
@@ -69,6 +88,7 @@ export const QuestionsOutput: React.FC<{ instanceId: string }> = ({
   instanceId,
 }) => {
   const { questions } = useSyncedQuestions(instanceId);
+  console.log("Questions:", questions);
 
   return (
     <div className="mt-8">

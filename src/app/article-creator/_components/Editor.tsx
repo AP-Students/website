@@ -155,13 +155,13 @@ const Editor = ({ setData, content }: { setData: (data: OutputData) => void, con
       api.saver
         .save()
         .then((outputData) => {
-          console.log("Saving successful: ", outputData);
           setData(outputData);
         })
         .catch((error) => {
           console.error("Saving failed: ", error);
         });
     },
+    
   });
 
   useEffect(() => {
@@ -180,7 +180,7 @@ const Editor = ({ setData, content }: { setData: (data: OutputData) => void, con
         }
       }
     };
-  }, [editor]);
+  }, [editor]); 
 
   return (
     <div className="flex flex-col gap-y-4">
