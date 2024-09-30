@@ -73,7 +73,7 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
       <div className="markdown text-xl font-bold md:text-2xl lg:text-3xl">
         <RenderContent content={question.body} />
       </div>
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="mt-4 grid grid-cols-1 gap-4">
         {question.options.map((option) => (
           <button
             key={option.id}

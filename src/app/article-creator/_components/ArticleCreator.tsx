@@ -116,8 +116,6 @@ function ArticleCreator({ className }: { className?: string }) {
           const data = docSnap.data()?.data as OutputData;
           revertTableObjectToArray(data);
 
-          console.log("Data:", data);
-
           setInitialData(data);
           setData(data);
         }

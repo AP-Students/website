@@ -17,7 +17,7 @@ interface Props {
 
 // Utility to store a file in IndexedDB with a unique key for each instance
 function storeFileInIndexedDB(name: string, file: File) {
-  const dbRequest = indexedDB.open("mediaFilesDB", 1);
+  const dbRequest = indexedDB.open("mediaFilesDB", 2);
 
   dbRequest.onupgradeneeded = (event) => {
     const db = (event.target as IDBOpenDBRequest).result;
@@ -42,7 +42,7 @@ function storeFileInIndexedDB(name: string, file: File) {
 // Utility to remove a file from IndexedDB and revoke object URL
 function deleteFileFromIndexedDB(name: string) {
   return new Promise<void>((resolve, reject) => {
-    const dbRequest = indexedDB.open("mediaFilesDB", 1);
+    const dbRequest = indexedDB.open("mediaFilesDB", 2);
 
     dbRequest.onsuccess = () => {
       const db = dbRequest.result;

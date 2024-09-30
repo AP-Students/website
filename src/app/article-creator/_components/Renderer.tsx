@@ -3,7 +3,7 @@ import edjsParser from "editorjs-parser";
 import katex from "katex";
 import hljs from "highlight.js";
 import "@/styles/highlightjs.css";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { QuestionsOutput } from "./custom_questions/QuestionInstance";
 import { QuestionFormat } from "@/types/questions";
@@ -101,8 +101,6 @@ const repropagateQuestions = async (instanceId: string) => {
   const key = getKey();
   const user = await getUser();
 
-  console.log("QuestionsAddCard is hit");
-
   if (!user) {
     return;
   }
@@ -112,7 +110,6 @@ const repropagateQuestions = async (instanceId: string) => {
   try {
     // Load questions from Firestore, if available
     const docRef = doc(db, "pages", key);
-    console.log("docRef:", docRef);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
@@ -154,35 +151,102 @@ const rootMap = new Map<Element, any>();
 
 const Renderer = (props: { content: OutputData }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const dataFetched = useRef<boolean>(false);
+  const instanceIdsLoaded = useRef<Set<string>>(new Set());
 
+  
   useEffect(() => {
-    if (containerRef.current) {
-      // Select the placeholder div and render the React component
-      for (const block of props.content.blocks) {
-        if (block.type === "questionsAddCard") {
-          const instanceId = block.data.instanceId;
-          const placeholder = containerRef.current.querySelector(
-            `.questions-block-${instanceId}`,
-          );
+    const fetchData = async () => {
+      if (!dataFetched.current) {
+        const key = getKey();
+        const user = await getUser();
 
-          if (placeholder) {
-            repropagateQuestions(instanceId);
-            let root = rootMap.get(placeholder);
+        if (!user) {
+          return;
+        }
 
-            // If no root exists for this placeholder, create one and store it
-            if (!root) {
-              root = createRoot(placeholder);
-              rootMap.set(placeholder, root);
-            }
+        try {
+          // Load questions from Firestore, if available
+          const docRef = doc(db, "pages", key);
+          const docSnap = await getDoc(docRef);
 
-            // Use the existing or newly created root to render
-            root.render(<QuestionsOutput instanceId={instanceId.toString()} />);
+          if (docSnap.exists()) {
+            const data = docSnap.data().data.blocks;
+
+            // Process data.blocks only once
+            data.forEach((block: any) => {
+              if (block.type === "questionsAddCard") {
+                const instanceId = block.data.instanceId;
+                const storageKey = `questions_${instanceId}`;
+
+                // Check if this instanceId has already been processed
+                if (!instanceIdsLoaded.current.has(instanceId)) {
+                  const questionsFromDb: QuestionFormat[] = block.data.questions.map(
+                    (question: any) => ({
+                      ...question,
+                      body: question.body || { value: "" }, // Ensure body exists
+                      options: question.options.map((option: any) => ({
+                        ...option,
+                        value: option.value || { value: "" }, // Ensure value exists
+                      })),
+                      correct: question.correct || [],
+                      explanation: question.explanation || { value: "" },
+                      course_id: question.course_id || "",
+                      unit_ids: question.unit_ids || [],
+                      subunit_ids: question.subunit_ids || [],
+                    }),
+                  );
+
+                  // Update local storage
+                  localStorage.setItem(storageKey, JSON.stringify(questionsFromDb));
+
+                  // Trigger a manual event to notify listeners that localStorage was updated
+                  const event = new Event("questionsUpdated");
+                  window.dispatchEvent(event);
+
+                  // Mark this instanceId as loaded
+                  instanceIdsLoaded.current.add(instanceId);
+                }
+              }
+            });
+
+            // Set dataFetched to true after processing all blocks
+            dataFetched.current = true;
           }
+        } catch (error) {
+          console.error("Error fetching questions from Firestore:", error);
         }
       }
-    }
-  }, [props.content]);
 
+      // Proceed to render the components
+      if (containerRef.current) {
+        props.content.blocks.forEach((block) => {
+          if (block.type === "questionsAddCard") {
+            const instanceId = block.data.instanceId;
+            const placeholder = containerRef.current!.querySelector(
+              `.questions-block-${instanceId}`,
+            );
+
+            if (placeholder) {
+              let root = rootMap.get(placeholder);
+
+              // If no root exists for this placeholder, create one and store it
+              if (!root) {
+                root = createRoot(placeholder);
+                rootMap.set(placeholder, root);
+              }
+
+              // Render the component
+              root.render(<QuestionsOutput instanceId={instanceId.toString()} />);
+            }
+          }
+        });
+      }
+    };
+
+    // Call the fetchData function
+    fetchData();
+  }, [props.content]);
   if (!props.content) return null;
 
   const parser = new edjsParser(

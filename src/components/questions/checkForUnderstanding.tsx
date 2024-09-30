@@ -24,13 +24,6 @@ const CheckForUnderstanding: React.FC<Props> = ({ question }) => {
         setSelectedOptions(selectedOptions.filter((oid) => oid !== id));
         return;
       }
-      if (question.displayNumAnswers) {
-        if (numAnswers > selectedOptions.length) {
-          setSelectedOptions([id, ...selectedOptions]);
-        }
-      } else {
-        setSelectedOptions([id, ...selectedOptions]);
-      }
     }
   };
 
@@ -60,7 +53,7 @@ const CheckForUnderstanding: React.FC<Props> = ({ question }) => {
       <div className="markdown text-xl font-bold md:text-2xl lg:text-3xl">
         <RenderContent content={question.body} />
       </div>
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="mt-4 grid grid-cols-1 gap-4">
         {question.options.map((option) => (
           <button
             key={option.id}

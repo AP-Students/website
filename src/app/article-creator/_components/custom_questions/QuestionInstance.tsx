@@ -35,7 +35,6 @@ const useSyncedQuestions = (instanceId: string) => {
     const handleStorageUpdate = () => {
       const updatedQuestions = localStorage.getItem(storageKey);
       if (updatedQuestions) {
-        console.log("Updated questions:", JSON.parse(updatedQuestions));
         setQuestions(JSON.parse(updatedQuestions));
       }
     };
@@ -88,7 +87,6 @@ export const QuestionsOutput: React.FC<{ instanceId: string }> = ({
   instanceId,
 }) => {
   const { questions } = useSyncedQuestions(instanceId);
-  console.log("Questions:", questions);
 
   return (
     <div className="mt-8">

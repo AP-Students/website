@@ -53,7 +53,6 @@ const Page = ({ params }: { params: { slug: string } }) => {
             revertTableObjectToArray(data);
             pageDocSnap.data()!.data = data;
             setContent(pageDocSnap.data() as Content);
-            console.log("Content:", pageDocSnap.data());
           } else {
             setError("Content not found. That's probably us, not you.");
           }
