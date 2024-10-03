@@ -1,0 +1,34 @@
+.moreButton {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: #fff;
+  border: 1px solid #000;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  padding: 10px;
+  z-index: 1000;
+}
+
+.dropdownItem {
+  display: block;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 5px;
+  text-align: left;
+  color: #000;
+  background: #fff;
+  border: 1px solid #ddd;
+  cursor: pointer;
+}
+
+.dropdownItem:hover {
+  background-color: #f0f0f0;
+}
