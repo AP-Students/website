@@ -134,7 +134,11 @@ const Page = ({ params }: { params: { slug: string } }) => {
       <Navbar />
 
       <main className="container flex-grow px-4 md:px-10 lg:px-14 2xl:px-20 py-8">
-        <h1 className="mb-8 text-center text-4xl font-bold">{subject?.title}</h1>
+        <h1 className="text-center text-4xl font-bold">{subject?.title}</h1>
+        <h2 className="min-w-full py-6 text-center text-2xl font-black underline px-4 md:px-10 lg:px-14 2xl:px-20">
+            DO NOT CLICK THE LINKS OR LEAVE THE PAGE BEFORE SAVING OR YOU
+            WILL LOSE YOUR CHANGES.
+          </h2>
         <div className="mb-8 space-y-4">
           {subject?.units.map((unit, unitIndex) => (
             <div key={unit.unit} className="rounded-lg border bg-white shadow-sm">
