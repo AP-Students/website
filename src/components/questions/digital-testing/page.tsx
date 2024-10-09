@@ -97,7 +97,9 @@ const DigitalTestingPage: React.FC = () => {
 
   return (
     <div className="flex h-screen flex-col">
-      <Header
+
+      {/* Parameters must be dynamic */}
+      <Header 
         examName="AP Calculus Exam"
         moduleName="Module 1"
         timeRemaining={45 * 60}

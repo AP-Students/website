@@ -13,7 +13,6 @@ interface FooterProps {
   onNext: () => void;
   onPrevious: () => void;
   goToQuestion: (index: number) => void;
-  progress: string;
   currentQuestionIndex: number;
   questions: Question[];
 }
