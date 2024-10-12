@@ -20,7 +20,7 @@ function LetterCircle({
       className={clsx(
         "flex size-7 items-center justify-center rounded-full border-2 border-black",
         {
-          "bg-[#3075c1] text-white": checked,
+          "border-transparent bg-[#294ad1] text-white": checked,
         },
       )}
     >
@@ -39,7 +39,7 @@ const QuestionPanel: React.FC<QuestionPanelProps> = ({
       <ol className="grid gap-4">
         {question.options.map((option, index) => (
           <li key={index}>
-            <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-black p-2 has-[:checked]:-m-[3px] has-[:checked]:border-4 has-[:checked]:border-[#3075c1]">
+            <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-black p-2 has-[:checked]:-m-[3px] has-[:checked]:border-4 has-[:checked]:border-[#294ad1]">
               <LetterCircle
                 letter={String.fromCharCode(65 + index)}
                 checked={question.selected === index}
