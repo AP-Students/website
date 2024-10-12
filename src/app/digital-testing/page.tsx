@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import Header from "./_components/Header";
 import ArticleComponent from "./_components/ArticleComponent";
 import QuestionPanel from "./_components/QuestionPanel";
-import ToolsDropdown from "./_components/ToolsDropdown";
 import Footer from "./_components/Footer";
 import { OutputData } from "@editorjs/editorjs";
 import { Bookmark } from "lucide-react";
@@ -66,7 +65,6 @@ const questionsData: Question[] = [
 const DigitalTestingPage: React.FC = () => {
   const [questions, setQuestions] = useState(questionsData);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [showTools, setShowTools] = useState(false);
 
   const saveSelection = (selected: number | null) => {
     questions[currentQuestionIndex]!.selected = selected;
@@ -89,10 +87,6 @@ const DigitalTestingPage: React.FC = () => {
     questions[currentQuestionIndex]!.bookmarked =
       !questions[currentQuestionIndex]!.bookmarked;
     setQuestions([...questions]);
-  };
-
-  const toggleTools = () => {
-    setShowTools(!showTools);
   };
 
   return (
