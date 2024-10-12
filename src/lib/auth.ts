@@ -10,7 +10,6 @@ import {
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "./firebase"; // Firestore instance
 import { useRouter } from "next/navigation";
-import { collection, query, where, getDocs } from "firebase/firestore";
 import { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
 
 export const useAuthHandlers = () => {
@@ -26,7 +25,6 @@ export const useAuthHandlers = () => {
     password: string,
   ) => {
     try {
-      // Step 1: Create the user with email and password
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -37,26 +35,28 @@ export const useAuthHandlers = () => {
       const defaultPhotoURL =
         "https://upload.wikimedia.org/wikipedia/commons/2/2c/Default_pfp.svg";
 
-      // Step 2: Update the user's profile in Firebase Authentication
       await updateProfile(user, {
         displayName: username,
         photoURL: defaultPhotoURL,
       });
 
-      // Step 3: Store additional user data in Firestore
       const userDocRef = doc(db, "users", user.uid);
       await setDoc(userDocRef, {
         uid: user.uid,
         email: user.email,
         displayName: username,
         photoURL: defaultPhotoURL,
-        admin: false, // Default to non-admin; set this as needed
+        access: "user",
       });
 
       router.push("/");
+      // Allows time for db to store user, then refreshes page to reload user and replace sign up + login page. 
+      setTimeout(() => {
+        router.refresh();
+      }, 500);
     } catch (e: any) {
       const error = e as FirebaseAuthError;
-      console.error(error);
+
       throw {
         code: error.code,
         message:
@@ -81,23 +81,58 @@ export const useAuthHandlers = () => {
       const userDoc = await getDoc(userDocRef);
 
       if (!userDoc.exists()) {
-        console.log("User doesn't exist in Firestore");
         throw {
           code: "auth/invalid-email",
         };
       }
 
       router.push("/");
+      setTimeout(() => {
+        router.refresh();
+      }, 500);
       return userCredential;
     } catch (e: any) {
       const error = e as FirebaseAuthError;
-      console.error(error);
       throw {
         code: error.code,
         message:
           error.message ||
           getMessageFromCode(error.code) ||
           "There was an error in login",
+      };
+    }
+  };
+
+  const signUpWithGoogle = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+
+      const userCredential = await signInWithPopup(auth, provider);
+      const user = userCredential.user;
+
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      await setDoc(userDocRef, {
+        uid: user.uid,
+        displayName: user.displayName,
+        email: user.email,
+        photoURL: user.photoURL,
+        access: "user", // Default access level
+      });
+
+      router.push("/");
+      setTimeout(() => {
+        router.refresh();
+      }, 500);
+    } catch (e: any) {
+      const error = e as FirebaseAuthError;
+      throw {
+        code: error.code,
+        message:
+          error.message ||
+          getMessageFromCode(error.code) ||
+          "There was an error signing up with Google",
       };
     }
   };
@@ -114,18 +149,17 @@ export const useAuthHandlers = () => {
       const userDoc = await getDoc(userDocRef);
 
       if (!userDoc.exists()) {
-        // If not, create it with default values
-        await setDoc(userDocRef, {
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          admin: false, // Default to non-admin
-        });
+        throw {
+          code: "auth/invalid-email",
+        };
       }
 
       router.push("/");
+      setTimeout(() => {
+        router.refresh();
+      }, 500);
+      
     } catch (error) {
-      console.error("Error signing in with Google:", error);
     }
   };
 
@@ -134,7 +168,6 @@ export const useAuthHandlers = () => {
       await sendPasswordResetEmail(auth, email);
     } catch (e: any) {
       const error = e as FirebaseAuthError;
-      console.error("Error sending password reset email:", error);
       throw {
         code: error.code,
         message:
@@ -148,6 +181,7 @@ export const useAuthHandlers = () => {
   return {
     signUpWithEmail,
     signInWithEmail,
+    signUpWithGoogle,
     signInWithGoogle,
     forgotPassword,
   };

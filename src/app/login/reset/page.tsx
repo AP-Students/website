@@ -53,7 +53,7 @@ export default function Login() {
           tempErrors.push("No user with this email exists");
           break;
         default:
-          tempErrors.push(`An unexpected error occurred. ${error.message}.`);
+          tempErrors.push(`An unexpected error occurred.`);
           break;
       }
     }
@@ -74,8 +74,9 @@ export default function Login() {
         <h1 className="mb-2 text-4xl">Reset Password</h1>
 
         {emailSent && (
-          <h3 className="mb-6">
-            If user with email {email} exists, reset password link has been sent.
+          <h3 className="mb-6 mt-3 text-green-600">
+            If user with email {email} exists, reset password link has been
+            sent.
           </h3>
         )}
 

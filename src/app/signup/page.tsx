@@ -14,7 +14,8 @@ const outfit = Outfit({
 });
 
 export default function Signup() {
-  const { signInWithGoogle, signUpWithEmail } = useAuthHandlers();
+  const { signInWithGoogle, signUpWithGoogle, signUpWithEmail } =
+    useAuthHandlers();
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -82,21 +83,23 @@ export default function Signup() {
       );
     } catch (e: any) {
       const error = e as FirebaseAuthError;
-      switch (error.code){
+      switch (error.code) {
         case "auth/email-already-in-use":
-          tempErrors.push('Account with this email already exists.');
+          tempErrors.push("Account with this email already exists.");
           break;
-        case 'auth/invalid-email':
-          tempErrors.push('The email is invalid.');
+        case "auth/invalid-email":
+          tempErrors.push("The email is invalid.");
           break;
-        case 'auth/operation-not-allowed':
-          tempErrors.push('This operation was not allowed by firebase, something is wrong with the firebase app.');
+        case "auth/operation-not-allowed":
+          tempErrors.push(
+            "This operation was not allowed by firebase, something is wrong with the firebase app.",
+          );
           break;
-        case 'auth/weak-password':
-          tempErrors.push('Your password is not strong enough.');
+        case "auth/weak-password":
+          tempErrors.push("Your password is not strong enough.");
           break;
         default:
-          errors.push(`An unexpected error occurred. ${error.message}.`);
+          errors.push(`An unexpected error occurred.`);
           break;
       }
       setErrors(tempErrors);
@@ -205,7 +208,7 @@ export default function Signup() {
               </svg>
             }
             className="text-xl"
-            onClick={signInWithGoogle}
+            onClick={signUpWithGoogle}
             type="button"
           >
             Sign up with Google

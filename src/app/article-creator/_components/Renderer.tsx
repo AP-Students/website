@@ -3,6 +3,15 @@ import edjsParser from "editorjs-parser";
 import katex from "katex";
 import hljs from "highlight.js";
 import "@/styles/highlightjs.css";
+import { useEffect, useRef } from "react";
+import { createRoot } from "react-dom/client";
+import { QuestionsOutput } from "./custom_questions/QuestionInstance";
+import { QuestionFormat } from "@/types/questions";
+import "@/app/article-creator/katexStyling.css";
+import { getUser } from "@/components/hooks/users";
+import { db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { getKey } from "./ArticleCreator";
 
 const customParsers = {
   alert: (data: { align: string; message: string; type: string }) => {
@@ -79,9 +88,101 @@ const customParsers = {
 
     return `<table>${thead}${tbody}</table>`;
   },
+
+  questionsAddCard: (data: { instanceId: string; content: QuestionFormat }) => {
+    const instanceUUID = data.instanceId;
+    const content = JSON.stringify(data.content);
+    return `<div class="questions-block-${instanceUUID}"></div>`;
+  },
 };
 
+// Function to repropagate the questions with parsed data and file URLs
+const repropagateQuestions = async (instanceId: string) => {
+  const key = getKey();
+  const user = await getUser();
+
+  console.log("QuestionsAddCard is hit");
+
+  if (!user) {
+    return;
+  }
+
+  const storageKey = `questions_${instanceId}`;
+
+  try {
+    // Load questions from Firestore, if available
+    const docRef = doc(db, "pages", key);
+    console.log("docRef:", docRef);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data().data.blocks;
+      data.forEach((block: any) => {
+        if (block.type === "questionsAddCard") {
+          const questionsFromDb: QuestionFormat[] = block.data.questions.map(
+            (question: any) => ({
+              ...question,
+              body: question.body || { value: "" }, // Ensure body exists
+              options: question.options.map((option: any) => ({
+                ...option,
+                value: option.value || { value: "" }, // Ensure value exists
+              })),
+              correct: question.correct || [],
+              explanation: question.explanation || { value: "" },
+              course_id: question.course_id || "",
+              unit_ids: question.unit_ids || [],
+              subunit_ids: question.subunit_ids || [],
+            }),
+          );
+
+          // Update local storage
+          localStorage.setItem(storageKey, JSON.stringify(questionsFromDb));
+
+          // Trigger a manual event to notify listeners that localStorage was updated
+          const event = new Event("questionsUpdated");
+          window.dispatchEvent(event);
+        }
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching questions from Firestore:", error);
+    return [];
+  }
+};
+
+const rootMap = new Map<Element, any>();
+
 const Renderer = (props: { content: OutputData }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      // Select the placeholder div and render the React component
+      for (const block of props.content.blocks) {
+        if (block.type === "questionsAddCard") {
+          const instanceId = block.data.instanceId;
+          const placeholder = containerRef.current.querySelector(
+            `.questions-block-${instanceId}`,
+          );
+
+          if (placeholder) {
+            repropagateQuestions(instanceId);
+            let root = rootMap.get(placeholder);
+
+            // If no root exists for this placeholder, create one and store it
+            if (!root) {
+              root = createRoot(placeholder);
+              rootMap.set(placeholder, root);
+            }
+
+            // Use the existing or newly created root to render
+            root.render(<QuestionsOutput instanceId={instanceId.toString()} />);
+          }
+        }
+      }
+    }
+  }, [props.content]);
+
   if (!props.content) return null;
 
   const parser = new edjsParser(
@@ -99,6 +200,7 @@ const Renderer = (props: { content: OutputData }) => {
 
   return (
     <article
+      ref={containerRef}
       className="prose before:prose-code:content-none after:prose-code:content-none"
       dangerouslySetInnerHTML={{
         __html: markup,

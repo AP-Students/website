@@ -1,19 +1,8 @@
 "use client";
 import React, { useState } from "react";
 import { MdNavigateNext, MdNavigateBefore } from "react-icons/md";
-
-interface Option {
-  value: string;
-  id: string;
-}
-
-interface QuestionFormat {
-  body: string;
-  title: string;
-  type: "mcq" | "multi-answer";
-  options: Option[];
-  correct: string[];
-}
+import { QuestionFormat } from "@/types/questions";
+import { RenderContent } from "@/app/article-creator/_components/custom_questions/RenderAdvancedTextbox";
 
 interface QuizRendererProps {
   questions: QuestionFormat[];
@@ -81,10 +70,9 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
         {showResults &&
           `Score: ${score}/${questions.length} (${((score / questions.length) * 100).toFixed(2)}%)`}
       </div>
-      <div
-        className="markdown text-xl font-bold md:text-2xl lg:text-3xl"
-        dangerouslySetInnerHTML={{ __html: question.body }}
-      />
+      <div className="markdown text-xl font-bold md:text-2xl lg:text-3xl">
+        <RenderContent content={question.body} />
+      </div>
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {question.options.map((option) => (
           <button
@@ -107,10 +95,18 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
             onClick={() => handleSelectOption(option.id)}
             disabled={showResults}
           >
-            {option.value}
+            <RenderContent content={option.value} />
           </button>
         ))}
       </div>
+
+      {showResults && question.explanation && (
+        <div className="mt-4 p-3 border bg-green-100 rounded-md">
+          <strong>Explanation:</strong> <RenderContent content={question.explanation} />
+        </div>
+      )}
+
+
       <div className="mt-4 flex justify-between">
         {currentQuestionIndex > 0 && (
           <button

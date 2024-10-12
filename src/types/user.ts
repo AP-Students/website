@@ -1,7 +1,7 @@
 export interface User {
   uid: string;
-  displayName?: string;
+  displayName: string;
   email: string;
   photoURL?: string;
-  admin: boolean;
+  access: "admin" | "member" | "user";
 }

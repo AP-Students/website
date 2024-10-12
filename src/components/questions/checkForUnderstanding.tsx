@@ -1,48 +1,35 @@
 "use client";
 import React, { useState } from "react";
 import { MdOutlineRefresh } from "react-icons/md";
-
-interface Option {
-  value: string;
-  id: string;
-}
-
-interface QuestionFormat {
-  body: string;
-  title: string;
-  type: "mcq" | "multi-answer";
-  options: Option[];
-  correct: string[];
-  course_id: string;
-  unit_ids: string[];
-  subunit_ids: string[];
-}
+import { QuestionFormat } from "@/types/questions";
+import { RenderContent } from "@/app/article-creator/_components/custom_questions/RenderAdvancedTextbox";
 
 interface Props {
-  questions: QuestionFormat[];
-  currentQuestionIndex: number;
+  question: QuestionFormat;
 }
 
-const CheckForUnderstanding: React.FC<Props> = ({
-  questions,
-  currentQuestionIndex,
-}) => {
+const CheckForUnderstanding: React.FC<Props> = ({ question }) => {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [submitted, setSubmitted] = useState<boolean>(false);
 
-  const question = questions[currentQuestionIndex]!;
-
   const handleSelectOption = (id: string) => {
+    const numAnswers = question.correct.length;
     if (!submitted) {
-      if (question.type === "mcq") {
-        setSelectedOptions([id]); // Ensure only one option can be selected at a time
+      if (numAnswers === 1){
+        setSelectedOptions([id]);
+        return;
+      }
+      if (selectedOptions.includes(id)) {
+        setSelectedOptions(selectedOptions.filter((oid) => oid !== id));
+        return;
+      }
+      if (question.displayNumAnswers) {
+        if (numAnswers > selectedOptions.length) {
+          setSelectedOptions([id, ...selectedOptions]);
+        }
       } else {
-        setSelectedOptions((prev) =>
-          prev.includes(id)
-            ? prev.filter((optionId) => optionId !== id)
-            : [...prev, id],
-        ); // Toggle selection for multi-answer
+        setSelectedOptions([id, ...selectedOptions]);
       }
     }
   };
@@ -51,10 +38,8 @@ const CheckForUnderstanding: React.FC<Props> = ({
     if (selectedOptions.length > 0) {
       setSubmitted(true);
       const allCorrect =
-        question.type === "mcq"
-          ? question.correct.includes(selectedOptions[0]!)
-          : question.correct.length === selectedOptions.length &&
-            question.correct.every((id) => selectedOptions.includes(id));
+        question.correct.length === selectedOptions.length &&
+        question.correct.every((id) => selectedOptions.includes(id));
       setIsCorrect(allCorrect);
     }
   };
@@ -71,10 +56,10 @@ const CheckForUnderstanding: React.FC<Props> = ({
 
   return (
     <div className="max-w-6xl bg-primary-foreground p-4 md:p-6 lg:p-8">
-      <div
-        className="markdown text-xl font-bold md:text-2xl lg:text-3xl"
-        dangerouslySetInnerHTML={{ __html: question.body }}
-      />
+
+      <div className="markdown text-xl font-bold md:text-2xl lg:text-3xl">
+        <RenderContent content={question.body} />
+      </div>
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {question.options.map((option) => (
           <button
@@ -97,7 +82,7 @@ const CheckForUnderstanding: React.FC<Props> = ({
             onClick={() => handleSelectOption(option.id)}
             disabled={submitted}
           >
-            {option.value}
+            <RenderContent content={option.value} />
           </button>
         ))}
       </div>
@@ -109,20 +94,22 @@ const CheckForUnderstanding: React.FC<Props> = ({
           Submit
         </button>
       ) : (
-        <div className="sm: mt-4 flex justify-center gap-4">
+        <div className={`mt-4 flex flex-col items-center justify-center gap-4`}>
           <button
             className={`rounded px-6 py-2 text-white ${isCorrect ? "bg-green-500" : "bg-red-500"}`}
             disabled
           >
             {isCorrect ? "Correct" : "Incorrect"}
+            {question.explanation && (
+              <RenderContent content={question.explanation} />
+            )}
           </button>
 
           <button
-            className="flex items-center rounded bg-gray-500 py-2 pl-3 pr-4 text-white hover:bg-gray-600"
+            className={`flex max-w-[50%] items-center justify-center rounded bg-gray-500 py-2 pl-3 pr-4 text-white hover:bg-gray-600`}
             onClick={handleRetry}
           >
             <MdOutlineRefresh size={24} style={{ color: "white" }} />
-
             <span>Retry</span>
           </button>
         </div>
@@ -132,84 +119,3 @@ const CheckForUnderstanding: React.FC<Props> = ({
 };
 
 export default CheckForUnderstanding;
-
-// Heres test questions if you want to try it out - put the code below in a page or else typescript will complain
-
-// interface Option {
-//   value: string;
-//   id: string;
-// }
-
-// interface QuestionFormat {
-//   body: string;
-//   title: string;
-//   type: "mcq" | "multi-answer";
-//   options: Option[];
-//   correct: string[];
-//   course_id: string;
-//   unit_ids: string[];
-//   subunit_ids: string[];
-// }
-
-// const questions = [
-//   {
-//     body: "Who was the first president of the United States?",
-//     title: "U.S. History",
-//     type: "mcq",
-//     options: [
-//       { value: "George Washington", id: "1" },
-//       { value: "John Adams", id: "2" },
-//       { value: "Samuel Jackson", id: "3" },
-//       { value: "Alexander Hamilton", id: "4" },
-//     ],
-//     correct: ["1"],
-//     course_id: '1',
-//     unit_ids: [],
-//     subunit_ids: []
-//   },
-//   {
-//     body: "Which of the following are NOT web development languages?",
-//     title: "Computer Science",
-//     type: "multi-answer",
-//     options: [
-//       { value: "Python", id: "1" },
-//       { value: "HTML", id: "2" },
-//       { value: "Java", id: "3" },
-//       { value: "CSS", id: "4" },
-//     ],
-//     correct: ["1", "3"],
-//     course_id: '2',
-//     unit_ids: [],
-//     subunit_ids: []
-//   },
-//   {
-//     body: "What is the chemical symbol for water?",
-//     title: "Chemistry",
-//     type: "mcq",
-//     options: [
-//       { value: "O2", id: "1" },
-//       { value: "H2O", id: "2" },
-//       { value: "CO2", id: "3" },
-//       { value: "H2O2", id: "4" },
-//     ],
-//     correct: ["2"],
-//     course_id: '3',
-//     unit_ids: [],
-//     subunit_ids: []
-//   },
-//   {
-//     body: "Which of these events occurred first in history?",
-//     title: "World History",
-//     type: "mcq",
-//     options: [
-//       { value: "The signing of the Magna Carta", id: "1" },
-//       { value: "The fall of the Roman Empire", id: "2" },
-//       { value: "The discovery of America", id: "3" },
-//       { value: "The French Revolution", id: "4" },
-//     ],
-//     correct: ["2"],
-//     course_id: '4',
-//     unit_ids: [],
-//     subunit_ids: []
-//   }
-// ] as QuestionFormat[];

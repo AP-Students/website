@@ -11,7 +11,6 @@ import Header from "@editorjs/header";
 import Paragraph from "@editorjs/paragraph";
 import Quote from "@editorjs/quote";
 import List from "@editorjs/list";
-import NestedList from "@editorjs/nested-list";
 import Table from "@editorjs/table";
 import CodeTool from "@editorjs/code";
 import InlineCode from "@editorjs/inline-code";
@@ -21,8 +20,8 @@ import Marker from "@editorjs/marker";
 import Underline from "@editorjs/underline";
 import MathTex from "editorjs-math";
 import Delimiter from "@editorjs/delimiter";
-import AttachesTool from "@editorjs/attaches";
 import Alert from "editorjs-alert";
+import { QuestionsAddCard } from "./custom_questions/QuestionsAddCard";
 
 export const EDITOR_TOOLS: EditorConfig["tools"] = {
   header: {
@@ -42,13 +41,9 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
     inlineToolbar: true,
   },
 
-  quote: {
-    class: Quote as unknown as ToolConstructable,
+  image: {
+    class: SimpleImage as unknown as ToolConstructable,
     inlineToolbar: true,
-    config: {
-      quotePlaceholder: "Enter a quote",
-      captionPlaceholder: "Quote's author",
-    },
   },
 
   list: {
@@ -60,9 +55,28 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
     },
   },
 
-  image: {
-    class: SimpleImage as unknown as ToolConstructable,
+  questionsAddCard: {
+    class: QuestionsAddCard as unknown as ToolConstructable,
+    shortcut: "CTRL+Q",
     inlineToolbar: true,
+  },
+
+  math: {
+    class: MathTex as unknown as ToolConstructable,
+    inlineToolbar: true,
+    shortcut: "CTRL+ALT+M",
+    toolbox: {
+      title: "LaTeX",
+    },
+  },
+
+  quote: {
+    class: Quote as unknown as ToolConstructable,
+    inlineToolbar: true,
+    config: {
+      quotePlaceholder: "Enter a quote",
+      captionPlaceholder: "Quote's author",
+    },
   },
 
   table: {
@@ -73,14 +87,14 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
     },
   },
 
-  code: {
-    class: CodeTool as unknown as ToolConstructable,
-    inlineToolbar: true,
-  },
-
   inlineCode: {
     class: InlineCode as unknown as ToolConstructable,
     shortcut: "CTRL+ALT+C",
+  },
+
+  code: {
+    class: CodeTool as unknown as ToolConstructable,
+    inlineToolbar: true,
   },
 
   Marker: {
@@ -89,15 +103,6 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
 
   underline: {
     class: Underline as unknown as ToolConstructable,
-  },
-
-  math: {
-    class: MathTex as unknown as ToolConstructable,
-    inlineToolbar: true,
-    shortcut: "CTRL+ALT+M",
-    toolbox: {
-      title: "LaTeX",
-    },
   },
 
   alert: Alert as unknown as ToolConstructable,
@@ -112,11 +117,11 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
   },
 };
 
-const Editor = ({ setData }: { setData: (data: OutputData) => void }) => {
+const Editor = ({ setData, content }: { setData: (data: OutputData) => void, content: OutputData }) => {
   const { editor, isEditorReady } = useEditor({
     holder: "editorjs",
     tools: EDITOR_TOOLS,
-    data: {
+    data: content ||  {
       time: Date.now(),
       blocks: [
         {
@@ -150,24 +155,36 @@ const Editor = ({ setData }: { setData: (data: OutputData) => void }) => {
       api.saver
         .save()
         .then((outputData) => {
-          console.log("Saving successful: ", outputData);
           setData(outputData);
         })
         .catch((error) => {
           console.error("Saving failed: ", error);
         });
     },
+    
   });
 
   useEffect(() => {
     return () => {
-      editor && editor.destroy();
+      // Check if the editor exists and is not already destroyed
+      if (editor) {
+        // Alternatively, you could remove the container div or handle cleanup differently
+        const editorContainer = document.getElementById("editor-container");
+        if (editorContainer) {
+          editorContainer.innerHTML = ""; // This removes all child nodes
+        }
+
+        // If you still want to call destroy for cleanup, ensure it is safe to do so
+        if (typeof editor.destroy === "function") {
+          editor.destroy();
+        }
+      }
     };
-  }, [editor]);
+  }, [editor]); 
 
   return (
     <div className="flex flex-col gap-y-4">
-      <div className="mx-4 opacity-50">Article:</div>
+      <div className="opacity-50">Input:</div>
       <div className="prose w-full" id="editorjs"></div>
     </div>
   );

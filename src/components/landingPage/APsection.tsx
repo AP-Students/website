@@ -1,4 +1,3 @@
-// Component for the different sections dividing the AP courses
 import Link from "next/link";
 import React from "react";
 
@@ -15,6 +14,7 @@ const APsection: React.FC<SectionProps> = ({
   backgroundColor,
   numofCol,
 }) => {
+
   return (
     <>
       <div
