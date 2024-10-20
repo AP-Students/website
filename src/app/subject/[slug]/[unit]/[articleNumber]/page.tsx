@@ -7,6 +7,7 @@ import TableOfContents from "@/components/subjectHomepage/table-of-contents";
 import { useUser } from "@/components/hooks/UserContext";
 import Renderer from "@/app/article-creator/_components/Renderer";
 import { useFetchAndCache } from "./useFetchAndCache";
+import "katex/dist/katex.min.css";
 
 const Page = ({ params }: { params: { slug: string } }) => {
   const { user } = useUser(); // Get user state

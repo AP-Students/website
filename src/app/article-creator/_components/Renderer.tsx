@@ -3,7 +3,7 @@ import edjsParser from "editorjs-parser";
 import katex from "katex";
 import hljs from "highlight.js";
 import "@/styles/highlightjs.css";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { QuestionsOutput } from "./custom_questions/QuestionInstance";
 import { QuestionFormat } from "@/types/questions";
@@ -94,57 +94,6 @@ const customParsers = {
     const content = JSON.stringify(data.content);
     return `<div class="questions-block-${instanceUUID}"></div>`;
   },
-};
-
-// Function to repropagate the questions with parsed data and file URLs
-const repropagateQuestions = async (instanceId: string) => {
-  const key = getKey();
-  const user = await getUser();
-
-  if (!user) {
-    return;
-  }
-
-  const storageKey = `questions_${instanceId}`;
-
-  try {
-    // Load questions from Firestore, if available
-    const docRef = doc(db, "pages", key);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      const data = docSnap.data().data.blocks;
-      data.forEach((block: any) => {
-        if (block.type === "questionsAddCard") {
-          const questionsFromDb: QuestionFormat[] = block.data.questions.map(
-            (question: any) => ({
-              ...question,
-              body: question.body || { value: "" }, // Ensure body exists
-              options: question.options.map((option: any) => ({
-                ...option,
-                value: option.value || { value: "" }, // Ensure value exists
-              })),
-              correct: question.correct || [],
-              explanation: question.explanation || { value: "" },
-              course_id: question.course_id || "",
-              unit_ids: question.unit_ids || [],
-              subunit_ids: question.subunit_ids || [],
-            }),
-          );
-
-          // Update local storage
-          localStorage.setItem(storageKey, JSON.stringify(questionsFromDb));
-
-          // Trigger a manual event to notify listeners that localStorage was updated
-          const event = new Event("questionsUpdated");
-          window.dispatchEvent(event);
-        }
-      });
-    }
-  } catch (error) {
-    console.error("Error fetching questions from Firestore:", error);
-    return [];
-  }
 };
 
 const rootMap = new Map<Element, any>();
@@ -243,6 +192,8 @@ const Renderer = (props: { content: OutputData }) => {
         });
       }
     };
+
+    
 
     // Call the fetchData function
     fetchData();
