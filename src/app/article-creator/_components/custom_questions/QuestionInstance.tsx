@@ -95,6 +95,9 @@ export const QuestionsOutput: React.FC<{ instanceId: string }> = ({
       ) : (
         <QuizRenderer questions={questions} />
       )}
+      {/* Code to indicate that this is a test instance */}
+      {/* Import Page from /questions/digital-testing/page.tsx */}
+      {/* <Page /> */}
     </div>
   );
 };

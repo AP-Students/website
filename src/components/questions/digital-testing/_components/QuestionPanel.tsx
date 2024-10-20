@@ -1,6 +1,6 @@
 import React from "react";
 import clsx from "clsx";
-import type { Question } from "../page";
+import type { Question } from "../testRenderer";
 
 interface QuestionPanelProps {
   question: Question;

@@ -11,7 +11,7 @@ import "@/app/article-creator/katexStyling.css";
 import { getUser } from "@/components/hooks/users";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
-import { getKey } from "./ArticleCreator";
+import { getKey } from "./FetchArticleFunctions";
 
 const customParsers = {
   alert: (data: { align: string; message: string; type: string }) => {

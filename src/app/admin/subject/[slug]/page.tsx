@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { ChevronDown, ChevronUp, Edit, Trash, PlusCircle } from 'lucide-react';
-import { Accordion, AccordionItem } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/components/hooks/UserContext";
 import { db } from "@/lib/firebase";
@@ -74,6 +73,28 @@ const Page = ({ params }: { params: { slug: string } }) => {
     fetchSubject();
   }, [user]);
 
+  const addUnit = () => {
+    if (!newUnitTitle.trim()) return;
+    const newUnit = {
+      unit: subject!.units.length + 1,
+      title: newUnitTitle,
+      chapters: [
+        {
+          chapter: 1,
+          title: "",
+        },
+      ],
+    };
+    setSubject({ ...subject!, units: [...subject?.units!, newUnit] });
+    setNewUnitTitle("");
+  };
+
+  const deleteUnit = (unitIndex: number) => {
+    const updatedUnits = [...subject?.units!];
+    updatedUnits.splice(unitIndex, 1);
+    setSubject({ ...subject!, units: updatedUnits });
+  };
+
   const addChapter = (unitIndex: number) => {
     if (!newChapterTitle.trim()) return;
     const newChapter = {
@@ -99,14 +120,6 @@ const Page = ({ params }: { params: { slug: string } }) => {
     setSubject({ ...subject!, units: updatedUnits });
   };
 
-  const toggleUnit = (unitIndex: number) => {
-    setExpandedUnits(prev => 
-      prev.includes(unitIndex) 
-        ? prev.filter(i => i !== unitIndex)
-        : [...prev, unitIndex]
-    )
-  }
-
   const handleSave = async () => {
     try {
       await setDoc(doc(db, "subjects", params.slug), subject);
@@ -125,7 +138,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
   }
 
   function optInForUnitTest(unitIndex: number): void {
-    throw new Error("Function not implemented.");
+    // Implement the Unit Test logic if necessary
   }
 
   return (
@@ -142,19 +155,25 @@ const Page = ({ params }: { params: { slug: string } }) => {
         <div className="mb-8 space-y-4">
           {subject?.units.map((unit, unitIndex) => (
             <div key={unit.unit} className="rounded-lg border bg-white shadow-sm">
-              <button
-                className="flex w-full items-center justify-between p-4 text-lg font-semibold"
-                onClick={() =>
-                  setExpandedUnits((prev) =>
-                    prev.includes(unitIndex)
-                      ? prev.filter((i) => i !== unitIndex)
-                      : [...prev, unitIndex]
-                  )
-                }
-              >
-                <span>Unit {unit.unit}: {unit.title}</span>
-                {expandedUnits.includes(unitIndex) ? <ChevronUp /> : <ChevronDown />}
-              </button>
+              <div className="flex items-center">
+                <Trash 
+                  onClick={() => deleteUnit(unitIndex)} 
+                  className="cursor-pointer hover:text-red-500 ml-4 mr-2" 
+                />
+                <button
+                  className="flex w-full items-center justify-between p-4 text-lg font-semibold"
+                  onClick={() =>
+                    setExpandedUnits((prev) =>
+                      prev.includes(unitIndex)
+                        ? prev.filter((i) => i !== unitIndex)
+                        : [...prev, unitIndex]
+                    )
+                  }
+                >
+                  <span>Unit {unit.unit}: {unit.title}</span>
+                  {expandedUnits.includes(unitIndex) ? <ChevronUp /> : <ChevronDown />}
+                </button>
+              </div>
               {expandedUnits.includes(unitIndex) && (
                 <div className="border-t p-4">
                   {unit.chapters.map((chapter, chapterIndex) => (
@@ -166,7 +185,12 @@ const Page = ({ params }: { params: { slug: string } }) => {
                           onBlur={(e) => editChapterTitle(unitIndex, chapterIndex, e.target.value)}
                         />
                       ) : (
-                        <Link href={`#`}>Chapter {chapter.chapter}: {chapter.title}</Link>
+                        <Link href={`${pathname.split("/").slice(0, 4).join("/")}/${unit.title
+                          .toLowerCase()
+                          .replace(/[^a-z1-9 ]+/g, "")
+                          .replace(/\s/g, "-")}/${chapter.chapter}`}
+                          className="px-2 py-3 hover:underline"
+                          >Chapter {chapter.chapter}: {chapter.title}</Link>
                       )}
                       <div className="flex gap-2">
                         <Edit onClick={() => setEditingChapter({ unitIndex, chapterIndex })} className="cursor-pointer hover:text-blue-400 " />
@@ -197,12 +221,21 @@ const Page = ({ params }: { params: { slug: string } }) => {
             </div>
           ))}
         </div>
+        <div className="flex items-center mb-4">
+          <input
+            className="border p-2 rounded mr-2"
+            value={newUnitTitle}
+            onChange={(e) => setNewUnitTitle(e.target.value)}
+            placeholder="New unit title"
+          />
+          <Button onClick={addUnit} className="cursor-pointer bg-green-500 hover:bg-green-600">
+            <PlusCircle className="mr-2" /> Add Unit
+          </Button>
+        </div>
         <Button className="bg-blue-600 text-white" onClick={handleSave}>
           Save Changes
         </Button>
       </main>
-
-      
     </div>
     <Footer />
     </>

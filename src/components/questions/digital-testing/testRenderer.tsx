@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import Header from "./_components/Header";
 import ArticleComponent from "./_components/ArticleComponent";
 import QuestionPanel from "./_components/QuestionPanel";
-import ToolsDropdown from "./_components/ToolsDropdown";
 import Footer from "./_components/Footer";
 import { OutputData } from "@editorjs/editorjs";
 import { Bookmark } from "lucide-react";

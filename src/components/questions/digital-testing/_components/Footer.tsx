@@ -1,6 +1,6 @@
 import React from "react";
 import { Bookmark, ChevronUp, MapPin } from "lucide-react";
-import { Question } from "../page";
+import { Question } from "../testRenderer";
 
 import {
   Popover,
