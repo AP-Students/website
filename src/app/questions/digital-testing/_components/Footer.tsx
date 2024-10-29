@@ -1,31 +1,31 @@
-import React from "react";
-import { Bookmark, ChevronUp, MapPin } from "lucide-react";
-import { Question } from "../testRenderer";
-
+import { Bookmark, ChevronUp, MapPin } from 'lucide-react'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import clsx from "clsx";
+} from '@/components/ui/popover'
+import clsx from 'clsx'
+import type { QuestionFormat } from '@/types/questions'
 
 interface FooterProps {
-  onNext: () => void;
-  onPrevious: () => void;
-  goToQuestion: (index: number) => void;
-  currentQuestionIndex: number;
-  questions: Question[];
+  onNext: () => void
+  onPrevious: () => void
+  goToQuestion: (index: number) => void
+  currentQuestionIndex: number
+  questions: QuestionFormat[]
+  selectedAnswers: Record<number, string[]>
 }
 
-const Footer: React.FC<FooterProps> = ({
+export default function Footer({
   onNext,
   onPrevious,
   goToQuestion,
   currentQuestionIndex,
   questions,
-}) => {
+  selectedAnswers,
+}: FooterProps) {
   return (
-    <footer className="fixed bottom-0 left-0 flex w-full items-center justify-between border-t-2 border-gray-300 bg-white px-4 py-2.5 text-black">
+    <footer className="fixed bottom-0 left-0 flex w-full items-center justify-between border-t-2 border-gray-300 bg-white px-4 py-2.5 text-black z-20">
       <p>John Doe</p>
       <Popover>
         <PopoverTrigger className="flex items-center gap-1 rounded-md bg-black py-1 pl-3 pr-1 text-sm font-bold tabular-nums text-white">
@@ -48,20 +48,18 @@ const Footer: React.FC<FooterProps> = ({
           <div className="grid grid-cols-6 gap-4">
             {questions.map((question, i) => (
               <button
+                key={i}
                 className={clsx(
                   "relative flex size-8 items-center justify-center border-2",
                   {
-                    "border-transparent bg-[#2a47bb] text-white":
-                      question.selected !== null,
-                    "border-dotted border-gray-400 text-[#2a47bb]":
-                      question.selected === null,
-                  },
+                    "border-transparent bg-[#2a47bb] text-white": selectedAnswers[i] && selectedAnswers[i].length > 0,
+                    "border-dotted border-gray-400 text-[#2a47bb]": !selectedAnswers[i]?.length,
+                  }
                 )}
                 onClick={() => goToQuestion(i)}
-                key={i}
               >
                 {i + 1}
-                {questions[i]?.bookmarked && (
+                {question.bookmarked && (
                   <Bookmark className="absolute -top-2 left-5 size-5 fill-black stroke-white" />
                 )}
                 {i === currentQuestionIndex && (
@@ -74,20 +72,18 @@ const Footer: React.FC<FooterProps> = ({
       </Popover>
       <div>
         <button
-          className="mr-3 rounded-full bg-[#294ad1] px-6 py-2 font-bold text-white hover:bg-[#2a47bb]"
+          className="rounded-full bg-[#294ad1] px-6 py-2 font-bold text-white hover:bg-[#2a47bb]"
           onClick={onPrevious}
         >
           Back
         </button>
         <button
-          className="rounded-full bg-[#294ad1] px-6 py-2 font-bold text-white hover:bg-[#2a47bb]"
+          className="ml-3 rounded-full bg-[#294ad1] px-6 py-2 font-bold text-white hover:bg-[#2a47bb]"
           onClick={onNext}
         >
           Next
         </button>
       </div>
     </footer>
-  );
-};
-
-export default Footer;
+  )
+}

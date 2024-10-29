@@ -5,16 +5,16 @@ import { QuestionFormat } from "@/types/questions";
 import { RenderContent } from "@/app/article-creator/_components/custom_questions/RenderAdvancedTextbox";
 
 interface Props {
-  question: QuestionFormat;
+  questionInstance: QuestionFormat;
 }
 
-const CheckForUnderstanding: React.FC<Props> = ({ question }) => {
+const CheckForUnderstanding: React.FC<Props> = ({ questionInstance }) => {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [submitted, setSubmitted] = useState<boolean>(false);
 
   const handleSelectOption = (id: string) => {
-    const numAnswers = question.correct.length;
+    const numAnswers = questionInstance.answers.length;
     if (!submitted) {
       if (numAnswers === 1){
         setSelectedOptions([id]);
@@ -31,14 +31,14 @@ const CheckForUnderstanding: React.FC<Props> = ({ question }) => {
     if (selectedOptions.length > 0) {
       setSubmitted(true);
       const allCorrect =
-        question.correct.length === selectedOptions.length &&
-        question.correct.every((id) => selectedOptions.includes(id));
+        questionInstance.answers.length === selectedOptions.length &&
+        questionInstance.answers.every((id) => selectedOptions.includes(id));
       setIsCorrect(allCorrect);
     }
   };
 
   const isAnswerCorrect = (id: string) => {
-    return question.correct.includes(id);
+    return questionInstance.answers.includes(id);
   };
 
   const handleRetry = () => {
@@ -51,10 +51,10 @@ const CheckForUnderstanding: React.FC<Props> = ({ question }) => {
     <div className="max-w-6xl bg-primary-foreground p-4 md:p-6 lg:p-8">
 
       <div className="markdown text-xl font-bold md:text-2xl lg:text-3xl">
-        <RenderContent content={question.body} />
+        <RenderContent content={questionInstance.question} />
       </div>
       <div className="mt-4 grid grid-cols-1 gap-4">
-        {question.options.map((option) => (
+        {questionInstance.options.map((option) => (
           <button
             key={option.id}
             className={`flex items-center justify-center rounded-lg border px-6 py-4 md:text-lg lg:text-xl
@@ -93,8 +93,8 @@ const CheckForUnderstanding: React.FC<Props> = ({ question }) => {
             disabled
           >
             {isCorrect ? "Correct" : "Incorrect"}
-            {question.explanation && (
-              <RenderContent content={question.explanation} />
+            {questionInstance.explanation && (
+              <RenderContent content={questionInstance.explanation} />
             )}
           </button>
 

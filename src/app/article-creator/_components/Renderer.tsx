@@ -131,18 +131,15 @@ const Renderer = (props: { content: OutputData }) => {
                 // Check if this instanceId has already been processed
                 if (!instanceIdsLoaded.current.has(instanceId)) {
                   const questionsFromDb: QuestionFormat[] = block.data.questions.map(
-                    (question: any) => ({
-                      ...question,
-                      body: question.body || { value: "" }, // Ensure body exists
-                      options: question.options.map((option: any) => ({
+                    (questionInstance: QuestionFormat) => ({
+                      ...questionInstance,
+                      questionInstance: questionInstance.question || { value: "" }, 
+                      options: questionInstance.options.map((option: any) => ({
                         ...option,
-                        value: option.value || { value: "" }, // Ensure value exists
+                        value: option.value || { value: "" }, 
                       })),
-                      correct: question.correct || [],
-                      explanation: question.explanation || { value: "" },
-                      course_id: question.course_id || "",
-                      unit_ids: question.unit_ids || [],
-                      subunit_ids: question.subunit_ids || [],
+                      answers: questionInstance.answers || [],
+                      explanation: questionInstance.explanation || { value: "" },
                     }),
                   );
 

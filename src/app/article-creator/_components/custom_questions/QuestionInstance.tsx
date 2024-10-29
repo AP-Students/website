@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { QuestionFormat } from "@/types/questions";
 
-import CheckForUnderstanding from "@/components/questions/checkForUnderstanding";
-import QuizRenderer from "@/components/questions/quizRenderer";
+import CheckForUnderstanding from "@/app/questions/checkForUnderstanding";
+import QuizRenderer from "@/app/questions/quizRenderer";
 import QuestionsInputInterface from "./QuestionsInputInterface";
+import TestRenderer from "@/app/questions/testRenderer";
+import AITestRenderer from "@/app/questions/AITestRenderer";
 
 const useSyncedQuestions = (instanceId: string) => {
   const storageKey = `questions_${instanceId}`;
@@ -13,19 +15,29 @@ const useSyncedQuestions = (instanceId: string) => {
       ? JSON.parse(savedQuestions)
       : [
           {
-            body: [],
-            title: "",
-            displayNumAnswers: true,
+            question: {
+              value: "",
+            },
+            type: "mcq",
             options: [
-              { value: [""], id: "1" },
-              { value: [""], id: "2" },
-              { value: [""], id: "3" },
-              { value: [""], id: "4" },
+              {
+                value: {
+                  value: "",
+                },
+                id: "1",
+              },
+              { value: { value: "" }, id: "2" },
+              { value: { value: "" }, id: "3" },
+              { value: { value: "" }, id: "4" },
             ],
-            correct: [],
-            course_id: "",
-            unit_ids: [],
-            subunit_ids: [],
+            answers: [""],
+            explanation: {
+              value: "",
+            },
+            content: {
+              value: "",
+            },
+            bookmarked: false,
           },
         ];
   });
@@ -51,7 +63,7 @@ const useSyncedQuestions = (instanceId: string) => {
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(questions));
   }, [questions, storageKey]);
-  
+
   // Clean up local storage on component unmount or page unload
   useEffect(() => {
     const handleUnload = () => {
@@ -91,13 +103,15 @@ export const QuestionsOutput: React.FC<{ instanceId: string }> = ({
   return (
     <div className="mt-8">
       {questions.length === 1 ? (
-        <CheckForUnderstanding question={questions[0]!} />
+        <CheckForUnderstanding
+          questionInstance={questions[0] as QuestionFormat}
+        />
       ) : (
-        <QuizRenderer questions={questions} />
+        <TestRenderer /> 
+        // <QuizRenderer questions={questions} />
       )}
       {/* Code to indicate that this is a test instance */}
       {/* Import Page from /questions/digital-testing/page.tsx */}
-      {/* <Page /> */}
     </div>
   );
 };

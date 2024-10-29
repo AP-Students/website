@@ -9,17 +9,20 @@ import Renderer from "@/app/article-creator/_components/Renderer";
 import { useFetchAndCache } from "./useFetchAndCache";
 import "katex/dist/katex.min.css";
 
-const Page = ({ params }: { params: { slug: string } }) => {
-  const { user } = useUser(); // Get user state
-  const { subject, content, loading, error } = useFetchAndCache(user, params); // Fetch with cache
-
-  const pathParts = window.location.pathname.split("/").slice(-2);
+const pathname = window.location.pathname;
+const pathParts = pathname.split("/").slice(-2);
   const formattedTitle = `Unit ${
     pathParts[1]?.charAt(0).toUpperCase() + pathParts[1]!.slice(1)
   }: ${
     pathParts[0]?.charAt(0).toUpperCase() + pathParts[0]!.slice(1)
   }`.replace(/-/g, " ");
 
+
+const Page = ({ params }: { params: { slug: string } }) => {
+  const { user } = useUser();
+  const { subject, content, loading, error } = useFetchAndCache(user, params); // Fetch with cache
+
+  
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center text-3xl">

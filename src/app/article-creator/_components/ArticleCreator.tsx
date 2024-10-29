@@ -135,32 +135,32 @@ function ArticleCreator({ className }: { className?: string }) {
         }
 
         return await Promise.all(
-          questions.map(async (question: QuestionFormat) => {
-            let updatedQuestion = { ...question };
+          questions.map(async (questionInstance: QuestionFormat) => {
+            let updatedQuestion = { ...questionInstance };
             const storage = getStorage();
 
             // Create an array of promises for the body, options, and explanation uploads
             const uploadPromises: Promise<any>[] = [];
 
             // Handle body fileKey
-            if (updatedQuestion.body?.fileKey) {
+            if (updatedQuestion.question?.fileKey) {
               uploadPromises.push(
                 (async () => {
                   const fileObj = await getFileFromIndexedDB(
-                    updatedQuestion.body.fileKey!,
+                    updatedQuestion.question.fileKey!,
                   );
                   // @ts-ignore - fileObj is obj with id and file
                   const file = fileObj?.file;
 
                   if (file && file instanceof File) {
-                    const storageRef = ref(storage, `${question.body.fileKey}`);
+                    const storageRef = ref(storage, `${questionInstance.question.fileKey}`);
                     const snapshot = await uploadBytes(storageRef, file);
                     const downloadURL = await getDownloadURL(snapshot.ref);
 
                     updatedQuestion = {
                       ...updatedQuestion,
-                      body: {
-                        ...updatedQuestion.body,
+                      question: {
+                        ...updatedQuestion.question,
                         fileURL: downloadURL,
                       },
                     };
@@ -170,7 +170,7 @@ function ArticleCreator({ className }: { className?: string }) {
             }
 
             // Handle options with fileKeys (batching file uploads for options)
-            const updatedOptionsPromises = question.options.map(
+            const updatedOptionsPromises = questionInstance.options.map(
               async (option) => {
                 if (option.value.fileKey) {
                   const fileObj = await getFileFromIndexedDB(
@@ -205,11 +205,11 @@ function ArticleCreator({ className }: { className?: string }) {
             );
 
             // Handle explanation fileKey
-            if (question.explanation?.fileKey) {
+            if (questionInstance.explanation?.fileKey) {
               uploadPromises.push(
                 (async () => {
                   const fileObj = await getFileFromIndexedDB(
-                    question.explanation.fileKey!,
+                    questionInstance.explanation.fileKey!,
                   );
                   // @ts-ignore - fileObj is obj with id and file
                   const file = fileObj?.file;
@@ -217,13 +217,13 @@ function ArticleCreator({ className }: { className?: string }) {
                   if (file && file instanceof File) {
                     const storageRef = ref(
                       storage,
-                      `${question.explanation.fileKey}`,
+                      `${questionInstance.explanation.fileKey}`,
                     );
                     const snapshot = await uploadBytes(storageRef, file);
                     const downloadURL = await getDownloadURL(snapshot.ref);
 
                     updatedQuestion.explanation = {
-                      ...question.explanation,
+                      ...questionInstance.explanation,
                       fileURL: downloadURL,
                     };
                   }

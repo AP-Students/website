@@ -62,6 +62,7 @@ export const RenderContent: React.FC<Props> = ({ content }) => {
   // Function to handle LaTeX and text rendering
   const renderTextContent = useCallback(() => {
     const tempElements: JSX.Element[] = [];
+    console.log("content", content);
 
     if (content.value) {
       content.value.split("$@").forEach((line, lineIndex) => {

@@ -21,8 +21,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
     setQuestions([
       ...questions,
       {
-        title: "",
-        body: {
+        question: {
           value: "",
         },
         type: "mcq",
@@ -37,13 +36,14 @@ const QuestionsInputInterface: React.FC<Props> = ({
           { value: { value: "" }, id: "3" },
           { value: { value: "" }, id: "4" },
         ],
-        correct: [],
+        answers: [""],
         explanation: {
           value: "",
         },
-        course_id: "",
-        unit_ids: [],
-        subunit_ids: [],
+        content: {
+          value: "",
+        },
+        bookmarked: false,
       },
     ]);
   };
@@ -105,21 +105,21 @@ const QuestionsInputInterface: React.FC<Props> = ({
 
   return (
     <div className="mb-4 rounded border p-4">
-      {questions.map((question, qIndex) => (
+      {questions.map((questionInstance, qIndex) => (
         <div key={qIndex} className="mb-4 rounded border p-4">
           <div>
             <label>{"Question: " + (qIndex + 1)}</label>
             <AdvancedTextbox
               questions={questions}
               setQuestions={setQuestions}
-              origin={"body"}
+              origin={"question"}
               qIndex={qIndex}
             />
           </div>
 
           <div className="my-4">
             <span className="text-lg font-bold">Options</span>
-            {question.options.map((option, oIndex) => (
+            {questionInstance.options.map((option, oIndex) => (
               <div key={oIndex} className="mb-2 min-w-full">
                 <div className="flex justify-between">
                   Option {oIndex + 1}
@@ -156,9 +156,11 @@ const QuestionsInputInterface: React.FC<Props> = ({
               <Input
                 id="correctAnswer"
                 type="text"
-                value={question.correct.join(",")} // Convert array back to string for input display
+                value={questionInstance.answers.join(",")} // Convert array back to string for input display
                 placeholder={
-                  question.type === "mcq" ? "Example: 1" : "Example: 1,3"
+                  questionInstance.type === "mcq"
+                    ? "Example: 1"
+                    : "Example: 1,3"
                 }
                 onChange={(e) => {
                   const inputValue = e.target.value;
@@ -166,10 +168,10 @@ const QuestionsInputInterface: React.FC<Props> = ({
                     .split(",")
                     .map((answer) => answer.trim());
                   updateQuestion(qIndex, {
-                    ...question,
-                    correct: correctAnswers,
+                    ...questionInstance,
+                    answers: correctAnswers,
                   });
-                  validateCorrectAnswer(inputValue, question.type);
+                  validateCorrectAnswer(inputValue, questionInstance.type);
                 }}
                 className="w-fit grow"
               />
@@ -193,10 +195,10 @@ const QuestionsInputInterface: React.FC<Props> = ({
           <div>
             <label>Question type:</label>
             <select
-              value={question.type}
+              value={questionInstance.type}
               onChange={(e) =>
                 updateQuestion(qIndex, {
-                  ...question,
+                  ...questionInstance,
                   type: e.target.value as "mcq" | "multi-answer",
                 })
               }
