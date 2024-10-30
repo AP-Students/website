@@ -1,12 +1,13 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Bookmark } from 'lucide-react'
-import Header from './digital-testing/_components/Header'
-import QuestionPanel from './digital-testing/_components/QuestionPanel'
-import Footer from './digital-testing/_components/Footer'
-import type { QuestionFormat } from '@/types/questions'
-import { RenderContent } from '../article-creator/_components/custom_questions/RenderAdvancedTextbox'
+import { useState } from "react";
+import { Bookmark } from "lucide-react";
+import Header from "./digital-testing/_components/Header";
+import QuestionPanel from "./digital-testing/_components/QuestionPanel";
+import Footer from "./digital-testing/_components/Footer";
+import type { QuestionFormat } from "@/types/questions";
+import { RenderContent } from "../article-creator/_components/custom_questions/RenderAdvancedTextbox";
+import Highlighter, { Highlight } from "./digital-testing/_components/Highlighter";
 
 const initialQuestions: QuestionFormat[] = [
   {
@@ -21,7 +22,8 @@ const initialQuestions: QuestionFormat[] = [
     answers: ["Paris"],
     explanation: { value: "Paris is the capital city of France." },
     content: {
-      value: "Paris is the capital city of France. (EXAMPLE article or document)",
+      value:
+        "Paris is the capital city of France. (EXAMPLE article or document)",
     },
     bookmarked: false,
   },
@@ -37,63 +39,94 @@ const initialQuestions: QuestionFormat[] = [
     answers: ["Tokyo"],
     explanation: { value: "Tokyo is the capital city of Japan." },
     content: {
-      value: "Tokyo is the capital city of Japan. (EXAMPLE article or document)",
+      value:
+        "Tokyo is the capital city of Japan. (EXAMPLE article or document)",
     },
     bookmarked: false,
   },
-]
+];
 
 export default function DigitalTestingPage() {
-  const [questions, setQuestions] = useState<QuestionFormat[]>(initialQuestions)
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string[]>>({})
-  const [showTools, setShowTools] = useState(false)
+  const [questions, setQuestions] =
+    useState<QuestionFormat[]>(initialQuestions);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedAnswers, setSelectedAnswers] = useState<
+    Record<number, string[]>
+  >({});
+  const [contentHighlights, setContentHighlights] = useState<Highlight[][]>([[]]);
+  const [questionHighlights, setQuestionHighlights] = useState<Highlight[][]>([[]]);
+  const [showTools, setShowTools] = useState(false);
+
+  // Track highlights for all --- uses index as key to corrospond to question, and array to hold highlights
+  const handleContentHighlights = (newHighlights: Highlight[]) => {
+    const updatedHighlights = [...contentHighlights]
+    updatedHighlights[currentQuestionIndex] = newHighlights
+    setContentHighlights(updatedHighlights)
+  }
+
+  const handleQuestionHighlights = (newHighlights: Highlight[]) => {
+    const updatedHighlights = [...questionHighlights]
+    updatedHighlights[currentQuestionIndex] = newHighlights
+    setQuestionHighlights(updatedHighlights)
+  }
 
   const handleNext = () => {
     if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1)
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
     }
-  }
+  };
 
   const handlePrevious = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1)
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
     }
-  }
+  };
 
   const toggleBookmark = () => {
-    const updatedQuestions = [...questions]
+    const updatedQuestions = [...questions];
     if (updatedQuestions[currentQuestionIndex]) {
       updatedQuestions[currentQuestionIndex] = {
         ...updatedQuestions[currentQuestionIndex],
-        bookmarked: !updatedQuestions[currentQuestionIndex].bookmarked
-      }
-      setQuestions(updatedQuestions)
+        bookmarked: !updatedQuestions[currentQuestionIndex].bookmarked,
+      };
+      setQuestions(updatedQuestions);
     }
-    setQuestions(updatedQuestions)
-  }
+    setQuestions(updatedQuestions);
+  };
 
   const handleSelectAnswer = (optionId: string) => {
-    setSelectedAnswers(prev => ({
+    setSelectedAnswers((prev) => ({
       ...prev,
-      [currentQuestionIndex]: questions[currentQuestionIndex]!.type === 'mcq' 
-        ? [optionId]
-        : prev[currentQuestionIndex]?.includes(optionId)
-          ? prev[currentQuestionIndex].filter(id => id !== optionId)
-          : [...(prev[currentQuestionIndex] || []), optionId]
-    }))
-  }
+      [currentQuestionIndex]:
+        questions[currentQuestionIndex]!.type === "mcq"
+          ? [optionId]
+          : prev[currentQuestionIndex]?.includes(optionId)
+            ? prev[currentQuestionIndex].filter((id) => id !== optionId)
+            : [...(prev[currentQuestionIndex] || []), optionId],
+    }));
+  };
 
   return (
     <div className="flex h-screen flex-col">
-      <Header examName="AP Calculus Exam" moduleName="Module 1" timeRemaining={45 * 60} />
+      <Header
+        examName="AP Calculus Exam"
+        moduleName="Module 1"
+        timeRemaining={45 * 60}
+      />
       <div className="flex flex-1 overflow-hidden pt-[52px]">
-        <div className="flex-1">
-          <div className="mt-4 mr-2">
-            <RenderContent content={questions[currentQuestionIndex]!.content!} />
+        {/* If there isn't content on the left, don't show left panel */}
+        {questions[currentQuestionIndex]!.content && (
+          <div className="flex-1">
+            <div className="mr-2 mt-4">
+              <Highlighter highlights={contentHighlights[currentQuestionIndex]!} onUpdateHighlights={handleContentHighlights}>
+                <RenderContent
+                  content={questions[currentQuestionIndex]!.content!}
+                />
+              </Highlighter>
+            </div>
           </div>
-        </div>
-        <div className="flex flex-1 flex-col p-5 border-l-2 border-gray-300 h-fit">
+        )}
+        <div className="flex h-fit flex-1 flex-col border-l-2 border-gray-300 p-5">
           <div className="flex h-9 items-center gap-2 bg-gray-200">
             <p className="flex h-full items-center bg-black px-3.5 text-lg font-bold tabular-nums text-white">
               {currentQuestionIndex + 1}
@@ -105,16 +138,19 @@ export default function DigitalTestingPage() {
                 </>
               ) : (
                 <>
-                  <Bookmark className="mr-1 inline fill-white" /> Mark for Review
+                  <Bookmark className="mr-1 inline fill-white" /> Mark for
+                  Review
                 </>
               )}
             </button>
           </div>
-          <QuestionPanel
-            questionInstance={questions[currentQuestionIndex]}
-            selectedAnswers={selectedAnswers[currentQuestionIndex] || []}
-            onSelectAnswer={handleSelectAnswer}
-          />
+          <Highlighter highlights={questionHighlights[currentQuestionIndex]!} onUpdateHighlights={handleQuestionHighlights}>
+            <QuestionPanel
+              questionInstance={questions[currentQuestionIndex]}
+              selectedAnswers={selectedAnswers[currentQuestionIndex] || []}
+              onSelectAnswer={handleSelectAnswer}
+            />
+          </Highlighter>
         </div>
       </div>
       <Footer
@@ -126,5 +162,5 @@ export default function DigitalTestingPage() {
         selectedAnswers={selectedAnswers}
       />
     </div>
-  )
+  );
 }
