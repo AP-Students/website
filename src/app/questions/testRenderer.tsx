@@ -53,8 +53,12 @@ export default function DigitalTestingPage() {
   const [selectedAnswers, setSelectedAnswers] = useState<
     Record<number, string[]>
   >({});
-  const [contentHighlights, setContentHighlights] = useState<Highlight[][]>([[]]);
-  const [questionHighlights, setQuestionHighlights] = useState<Highlight[][]>([[]]);
+  const [contentHighlights, setContentHighlights] = useState<Highlight[][]>(
+    initialQuestions.map(() => [])
+  );
+  const [questionHighlights, setQuestionHighlights] = useState<Highlight[][]>(
+    initialQuestions.map(() => [])
+  );
   const [showTools, setShowTools] = useState(false);
 
   // Track highlights for all --- uses index as key to corrospond to question, and array to hold highlights
@@ -118,7 +122,7 @@ export default function DigitalTestingPage() {
         {questions[currentQuestionIndex]!.content && (
           <div className="flex-1">
             <div className="mr-2 mt-4">
-              <Highlighter highlights={contentHighlights[currentQuestionIndex]!} onUpdateHighlights={handleContentHighlights}>
+              <Highlighter questionIndex={currentQuestionIndex} highlights={contentHighlights[currentQuestionIndex]!} onUpdateHighlights={handleContentHighlights}>
                 <RenderContent
                   content={questions[currentQuestionIndex]!.content!}
                 />
@@ -144,7 +148,7 @@ export default function DigitalTestingPage() {
               )}
             </button>
           </div>
-          <Highlighter highlights={questionHighlights[currentQuestionIndex]!} onUpdateHighlights={handleQuestionHighlights}>
+          <Highlighter questionIndex={currentQuestionIndex} highlights={questionHighlights[currentQuestionIndex]!} onUpdateHighlights={handleQuestionHighlights}>
             <QuestionPanel
               questionInstance={questions[currentQuestionIndex]}
               selectedAnswers={selectedAnswers[currentQuestionIndex] || []}

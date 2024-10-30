@@ -11,6 +11,7 @@ export interface Highlight {
 
 interface HighlighterProps {
   className?: string;
+  questionIndex: number;
   highlights: Highlight[];
   onUpdateHighlights: (newHighlights: Highlight[]) => void;
   children: ReactNode;
@@ -18,6 +19,7 @@ interface HighlighterProps {
 
 export default function Highlighter({
   className = "",
+  questionIndex,
   highlights,
   onUpdateHighlights,
   children,
@@ -87,6 +89,10 @@ export default function Highlighter({
       highlightOverlay.style.zIndex = "50"; // Ensure the highlight is above the content
       highlightOverlay.style.pointerEvents = "auto"; // Ensure the button can be clicked
       highlightOverlay.setAttribute("data-highlight-id", id);
+      highlightOverlay.setAttribute(
+        "data-question-index",
+        questionIndex.toString(),
+      ); // Store the question index
 
       // Create the delete button
       const button = document.createElement("button");
@@ -128,6 +134,19 @@ export default function Highlighter({
     // Update the highlights state to remove the deleted highlight
     onUpdateHighlights(highlights.filter((h) => h.id !== id));
   };
+
+  useEffect(() => {
+    // Hide all highlights if they don't belong to the current question
+    const allOverlays = document.querySelectorAll("[data-question-index]");
+    allOverlays.forEach((overlay) => {
+      const element = overlay as HTMLElement;
+      const overlayIndex = parseInt(
+        element.getAttribute("data-question-index") || "-1",
+        10,
+      );
+      element.style.display = overlayIndex === questionIndex ? "block" : "none";
+    });
+  }, [questionIndex]);
 
   return (
     <div
