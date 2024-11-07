@@ -6,24 +6,50 @@ import {
 } from '@/components/ui/popover'
 import clsx from 'clsx'
 import type { QuestionFormat } from '@/types/questions'
+import { useState } from 'react'
 
 interface FooterProps {
-  onNext: () => void
-  onPrevious: () => void
   goToQuestion: (index: number) => void
   currentQuestionIndex: number
+  setCurrentQuestionIndex: (index: number) => void
   questions: QuestionFormat[]
   selectedAnswers: Record<number, string[]>
+  setShowReviewPage: (showReviewPage: boolean) => void
 }
 
 export default function Footer({
-  onNext,
-  onPrevious,
   goToQuestion,
   currentQuestionIndex,
+  setCurrentQuestionIndex,
   questions,
   selectedAnswers,
+  setShowReviewPage,
 }: FooterProps) {
+  const [next, setNext] = useState("Next");
+
+  const handleNext = () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      if(currentQuestionIndex === questions.length - 2){
+        setNext("Review");
+      }
+    }else if(currentQuestionIndex === questions.length - 1){
+      // Review page will === currentQuestionIndex as a convienence; handlePrevious will kick it back to the last question given this logic
+      setShowReviewPage(true); 
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentQuestionIndex === questions.length) {
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
+      setNext("Next");
+      setShowReviewPage(false);
+    }else if(currentQuestionIndex > 0){
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
+    }
+  };
+
   return (
     <footer className="fixed bottom-0 left-0 flex w-full items-center justify-between border-t-2 border-gray-300 bg-white px-4 py-2.5 text-black z-20">
       <p>John Doe</p>
@@ -73,15 +99,15 @@ export default function Footer({
       <div>
         <button
           className="rounded-full bg-[#294ad1] px-6 py-2 font-bold text-white hover:bg-[#2a47bb]"
-          onClick={onPrevious}
+          onClick={handlePrevious}
         >
           Back
         </button>
         <button
           className="ml-3 rounded-full bg-[#294ad1] px-6 py-2 font-bold text-white hover:bg-[#2a47bb]"
-          onClick={onNext}
+          onClick={handleNext}
         >
-          Next
+          {next}
         </button>
       </div>
     </footer>

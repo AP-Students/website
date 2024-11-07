@@ -3,11 +3,17 @@
 import { useState } from "react";
 import { Bookmark } from "lucide-react";
 import Header from "./digital-testing/_components/Header";
-import QuestionPanel from "./digital-testing/_components/QuestionPanel";
+import QuestionPanel, {
+  ABC,
+} from "./digital-testing/_components/QuestionPanel";
 import Footer from "./digital-testing/_components/Footer";
 import type { QuestionFormat } from "@/types/questions";
 import { RenderContent } from "../article-creator/_components/custom_questions/RenderAdvancedTextbox";
-import Highlighter, { Highlight } from "./digital-testing/_components/Highlighter";
+import Highlighter, {
+  Highlight,
+} from "./digital-testing/_components/Highlighter";
+import ReviewPage from "./digital-testing/_components/ReviewPage";
+import clsx from "clsx";
 
 const initialQuestions: QuestionFormat[] = [
   {
@@ -54,36 +60,27 @@ export default function DigitalTestingPage() {
     Record<number, string[]>
   >({});
   const [contentHighlights, setContentHighlights] = useState<Highlight[][]>(
-    initialQuestions.map(() => [])
+    initialQuestions.map(() => []),
   );
   const [questionHighlights, setQuestionHighlights] = useState<Highlight[][]>(
-    initialQuestions.map(() => [])
+    initialQuestions.map(() => []),
   );
+  const [showEliminationTools, setShowEliminationTools] = useState(false);
+
+  const [showReviewPage, setShowReviewPage] = useState(false);
   const [showTools, setShowTools] = useState(false);
 
-  // Track highlights for all --- uses index as key to corrospond to question, and array to hold highlights
+  // Track highlights for all --- uses index as key to corrospond to question, and array to hold highlights (might need to move to Highlighter file)
   const handleContentHighlights = (newHighlights: Highlight[]) => {
-    const updatedHighlights = [...contentHighlights]
-    updatedHighlights[currentQuestionIndex] = newHighlights
-    setContentHighlights(updatedHighlights)
-  }
-
-  const handleQuestionHighlights = (newHighlights: Highlight[]) => {
-    const updatedHighlights = [...questionHighlights]
-    updatedHighlights[currentQuestionIndex] = newHighlights
-    setQuestionHighlights(updatedHighlights)
-  }
-
-  const handleNext = () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-    }
+    const updatedHighlights = [...contentHighlights];
+    updatedHighlights[currentQuestionIndex] = newHighlights;
+    setContentHighlights(updatedHighlights);
   };
 
-  const handlePrevious = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
-    }
+  const handleQuestionHighlights = (newHighlights: Highlight[]) => {
+    const updatedHighlights = [...questionHighlights];
+    updatedHighlights[currentQuestionIndex] = newHighlights;
+    setQuestionHighlights(updatedHighlights);
   };
 
   const toggleBookmark = () => {
@@ -113,58 +110,88 @@ export default function DigitalTestingPage() {
   return (
     <div className="flex h-screen flex-col">
       <Header
+        // Dynamic please C:
         examName="AP Calculus Exam"
         moduleName="Module 1"
         timeRemaining={45 * 60}
       />
-      {/* Content panel */}
-      <div className="flex flex-1 overflow-hidden pt-[52px]">
-        {/* If there isn't content on the left, don't show left panel */}
-        {questions[currentQuestionIndex]!.content && (
-          <div className="flex-1">
-            <div className="mr-2 mt-4">
-              <Highlighter questionIndex={currentQuestionIndex} highlights={contentHighlights[currentQuestionIndex]!} onUpdateHighlights={handleContentHighlights}>
-                <RenderContent
-                  content={questions[currentQuestionIndex]!.content!}
-                />
-              </Highlighter>
+      {showReviewPage ? (
+        <ReviewPage
+          goToQuestion={setCurrentQuestionIndex}
+          currentQuestionIndex={currentQuestionIndex}
+          questions={questions}
+          selectedAnswers={selectedAnswers}
+        />
+      ) : (
+        <div className="flex flex-1 overflow-hidden pt-[52px]">
+          {/* If there isn't content on the left, don't show left panel */}
+          {questions[currentQuestionIndex]!.content && (
+            <div className="flex-1">
+              <div className="mr-2 mt-4">
+                <Highlighter
+                  questionIndex={currentQuestionIndex}
+                  highlights={contentHighlights[currentQuestionIndex]!}
+                  onUpdateHighlights={handleContentHighlights}
+                >
+                  <RenderContent
+                    content={questions[currentQuestionIndex]!.content!}
+                  />
+                </Highlighter>
+              </div>
             </div>
+          )}
+          <div className="flex h-fit flex-1 flex-col border-l-2 border-gray-300 p-5">
+            <div className="flex h-9 items-center gap-2 bg-gray-200">
+              <p className="flex h-full items-center bg-black px-3.5 text-lg font-bold tabular-nums text-white">
+                {currentQuestionIndex + 1}
+              </p>
+              <button className="flex" onClick={toggleBookmark}>
+                {questions[currentQuestionIndex]!.bookmarked ? (
+                  <>
+                    <Bookmark className="mr-1 inline fill-black" /> Bookmarked
+                  </>
+                ) : (
+                  <>
+                    <Bookmark className="mr-1 inline fill-white" /> Mark for
+                    Review
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={() => setShowEliminationTools(!showEliminationTools)}
+                className={clsx(
+                  "rounded-lg border p-2 transition-colors",
+                  showEliminationTools && "bg-gray-100",
+                )}
+              >
+                <div className="ml-auto">
+                  <ABC />
+                </div>
+              </button>
+            </div>
+            <Highlighter
+              questionIndex={currentQuestionIndex}
+              highlights={questionHighlights[currentQuestionIndex]!}
+              onUpdateHighlights={handleQuestionHighlights}
+            >
+              <QuestionPanel
+                showEliminationTools={showEliminationTools}
+                questionInstance={questions[currentQuestionIndex]}
+                selectedAnswers={selectedAnswers[currentQuestionIndex] || []}
+                onSelectAnswer={handleSelectAnswer}
+              />
+            </Highlighter>
           </div>
-        )}
-        <div className="flex h-fit flex-1 flex-col border-l-2 border-gray-300 p-5">
-          <div className="flex h-9 items-center gap-2 bg-gray-200">
-            <p className="flex h-full items-center bg-black px-3.5 text-lg font-bold tabular-nums text-white">
-              {currentQuestionIndex + 1}
-            </p>
-            <button className="flex" onClick={toggleBookmark}>
-              {questions[currentQuestionIndex]!.bookmarked ? (
-                <>
-                  <Bookmark className="mr-1 inline fill-black" /> Bookmarked
-                </>
-              ) : (
-                <>
-                  <Bookmark className="mr-1 inline fill-white" /> Mark for
-                  Review
-                </>
-              )}
-            </button>
-          </div>
-          <Highlighter questionIndex={currentQuestionIndex} highlights={questionHighlights[currentQuestionIndex]!} onUpdateHighlights={handleQuestionHighlights}>
-            <QuestionPanel
-              questionInstance={questions[currentQuestionIndex]}
-              selectedAnswers={selectedAnswers[currentQuestionIndex] || []}
-              onSelectAnswer={handleSelectAnswer}
-            />
-          </Highlighter>
         </div>
-      </div>
+      )}
       <Footer
-        onNext={handleNext}
-        onPrevious={handlePrevious}
         goToQuestion={setCurrentQuestionIndex}
         currentQuestionIndex={currentQuestionIndex}
+        setCurrentQuestionIndex={setCurrentQuestionIndex}
         questions={questions}
         selectedAnswers={selectedAnswers}
+        setShowReviewPage={setShowReviewPage}
       />
     </div>
   );
