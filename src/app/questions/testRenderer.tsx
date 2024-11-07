@@ -117,6 +117,7 @@ export default function DigitalTestingPage() {
         moduleName="Module 1"
         timeRemaining={45 * 60}
       />
+      {/* Content panel */}
       <div className="flex flex-1 overflow-hidden pt-[52px]">
         {/* If there isn't content on the left, don't show left panel */}
         {questions[currentQuestionIndex]!.content && (

@@ -29,7 +29,7 @@
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
-    "@radix-ui/react-dialog": "^1.1.1",
+    "@radix-ui/react-dialog": "^1.1.2",
     "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-popover": "^1.1.1",
     "@radix-ui/react-slot": "^1.1.0",
@@ -83,5 +83,18 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4"
   },
-  "packageManager": "pnpm@9.6.0+sha512.38dc6fba8dba35b39340b9700112c2fe1e12f10b17134715a4aa98ccf7bb035e76fd981cf0bb384dfa98f8d6af5481c2bef2f4266a24bfa20c34eb7147ce0b5e"
+  "overrides": {
+    "vulnerable-package": "version-with-fix",
+    "lodash": "^4.17.21",
+    "amqplib": "^0.10.4",
+    "body-parser": "^1.20.3",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "moment": "^2.30.1",
+    "path-to-regexp": "^8.2.0",
+    "qs": "^6.13.0",
+    "send": "^1.1.0",
+    "ws": "^8.18.0"
+  },
+  "packageManager": "npm@10.8.2"
 }
