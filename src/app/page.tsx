@@ -54,7 +54,7 @@ export default async function Home() {
               href="https://discord.com/invite/apstudents"
               target="_blank"
             >
-              <Button className="w-full border border-[#7289DA] bg-transparent py-6 text-base font-medium text-[#7289DA] transition-colors hover:bg-[#7289DA] hover:text-white sm:w-auto sm:p-6">
+              <Button className="w-full border border-[#5865F2] bg-transparent py-6 text-base font-medium text-[#5865F2] transition-colors hover:bg-[#5865F2] hover:text-white sm:w-auto sm:p-6">
                 Join the AP Discord
               </Button>
             </Link>
@@ -87,9 +87,7 @@ export default async function Home() {
             </p>
           </div>
 
-          <div id="library-section" className="grid grid-cols-3 gap-4 lg:gap-8">
-            <APLibrary />
-          </div>
+          <APLibrary />
 
           <div className="flex flex-wrap items-center justify-evenly gap-x-10 gap-y-36 px-16 py-32">
             <div>
@@ -155,7 +153,7 @@ export default async function Home() {
               <a
                 href="https://discord.com/invite/apstudents"
                 target="_blank"
-                className="w-fit rounded-full border border-[#7289DA] px-6 py-3 font-medium text-[#7289DA] transition-colors hover:bg-[#7289DA] hover:text-white"
+                className="w-fit rounded-full border border-[#5865F2] px-6 py-3 font-medium text-[#5865F2] transition-colors hover:bg-[#5865F2] hover:text-white"
               >
                 Join the AP Discord
               </a>

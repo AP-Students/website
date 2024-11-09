@@ -69,7 +69,7 @@ export default function Login() {
     >
       <form
         onSubmit={resetPassword}
-        className="w-full max-w-md rounded-2xl border border-gray-300 bg-destructive-foreground p-8 shadow-sm"
+        className="w-full max-w-md rounded-lg border bg-white p-8 shadow-sm"
       >
         <h1 className="mb-2 text-4xl">Reset Password</h1>
 

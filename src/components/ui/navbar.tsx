@@ -43,7 +43,7 @@ const Navbar = ({
       <UserProvider>
         <div
           className={cn(
-            " hidden w-full items-center justify-between py-7 md:flex",
+            "hidden w-full items-center justify-between pt-5 md:flex",
             className,
           )}
         >
@@ -54,7 +54,7 @@ const Navbar = ({
             )}
           >
             <Link href={"/"}>
-              <Image src="/logo.svg" alt="Logo" width={100} height={120} />
+              <Image src="/logo.png" alt="Logo" width={100} height={100} />
             </Link>
           </div>
 
@@ -100,7 +100,7 @@ const Navbar = ({
         >
           <div className="flex items-center justify-center">
             <Link href={"/"}>
-              <Image src="/logo.svg" alt="Logo" width={75} height={80} />
+              <Image src="/logo.png" alt="Logo" width={75} height={75} />
             </Link>
           </div>
 
@@ -128,7 +128,7 @@ const MobileNavbar = () => {
                 <SheetTrigger asChild>
                   <Link className="inline-block" href={"/"}>
                     <Image
-                      src="/logo.svg"
+                      src="/logo.png"
                       alt="Logo"
                       width={75 * 1.35}
                       height={80 * 1.35}

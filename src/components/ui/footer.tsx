@@ -24,7 +24,7 @@ export default function Footer({ className }: { className?: string }) {
     >
       <div className="flex flex-col justify-between gap-y-6 sm:flex-row sm:items-center">
         <Link href={"/"}>
-          <Image src={"/logo.svg"} alt="AProjectLogo" width={98} height={34} />
+          <Image src={"/logo.png"} alt="FiveHive logo" width={98} height={34} />
         </Link>
 
         <ul className="flex flex-col gap-6 sm:flex-row">
@@ -51,7 +51,7 @@ export default function Footer({ className }: { className?: string }) {
       </div>
       <hr className="mb-4 mt-[1.875rem] border-gray-300" />
       <h6 className="text-xs text-[#2E0F0FB2]">
-        &copy; 2024 AP(roject)&trade;. All Rights Reserved.
+        &copy; 2024 FiveHive&trade;. All Rights Reserved.
       </h6>
     </footer>
   );
