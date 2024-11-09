@@ -11,6 +11,7 @@ interface QuestionPanelProps {
   onSelectAnswer: (optionId: string) => void;
   currentQuestionIndex: number; // Pass current question index as a prop
   questionsLength: number;
+  submittedAnswers: boolean;
 }
 
 function LetterCircle({
@@ -23,7 +24,7 @@ function LetterCircle({
   return (
     <span
       className={clsx(
-        "flex size-7 items-center justify-center rounded-full border-2 border-black w-8 h-8 text-center",
+        "flex size-7 h-8 w-8 items-center justify-center rounded-full border-2 border-black text-center",
         {
           "bg-[#3075c1] text-white": checked,
           aspectRatio: "1 / 1",
@@ -65,6 +66,7 @@ export default function QuestionPanel({
   onSelectAnswer,
   currentQuestionIndex,
   questionsLength,
+  submittedAnswers,
 }: QuestionPanelProps) {
   // Array of Sets, each Set represents striked answers for one question
   const [strikedAnswers, setStrikedAnswers] = useState<Set<number>[]>(
@@ -92,7 +94,7 @@ export default function QuestionPanel({
   return (
     <div className="relative">
       <div className="my-4 text-lg">
-        <RenderContent content={questionInstance.question} /> 
+        <RenderContent content={questionInstance.question} />
       </div>
 
       <div className="grid gap-4">
@@ -154,6 +156,12 @@ export default function QuestionPanel({
             </div>
           );
         })}
+        {submittedAnswers && (
+          <div className="rounded-lg bg-green-100 p-4">
+            <h3 className="mb-2 text-lg font-semibold">Explanation:</h3>
+            <RenderContent content={questionInstance.explanation} />
+          </div>
+        )}
       </div>
     </div>
   );

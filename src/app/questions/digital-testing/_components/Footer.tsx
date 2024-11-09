@@ -15,6 +15,7 @@ interface FooterProps {
   questions: QuestionFormat[]
   selectedAnswers: Record<number, string[]>
   setShowReviewPage: (showReviewPage: boolean) => void
+  setSubmittedAnswers: (value: boolean) => void
 }
 
 export default function Footer({
@@ -24,12 +25,15 @@ export default function Footer({
   questions,
   selectedAnswers,
   setShowReviewPage,
+  setSubmittedAnswers,
 }: FooterProps) {
   const [next, setNext] = useState("Next");
 
   const handleNext = () => {
     if(next === "Submit"){
-      // Function that submits the test
+      setCurrentQuestionIndex(0);
+      setSubmittedAnswers(true);
+      setNext("Next");
     }
 
     if (currentQuestionIndex < questions.length - 1) {
@@ -41,7 +45,6 @@ export default function Footer({
       // Review page will === currentQuestionIndex as a convienence; handlePrevious will kick it back to the last question given this logic
       setShowReviewPage(true); 
       setNext("Submit")
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
     }
   };
 
@@ -59,7 +62,7 @@ export default function Footer({
 
   return (
     <footer className="fixed bottom-0 left-0 flex w-full items-center justify-between border-t-2 border-gray-300 bg-white px-4 py-2.5 text-black z-20">
-      <p>John Doe</p>
+      <p>{" "}</p>
       <Popover>
         <PopoverTrigger className="flex items-center gap-1 rounded-md bg-black py-1 pl-3 pr-1 text-sm font-bold tabular-nums text-white">
           Question {currentQuestionIndex + 1} of {questions.length}

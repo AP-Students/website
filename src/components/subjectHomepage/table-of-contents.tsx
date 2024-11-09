@@ -12,6 +12,7 @@ type Props = {
   title: string;
   subject: Subject;
 };
+
 const TableOfContents = ({ title, subject }: Props) => {
   const router = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -43,16 +44,18 @@ const TableOfContents = ({ title, subject }: Props) => {
 
       <div className={cn("flex flex-col gap-1", collapsed && "animate-hide")}>
         {subject.units.map((unit) => (
-          <Link
-            href={`${router}#${unit.title}`}
-            key={unit.title}
-            className={cn(
-              "flex items-center gap-3 text-base font-medium opacity-50 transition-all hover:text-primary/70 hover:opacity-100",
-              collapsed && "whitespace-nowrap",
-            )}
-          >
-            Unit {unit.unit} - {unit.title}
-          </Link>
+          <div>
+            <Link
+              href={`${router}#${unit.title}`}
+              key={unit.title}
+              className={cn(
+                "flex items-center gap-3 text-base font-medium opacity-50 transition-all hover:text-primary/70 hover:opacity-100",
+                collapsed && "whitespace-nowrap",
+              )}
+            >
+              Unit {unit.unit} - {unit.title}
+            </Link>
+          </div>
         ))}
       </div>
     </div>

@@ -14,6 +14,8 @@ import { getUser } from "@/components/hooks/users";
 import { User } from "@/types/user";
 import Link from "next/link";
 
+const pathname = window.location.pathname;
+
 const Page = ({ params }: { params: { slug: string } }) => {
   const [subject, setSubject] = useState<Subject | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -101,7 +103,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
   return (
     <div className="relative flex min-h-screen">
-      <SubjectSidebar subject={subject} />
+      <SubjectSidebar subject={subject} pathname={pathname} />
 
       <div className="relative flex grow flex-col">
         <Navbar className="w-full px-10 xl:px-20" variant="secondary" />
@@ -120,7 +122,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
               defaultValue={subject.units.map((unit) => unit.title)}
             >
               {subject.units.map((unit) => (
-                <UnitAccordion unit={unit} key={unit.title} />
+                <UnitAccordion unit={unit} key={unit.title} pathname={pathname} />
               ))}
             </Accordion>
           </div>

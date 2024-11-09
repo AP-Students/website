@@ -6,24 +6,25 @@ import { useSyncedQuestions } from "@/app/article-creator/_components/custom_que
 import Navbar from "@/components/ui/navbar";
 import { useUser } from "@/components/hooks/UserContext";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { getUserAccess } from "@/components/hooks/users";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Subject } from "@/types";
 
 const pathname = window.location.pathname;
-
 
 const Page = () => {
   const { user } = useUser();
   const instanceId = pathname.split("/").slice(-2).join("_");
   const collectionId = instanceId.split("_")[0];
   const unitId = instanceId.split("_")[1];
+  const [testName, setTestName] = useState<string>("");
+  const [time, setTime] = useState<number>(0);
   const { questions, setQuestions } = useSyncedQuestions(instanceId);
 
   useEffect(() => {
-    const fetchQuestions = async () => {
+    const fetchItems = async () => {
       try {
         const userAccess = await getUserAccess();
         if (userAccess && (userAccess === "admin" || userAccess === "member")) {
@@ -32,10 +33,20 @@ const Page = () => {
           if (docSnap.exists()) {
             const data = docSnap.data() as Subject;
             const unitIndex = parseInt(unitId!, 10) - 1;
-            const questions = data && data.units[unitIndex] && data.units[unitIndex].test!.questions;
-            if(questions){
+
+            const time =
+              data && data.units[unitIndex] && data.units[unitIndex].test!.time;
+            setTime((time && time / 60) || 20);
+            const testName = data && data.title;
+            setTestName(testName);
+            const questions =
+              data &&
+              data.units[unitIndex] &&
+              data.units[unitIndex].test!.questions;
+
+            if (questions) {
               setQuestions(questions);
-            }else{
+            } else {
               setQuestions(useSyncedQuestions(instanceId).questions);
             }
           }
@@ -45,9 +56,8 @@ const Page = () => {
       }
     };
 
-    fetchQuestions();
+    fetchItems();
   }, []);
-
 
   const handleSave = async () => {
     try {
@@ -62,26 +72,22 @@ const Page = () => {
 
         const sanitizedQuestions = removeUndefined(questions);
 
-        console.log("Questions", questions);
-        console.log("Sanitized Questions", sanitizedQuestions);
         // Update the specific unit in the array
         units[unitIndex] = {
           ...units[unitIndex],
           test: {
-            ...(units[unitIndex]?.test),
+            ...units[unitIndex]?.test,
             optedIn: true,
-            questions: sanitizedQuestions, 
+            questions: sanitizedQuestions,
+            time: time * 60, //Convert minutes to seconds
           },
         };
-
-        console.log("units[unitIndex]", units[unitIndex]);
-        console.log("data", data);
 
         // Update the units array in Firestore
         await setDoc(
           doc(db, "subjects", collectionId!),
           { units },
-          { merge: true }
+          { merge: true },
         );
         alert("Questions saved successfully.");
       } else {
@@ -99,7 +105,22 @@ const Page = () => {
       <div className="relative min-h-screen">
         <Navbar />
 
-        <div className="my-6 flex items-center justify-center">
+        <div className="my-6 flex flex-col items-center justify-center">
+          <h1 className="mb-2 text-center text-4xl font-bold">{testName}</h1>
+          {/* Time Input for Admins */}
+          <div className="mb-6 flex items-center gap-4">
+            <div className="bg-blue-600 text-white">
+              Set Time: {time} minutes
+            </div>
+            <input
+              type="number"
+              value={time}
+              onChange={(e) => setTime(parseInt(e.target.value) || 0)}
+              placeholder="Set time in minutes"
+              className="rounded border p-2 text-lg"
+              min="0"
+            />
+          </div>
           <Button className="bg-blue-600 text-white" onClick={handleSave}>
             Save Changes
           </Button>
@@ -117,7 +138,12 @@ const Page = () => {
             />
           </div>
           <div className="flex-1 rounded border p-4">
-            <TestRenderer inputQuestions={questions} adminMode={true} />
+            <TestRenderer
+              time={time}
+              testName={testName}
+              inputQuestions={questions}
+              adminMode={true}
+            />
           </div>
         </div>
       </div>
@@ -131,8 +157,8 @@ export default Page;
 
 const removeUndefined = (obj: any): any => {
   if (Array.isArray(obj)) {
-    return obj.map(item => removeUndefined(item));
-  } else if (obj && typeof obj === 'object') {
+    return obj.map((item) => removeUndefined(item));
+  } else if (obj && typeof obj === "object") {
     return Object.entries(obj).reduce((acc, [key, value]) => {
       if (value !== undefined) {
         acc[key] = removeUndefined(value);

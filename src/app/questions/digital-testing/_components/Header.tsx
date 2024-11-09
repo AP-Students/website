@@ -3,22 +3,42 @@ import ToolsDropdown from "./ToolsDropdown";
 
 interface HeaderProps {
   examName: string;
-  moduleName: string;
-  timeRemaining: number;
+  timeRemaining: number; // In seconds
+  setSubmittedAnswers: (value: boolean) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
   examName,
-  moduleName,
   timeRemaining,
+  setSubmittedAnswers,
 }) => {
+  const [remainingTime, setRemainingTime] = useState(timeRemaining);
   const [showDirections, setShowDirections] = useState(true); // State to control directions visibility
   const directionsRef = useRef<HTMLDivElement>(null); // Ref for detecting outside clicks
+
+  // Start the countdown timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setRemainingTime((prevTime) => {
+        if (prevTime <= 1) {
+          clearInterval(timer); // Stop at 0
+          setSubmittedAnswers(true); // Trigger action at timeout
+          return 0;
+        }
+        return prevTime - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer); // Clean up interval on component unmount
+  }, []);
 
   // Close directions when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (directionsRef.current && !directionsRef.current.contains(event.target as Node)) {
+      if (
+        directionsRef.current &&
+        !directionsRef.current.contains(event.target as Node)
+      ) {
         setShowDirections(false);
       }
     };
@@ -36,21 +56,16 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <header className="fixed left-0 top-0 z-[1000] flex w-full items-center justify-between border-b-2 border-gray-300 p-2.5">
       <div className="flex w-full items-center justify-between">
-        <div className="flex-1">
-          {examName} - {moduleName}
-        </div>
+        <div className="flex-1">{examName}</div>
         <div className="flex-1 text-center text-xl font-bold">
-          {Math.floor(timeRemaining / 3600).toString().padStart(2, "0")}:
-          {Math.floor((timeRemaining % 3600) / 60).toString().padStart(2, "0")}:
-          {(timeRemaining % 60).toString().padStart(2, "0")}
+          {formatTime(remainingTime)}
         </div>
         <div className="flex-1 text-right">
           <button
             onClick={handleToggleDirections}
             className="text-blue-500 hover:underline"
           >
-            Directions{" "}
-            <span>{showDirections ? "▲" : "▼"}</span>
+            Directions <span>{showDirections ? "▲" : "▼"}</span>
           </button>
         </div>
       </div>
@@ -59,12 +74,10 @@ const Header: React.FC<HeaderProps> = ({
       {showDirections && (
         <div
           ref={directionsRef}
-          className="absolute top-12 left-0 right-0 z-[9000] bg-white p-5 border-2 border-gray-300 shadow-lg"
+          className="absolute left-0 right-0 top-12 z-[9000] border-2 border-gray-300 bg-white p-5 shadow-lg"
         >
           <p>
-            The questions in this section address a number of important reading
-            and writing skills. Each question includes one or more passages,
-            which may include a table or graph. Read each passage and question
+             Read each passage and question
             carefully, and then choose the best answer to the question based on
             the passage(s).
           </p>
@@ -74,7 +87,7 @@ const Header: React.FC<HeaderProps> = ({
           </p>
           <button
             onClick={() => setShowDirections(false)}
-            className="mt-4 text-yellow-600 font-semibold"
+            className="mt-4 font-semibold text-yellow-600"
           >
             Close
           </button>
@@ -85,3 +98,15 @@ const Header: React.FC<HeaderProps> = ({
 };
 
 export default Header;
+
+// Format time for display
+const formatTime = (time: number) => {
+  const hours = Math.floor(time / 3600)
+    .toString()
+    .padStart(2, "0");
+  const minutes = Math.floor((time % 3600) / 60)
+    .toString()
+    .padStart(2, "0");
+  const seconds = (time % 60).toString().padStart(2, "0");
+  return `${hours}:${minutes}:${seconds}`;
+};

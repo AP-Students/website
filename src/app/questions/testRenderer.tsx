@@ -17,6 +17,8 @@ import clsx from "clsx";
 
 interface Props {
   inputQuestions: QuestionFormat[];
+  time: number;
+  testName: string;
   adminMode?: boolean;
 }
 
@@ -57,7 +59,7 @@ const initialQuestions: QuestionFormat[] = [
   },
 ];
 
-export default function DigitalTestingPage({inputQuestions, adminMode = false}: Props) {
+export default function DigitalTestingPage({time, testName, inputQuestions, adminMode = false}: Props) {
   const [questions, setQuestions] =
     useState<QuestionFormat[]>(inputQuestions || initialQuestions);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -73,7 +75,7 @@ export default function DigitalTestingPage({inputQuestions, adminMode = false}: 
   );
 
   const [showEliminationTools, setShowEliminationTools] = useState(false);
-
+  const [submittedAnswers, setSubmittedAnswers] = useState(false);
   const [showReviewPage, setShowReviewPage] = useState(false);
   const [showTools, setShowTools] = useState(false);
 
@@ -123,13 +125,12 @@ export default function DigitalTestingPage({inputQuestions, adminMode = false}: 
     <div className="flex h-screen flex-col">
       {
         !adminMode && <Header
-          // Dynamic please C:
-          examName="AP Calculus Exam"
-          moduleName="Module 1"
-          timeRemaining={45 * 60}
+          setSubmittedAnswers={setSubmittedAnswers}
+          examName={testName}
+          timeRemaining={time * 60}
         />
       }
-      {showReviewPage ? (
+      {showReviewPage && !submittedAnswers ? (
         <ReviewPage
           goToQuestion={setCurrentQuestionIndex}
           currentQuestionIndex={currentQuestionIndex}
@@ -196,6 +197,7 @@ export default function DigitalTestingPage({inputQuestions, adminMode = false}: 
                 onSelectAnswer={handleSelectAnswer}
                 currentQuestionIndex={currentQuestionIndex}
                 questionsLength={questions.length}
+                submittedAnswers={submittedAnswers}
               />
             </Highlighter>
           </div>
@@ -208,6 +210,7 @@ export default function DigitalTestingPage({inputQuestions, adminMode = false}: 
         questions={questions}
         selectedAnswers={selectedAnswers}
         setShowReviewPage={setShowReviewPage}
+        setSubmittedAnswers={setSubmittedAnswers}
       />
     </div>
   );

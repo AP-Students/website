@@ -13,9 +13,8 @@ import Link from "next/link";
 
 type Props = {
   subject: Subject;
+  pathname: string;
 };
-
-const pathname = window.location.pathname;
 
 const SubjectSidebar = (props: Props) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -80,7 +79,7 @@ const SubjectSidebar = (props: Props) => {
                     <Link
                       className="group relative mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0 hover:underline"
                       key={chapter.title}
-                      href = {`${pathname.split("/").slice(0, 4).join("/")}/${unit.title
+                      href={`${props.pathname.split("/").slice(0, 4).join("/")}/${unit.title
                         .toLowerCase()
                         .replace(/[^a-z1-9 ]+/g, "")
                         .replace(/\s/g, "-")}/${chapter.chapter}`}
@@ -91,6 +90,18 @@ const SubjectSidebar = (props: Props) => {
                       <span>{chapter.title}</span>
                     </Link>
                   ))}
+                  {unit.test?.optedIn && (
+                    <Link
+                      className="group relative mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0 hover:underline"
+                      key={unit.test.instanceId}
+                      href={`${props.pathname.split("/").slice(0, 4).join("/")}/${unit.unit}`}
+                    >
+                      <div className="flex size-6 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-[.75rem] text-white">
+                        {unit.unit}
+                      </div>
+                      <span>Unit Test</span>
+                    </Link>
+                  )}
                 </div>
               </AccordionContent>
             </AccordionItem>
