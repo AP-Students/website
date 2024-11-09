@@ -1,15 +1,16 @@
-"use client";
-
 import { type QuestionFormat } from "@/types/questions";
 import { useState } from "react";
 import clsx from "clsx";
 import "@/app/questions/digital-testing/styles/strikeThrough.css";
+import { RenderContent } from "@/app/article-creator/_components/custom_questions/RenderAdvancedTextbox";
 
 interface QuestionPanelProps {
   showEliminationTools: boolean;
   questionInstance: QuestionFormat | undefined;
   selectedAnswers: string[];
   onSelectAnswer: (optionId: string) => void;
+  currentQuestionIndex: number; // Pass current question index as a prop
+  questionsLength: number;
 }
 
 function LetterCircle({
@@ -22,9 +23,10 @@ function LetterCircle({
   return (
     <span
       className={clsx(
-        "flex size-7 items-center justify-center rounded-full border-2 border-black",
+        "flex size-7 items-center justify-center rounded-full border-2 border-black w-8 h-8 text-center",
         {
           "bg-[#3075c1] text-white": checked,
+          aspectRatio: "1 / 1",
         },
       )}
     >
@@ -40,13 +42,13 @@ function StrikeButton({
 }: {
   letter: string;
   onClick: () => void;
-  active: boolean;
+  active?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
       className={clsx(
-        "flex size-[18px] items-center justify-center rounded-full border border-black transition-colors line-through", 
+        "flex size-[18px] items-center justify-center rounded-full border border-black line-through transition-colors",
         active && "bg-gray-200",
       )}
     >
@@ -61,29 +63,43 @@ export default function QuestionPanel({
   questionInstance,
   selectedAnswers,
   onSelectAnswer,
+  currentQuestionIndex,
+  questionsLength,
 }: QuestionPanelProps) {
-  const [strikedAnswers, setStrikedAnswers] = useState<Set<number>>(new Set());
-  const [isMarkedForReview, setIsMarkedForReview] = useState(false);
+  // Array of Sets, each Set represents striked answers for one question
+  const [strikedAnswers, setStrikedAnswers] = useState<Set<number>[]>(
+    Array(questionsLength)
+      .fill(null)
+      .map(() => new Set<number>()),
+  );
 
   if (!questionInstance) return null;
 
   const toggleStrike = (index: number) => {
-    const newStrikes = new Set(strikedAnswers);
-    if (newStrikes.has(index)) {
-      newStrikes.delete(index);
+    const newStrikedAnswers = [...strikedAnswers];
+    const currentStrikes = new Set(newStrikedAnswers[currentQuestionIndex]);
+
+    if (currentStrikes.has(index)) {
+      currentStrikes.delete(index);
     } else {
-      newStrikes.add(index);
+      currentStrikes.add(index);
     }
-    setStrikedAnswers(newStrikes);
+
+    newStrikedAnswers[currentQuestionIndex] = currentStrikes;
+    setStrikedAnswers(newStrikedAnswers);
   };
 
   return (
     <div className="relative">
-      <div className="my-4 text-lg">{questionInstance.question.value}</div>
+      <div className="my-4 text-lg">
+        <RenderContent content={questionInstance.question} /> 
+      </div>
 
       <div className="grid gap-4">
         {questionInstance.options.map((option, index) => {
-          const isStrikedThrough = strikedAnswers.has(index);
+          const isStrikedThrough =
+            strikedAnswers[currentQuestionIndex] &&
+            strikedAnswers[currentQuestionIndex].has(index);
 
           return (
             <div key={option.id} className="group relative">
@@ -112,11 +128,11 @@ export default function QuestionPanel({
                       isStrikedThrough && "opacity-50",
                     )}
                   >
-                    {option.value.value}
+                    <RenderContent content={option.value} />
                   </span>
 
                   {showEliminationTools && (
-                    <div className="flex items-center gap-2 ml-auto">
+                    <div className="ml-auto flex items-center gap-2">
                       {isStrikedThrough ? (
                         <button
                           onClick={() => toggleStrike(index)}
@@ -161,7 +177,7 @@ export function ABC() {
         ry="2"
         fill="#E0E0E0"
         stroke="#000"
-        stroke-width="1"
+        strokeWidth="1"
       />
       <text
         x="4"
@@ -179,7 +195,7 @@ export function ABC() {
         x2="17"
         y2="17"
         stroke="#000"
-        stroke-width="1.5"
+        strokeWidth="1.5"
         stroke-linecap="round"
       />
     </svg>

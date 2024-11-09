@@ -330,7 +330,7 @@ function ArticleCreator({ className }: { className?: string }) {
           className,
         )}
       >
-        <div className="px-8">
+        <div className="px-8 overflow-y-auto rounded border p-4">
           <Editor content={initialData} setData={setData} />
         </div>
 

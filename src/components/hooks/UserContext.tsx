@@ -39,6 +39,18 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchUser();
   }, []);
 
+  if(loading){
+    return <div className="flex min-h-screen items-center justify-center text-3xl">Loading...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-3xl">
+        {error}
+      </div>
+    );
+  }
+
   return (
     <UserContext.Provider value={{ user, loading, error, setError, setLoading }}>
       {children}

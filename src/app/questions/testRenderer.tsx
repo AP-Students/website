@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bookmark } from "lucide-react";
 import Header from "./digital-testing/_components/Header";
 import QuestionPanel, {
@@ -14,6 +14,11 @@ import Highlighter, {
 } from "./digital-testing/_components/Highlighter";
 import ReviewPage from "./digital-testing/_components/ReviewPage";
 import clsx from "clsx";
+
+interface Props {
+  inputQuestions: QuestionFormat[];
+  adminMode?: boolean;
+}
 
 const initialQuestions: QuestionFormat[] = [
   {
@@ -52,23 +57,30 @@ const initialQuestions: QuestionFormat[] = [
   },
 ];
 
-export default function DigitalTestingPage() {
+export default function DigitalTestingPage({inputQuestions, adminMode = false}: Props) {
   const [questions, setQuestions] =
-    useState<QuestionFormat[]>(initialQuestions);
+    useState<QuestionFormat[]>(inputQuestions || initialQuestions);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<
     Record<number, string[]>
   >({});
+
   const [contentHighlights, setContentHighlights] = useState<Highlight[][]>(
     initialQuestions.map(() => []),
   );
   const [questionHighlights, setQuestionHighlights] = useState<Highlight[][]>(
     initialQuestions.map(() => []),
   );
+
   const [showEliminationTools, setShowEliminationTools] = useState(false);
 
   const [showReviewPage, setShowReviewPage] = useState(false);
   const [showTools, setShowTools] = useState(false);
+
+  useEffect(() => {
+    setQuestions(inputQuestions);
+  }, [inputQuestions]);
+  
 
   // Track highlights for all --- uses index as key to corrospond to question, and array to hold highlights (might need to move to Highlighter file)
   const handleContentHighlights = (newHighlights: Highlight[]) => {
@@ -109,12 +121,14 @@ export default function DigitalTestingPage() {
 
   return (
     <div className="flex h-screen flex-col">
-      <Header
-        // Dynamic please C:
-        examName="AP Calculus Exam"
-        moduleName="Module 1"
-        timeRemaining={45 * 60}
-      />
+      {
+        !adminMode && <Header
+          // Dynamic please C:
+          examName="AP Calculus Exam"
+          moduleName="Module 1"
+          timeRemaining={45 * 60}
+        />
+      }
       {showReviewPage ? (
         <ReviewPage
           goToQuestion={setCurrentQuestionIndex}
@@ -180,6 +194,8 @@ export default function DigitalTestingPage() {
                 questionInstance={questions[currentQuestionIndex]}
                 selectedAnswers={selectedAnswers[currentQuestionIndex] || []}
                 onSelectAnswer={handleSelectAnswer}
+                currentQuestionIndex={currentQuestionIndex}
+                questionsLength={questions.length}
               />
             </Highlighter>
           </div>

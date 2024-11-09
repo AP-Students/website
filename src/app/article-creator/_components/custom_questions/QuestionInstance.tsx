@@ -1,13 +1,10 @@
 import { useState, useEffect } from "react";
 import { QuestionFormat } from "@/types/questions";
-
 import CheckForUnderstanding from "@/app/questions/checkForUnderstanding";
 import QuizRenderer from "@/app/questions/quizRenderer";
 import QuestionsInputInterface from "./QuestionsInputInterface";
-import TestRenderer from "@/app/questions/testRenderer";
-import AITestRenderer from "@/app/questions/AITestRenderer";
 
-const useSyncedQuestions = (instanceId: string) => {
+export const useSyncedQuestions = (instanceId: string) => {
   const storageKey = `questions_${instanceId}`;
   const [questions, setQuestions] = useState<QuestionFormat[]>(() => {
     const savedQuestions = localStorage.getItem(storageKey);
@@ -107,11 +104,8 @@ export const QuestionsOutput: React.FC<{ instanceId: string }> = ({
           questionInstance={questions[0] as QuestionFormat}
         />
       ) : (
-        <TestRenderer /> 
-        // <QuizRenderer questions={questions} />
+        <QuizRenderer questions={questions} />
       )}
-      {/* Code to indicate that this is a test instance */}
-      {/* Import Page from /questions/digital-testing/page.tsx */}
     </div>
   );
 };

@@ -8,7 +8,8 @@ export type Unit = {
   test?: {
     "questions": QuestionFormat[];
     "time": number;
-    "module": string;
+    "optedIn": boolean;
+    "instanceId": string;
     // Any other meta data?
   }
 };

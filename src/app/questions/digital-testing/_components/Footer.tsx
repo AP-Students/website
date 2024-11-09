@@ -28,6 +28,10 @@ export default function Footer({
   const [next, setNext] = useState("Next");
 
   const handleNext = () => {
+    if(next === "Submit"){
+      // Function that submits the test
+    }
+
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       if(currentQuestionIndex === questions.length - 2){
@@ -36,6 +40,7 @@ export default function Footer({
     }else if(currentQuestionIndex === questions.length - 1){
       // Review page will === currentQuestionIndex as a convienence; handlePrevious will kick it back to the last question given this logic
       setShowReviewPage(true); 
+      setNext("Submit")
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     }
   };
@@ -45,7 +50,9 @@ export default function Footer({
       setCurrentQuestionIndex(currentQuestionIndex - 1);
       setNext("Next");
       setShowReviewPage(false);
-    }else if(currentQuestionIndex > 0){
+    }
+    else if(currentQuestionIndex > 0){
+      setNext("Next");
       setCurrentQuestionIndex(currentQuestionIndex - 1);
     }
   };

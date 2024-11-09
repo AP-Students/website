@@ -9,7 +9,7 @@ import { getUser } from "@/components/hooks/users";
 interface Props {
   questions: QuestionFormat[];
   setQuestions: (questions: QuestionFormat[]) => void;
-  origin: "question" | "option" | "explanation";
+  origin: "question" | "option" | "explanation" | "content";
   qIndex: number;
   placeholder?: string;
   oIndex?: number | undefined;
@@ -95,7 +95,7 @@ export default function AdvancedTextbox({
       ) {
         setFileExists(true);
       }
-    } else if (origin === "question" || origin === "explanation") {
+    } else if (origin === "question" || origin === "explanation" || origin === "content") {
       if (questionInstance![origin] && questionInstance![origin].value) {
         setCurrentText(questionInstance![origin].value);
       }
@@ -125,7 +125,7 @@ export default function AdvancedTextbox({
     setCurrentText(newText);
     // Clone the current question to avoid direct mutation
     const updatedQuestions = [...questions];
-    if (origin === "question" || origin === "explanation") {
+    if (origin === "question" || origin === "explanation" || origin === "content") {
       const updatedQuestion: QuestionFormat = {
         ...questionInstance!,
         [origin]: {
@@ -189,6 +189,11 @@ export default function AdvancedTextbox({
         questionInput.fileKey = `${file.type}-${file.lastModified}`;
         updatedQuestion.explanation = questionInput;
         setFileExists(true);
+      } if (origin === "content") {
+        const questionInput: questionInput = { ...updatedQuestion.content };
+        questionInput.fileKey = `${file.type}-${file.lastModified}`;
+        updatedQuestion.content = questionInput;
+        setFileExists(true);
       }
       updatedQuestions[qIndex] = updatedQuestion;
 
@@ -222,8 +227,8 @@ export default function AdvancedTextbox({
     const updatedQuestions = [...questions];
     const updatedQuestion: QuestionFormat = { ...questionInstance! };
 
-    if (origin === "question" || origin === "explanation") {
-      const questionInput: questionInput = { ...updatedQuestion.question };
+    if (origin === "question" || origin === "explanation" || origin === "content") {
+      const questionInput: questionInput = { ...updatedQuestion[origin] };
       deleteFileFromIndexedDB(questionInput.fileKey!);
       deleteFileFromStorage(questionInput.fileKey!);
 

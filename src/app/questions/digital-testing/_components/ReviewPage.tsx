@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { MapPin, Bookmark, X, ChevronDown } from "lucide-react";
+import { MapPin, Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { QuestionFormat } from "@/types/questions";
 
