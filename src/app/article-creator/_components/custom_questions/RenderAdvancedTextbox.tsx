@@ -10,16 +10,29 @@ interface Props {
 // Utility to retrieve a file from IndexedDB based on unique ID
 export function getFileFromIndexedDB(name: string): Promise<File | null> {
     return new Promise((resolve) => {
-      const dbRequest = indexedDB.open("mediaFilesDB", 1);
+      const dbRequest = indexedDB.open("mediaFilesDB", 2);
+
+      dbRequest.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result;
+      
+        // Create the object store if it doesn't exist
+        if (!db.objectStoreNames.contains("mediaFiles")) {
+          db.createObjectStore("mediaFiles", { keyPath: "id" });
+  
+        }
+      };
   
       dbRequest.onsuccess = () => {
         const db = dbRequest.result;
+
         const transaction = db.transaction("mediaFiles", "readonly");
         const objectStore = transaction.objectStore("mediaFiles");
   
         // Use the same unique ID to retrieve the file
         const uniqueId = `file_${name}`;
+
         const fileRequest = objectStore.get(uniqueId); // Fetch file by its unique ID
+
   
         fileRequest.onsuccess = () => {
           const fileBlob = fileRequest.result;

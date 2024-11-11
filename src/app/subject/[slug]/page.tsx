@@ -13,12 +13,14 @@ import { doc, getDoc } from "firebase/firestore";
 import { getUser } from "@/components/hooks/users";
 import { User } from "@/types/user";
 import Link from "next/link";
+import usePathname from "@/components/client/pathname";
 
 const Page = ({ params }: { params: { slug: string } }) => {
+  const pathname = usePathname();
+
   const [subject, setSubject] = useState<Subject | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [notAuthenticated, setNotAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<User | null | undefined>(undefined);
 
   useEffect(() => {
@@ -37,16 +39,12 @@ const Page = ({ params }: { params: { slug: string } }) => {
   useEffect(() => {
     const fetchSubject = async () => {
       try {
-        if (user) {
-          const docRef = doc(db, "subjects", params.slug);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            setSubject(docSnap.data() as Subject);
-          } else {
-            setError("Subject not found. That's probably us, not you.");
-          }
+        const docRef = doc(db, "subjects", params.slug);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setSubject(docSnap.data() as Subject);
         } else {
-          setNotAuthenticated(true); // Trigger not authenticated state if user is null
+          setError("Subject not found. That's probably us, not you.");
         }
       } catch (error) {
         console.error("Error fetching subject data:", error);
@@ -68,29 +66,6 @@ const Page = ({ params }: { params: { slug: string } }) => {
       </div>
     );
   }
-
-  if (notAuthenticated) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center text-3xl">
-        <span className="mb-4">Log in or sign up to view this subject.</span>
-
-        <Link
-          href="/login"
-          className="rounded-md py-2 text-xl text-blue-500 hover:underline"
-        >
-          Log in for FiveHive to view this subject.
-        </Link>
-
-        <Link
-          href="/signup"
-          className="rounded-md py-2 text-xl text-blue-500 hover:underline"
-        >
-          Sign up for FiveHive to view this subject.
-        </Link>
-      </div>
-    );
-  }
-
   if (error || !subject) {
     return (
       <div className="flex min-h-screen items-center justify-center text-3xl">
@@ -101,7 +76,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
   return (
     <div className="relative flex min-h-screen">
-      <SubjectSidebar subject={subject} />
+      <SubjectSidebar subject={subject} pathname={pathname} />
 
       <div className="relative flex grow flex-col">
         <Navbar className="w-full px-10 xl:px-20" variant="secondary" />
@@ -120,7 +95,11 @@ const Page = ({ params }: { params: { slug: string } }) => {
               defaultValue={subject.units.map((unit) => unit.title)}
             >
               {subject.units.map((unit) => (
-                <UnitAccordion unit={unit} key={unit.title} />
+                <UnitAccordion
+                  unit={unit}
+                  key={unit.title}
+                  pathname={pathname}
+                />
               ))}
             </Accordion>
           </div>

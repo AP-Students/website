@@ -18,13 +18,13 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
   const [showResults, setShowResults] = useState<boolean>(false);
   const [score, setScore] = useState<number>(0);
 
-  const question = questions[currentQuestionIndex]!;
+  const questionInstance = questions[currentQuestionIndex]!;
 
   const handleSelectOption = (optionId: string): void => {
     setAnswers({
       ...answers,
       [currentQuestionIndex]:
-        question.type === "mcq" ? [optionId] : toggleAnswer(optionId),
+        questionInstance.type === "mcq" ? [optionId] : toggleAnswer(optionId),
     });
   };
 
@@ -47,7 +47,7 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
   const handleSubmitTest = (): void => {
     const correctCount = Object.keys(answers).reduce((acc, key) => {
       const index = parseInt(key);
-      const questionAnswers = questions[index]?.correct ?? [];
+      const questionAnswers = questions[index]?.answers ?? [];
       const userAnswers = answers[index] ?? [];
       const isCorrect =
         questionAnswers.length === userAnswers.length &&
@@ -60,7 +60,7 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
   };
 
   const isAnswerCorrect = (optionId: string): boolean => {
-    return question.correct.includes(optionId);
+    return questionInstance.answers.includes(optionId);
   };
 
   return (
@@ -71,10 +71,10 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
           `Score: ${score}/${questions.length} (${((score / questions.length) * 100).toFixed(2)}%)`}
       </div>
       <div className="markdown text-xl font-bold md:text-2xl lg:text-3xl">
-        <RenderContent content={question.body} />
+        <RenderContent content={questionInstance.question} />
       </div>
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {question.options.map((option) => (
+      <div className="mt-4 grid grid-cols-1 gap-4">
+        {questionInstance.options.map((option) => (
           <button
             key={option.id}
             className={`flex items-center justify-center rounded-lg border px-6 py-4 md:text-lg lg:text-xl
@@ -100,9 +100,9 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
         ))}
       </div>
 
-      {showResults && question.explanation && (
+      {showResults && questionInstance.explanation && (
         <div className="mt-4 p-3 border bg-green-100 rounded-md">
-          <strong>Explanation:</strong> <RenderContent content={question.explanation} />
+          <strong>Explanation:</strong> <RenderContent content={questionInstance.explanation} />
         </div>
       )}
 
