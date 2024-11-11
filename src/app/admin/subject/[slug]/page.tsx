@@ -10,10 +10,9 @@ import apClassesData from "@/app/admin/apClasses.json";
 import { Subject } from "@/types";
 import Navbar from "@/components/ui/navbar";
 import Footer from "@/components/ui/footer";
-import { v4 as uuidv4 } from "uuid";
+import usePathname from "@/components/client/pathname";
 
 const apClasses = apClassesData.apClasses;
-const pathname = window.location.pathname;
 
 // Empty subject template
 const emptyData: Subject = {
@@ -39,6 +38,7 @@ const emptyData: Subject = {
 };
 
 const Page = ({ params }: { params: { slug: string } }) => {
+  const pathname = usePathname();
   const { user, error, setError, setLoading } = useUser();
   const [subject, setSubject] = useState<Subject>();
   const [expandedUnits, setExpandedUnits] = useState<number[]>([]);
@@ -98,6 +98,12 @@ const Page = ({ params }: { params: { slug: string } }) => {
           title: "",
         },
       ],
+      test: {
+        questions: [],
+        time: 0,
+        optedIn: false,
+        instanceId: "",
+      },
     };
     setSubject({ ...subject!, units: [...subject?.units!, newUnit] });
     setNewUnitTitle("");
@@ -156,6 +162,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
   const optInForUnitTest = (unitIndex: number): void => {
     const updatedSubject = { ...subject! };
+    console.log("Updated subject:", updatedSubject);
     if (updatedSubject && updatedSubject.units[unitIndex]?.test) {
       updatedSubject.units[unitIndex].test.optedIn = true;
       updatedSubject.units[unitIndex].test.instanceId =
@@ -308,9 +315,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
                     {unit.test && unit.test.optedIn ? (
                       <div className="flex items-center">
                         <Link
-                          href={`${pathname.split("/").slice(0, 4).join("/")}/${unit.title
-                            .toLowerCase()
-                            .replace(/[^a-z1-9 ]+/g, "")}/${unitIndex + 1}`}
+                          href={`${pathname.split("/").slice(0, 4).join("/")}/${unitIndex + 1}`}
                         >
                           <p className="mt-4 text-green-500 hover:underline">
                             Access Unit Test

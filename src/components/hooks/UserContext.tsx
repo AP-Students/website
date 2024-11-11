@@ -25,12 +25,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const fetchedUser = await getUser();
       if(fetchedUser) {
         setUser(fetchedUser);
-      }else{
-        setError("Error fetching user, please try again.");
       }
       setLoading(false);
     } catch (err) {
-      setError("Error fetching user, please try again.");
       setLoading(false);
     }
   };

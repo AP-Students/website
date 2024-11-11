@@ -11,14 +11,16 @@ import { Button } from "@/components/ui/button";
 import { getUserAccess } from "@/components/hooks/users";
 import { useEffect, useState } from "react";
 import { Subject } from "@/types";
-
-const pathname = window.location.pathname;
+import usePathname from "@/components/client/pathname";
 
 const Page = () => {
+  const pathname = usePathname();
+
   const { user } = useUser();
   const instanceId = pathname.split("/").slice(-2).join("_");
   const collectionId = instanceId.split("_")[0];
   const unitId = instanceId.split("_")[1];
+
   const [testName, setTestName] = useState<string>("");
   const [time, setTime] = useState<number>(0);
   const { questions, setQuestions } = useSyncedQuestions(instanceId);
@@ -100,7 +102,11 @@ const Page = () => {
   };
 
   // User auth
-  if (user && (user?.access === "admin" || user?.access === "member")) {
+  if (
+    user &&
+    (user?.access === "admin" || user?.access === "member") &&
+    questions
+  ) {
     return (
       <div className="relative min-h-screen">
         <Navbar />
@@ -109,7 +115,7 @@ const Page = () => {
           <h1 className="mb-2 text-center text-4xl font-bold">{testName}</h1>
           {/* Time Input for Admins */}
           <div className="mb-6 flex items-center gap-4">
-            <div className="bg-blue-600 text-white">
+            <div className="bg-blue-600 text-white px-2 py-1 rounded-sm">
               Set Time: {time} minutes
             </div>
             <input
@@ -148,8 +154,14 @@ const Page = () => {
         </div>
       </div>
     );
-  } else if (user) {
+  } else if (user && questions) {
     return <div>Failed to load data.</div>;
+  } else {
+    return (
+      <div className="flex items-center justify-center text-3xl">
+        Loading...
+      </div>
+    );
   }
 };
 

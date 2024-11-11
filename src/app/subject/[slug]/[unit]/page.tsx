@@ -1,13 +1,11 @@
 "use client";
 
 import TestRenderer from "@/app/questions/testRenderer";
-import Navbar from "@/components/ui/navbar";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { Subject } from "@/types";
 import { QuestionFormat } from "@/types/questions";
-import Footer from "@/components/ui/footer";
 
 const pathname = window.location.pathname;
 
