@@ -50,7 +50,7 @@ export const useAuthHandlers = () => {
       });
 
       router.push("/");
-      // Allows time for db to store user, then refreshes page to reload user and replace sign up + login page. 
+      // Allows time for db to store user, then refreshes page to reload user and replace sign up + login page.
       setTimeout(() => {
         router.refresh();
       }, 500);
@@ -113,13 +113,15 @@ export const useAuthHandlers = () => {
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
 
-      await setDoc(userDocRef, {
-        uid: user.uid,
-        displayName: user.displayName,
-        email: user.email,
-        photoURL: user.photoURL,
-        access: "user", // Default access level
-      });
+      if (!userDoc.exists()) {
+        await setDoc(userDocRef, {
+          uid: user.uid,
+          displayName: user.displayName,
+          email: user.email,
+          photoURL: user.photoURL,
+          access: "user", // Default access level
+        });
+      }
 
       router.push("/");
       setTimeout(() => {
@@ -134,32 +136,6 @@ export const useAuthHandlers = () => {
           getMessageFromCode(error.code) ||
           "There was an error signing up with Google",
       };
-    }
-  };
-
-  const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-
-    try {
-      const userCredential = await signInWithPopup(auth, provider);
-      const user = userCredential.user;
-
-      // Check if user data exists in Firestore
-      const userDocRef = doc(db, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (!userDoc.exists()) {
-        throw {
-          code: "auth/invalid-email",
-        };
-      }
-
-      router.push("/");
-      setTimeout(() => {
-        router.refresh();
-      }, 500);
-      
-    } catch (error) {
     }
   };
 
@@ -182,7 +158,6 @@ export const useAuthHandlers = () => {
     signUpWithEmail,
     signInWithEmail,
     signUpWithGoogle,
-    signInWithGoogle,
     forgotPassword,
   };
 };
