@@ -113,13 +113,15 @@ export const useAuthHandlers = () => {
 
       const userDocRef = doc(db, "users", user.uid);
 
-      await setDoc(userDocRef, {
-        uid: user.uid,
-        displayName: user.displayName,
-        email: user.email,
-        photoURL: user.photoURL,
-        access: "user", // Default access level
-      });
+      if (!userDoc.exists()) {
+        await setDoc(userDocRef, {
+          uid: user.uid,
+          displayName: user.displayName,
+          email: user.email,
+          photoURL: user.photoURL,
+          access: "user", // Default access level
+        });
+      }
 
       router.push("/");
       setTimeout(() => {
@@ -135,26 +137,6 @@ export const useAuthHandlers = () => {
           "There was an error signing up with Google",
       };
     }
-  };
-
-  const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-
-    const userCredential = await signInWithPopup(auth, provider);
-    const user = userCredential.user;
-
-    // Check if user data exists in Firestore
-    const userDocRef = doc(db, "users", user.uid);
-    const userDoc = await getDoc(userDocRef);
-
-    if (!userDoc.exists()) {
-      throw {
-        code: "auth/invalid-email",
-      };
-    }
-
-    router.push("/");
-    await updateUser();
   };
 
   const forgotPassword = async (email: string) => {
@@ -176,7 +158,6 @@ export const useAuthHandlers = () => {
     signUpWithEmail,
     signInWithEmail,
     signUpWithGoogle,
-    signInWithGoogle,
     forgotPassword,
   };
 };
