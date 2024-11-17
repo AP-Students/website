@@ -72,6 +72,7 @@ export const getUser = async (): Promise<User | null> => {
               photoURL:
                 userData?.photoURL || firebaseUser!.photoURL || undefined,
               access: userData.access || "user",
+              createdWith: userData.createdWith,
             };
 
             // Cache the user object
