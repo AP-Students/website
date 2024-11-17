@@ -49,6 +49,7 @@ export const useAuthHandlers = () => {
         displayName: username,
         photoURL: defaultPhotoURL,
         access: "user",
+        createdWith: "email",
       });
 
       router.push("/");
@@ -120,6 +121,7 @@ export const useAuthHandlers = () => {
           email: user.email,
           photoURL: user.photoURL,
           access: "user", // Default access level
+          createdWith: "google",
         });
       }
 
