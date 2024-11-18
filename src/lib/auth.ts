@@ -6,6 +6,7 @@ import {
   GoogleAuthProvider,
   sendPasswordResetEmail,
   updateProfile,
+  confirmPasswordReset,
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "./firebase"; // Firestore instance
@@ -156,10 +157,26 @@ export const useAuthHandlers = () => {
     }
   };
 
+  const resetPassword = async (newPassword: string, code: string) => {
+    try {
+      await confirmPasswordReset(auth, code, newPassword);
+    } catch (e) {
+      const error = e as FirebaseAuthError;
+      throw {
+        code: error.code,
+        message:
+          error.message ||
+          getMessageFromCode(error.code) ||
+          "An unknown error occurred",
+      };
+    };
+  }
+
   return {
     signUpWithEmail,
     signInWithEmail,
     signUpWithGoogle,
     forgotPassword,
+    resetPassword,
   };
 };
