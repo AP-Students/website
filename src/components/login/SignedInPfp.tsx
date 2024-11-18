@@ -63,6 +63,13 @@ const SignedInPfp = () => {
               </Link>
             )}
 
+            <Link
+              href="/user/manage"
+              className="block w-full px-4 py-2 text-left hover:bg-gray-100"
+            >
+              Manage Account
+            </Link>
+
             <button
               onClick={() => signOutUser()}
               className="block w-full px-4 py-2 text-left hover:bg-gray-100"
