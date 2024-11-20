@@ -176,7 +176,7 @@ export default function PasswordResetPage({ code }: { code: string }) {
         </div>
 
         <div className="mt-8 flex justify-center">
-          <Link className="hover:underline" href="/signup">
+          <Link className="hover:underline" href="/login">
             Login
           </Link>
         </div>
