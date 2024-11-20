@@ -74,37 +74,6 @@ export default function UserManagementPage() {
     }
   };
 
-  const handleUpdateEmail = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setErrors({});
-    setSuccessMessage(null);
-
-    const email = (event.currentTarget.email.value as string).trim();
-    if (!user) return;
-    if (email === user.email) return;
-
-    // Store the new email temporarily
-    setTempEmail(email);
-    // Open reauthentication modal before proceeding
-    setReauthAction("email");
-    setReauthModalOpen(true);
-  };
-
-  const handleConfirmUpdateEmail = async () => {
-    if (!user) return;
-
-    try {
-      await updateEmailAddress(user.uid, tempEmail);
-      setUser((prevUser) =>
-        prevUser ? { ...prevUser, email: tempEmail } : prevUser
-      );
-      setSuccessMessage("Email updated successfully.");
-      setTempEmail("");
-    } catch (error: any) {
-      setErrors((prev) => ({ ...prev, email: error }));
-    }
-  };
-
   const handleUpdatePassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrors({});
@@ -181,9 +150,7 @@ export default function UserManagementPage() {
   const onReauthSuccess = () => {
     if (!reauthAction) return;
 
-    if (reauthAction === "email" && tempEmail) {
-      handleConfirmUpdateEmail();
-    } else if (reauthAction === "password" && tempPassword) {
+   if (reauthAction === "password" && tempPassword) {
       handleConfirmUpdatePassword();
     } else if (reauthAction === "delete") {
       handleConfirmDeleteAccount();
@@ -261,29 +228,6 @@ export default function UserManagementPage() {
               Save Changes
             </Button>
           </form>
-
-          {/* Email */}
-          {accountType === "email" && (
-            <form
-              className="flex flex-col space-y-2"
-              onSubmit={handleUpdateEmail}
-            >
-              <label className="text-sm font-semibold text-gray-600">Email</label>
-              <input
-                type="email"
-                name="email"
-                defaultValue={user.email}
-                className="rounded-md border border-gray-300 px-4 py-2 text-gray-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-300"
-                required
-              />
-              {errors.email && (
-                <span className="text-sm text-red-600">{errors.email}</span>
-              )}
-              <Button className="self-end text-sm font-semibold" type="submit">
-                Save Changes
-              </Button>
-            </form>
-          )}
 
           {/* Password */}
           {accountType === "email" && (
