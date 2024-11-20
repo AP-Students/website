@@ -1,16 +1,50 @@
+// lib/manageUser.ts
 import { auth, db } from "@/lib/firebase";
-import { updateProfile, verifyBeforeUpdateEmail } from "firebase/auth";
-import { doc, updateDoc } from "firebase/firestore";
-import { resolve } from "path";
+import {
+  updateProfile,
+  deleteUser,
+  updatePassword as firebaseUpdatePassword,
+  updateEmail as firebaseUpdateEmail,
+  User as FirebaseUser,
+} from "firebase/auth";
+import { doc, updateDoc, deleteDoc } from "firebase/firestore";
 
 /**
- * Updates the user's display name in Firestore.
+ * Maps Firebase Auth errors to user-friendly messages.
+ * @param error - The error thrown by Firebase Auth.
+ * @returns A user-friendly error message.
+ */
+function mapAuthError(error: any): string {
+  const errorCode = error.code;
+  switch (errorCode) {
+    case "auth/invalid-password":
+    case "auth/wrong-password":
+      return "The password is incorrect.";
+    case "auth/user-disabled":
+      return "The user account has been disabled.";
+    case "auth/user-not-found":
+      return "No user found for this action.";
+    case "auth/email-already-in-use":
+      return "The email address is already in use by another account.";
+    case "auth/invalid-email":
+      return "The email address is invalid.";
+    case "auth/too-many-requests":
+      return "Too many attempts. Please try again later.";
+    case "auth/requires-recent-login":
+      return "Please reauthenticate and try again.";
+    default:
+      return "An error occurred. Please try again.";
+  }
+}
+
+/**
+ * Updates the user's display name in Firebase Authentication and Firestore.
  * @param uid - The user's unique identifier.
  * @param displayName - The new display name to set.
  */
-async function updateDisplayName(
+export async function updateDisplayName(
   uid: string,
-  displayName: string,
+  displayName: string
 ): Promise<void> {
   if (!uid || !displayName) {
     throw new Error("User ID and display name are required.");
@@ -18,19 +52,28 @@ async function updateDisplayName(
 
   const user = auth.currentUser;
   if (!user) {
-    throw new Error("No user logged in");
+    throw new Error("No user is currently authenticated.");
   }
-  await updateProfile(user, { displayName });
-  const userDocRef = doc(db, "users", uid);
-  await updateDoc(userDocRef, { displayName });
+
+  try {
+    await updateProfile(user, { displayName });
+    const userDocRef = doc(db, "users", uid);
+    await updateDoc(userDocRef, { displayName });
+  } catch (error: any) {
+    throw mapAuthError(error);
+  }
 }
 
 /**
  * Updates the user's email in Firebase Authentication and Firestore.
+ * Requires reauthentication.
  * @param uid - The user's unique identifier.
  * @param email - The new email to set.
  */
-async function updateEmailAddress(uid: string, email: string): Promise<void> {
+export async function updateEmailAddress(
+  uid: string,
+  email: string
+): Promise<void> {
   if (!uid || !email) {
     throw new Error("User ID and email are required.");
   }
@@ -40,44 +83,46 @@ async function updateEmailAddress(uid: string, email: string): Promise<void> {
     throw new Error("No authenticated user found.");
   }
 
-  await verifyBeforeUpdateEmail(user, email, null);
-
-  // Poll for email verification by checking if it has been updated
-  const timeoutMs = 3 * 1000;
-  const intervalMs = 3 * 1000;
-  const startTime = Date.now();
-  await new Promise<void>((resolve, reject) => {
-    const interval = setInterval(async () => {
-      try {
-        if (auth.currentUser) {
-          await auth.currentUser.reload();
-          if (auth.currentUser.email == email) {
-            clearInterval(interval);
-						resolve()
-          }
-        }
-      } catch (error) {
-        clearInterval(interval);
-				reject(new Error("Failed to reload user: " + error?.message));
-      }
-
-      if (Date.now() - startTime > timeoutMs) {
-        clearInterval(interval);
-        reject(new Error("Timeout waiting for email verification from new email"));
-      }
-    }, intervalMs);
-  });
-
-  const userDocRef = doc(db, "users", uid);
-  await updateDoc(userDocRef, { email });
+  try {
+    await firebaseUpdateEmail(user, email);
+    const userDocRef = doc(db, "users", uid);
+    await updateDoc(userDocRef, { email });
+  } catch (error: any) {
+    throw mapAuthError(error);
+  }
 }
 
 /**
- * Updates the user's photoURL in Firestore after validation.
+ * Updates the user's password in Firebase Authentication.
+ * Requires reauthentication.
+ * @param newPassword - The new password to set.
+ */
+export async function updatePassword(newPassword: string): Promise<void> {
+  if (!newPassword) {
+    throw new Error("New password is required.");
+  }
+
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error("No authenticated user found.");
+  }
+
+  try {
+    await firebaseUpdatePassword(user, newPassword);
+  } catch (error: any) {
+    throw mapAuthError(error);
+  }
+}
+
+/**
+ * Updates the user's photo URL in Firebase Authentication and Firestore.
  * @param uid - The user's unique identifier.
  * @param photoURL - The new photo URL to set.
  */
-async function updatePhotoURL(uid: string, photoURL: string): Promise<void> {
+export async function updatePhotoURL(
+  uid: string,
+  photoURL: string
+): Promise<void> {
   if (!uid || !photoURL) {
     throw new Error("User ID and photo URL are required.");
   }
@@ -91,11 +136,37 @@ async function updatePhotoURL(uid: string, photoURL: string): Promise<void> {
 
   const user = auth.currentUser;
   if (!user) {
-    throw new Error("No user logged in");
+    throw new Error("No user is currently authenticated.");
   }
-  await updateProfile(user, { photoURL });
-  const userDocRef = doc(db, "users", uid);
-  await updateDoc(userDocRef, { photoURL });
+
+  try {
+    await updateProfile(user, { photoURL });
+    const userDocRef = doc(db, "users", uid);
+    await updateDoc(userDocRef, { photoURL });
+  } catch (error: any) {
+    throw mapAuthError(error);
+  }
 }
 
-export { updateDisplayName, updateEmailAddress, updatePhotoURL };
+/**
+ * Deletes the user's account from Firebase Authentication and Firestore.
+ * Requires reauthentication.
+ */
+export async function deleteAccount(): Promise<void> {
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error("No user is currently authenticated.");
+  }
+
+  const userDocRef = doc(db, "users", user.uid);
+
+  try {
+    // Delete Firestore document first
+    await deleteDoc(userDocRef);
+    // Then delete Firebase user
+    await deleteUser(user);
+    // Optionally, you can also sign out the user here if not already handled
+  } catch (error: any) {
+    throw mapAuthError(error);
+  }
+}

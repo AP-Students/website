@@ -1,6 +1,6 @@
 'use client';
 
-import PasswordResetPage from "@/app/auth/ResetPassword";
+import PasswordResetPage from "@/components/auth/ResetPassword";
 import { useSearchParams } from "next/navigation";
 
 // If you want this to take effect on your local app, you have to go to firebase -> auth -> templates -> edit -> customize action url -> "http://localhost:<port>/auth/action"

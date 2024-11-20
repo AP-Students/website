@@ -7,6 +7,7 @@ import {
   sendPasswordResetEmail,
   updateProfile,
   confirmPasswordReset,
+  applyActionCode,
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "./firebase"; // Firestore instance
@@ -172,11 +173,16 @@ export const useAuthHandlers = () => {
     };
   }
 
+  const undoEmailChange = async (code: string) => {
+    applyActionCode(auth, code);
+  }
+
   return {
     signUpWithEmail,
     signInWithEmail,
     signUpWithGoogle,
     forgotPassword,
     resetPassword,
+    undoEmailChange,
   };
 };
