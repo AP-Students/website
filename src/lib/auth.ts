@@ -107,7 +107,6 @@ export const useAuthHandlers = () => {
       const user = userCredential.user;
 
       const userDocRef = doc(db, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
 
       if (!userDoc.exists()) {
         await setDoc(userDocRef, {

@@ -31,27 +31,18 @@ service cloud.firestore {
 		
     // Subjects and pages can be accessed by members and admins
     match /subjects/{document=**} {
-    	allow read: if isAuthenticated();
+    	allow read: if true;
       allow write: if isMemberOrAdmin();
     }
     
     match /pages/{document=**} {
-    	allow read: if isAuthenticated();
+    	allow read: if true;
       allow write: if isMemberOrAdmin();
     }
 
     // Allow users to access and write to their own profiles
     match /profiles/{userId} {
       allow read, write: if isAuthenticated() && request.auth.uid == userId;
-    }
-  }
-}
-
-
-service firebase.storage {
-  match /b/{bucket}/o {
-    match /{allPaths=**} {
-      allow read, write: if true;
     }
   }
 }

@@ -13,35 +13,7 @@ import { faCheckCircle } from "@fortawesome/free-solid-svg-icons";
 import { getFileFromIndexedDB } from "./custom_questions/RenderAdvancedTextbox";
 import { QuestionFormat } from "@/types/questions";
 import Renderer from "./Renderer";
-
-export const revertTableObjectToArray = (data: OutputData) => {
-  const table = data.blocks.find((block) => block.type === "table");
-  if (table) {
-    const contentAsObject = table.data.content as Record<string, any[]>;
-
-    // Convert the object (with keys like row0, row1, ...) back to an array of arrays
-    const contentAsArray = Object.keys(contentAsObject)
-      .sort()  // Ensure the rows are in correct order, just in case
-      .map((key) => contentAsObject[key]);
-
-    // Update the data to replace the object back with an array
-    data.blocks[data.blocks.indexOf(table)] = {
-      ...table,
-      data: {
-        ...table.data,
-        content: contentAsArray,
-      },
-    };
-  }
-};
-
-export const getKey = () => {
-  const pathParts = window.location.pathname.split("/").slice(-3);
-  const key = pathParts.join("-");
-  return key;
-};
-
-
+import { revertTableObjectToArray, getKey } from "./FetchArticleFunctions";
 
 function ArticleCreator({ className }: { className?: string }) {
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
@@ -116,8 +88,6 @@ function ArticleCreator({ className }: { className?: string }) {
           const data = docSnap.data()?.data as OutputData;
           revertTableObjectToArray(data);
 
-          console.log("Data:", data);
-
           setInitialData(data);
           setData(data);
         }
@@ -165,32 +135,32 @@ function ArticleCreator({ className }: { className?: string }) {
         }
 
         return await Promise.all(
-          questions.map(async (question: QuestionFormat) => {
-            let updatedQuestion = { ...question };
+          questions.map(async (questionInstance: QuestionFormat) => {
+            let updatedQuestion = { ...questionInstance };
             const storage = getStorage();
 
             // Create an array of promises for the body, options, and explanation uploads
             const uploadPromises: Promise<any>[] = [];
 
             // Handle body fileKey
-            if (updatedQuestion.body?.fileKey) {
+            if (updatedQuestion.question?.fileKey) {
               uploadPromises.push(
                 (async () => {
                   const fileObj = await getFileFromIndexedDB(
-                    updatedQuestion.body.fileKey!,
+                    updatedQuestion.question.fileKey!,
                   );
                   // @ts-ignore - fileObj is obj with id and file
                   const file = fileObj?.file;
 
                   if (file && file instanceof File) {
-                    const storageRef = ref(storage, `${question.body.fileKey}`);
+                    const storageRef = ref(storage, `${questionInstance.question.fileKey}`);
                     const snapshot = await uploadBytes(storageRef, file);
                     const downloadURL = await getDownloadURL(snapshot.ref);
 
                     updatedQuestion = {
                       ...updatedQuestion,
-                      body: {
-                        ...updatedQuestion.body,
+                      question: {
+                        ...updatedQuestion.question,
                         fileURL: downloadURL,
                       },
                     };
@@ -200,7 +170,7 @@ function ArticleCreator({ className }: { className?: string }) {
             }
 
             // Handle options with fileKeys (batching file uploads for options)
-            const updatedOptionsPromises = question.options.map(
+            const updatedOptionsPromises = questionInstance.options.map(
               async (option) => {
                 if (option.value.fileKey) {
                   const fileObj = await getFileFromIndexedDB(
@@ -235,11 +205,11 @@ function ArticleCreator({ className }: { className?: string }) {
             );
 
             // Handle explanation fileKey
-            if (question.explanation?.fileKey) {
+            if (questionInstance.explanation?.fileKey) {
               uploadPromises.push(
                 (async () => {
                   const fileObj = await getFileFromIndexedDB(
-                    question.explanation.fileKey!,
+                    questionInstance.explanation.fileKey!,
                   );
                   // @ts-ignore - fileObj is obj with id and file
                   const file = fileObj?.file;
@@ -247,13 +217,13 @@ function ArticleCreator({ className }: { className?: string }) {
                   if (file && file instanceof File) {
                     const storageRef = ref(
                       storage,
-                      `${question.explanation.fileKey}`,
+                      `${questionInstance.explanation.fileKey}`,
                     );
                     const snapshot = await uploadBytes(storageRef, file);
                     const downloadURL = await getDownloadURL(snapshot.ref);
 
                     updatedQuestion.explanation = {
-                      ...question.explanation,
+                      ...questionInstance.explanation,
                       fileURL: downloadURL,
                     };
                   }
@@ -360,7 +330,7 @@ function ArticleCreator({ className }: { className?: string }) {
           className,
         )}
       >
-        <div className="px-8">
+        <div className="px-8 overflow-y-auto rounded border p-4">
           <Editor content={initialData} setData={setData} />
         </div>
 
