@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { ChevronDown, ChevronUp, Edit, Trash, PlusCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useUser } from "@/components/hooks/UserContext";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
@@ -192,28 +193,19 @@ const Page = ({ params }: { params: { slug: string } }) => {
       <div className="relative min-h-screen">
         <Navbar />
 
-        <main className="container flex-grow px-4 py-8 md:px-10 lg:px-14 2xl:px-20">
+        <main className="container max-w-3xl flex-grow px-4 py-8 md:px-10 lg:px-14 2xl:px-20">
           <h1 className="text-center text-4xl font-bold">{subject?.title}</h1>
           <h2 className="min-w-full px-4 py-6 text-center text-2xl font-black underline md:px-10 lg:px-14 2xl:px-20">
-            DO NOT CLICK THE LINKS OR LEAVE THE PAGE BEFORE SAVING OR YOU WILL
-            LOSE YOUR CHANGES.
-          </h2>
-          <h2 className="min-w-full px-4 py-6 text-center text-2xl font-black md:px-10 lg:px-14 2xl:px-20">
-            To save your changes, scroll down and click the "Save Changes"
-            button. on the bottom left of the page
+            BEFORE CLICKING ANY LINKS OR LEAVING THE PAGE, click "Save Changes"
+            at the bottom of this page to avoid losing your changes.
           </h2>
           <div className="mb-8 space-y-4">
             {subject?.units.map((unit, unitIndex) => (
-              <div
-                key={unit.unit}
-                className="rounded-lg border bg-white shadow-sm"
-              >
+              <div key={unit.unit} className="rounded-lg border shadow-sm">
                 <div className="flex items-center">
                   <Edit
-                    onClick={() =>
-                      setEditingUnit({ unitIndex})
-                    }
-                    className="cursor-pointer hover:text-blue-400 ml-4"
+                    onClick={() => setEditingUnit({ unitIndex })}
+                    className="ml-4 cursor-pointer hover:text-blue-400"
                   />
 
                   <Trash
@@ -254,55 +246,64 @@ const Page = ({ params }: { params: { slug: string } }) => {
                     {unit.chapters.map((chapter, chapterIndex) => (
                       <div
                         key={chapter.chapter}
-                        className="mb-3 flex items-center justify-between"
+                        className="mb-3 flex items-center justify-between gap-4"
                       >
+                        <a
+                          className={buttonVariants({ variant: "outline" })}
+                          href={`${pathname.split("/").slice(0, 4).join("/")}/${unit.title
+                            .toLowerCase()
+                            .replace(/[^a-z1-9 ]+/g, "")
+                            .replace(/\s/g, "-")}/${chapter.chapter}`}
+                        >
+                          Edit Content
+                        </a>
+
                         {editingChapter.unitIndex === unitIndex &&
                         editingChapter.chapterIndex === chapterIndex ? (
-                          <input
-                            defaultValue={chapter.title}
-                            ref={chapterInputRef}
-                            onBlur={(e) =>
-                              editChapterTitle(
-                                unitIndex,
-                                chapterIndex,
-                                e.target.value,
-                              )
-                            }
-                            className="border border-blue-500"
-                          />
+                          <>
+                            <p className="text-nowrap px-2">
+                              Chapter {chapter.chapter}:
+                            </p>
+                            <input
+                              autoFocus
+                              className="-ml-5 w-full"
+                              defaultValue={chapter.title}
+                              ref={chapterInputRef}
+                              onBlur={(e) =>
+                                editChapterTitle(
+                                  unitIndex,
+                                  chapterIndex,
+                                  e.target.value,
+                                )
+                              }
+                            />
+                          </>
                         ) : (
-                          <Link
-                            href={`${pathname.split("/").slice(0, 4).join("/")}/${unit.title
-                              .toLowerCase()
-                              .replace(/[^a-z1-9 ]+/g, "")
-                              .replace(/\s/g, "-")}/${chapter.chapter}`}
-                            className="px-2 py-3 hover:underline"
-                          >
-                            Chapter {chapter.chapter}: {chapter.title}
-                          </Link>
-                        )}
-                        <div className="flex gap-2">
-                          <Edit
-                            onClick={() =>
+                          <p
+                            onDoubleClick={() =>
                               setEditingChapter({ unitIndex, chapterIndex })
                             }
-                            className="cursor-pointer hover:text-blue-400 "
-                          />
-                          <Trash
-                            onClick={() =>
-                              deleteChapter(unitIndex, chapterIndex)
-                            }
-                            className="cursor-pointer hover:text-primary"
-                          />
-                        </div>
+                            className="w-full cursor-pointer rounded-sm px-2 py-1 hover:bg-accent"
+                          >
+                            Chapter {chapter.chapter}: {chapter.title}
+                          </p>
+                        )}
+
+                        <Button
+                          className="ml-auto"
+                          variant={"destructive"}
+                          onClick={() => deleteChapter(unitIndex, chapterIndex)}
+                        >
+                          <Trash />
+                        </Button>
                       </div>
                     ))}
-                    <div className="mt-4 flex items-center">
-                      <input
-                        className="mr-2 rounded border p-2"
+                    <div className="mt-4 flex gap-2">
+                      <Input
                         value={newChapterTitle}
                         onChange={(e) => setNewChapterTitle(e.target.value)}
                         placeholder="New chapter title"
+                        className="w-1/2"
                       />
                       <Button
                         onClick={() => addChapter(unitIndex)}
@@ -318,15 +319,16 @@ const Page = ({ params }: { params: { slug: string } }) => {
                           href={`${pathname.split("/").slice(0, 4).join("/")}/${unitIndex + 1}`}
                         >
                           <p className="mt-4 text-green-500 hover:underline">
-                            Access Unit Test
+                            Edit Unit Test
                           </p>
                         </Link>
 
                         <Button
                           className="ml-4 mt-4"
+                          variant={"destructive"}
                           onClick={() => optOutOfUnitTest(unitIndex)}
                         >
-                          Opt out of Unit Test
+                          Remove Unit Test
                         </Button>
                       </div>
                     ) : (
@@ -334,7 +336,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
                         className="mt-4"
                         onClick={() => optInForUnitTest(unitIndex)}
                       >
-                        Opt in for Unit Test
+                        Add Unit Test
                       </Button>
                     )}
                   </div>
