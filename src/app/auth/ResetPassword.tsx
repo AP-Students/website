@@ -6,7 +6,6 @@ import { useAuthHandlers } from "@/lib/auth";
 import React, { type FormEvent, useState } from "react";
 import Button from "@/components/login/submitButton";
 import { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
-import { redirect } from "next/navigation";
 import Link from "next/link";
 
 const outfit = Outfit({
