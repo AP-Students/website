@@ -9,7 +9,7 @@ import { getUser } from "@/components/hooks/users";
 interface Props {
   questions: QuestionFormat[];
   setQuestions: (questions: QuestionFormat[]) => void;
-  origin: "body" | "option" | "explanation";
+  origin: "question" | "option" | "explanation" | "content";
   qIndex: number;
   placeholder?: string;
   oIndex?: number | undefined;
@@ -17,7 +17,7 @@ interface Props {
 
 // Utility to store a file in IndexedDB with a unique key for each instance
 function storeFileInIndexedDB(name: string, file: File) {
-  const dbRequest = indexedDB.open("mediaFilesDB", 1);
+  const dbRequest = indexedDB.open("mediaFilesDB", 2);
 
   dbRequest.onupgradeneeded = (event) => {
     const db = (event.target as IDBOpenDBRequest).result;
@@ -42,7 +42,7 @@ function storeFileInIndexedDB(name: string, file: File) {
 // Utility to remove a file from IndexedDB and revoke object URL
 function deleteFileFromIndexedDB(name: string) {
   return new Promise<void>((resolve, reject) => {
-    const dbRequest = indexedDB.open("mediaFilesDB", 1);
+    const dbRequest = indexedDB.open("mediaFilesDB", 2);
 
     dbRequest.onsuccess = () => {
       const db = dbRequest.result;
@@ -71,7 +71,7 @@ export default function AdvancedTextbox({
   oIndex,
   setQuestions,
 }: Props) {
-  const question = questions[qIndex];
+  const questionInstance = questions[qIndex];
   const [currentText, setCurrentText] = useState<string>("");
   const [fileExists, setFileExists] = useState<boolean>(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -81,29 +81,29 @@ export default function AdvancedTextbox({
   useEffect(() => {
     if (origin === "option" && oIndex !== undefined) {
       if (
-        question!.options[oIndex] &&
-        question!.options[oIndex]!.value &&
-        question!.options[oIndex]!.value.value
+        questionInstance!.options[oIndex] &&
+        questionInstance!.options[oIndex]!.value &&
+        questionInstance!.options[oIndex]!.value.value
       ) {
-        setCurrentText(question!.options[oIndex]!.value.value);
+        setCurrentText(questionInstance!.options[oIndex]!.value.value);
       }
 
       if (
-        question!.options[oIndex] &&
-        question!.options[oIndex]!.value &&
-        question!.options[oIndex]!.value.fileKey
+        questionInstance!.options[oIndex] &&
+        questionInstance!.options[oIndex]!.value &&
+        questionInstance!.options[oIndex]!.value.fileKey
       ) {
         setFileExists(true);
       }
-    } else if (origin === "body" || origin === "explanation") {
-      if (question![origin] && question![origin].value) {
-        setCurrentText(question![origin].value);
+    } else if (origin === "question" || origin === "explanation" || origin === "content") {
+      if (questionInstance![origin] && questionInstance![origin].value) {
+        setCurrentText(questionInstance![origin].value);
       }
-      if (question![origin] && question![origin].fileKey) {
+      if (questionInstance![origin] && questionInstance![origin].fileKey) {
         setFileExists(true);
       }
     }
-  }, [question]);
+  }, [questionInstance]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Keys are being handled by EditorJS rather than default behavior, so we need to block the EditorJS behavior
@@ -125,30 +125,30 @@ export default function AdvancedTextbox({
     setCurrentText(newText);
     // Clone the current question to avoid direct mutation
     const updatedQuestions = [...questions];
-    if (origin === "body" || origin === "explanation") {
+    if (origin === "question" || origin === "explanation" || origin === "content") {
       const updatedQuestion: QuestionFormat = {
-        ...question!,
+        ...questionInstance!,
         [origin]: {
-          ...(question ? [origin] : QuestionsInput),
+          ...(questionInstance ? [origin] : QuestionsInput),
           value: newText,
-          fileKey: question?.body.fileKey, // Keep the file key if it exists
-        }, // Clone body
+          fileKey: questionInstance?.question.fileKey, // Keep the file key if it exists
+        }, // Clone question
       };
       updatedQuestions[qIndex] = updatedQuestion;
     } else if (origin === "option" && oIndex !== undefined) {
       // oIndex !== undefined because 0 is falsy
       const updatedQuestion: QuestionFormat = {
-        ...question!,
+        ...questionInstance!,
         options: [
-          ...question!.options.slice(0, oIndex),
+          ...questionInstance!.options.slice(0, oIndex),
           {
             value: {
               value: newText,
-              fileKey: question!.options[oIndex]!.value.fileKey,
+              fileKey: questionInstance!.options[oIndex]!.value.fileKey,
             },
-            id: question!.options[oIndex]!.id,
+            id: questionInstance!.options[oIndex]!.id,
           },
-          ...question!.options.slice(oIndex + 1),
+          ...questionInstance!.options.slice(oIndex + 1),
         ],
       };
       updatedQuestions[qIndex] = updatedQuestion;
@@ -169,12 +169,12 @@ export default function AdvancedTextbox({
       storeFileInIndexedDB(`${file.type}-${file.lastModified}`, file);
 
       const updatedQuestions = [...questions];
-      const updatedQuestion: QuestionFormat = { ...question! };
+      const updatedQuestion: QuestionFormat = { ...questionInstance! };
 
-      if (origin === "body") {
-        const questionInput: questionInput = { ...updatedQuestion.body };
+      if (origin === "question") {
+        const questionInput: questionInput = { ...updatedQuestion.question };
         questionInput.fileKey = `${file.type}-${file.lastModified}`;
-        updatedQuestion.body = questionInput;
+        updatedQuestion.question = questionInput;
         setFileExists(true);
       } else if (origin === "option" && oIndex !== undefined) {
         // Update a specific option by oIndex
@@ -188,6 +188,11 @@ export default function AdvancedTextbox({
         const questionInput: questionInput = { ...updatedQuestion.explanation };
         questionInput.fileKey = `${file.type}-${file.lastModified}`;
         updatedQuestion.explanation = questionInput;
+        setFileExists(true);
+      } if (origin === "content") {
+        const questionInput: questionInput = { ...updatedQuestion.content };
+        questionInput.fileKey = `${file.type}-${file.lastModified}`;
+        updatedQuestion.content = questionInput;
         setFileExists(true);
       }
       updatedQuestions[qIndex] = updatedQuestion;
@@ -220,10 +225,10 @@ export default function AdvancedTextbox({
 
   const handleDeleteFile = () => {
     const updatedQuestions = [...questions];
-    const updatedQuestion: QuestionFormat = { ...question! };
+    const updatedQuestion: QuestionFormat = { ...questionInstance! };
 
-    if (origin === "body" || origin === "explanation") {
-      const questionInput: questionInput = { ...updatedQuestion.body };
+    if (origin === "question" || origin === "explanation" || origin === "content") {
+      const questionInput: questionInput = { ...updatedQuestion[origin] };
       deleteFileFromIndexedDB(questionInput.fileKey!);
       deleteFileFromStorage(questionInput.fileKey!);
 

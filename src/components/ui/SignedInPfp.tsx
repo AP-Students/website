@@ -8,10 +8,9 @@ import { UserProvider, useUser } from "../hooks/UserContext";
 
 const SignedInPfp = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const { user, loading, error, setError } = useUser();
+  const { user } = useUser();
 
-  if (loading) return <div>Loading...</div>;
-  if (!user || error) return null;
+  if (!user) return null;
 
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);

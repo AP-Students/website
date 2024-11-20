@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 const Page = ({ params }: { params: { slug: string } }) => {
-  const { user, loading, error} = useUser();
+  const { user, loading} = useUser();
 
   const router = useRouter();
   const pathname = usePathname();
@@ -24,22 +24,6 @@ const Page = ({ params }: { params: { slug: string } }) => {
       router.push("/");
     }
   }, [user]); 
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center text-3xl">
-        Loading...
-      </div>
-    );
-  } 
-
-  if (error) {
-    return (
-      <div className="flex min-h-screen items-center justify-center text-3xl">
-        {error}
-      </div>
-    );
-  }
 
   return (
     <div className="relative flex grow flex-col">

@@ -25,12 +25,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const fetchedUser = await getUser();
       if(fetchedUser) {
         setUser(fetchedUser);
-      }else{
-        setError("Error fetching user, please try again.");
       }
       setLoading(false);
     } catch (err) {
-      setError("Error fetching user, please try again.");
       setLoading(false);
     }
   };
@@ -38,6 +35,18 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     fetchUser();
   }, []);
+
+  if(loading){
+    return <div className="flex min-h-screen items-center justify-center text-3xl">Loading...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-3xl">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <UserContext.Provider value={{ user, loading, error, setError, setLoading }}>
