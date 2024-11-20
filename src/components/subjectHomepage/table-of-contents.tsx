@@ -44,7 +44,7 @@ const TableOfContents = ({ title, subject }: Props) => {
 
       <div className={cn("flex flex-col gap-1", collapsed && "animate-hide")}>
         {subject.units.map((unit) => (
-          <div>
+          <div key={unit.unit}>
             <Link
               href={`${router}#${unit.title}`}
               key={unit.title}

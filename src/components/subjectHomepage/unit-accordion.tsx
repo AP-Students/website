@@ -30,7 +30,7 @@ const UnitAccordion = ({ unit, pathname }: Props) => {
 
       <AccordionContent className="flex flex-col gap-2">
         {unit.chapters.map((chapter, index) => (
-          <div>
+          <div key={chapter.chapter}>
             <Link
               className="group mb-3 flex items-center gap-x-3 font-semibold last:mb-0"
               href={`${pathname}/${unit.title
