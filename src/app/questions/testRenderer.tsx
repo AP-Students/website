@@ -3,9 +3,7 @@
 import { useEffect, useState } from "react";
 import { Bookmark } from "lucide-react";
 import Header from "./digital-testing/_components/Header";
-import QuestionPanel, {
-  ABC,
-} from "./digital-testing/_components/QuestionPanel";
+import QuestionPanel from "./digital-testing/_components/QuestionPanel";
 import Footer from "./digital-testing/_components/Footer";
 import type { QuestionFormat } from "@/types/questions";
 import { RenderContent } from "../article-creator/_components/custom_questions/RenderAdvancedTextbox";
@@ -59,9 +57,15 @@ const initialQuestions: QuestionFormat[] = [
   },
 ];
 
-export default function DigitalTestingPage({time, testName, inputQuestions, adminMode = false}: Props) {
-  const [questions, setQuestions] =
-    useState<QuestionFormat[]>(inputQuestions || initialQuestions);
+export default function DigitalTestingPage({
+  time,
+  testName,
+  inputQuestions,
+  adminMode = false,
+}: Props) {
+  const [questions, setQuestions] = useState<QuestionFormat[]>(
+    inputQuestions || initialQuestions,
+  );
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<
     Record<number, string[]>
@@ -82,7 +86,6 @@ export default function DigitalTestingPage({time, testName, inputQuestions, admi
   useEffect(() => {
     setQuestions(inputQuestions);
   }, [inputQuestions]);
-  
 
   // Track highlights for all --- uses index as key to corrospond to question, and array to hold highlights (might need to move to Highlighter file)
   const handleContentHighlights = (newHighlights: Highlight[]) => {
@@ -123,13 +126,13 @@ export default function DigitalTestingPage({time, testName, inputQuestions, admi
 
   return (
     <div className="flex h-screen flex-col">
-      {
-        !adminMode && <Header
+      {!adminMode && (
+        <Header
           setSubmittedAnswers={setSubmittedAnswers}
           examName={testName}
           timeRemaining={time * 60}
         />
-      }
+      )}
       {showReviewPage && !submittedAnswers ? (
         <ReviewPage
           goToQuestion={setCurrentQuestionIndex}
@@ -175,14 +178,47 @@ export default function DigitalTestingPage({time, testName, inputQuestions, admi
 
               <button
                 onClick={() => setShowEliminationTools(!showEliminationTools)}
-                className={clsx(
-                  "rounded-lg border p-2 transition-colors",
-                  showEliminationTools && "bg-gray-100",
-                )}
+                className="ml-auto p-1"
+                title="Eliminate options"
               >
-                <div className="ml-auto">
-                  <ABC />
-                </div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="25"
+                  height="25"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                >
+                  <rect
+                    className={clsx(showEliminationTools && "fill-white")}
+                    x="1"
+                    y="1"
+                    width="18"
+                    height="18"
+                    rx="2"
+                    ry="2"
+                    stroke="#000"
+                    strokeWidth="1"
+                  />
+                  <text
+                    x="4"
+                    y="12"
+                    fontFamily="Arial, sans-serif"
+                    fontSize="6"
+                    fontWeight="bold"
+                    fill="#000"
+                  >
+                    ABC
+                  </text>
+                  <line
+                    x1="3"
+                    y1="3"
+                    x2="17"
+                    y2="17"
+                    stroke="#000"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
               </button>
             </div>
             <Highlighter
