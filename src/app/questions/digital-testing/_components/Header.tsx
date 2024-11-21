@@ -15,6 +15,7 @@ const Header: React.FC<HeaderProps> = ({
   const [remainingTime, setRemainingTime] = useState(timeRemaining);
   const [showDirections, setShowDirections] = useState(true); // State to control directions visibility
   const directionsRef = useRef<HTMLDivElement>(null); // Ref for detecting outside clicks
+  const toggleButtonRef = useRef<HTMLButtonElement>(null);
 
   // Start the countdown timer
   useEffect(() => {
@@ -37,7 +38,9 @@ const Header: React.FC<HeaderProps> = ({
     const handleClickOutside = (event: MouseEvent) => {
       if (
         directionsRef.current &&
-        !directionsRef.current.contains(event.target as Node)
+        !directionsRef.current.contains(event.target as Node) &&
+        toggleButtonRef.current &&
+        !toggleButtonRef.current.contains(event.target as Node)
       ) {
         setShowDirections(false);
       }
@@ -62,6 +65,7 @@ const Header: React.FC<HeaderProps> = ({
         </div>
         <div className="flex-1 text-right">
           <button
+            ref={toggleButtonRef}
             onClick={handleToggleDirections}
             className="text-blue-500 hover:underline"
           >
@@ -77,9 +81,8 @@ const Header: React.FC<HeaderProps> = ({
           className="absolute left-0 right-0 top-12 z-[9000] border-2 border-gray-300 bg-white p-5 shadow-lg"
         >
           <p>
-             Read each passage and question
-            carefully, and then choose the best answer to the question based on
-            the passage(s).
+            Read each passage and question carefully, and then choose the best
+            answer to the question based on the passage(s).
           </p>
           <p>
             All questions in this section are multiple-choice with four answer
