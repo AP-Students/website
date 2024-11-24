@@ -4,4 +4,5 @@ export interface User {
   email: string;
   photoURL?: string;
   access: "admin" | "member" | "user";
+  createdWith: "email" | "google";
 }

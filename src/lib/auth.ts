@@ -6,6 +6,8 @@ import {
   GoogleAuthProvider,
   sendPasswordResetEmail,
   updateProfile,
+  confirmPasswordReset,
+  applyActionCode,
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "./firebase"; // Firestore instance
@@ -47,13 +49,10 @@ export const useAuthHandlers = () => {
         displayName: username,
         photoURL: defaultPhotoURL,
         access: "user",
+        createdWith: "email",
       });
 
       router.push("/");
-      // Allows time for db to store user, then refreshes page to reload user and replace sign up + login page. 
-      setTimeout(() => {
-        router.refresh();
-      }, 500);
     } catch (e: any) {
       const error = e as FirebaseAuthError;
 
@@ -87,9 +86,6 @@ export const useAuthHandlers = () => {
       }
 
       router.push("/");
-      setTimeout(() => {
-        router.refresh();
-      }, 500);
       return userCredential;
     } catch (e: any) {
       const error = e as FirebaseAuthError;
@@ -111,19 +107,20 @@ export const useAuthHandlers = () => {
       const user = userCredential.user;
 
       const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
 
-      await setDoc(userDocRef, {
-        uid: user.uid,
-        displayName: user.displayName,
-        email: user.email,
-        photoURL: user.photoURL,
-        access: "user", // Default access level
-      });
+      if (!userDoc.exists()) {
+        await setDoc(userDocRef, {
+          uid: user.uid,
+          displayName: user.displayName,
+          email: user.email,
+          photoURL: user.photoURL,
+          access: "user", // Default access level
+          createdWith: "google",
+        });
+      }
 
       router.push("/");
-      setTimeout(() => {
-        router.refresh();
-      }, 500);
     } catch (e: any) {
       const error = e as FirebaseAuthError;
       throw {
@@ -133,32 +130,6 @@ export const useAuthHandlers = () => {
           getMessageFromCode(error.code) ||
           "There was an error signing up with Google",
       };
-    }
-  };
-
-  const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-
-    try {
-      const userCredential = await signInWithPopup(auth, provider);
-      const user = userCredential.user;
-
-      // Check if user data exists in Firestore
-      const userDocRef = doc(db, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (!userDoc.exists()) {
-        throw {
-          code: "auth/invalid-email",
-        };
-      }
-
-      router.push("/");
-      setTimeout(() => {
-        router.refresh();
-      }, 500);
-      
-    } catch (error) {
     }
   };
 
@@ -177,11 +148,31 @@ export const useAuthHandlers = () => {
     }
   };
 
+  const resetPassword = async (newPassword: string, code: string) => {
+    try {
+      await confirmPasswordReset(auth, code, newPassword);
+    } catch (e) {
+      const error = e as FirebaseAuthError;
+      throw {
+        code: error.code,
+        message:
+          error.message ||
+          getMessageFromCode(error.code) ||
+          "An unknown error occurred",
+      };
+    }
+  };
+
+  const undoEmailChange = async (code: string) => {
+    applyActionCode(auth, code);
+  };
+
   return {
     signUpWithEmail,
     signInWithEmail,
     signUpWithGoogle,
-    signInWithGoogle,
     forgotPassword,
+    resetPassword,
+    undoEmailChange,
   };
 };
