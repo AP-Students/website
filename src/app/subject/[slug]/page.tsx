@@ -11,7 +11,8 @@ import UnitAccordion from "@/components/subjectHomepage/unit-accordion";
 import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { getUser } from "@/components/hooks/users";
-import type { User } from "@/types/user";
+import { User } from "@/types/user";
+import Link from "next/link";
 import usePathname from "@/components/client/pathname";
 
 const Page = ({ params }: { params: { slug: string } }) => {
@@ -56,7 +57,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
     if (user !== undefined) {
       fetchSubject();
     }
-  }, [user, params.slug]);
+  }, [user]);
 
   if (loading) {
     return (

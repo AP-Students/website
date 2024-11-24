@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import type { QuestionFormat } from "@/types/questions";
+import { QuestionFormat } from "@/types/questions";
 import { Trash, CirclePlus } from "lucide-react";
 import AdvancedTextbox from "./AdvancedTextbox";
 import { Input } from "@/components/ui/input";

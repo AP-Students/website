@@ -1,7 +1,7 @@
 "use client";
 import Navbar from "@/components/ui/navbar";
 import Footer from "@/components/ui/footer";
-import type { User } from "@/types/user";
+import { User } from "@/types/user";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUserManagement } from "./useUserManagement";

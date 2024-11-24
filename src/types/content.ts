@@ -1,5 +1,5 @@
-import type { OutputData } from "@editorjs/editorjs";
-import type { User } from "./user";
+import { OutputData } from "@editorjs/editorjs";
+import { User } from "./user";
 
 export type Content = {
   title: string;

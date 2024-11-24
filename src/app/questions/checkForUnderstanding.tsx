@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { MdOutlineRefresh } from "react-icons/md";
-import type { QuestionFormat } from "@/types/questions";
+import { QuestionFormat } from "@/types/questions";
 import { RenderContent } from "@/app/article-creator/_components/custom_questions/RenderAdvancedTextbox";
 
 interface Props {

@@ -1,6 +1,6 @@
 import { auth, db } from "@/lib/firebase";
-import { User as FirebaseUser } from "firebase/auth";
-import type { User } from "@/types/user";
+import { User as FirebaseUser, getAuth } from "firebase/auth";
+import { User } from "@/types/user";
 import {
   collection,
   doc,

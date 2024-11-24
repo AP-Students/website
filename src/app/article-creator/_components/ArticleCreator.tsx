@@ -11,7 +11,7 @@ import { getUser, getUserAccess } from "@/components/hooks/users";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheckCircle } from "@fortawesome/free-solid-svg-icons";
 import { getFileFromIndexedDB } from "./custom_questions/RenderAdvancedTextbox";
-import type { QuestionFormat } from "@/types/questions";
+import { QuestionFormat } from "@/types/questions";
 import Renderer from "./Renderer";
 import { revertTableObjectToArray, getKey } from "./FetchArticleFunctions";
 
@@ -253,7 +253,7 @@ function ArticleCreator({ className }: { className?: string }) {
 
       // Traverse through data to find QuestionFormat[] arrays
       const updatedData = await Promise.all(
-        Object.entries(data.blocks).map(async ([, value]) => {
+        Object.entries(data.blocks).map(async ([key, value]) => {
           // Check if the array contains objects of type QuestionFormat
           if (value.type === "questionsAddCard") {
             const updatedQuestions = await processQuestions(

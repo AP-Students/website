@@ -118,7 +118,7 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
 };
 
 const Editor = ({ setData, content }: { setData: (data: OutputData) => void, content: OutputData }) => {
-  const { editor } = useEditor({
+  const { editor, isEditorReady } = useEditor({
     holder: "editorjs",
     tools: EDITOR_TOOLS,
     data: content ||  {

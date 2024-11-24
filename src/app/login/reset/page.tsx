@@ -6,7 +6,7 @@ import { useAuthHandlers } from "@/lib/auth";
 import React, { useState } from "react";
 import Link from "next/link";
 import Button from "@/components/login/submitButton";
-import type { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
+import { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
 
 const outfit = Outfit({
   subsets: ["latin"],

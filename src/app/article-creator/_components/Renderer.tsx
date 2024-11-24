@@ -6,7 +6,7 @@ import "@/styles/highlightjs.css";
 import { useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { QuestionsOutput } from "./custom_questions/QuestionInstance";
-import type { QuestionFormat } from "@/types/questions";
+import { QuestionFormat } from "@/types/questions";
 import "@/app/article-creator/katexStyling.css";
 import { getUser } from "@/components/hooks/users";
 import { db } from "@/lib/firebase";
@@ -91,7 +91,7 @@ const customParsers = {
 
   questionsAddCard: (data: { instanceId: string; content: QuestionFormat }) => {
     const instanceUUID = data.instanceId;
-    // const content = JSON.stringify(data.content);
+    const content = JSON.stringify(data.content);
     return `<div class="questions-block-${instanceUUID}"></div>`;
   },
 };

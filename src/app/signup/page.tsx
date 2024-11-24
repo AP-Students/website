@@ -6,7 +6,7 @@ import { useAuthHandlers } from "@/lib/auth";
 import React, { type FormEvent, useState } from "react";
 import Link from "next/link";
 import Button from "@/components/login/submitButton";
-import type { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
+import { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -14,7 +14,7 @@ const outfit = Outfit({
 });
 
 export default function Signup() {
-  const { signUpWithGoogle, signUpWithEmail } =
+  const { signInWithGoogle, signUpWithGoogle, signUpWithEmail } =
     useAuthHandlers();
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);

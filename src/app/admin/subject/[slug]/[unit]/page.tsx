@@ -10,7 +10,7 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { getUserAccess } from "@/components/hooks/users";
 import { useEffect, useState } from "react";
-import type { Subject } from "@/types";
+import { Subject } from "@/types";
 import usePathname from "@/components/client/pathname";
 
 const Page = () => {
@@ -59,7 +59,7 @@ const Page = () => {
     };
 
     fetchItems();
-  }, [collectionId, instanceId, setQuestions, unitId]);
+  }, []);
 
   const handleSave = async () => {
     try {

@@ -10,7 +10,7 @@ import {
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "./firebase"; // Firestore instance
 import { useRouter } from "next/navigation";
-import type { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
+import { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
 
 export const useAuthHandlers = () => {
   const router = useRouter();

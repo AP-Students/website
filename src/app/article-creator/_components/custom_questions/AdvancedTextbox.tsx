@@ -1,6 +1,6 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useCallback, useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
-import type { QuestionFormat, questionInput } from "@/types/questions";
+import { QuestionFormat, questionInput } from "@/types/questions";
 import { QuestionsInput } from "./QuestionInstance";
 import { Paperclip, Trash } from "lucide-react";
 import { deleteObject, getStorage, ref } from "firebase/storage";
@@ -103,7 +103,7 @@ export default function AdvancedTextbox({
         setFileExists(true);
       }
     }
-  }, [questionInstance, oIndex, origin]);
+  }, [questionInstance]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Keys are being handled by EditorJS rather than default behavior, so we need to block the EditorJS behavior

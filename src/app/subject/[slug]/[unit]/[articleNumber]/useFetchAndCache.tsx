@@ -6,8 +6,8 @@ import {
   revertTableObjectToArray,
   getKey,
 } from "@/app/article-creator/_components/FetchArticleFunctions";
-import type { Subject } from "@/types";
-import type { Content } from "@/types/content";
+import { Subject } from "@/types";
+import { Content } from "@/types/content";
 
 const CACHE_EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
 
@@ -110,7 +110,7 @@ export const useFetchAndCache = (user: any, params: any) => {
     };
 
     fetchData();
-  });
+  }, []);
 
   return { subject, content, loading, error };
 };

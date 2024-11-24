@@ -2,7 +2,7 @@
 
 import { MapPin, Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { QuestionFormat } from "@/types/questions";
+import { QuestionFormat } from "@/types/questions";
 
 interface FooterProps {
   goToQuestion: (index: number) => void;

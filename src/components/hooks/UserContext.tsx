@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { getUser } from "./users";
-import type { User } from "@/types/user";
+import { User } from "@/types/user";
 
 
 interface UserContextType {
