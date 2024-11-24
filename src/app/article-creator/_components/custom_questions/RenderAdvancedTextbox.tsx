@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import katex from "katex";
-import { questionInput } from "@/types/questions";
+import type { questionInput } from "@/types/questions";
 import "@/app/article-creator/katexStyling.css";
+import Image from "next/image";
 
 interface Props {
   content: questionInput;
@@ -101,10 +102,11 @@ export const RenderContent: React.FC<Props> = ({ content }) => {
             setElements((prev) => [
               ...prev,
               <div key={content.fileKey} className="my-2">
-                <img
+                <Image
                   src={fileURL}
                   alt="Uploaded image"
                   className="h-auto max-w-full"
+                  fill={true}
                 />
               </div>,
             ]);
@@ -132,10 +134,11 @@ export const RenderContent: React.FC<Props> = ({ content }) => {
         setElements((prev) => [
           ...prev,
           <div key={content.fileKey} className="my-2">
-            <img
-              src={content.fileURL}
+            <Image
+              src={content.fileURL as string}
               alt="Uploaded image"
               className="h-auto max-w-full"
+              fill={true}
             />
           </div>,
         ]);

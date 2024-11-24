@@ -1,4 +1,4 @@
-import {
+import type {
   BlockToolConstructable,
   BlockToolConstructorOptions,
   ToolConfig,
@@ -6,7 +6,7 @@ import {
 import ReactDOM from "react-dom/client";
 import { QuestionsInput } from "./QuestionInstance";
 import { v4 as uuidv4 } from "uuid";
-import { QuestionFormat } from "@/types/questions";
+import type { QuestionFormat } from "@/types/questions";
 
 //@ts-expect-error
 export class QuestionsAddCard implements BlockToolConstructable {
@@ -38,7 +38,7 @@ export class QuestionsAddCard implements BlockToolConstructable {
     return wrapper;
   }
 
-  save(blockContent: HTMLElement): { instanceId: string; questions: QuestionFormat[] } {
+  save(): { instanceId: string; questions: QuestionFormat[] } {
     // Load questions from localStorage or initialize to an empty array
     const storageKey = `questions_${this.instanceId}`;
     const savedQuestions = localStorage.getItem(storageKey);

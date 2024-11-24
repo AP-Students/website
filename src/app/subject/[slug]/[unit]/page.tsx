@@ -4,8 +4,8 @@ import TestRenderer from "@/app/questions/testRenderer";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { Subject } from "@/types";
-import { QuestionFormat } from "@/types/questions";
+import type { Subject } from "@/types";
+import type { QuestionFormat } from "@/types/questions";
 
 const pathname = window.location.pathname;
 
@@ -47,7 +47,7 @@ const Page = () => {
     };
 
     fetchQuestions();
-  }, []);
+  });
 
   // Render TestRenderer only for clients without admin privileges
 

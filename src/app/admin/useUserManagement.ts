@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { getAllUsers, updateUserRole } from "@/components/hooks/users";
-import { User } from "@/types/user";
+import type { User } from "@/types/user";
 
 export const useUserManagement = (authUser: User | null) => {
   const [users, setUsers] = useState<User[]>([]);
@@ -25,7 +25,7 @@ export const useUserManagement = (authUser: User | null) => {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  });
 
   const handleRoleChange = async (
     selectedUser: User,

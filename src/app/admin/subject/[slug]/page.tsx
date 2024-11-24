@@ -8,7 +8,7 @@ import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import Link from "next/link";
 import apClassesData from "@/app/admin/apClasses.json";
-import { Subject } from "@/types";
+import type { Subject } from "@/types";
 import Navbar from "@/components/ui/navbar";
 import Footer from "@/components/ui/footer";
 import usePathname from "@/components/client/pathname";
@@ -86,7 +86,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
       }
     };
     fetchSubject();
-  }, [user]);
+  }, [user, params.slug, setError, setLoading]);
 
   const addUnit = () => {
     if (!newUnitTitle.trim()) return;

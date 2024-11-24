@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { QuestionFormat } from "@/types/questions";
+import type { QuestionFormat } from "@/types/questions";
 import CheckForUnderstanding from "@/app/questions/checkForUnderstanding";
 import QuizRenderer from "@/app/questions/quizRenderer";
 import QuestionsInputInterface from "./QuestionsInputInterface";

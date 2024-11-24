@@ -6,7 +6,7 @@ import Navbar from "@/components/ui/navbar";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-const Page = ({ params }: { params: { slug: string } }) => {
+const Page = ({}: { params: { slug: string } }) => {
   const { user, loading} = useUser();
 
   const router = useRouter();
@@ -23,7 +23,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
     if ((!user || user?.access === "user") && !loading) {
       router.push("/");
     }
-  }, [user]); 
+  }, [user, loading, router]); 
 
   return (
     <div className="relative flex grow flex-col">

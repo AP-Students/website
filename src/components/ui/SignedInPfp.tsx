@@ -4,6 +4,7 @@ import { signOut } from "firebase/auth";
 import React, { useState } from "react";
 import { auth } from "@/lib/firebase";
 import Link from "next/link";
+import Image from "next/image";
 import { UserProvider, useUser } from "../hooks/UserContext";
 
 const SignedInPfp = () => {
@@ -16,10 +17,10 @@ const SignedInPfp = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
 
-  const handleChangePfp = () => {
-    console.log("user", user);
-    console.log("Changing profile picture...");
-  };
+  // const handleChangePfp = () => {
+  //   console.log("user", user);
+  //   console.log("Changing profile picture...");
+  // };
 
   return (
     <UserProvider>
@@ -29,10 +30,12 @@ const SignedInPfp = () => {
           <span>{user.displayName}</span>
           <div onClick={toggleDropdown} className="relative cursor-pointer">
             {user.photoURL ? (
-              <img
+              <Image
                 src={user.photoURL}
                 alt={user.displayName || user.email}
-                style={{ width: "40px", borderRadius: "50%" }}
+                style={{ borderRadius: "50%" }}
+                width={40}
+                height={40}
               />
             ) : (
               <div

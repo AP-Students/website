@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect, type ReactNode } from "react";
-import { X } from "lucide-react";
 
 export interface Highlight {
   id: string;

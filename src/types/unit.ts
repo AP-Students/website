@@ -1,5 +1,5 @@
 import { type Chapter } from ".";
-import { QuestionFormat } from "./questions";
+import type { QuestionFormat } from "./questions";
 
 export type Unit = {
   unit: number;

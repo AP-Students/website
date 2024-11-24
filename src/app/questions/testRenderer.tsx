@@ -8,7 +8,7 @@ import Footer from "./digital-testing/_components/Footer";
 import type { QuestionFormat } from "@/types/questions";
 import { RenderContent } from "../article-creator/_components/custom_questions/RenderAdvancedTextbox";
 import Highlighter, {
-  Highlight,
+  type Highlight,
 } from "./digital-testing/_components/Highlighter";
 import ReviewPage from "./digital-testing/_components/ReviewPage";
 import clsx from "clsx";
@@ -81,7 +81,7 @@ export default function DigitalTestingPage({
   const [showEliminationTools, setShowEliminationTools] = useState(false);
   const [submittedAnswers, setSubmittedAnswers] = useState(false);
   const [showReviewPage, setShowReviewPage] = useState(false);
-  const [showTools, setShowTools] = useState(false);
+  // const [showTools, setShowTools] = useState(false);
 
   useEffect(() => {
     setQuestions(inputQuestions);
