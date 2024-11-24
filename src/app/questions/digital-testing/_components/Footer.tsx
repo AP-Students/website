@@ -74,7 +74,7 @@ export default function Footer({
               <MapPin className="mr-1 inline" /> Current
             </p>
             <p className="flex">
-              <div className="mr-1 size-6 border-2 border-dotted border-gray-400"></div>
+              <span className="mr-1 size-6 border-2 border-dotted border-gray-400"></span>
               Unanswered
             </p>
             <p className="flex text-nowrap">
