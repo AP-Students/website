@@ -30,7 +30,9 @@ export default function UserManagementPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [reauthModalOpen, setReauthModalOpen] = useState<boolean>(false);
-  const [reauthAction, setReauthAction] = useState<"email" | "password" | "delete" | null>(null);
+  const [reauthAction, setReauthAction] = useState<
+    "email" | "password" | "delete" | null
+  >(null);
 
   // Temporary states to hold new values until reauthentication is successful
   const [tempEmail, setTempEmail] = useState<string>("");
@@ -59,14 +61,16 @@ export default function UserManagementPage() {
     setErrors({});
     setSuccessMessage(null);
 
-    const displayName = (event.currentTarget.displayName.value as string).trim();
+    const displayName = (
+      event.currentTarget.displayName.value as string
+    ).trim();
     if (!user) return;
     if (displayName === user.displayName) return;
 
     try {
       await updateDisplayName(user.uid, displayName);
       setUser((prevUser) =>
-        prevUser ? { ...prevUser, displayName } : prevUser
+        prevUser ? { ...prevUser, displayName } : prevUser,
       );
       setSuccessMessage("Display name updated successfully.");
     } catch (error: any) {
@@ -150,7 +154,7 @@ export default function UserManagementPage() {
   const onReauthSuccess = () => {
     if (!reauthAction) return;
 
-   if (reauthAction === "password" && tempPassword) {
+    if (reauthAction === "password" && tempPassword) {
       handleConfirmUpdatePassword();
     } else if (reauthAction === "delete") {
       handleConfirmDeleteAccount();
@@ -181,14 +185,16 @@ export default function UserManagementPage() {
     <div
       className={`${outfit.variable} flex min-h-screen items-center justify-center bg-primary-foreground font-sans`}
     >
-      <div className="w-full max-w-3xl bg-white shadow-lg rounded-lg p-8">
+      <div className="w-full max-w-3xl rounded-lg bg-white p-8 shadow-lg">
         <button
           onClick={() => router.back()}
           className="mb-6 text-blue-500 hover:underline"
         >
           ← Back
         </button>
-        <h1 className="mb-6 text-3xl font-bold text-gray-800">User Management</h1>
+        <h1 className="mb-6 text-3xl font-bold text-gray-800">
+          FiveHive Account
+        </h1>
         <p className="mb-8 text-gray-600">
           Manage your account details below. Click "Save Changes" to update.
         </p>
@@ -225,7 +231,7 @@ export default function UserManagementPage() {
               <span className="text-sm text-red-600">{errors.displayName}</span>
             )}
             <Button className="self-end text-sm font-semibold" type="submit">
-              Save Changes
+              Save
             </Button>
           </form>
 
@@ -249,7 +255,7 @@ export default function UserManagementPage() {
                 <span className="text-sm text-red-600">{errors.password}</span>
               )}
               <Button className="self-end text-sm font-semibold" type="submit">
-                Save Changes
+                Save
               </Button>
             </form>
           )}
@@ -262,6 +268,13 @@ export default function UserManagementPage() {
             <label className="text-sm font-semibold text-gray-600">
               Profile Picture URL
             </label>
+            {photoPreview && (
+              <img
+                src={photoPreview}
+                alt="Profile Preview"
+                className="mt-4 h-24 w-24 rounded-full border"
+              />
+            )}
             <input
               type="url"
               name="photoURL"
@@ -272,29 +285,25 @@ export default function UserManagementPage() {
             {errors.photoURL && (
               <span className="text-sm text-red-600">{errors.photoURL}</span>
             )}
-            {photoPreview && (
-              <img
-                src={photoPreview}
-                alt="Profile Preview"
-                className="mt-4 h-24 w-24 rounded-full border"
-              />
-            )}
             <Button className="self-end text-sm font-semibold" type="submit">
-              Save Changes
+              Save
             </Button>
           </form>
 
           {/* Delete Account */}
           <div className="mt-8">
-            <h2 className="mb-2 text-lg font-semibold text-red-600">Danger Zone</h2>
+            <h2 className="mb-2 text-lg font-semibold text-red-600">
+              Danger Zone
+            </h2>
             <button
               onClick={handleDeleteAccount}
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              className="rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700"
             >
               Delete Account
             </button>
             <p className="mt-2 text-sm text-gray-500">
-              This action cannot be undone. All your data will be permanently deleted.
+              This action cannot be undone. All your data will be permanently
+              deleted.
             </p>
           </div>
         </div>
