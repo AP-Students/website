@@ -13,7 +13,9 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +25,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       setError(null);
       const fetchedUser = await getUser();
-      if(fetchedUser) {
+      if (fetchedUser) {
         setUser(fetchedUser);
       }
       setLoading(false);
@@ -60,8 +62,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, []);
 
-  if(loading){
-    return <div className="flex min-h-screen items-center justify-center text-3xl">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-3xl">
+        Loading...
+      </div>
+    );
   }
 
   if (error) {
@@ -81,7 +87,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useUser = (): UserContextType => {
   const context = useContext(UserContext);
-  
+
   if (context === undefined) {
     throw new Error("useUser must be used within a UserProvider");
   }

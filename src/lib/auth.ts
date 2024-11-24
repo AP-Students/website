@@ -107,6 +107,7 @@ export const useAuthHandlers = () => {
       const user = userCredential.user;
 
       const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
 
       if (!userDoc.exists()) {
         await setDoc(userDocRef, {
@@ -159,12 +160,12 @@ export const useAuthHandlers = () => {
           getMessageFromCode(error.code) ||
           "An unknown error occurred",
       };
-    };
-  }
+    }
+  };
 
   const undoEmailChange = async (code: string) => {
     applyActionCode(auth, code);
-  }
+  };
 
   return {
     signUpWithEmail,

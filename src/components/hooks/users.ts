@@ -37,7 +37,6 @@ export const getUserAccess = async (): Promise<string | null> => {
 };
 
 export const getUser = async (): Promise<User | null> => {
-  
   if (cachedUser && isCacheValid()) {
     // Update the access property if the user is already cached
     const newAccess = await getUserAccess();
@@ -61,7 +60,18 @@ export const getUser = async (): Promise<User | null> => {
 
         try {
           const userDocRef = doc(db, "users", firebaseUser!.uid);
-          const userDoc = await getDoc(userDocRef);
+          let userDoc = await getDoc(userDocRef);
+          if (!userDoc.exists()) {
+            // Retry up to 5 times because it takes time after sign up to create user doc
+            for (let i = 0; i < 5; i++) {
+              await new Promise((resolve) => setTimeout(resolve, 500)); // Wait 0.5 seconds
+              userDoc = await getDoc(userDocRef);
+              if (userDoc.exists()) {
+                break;
+              }
+            }
+          }
+
           if (userDoc.exists()) {
             const userData = userDoc.data();
             const mappedUser: User = {
