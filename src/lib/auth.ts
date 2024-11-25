@@ -11,9 +11,11 @@ import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "./firebase"; // Firestore instance
 import { useRouter } from "next/navigation";
 import { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
+import { useUser } from "@/components/hooks/UserContext";
 
 export const useAuthHandlers = () => {
   const router = useRouter();
+  const { updateUser } = useUser(); // Get the updateUser function
 
   const getMessageFromCode = (code: string): string | undefined => {
     return code.split("/").pop()?.replaceAll("-", " ");
@@ -50,7 +52,7 @@ export const useAuthHandlers = () => {
       });
 
       router.push("/");
-      // Allows time for db to store user, then refreshes page to reload user and replace sign up + login page. 
+      // Allows time for db to store user, then refreshes page to reload user and replace sign up + login page.
       setTimeout(() => {
         router.refresh();
       }, 500);
@@ -86,10 +88,9 @@ export const useAuthHandlers = () => {
         };
       }
 
+
       router.push("/");
-      setTimeout(() => {
-        router.refresh();
-      }, 500);
+      await updateUser();
       return userCredential;
     } catch (e: any) {
       const error = e as FirebaseAuthError;
@@ -139,27 +140,21 @@ export const useAuthHandlers = () => {
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
 
-    try {
-      const userCredential = await signInWithPopup(auth, provider);
-      const user = userCredential.user;
+    const userCredential = await signInWithPopup(auth, provider);
+    const user = userCredential.user;
 
-      // Check if user data exists in Firestore
-      const userDocRef = doc(db, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
+    // Check if user data exists in Firestore
+    const userDocRef = doc(db, "users", user.uid);
+    const userDoc = await getDoc(userDocRef);
 
-      if (!userDoc.exists()) {
-        throw {
-          code: "auth/invalid-email",
-        };
-      }
-
-      router.push("/");
-      setTimeout(() => {
-        router.refresh();
-      }, 500);
-      
-    } catch (error) {
+    if (!userDoc.exists()) {
+      throw {
+        code: "auth/invalid-email",
+      };
     }
+
+    router.push("/");
+    await updateUser();
   };
 
   const forgotPassword = async (email: string) => {

@@ -4,7 +4,7 @@ import CheckForUnderstanding from "@/app/questions/checkForUnderstanding";
 import QuizRenderer from "@/app/questions/quizRenderer";
 import QuestionsInputInterface from "./QuestionsInputInterface";
 
-export const useSyncedQuestions = (instanceId: string) => {
+export const syncedQuestions = (instanceId: string) => {
   const storageKey = `questions_${instanceId}`;
   const [questions, setQuestions] = useState<QuestionFormat[]>(() => {
     const savedQuestions = localStorage.getItem(storageKey);
@@ -80,7 +80,7 @@ export const useSyncedQuestions = (instanceId: string) => {
 export const QuestionsInput: React.FC<{ instanceId: string }> = ({
   instanceId,
 }) => {
-  const { questions, setQuestions } = useSyncedQuestions(instanceId);
+  const { questions, setQuestions } = syncedQuestions(instanceId);
 
   return (
     <div>
@@ -95,7 +95,7 @@ export const QuestionsInput: React.FC<{ instanceId: string }> = ({
 export const QuestionsOutput: React.FC<{ instanceId: string }> = ({
   instanceId,
 }) => {
-  const { questions } = useSyncedQuestions(instanceId);
+  const { questions } = syncedQuestions(instanceId);
 
   return (
     <div className="mt-8">

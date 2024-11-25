@@ -15,6 +15,8 @@ const outfit = Outfit({
 
 export default function Login() {
   const { signInWithGoogle, signInWithEmail } = useAuthHandlers();
+  
+  
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -47,13 +49,14 @@ export default function Login() {
     setLoading(true);
     try {
       await signInWithEmail(email, password);
-    } catch (e: any) {
+    } catch (e) {
       const error = e as FirebaseAuthError;
       switch (error.code) {
         case "auth/invalid-email":
           tempErrors.push(
             "Email doesn't exist. Please sign up to join FiveHive.",
           );
+          console.log("temp errors", tempErrors);
           break;
         case "auth/invalid-credential":
           tempErrors.push("Incorrect password.");
@@ -66,6 +69,7 @@ export default function Login() {
           break;
       }
     }
+
     setErrors(tempErrors);
     setLoading(false);
     return;

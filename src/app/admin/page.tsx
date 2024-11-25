@@ -1,7 +1,7 @@
 "use client";
 import Navbar from "@/components/ui/navbar";
 import Footer from "@/components/ui/footer";
-import { User } from "@/types/user";
+import type { User } from "@/types/user";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUserManagement } from "./useUserManagement";
@@ -23,6 +23,7 @@ const Page = () => {
     apClass.toLowerCase().includes(searchTermAPClasses.toLowerCase()),
   );
 
+  // Users here is refering to the FiveHive users propagated in the changeUserRole (only seen by admins)
   const { users, error, handleRoleChange } = useUserManagement(user);
 
   const openModal = (user: User) => {
@@ -39,7 +40,7 @@ const Page = () => {
     router.push("/");
     return null;
   }
-
+  
   return (
     <div>
       <Navbar />
@@ -65,10 +66,9 @@ const Page = () => {
                 />
                 <ul className="class-list max-h-60 overflow-y-auto">
                   {!error &&
-                    users!.map(
-                      (
-                        u, // If error, it will show error message. Otherwise, it will show users
-                      ) => (
+                    users.map(
+                      // If error, it will show error message. Otherwise, it will show users
+                      (u,) => (
                         <li
                           key={u.uid}
                           className="grid cursor-pointer grid-cols-1 gap-4 rounded-md border p-4 text-center shadow-md hover:bg-gray-200 md:grid-cols-2 lg:grid-cols-3"
@@ -135,18 +135,26 @@ const Page = () => {
             <div className="flex justify-between space-x-4">
               <button
                 className="rounded-lg bg-blue-500 p-2 text-white"
-                onClick={() => {
-                  handleRoleChange(selectedUser, "member");
-                  closeModal();
+                onClick={async () => {
+                  try {
+                    await handleRoleChange(selectedUser, "member");
+                    closeModal(); // Runs only after handleRoleChange succeeds
+                  } catch (error) {
+                    alert(error instanceof Error ? error.message : "An unexpected error occurred.");
+                  }
                 }}
               >
                 Set to Member
               </button>
               <button
                 className="rounded-lg bg-red-500 p-2 text-white"
-                onClick={() => {
-                  handleRoleChange(selectedUser, "user");
-                  closeModal();
+                onClick={async () => {
+                  try {
+                    await handleRoleChange(selectedUser, "member");
+                    closeModal(); // Runs only after handleRoleChange succeeds
+                  } catch (error) {
+                    alert(error instanceof Error ? error.message : "An unexpected error occurred.");
+                  }
                 }}
               >
                 Set to User

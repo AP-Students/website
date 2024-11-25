@@ -93,12 +93,14 @@ export const getUser = async (): Promise<User | null> => {
 };
 
 // Fetch all users from Firestore
-export const getAllUsers = async (): Promise<User[]> => {
-  let users: User[] = [];
+let users: User[] = [];
 
-  if (users) {
+export const getAllUsers = async (): Promise<User[]> => {  
+
+  if (users.length > 0) {
     return users;
   }
+
 
   try {
     const usersCollection = collection(db, "users");

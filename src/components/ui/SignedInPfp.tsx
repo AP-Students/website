@@ -16,11 +16,6 @@ const SignedInPfp = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
 
-  const handleChangePfp = () => {
-    console.log("user", user);
-    console.log("Changing profile picture...");
-  };
-
   return (
     <UserProvider>
       <div className="relative">
@@ -55,19 +50,8 @@ const SignedInPfp = () => {
         {/* Dropdown Menu */}
         {isDropdownOpen && (
           <div className="absolute right-0 mt-2 max-w-48 whitespace-nowrap rounded-lg border border-gray-200 bg-white shadow-lg">
-            {/* <div className="px-4 py-2 w-full">
-            <span>{user.displayName || user.email}</span>
-          </div>
-          <hr className="border-gray-200" />
-          <button
-            onClick={handleChangePfp}
-            className="block px-4 py-2 text-left hover:bg-gray-100 w-full"
-          >
-            Change Profile Picture
-          </button>
-          <hr className="border-gray-200" /> */}
 
-            {user.access === "admin" && (
+            {(user.access === "admin" || user.access === "member") && (
               <Link
                 className="block w-full px-4 py-2 text-left hover:bg-gray-100"
                 href="/admin"

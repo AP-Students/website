@@ -17,5 +17,5 @@ const setCustomClaims = async (uid: string) => {
   }
 };
 
-// Example usage
+// Example usage (Args is uid)
 setCustomClaims('DxMgvV6dWYOM6PmBShujOvLm52'); 
