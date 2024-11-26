@@ -8,7 +8,7 @@ import Footer from "./digital-testing/_components/Footer";
 import type { QuestionFormat } from "@/types/questions";
 import { RenderContent } from "../article-creator/_components/custom_questions/RenderAdvancedTextbox";
 import Highlighter, {
-  Highlight,
+  type Highlight,
 } from "./digital-testing/_components/Highlighter";
 import ReviewPage from "./digital-testing/_components/ReviewPage";
 import clsx from "clsx";
@@ -81,7 +81,8 @@ export default function DigitalTestingPage({
   const [showEliminationTools, setShowEliminationTools] = useState(false);
   const [submittedAnswers, setSubmittedAnswers] = useState(false);
   const [showReviewPage, setShowReviewPage] = useState(false);
-  const [showTools, setShowTools] = useState(false);
+  // Maybe later (Good for new features)
+  // const [showTools, setShowTools] = useState(false);
 
   useEffect(() => {
     setQuestions(inputQuestions);
@@ -120,7 +121,7 @@ export default function DigitalTestingPage({
           ? [optionId]
           : prev[currentQuestionIndex]?.includes(optionId)
             ? prev[currentQuestionIndex].filter((id) => id !== optionId)
-            : [...(prev[currentQuestionIndex] || []), optionId],
+            : [...(prev[currentQuestionIndex] ?? []), optionId],
     }));
   };
 
@@ -152,7 +153,7 @@ export default function DigitalTestingPage({
                   onUpdateHighlights={handleContentHighlights}
                 >
                   <RenderContent
-                    content={questions[currentQuestionIndex]!.content!}
+                    content={questions[currentQuestionIndex]!.content}
                   />
                 </Highlighter>
               </div>
@@ -229,7 +230,7 @@ export default function DigitalTestingPage({
               <QuestionPanel
                 showEliminationTools={showEliminationTools}
                 questionInstance={questions[currentQuestionIndex]}
-                selectedAnswers={selectedAnswers[currentQuestionIndex] || []}
+                selectedAnswers={selectedAnswers[currentQuestionIndex] ?? []}
                 onSelectAnswer={handleSelectAnswer}
                 currentQuestionIndex={currentQuestionIndex}
                 questionsLength={questions.length}

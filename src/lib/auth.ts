@@ -10,7 +10,7 @@ import {
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "./firebase"; // Firestore instance
 import { useRouter } from "next/navigation";
-import { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
+import { type FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
 import { useUser } from "@/components/hooks/UserContext";
 
 export const useAuthHandlers = () => {
@@ -56,14 +56,14 @@ export const useAuthHandlers = () => {
       setTimeout(() => {
         router.refresh();
       }, 500);
-    } catch (e: any) {
+    } catch (e: unknown) {
       const error = e as FirebaseAuthError;
 
       throw {
         code: error.code,
         message:
-          error.message ||
-          getMessageFromCode(error.code) ||
+          error.message ??
+          getMessageFromCode(error.code) ??
           "There was an error in sign up",
       };
     }
@@ -92,13 +92,13 @@ export const useAuthHandlers = () => {
       router.push("/");
       await updateUser();
       return userCredential;
-    } catch (e: any) {
+    } catch (e: unknown) {
       const error = e as FirebaseAuthError;
       throw {
         code: error.code,
         message:
-          error.message ||
-          getMessageFromCode(error.code) ||
+          error.message ??
+          getMessageFromCode(error.code) ??
           "There was an error in login",
       };
     }
@@ -125,13 +125,13 @@ export const useAuthHandlers = () => {
       setTimeout(() => {
         router.refresh();
       }, 500);
-    } catch (e: any) {
+    } catch (e: unknown) {
       const error = e as FirebaseAuthError;
       throw {
         code: error.code,
         message:
-          error.message ||
-          getMessageFromCode(error.code) ||
+          error.message ??
+          getMessageFromCode(error.code) ??
           "There was an error signing up with Google",
       };
     }
@@ -160,13 +160,13 @@ export const useAuthHandlers = () => {
   const forgotPassword = async (email: string) => {
     try {
       await sendPasswordResetEmail(auth, email);
-    } catch (e: any) {
+    } catch (e: unknown) {
       const error = e as FirebaseAuthError;
       throw {
         code: error.code,
         message:
-          error.message ||
-          getMessageFromCode(error.code) ||
+          error.message ??
+          getMessageFromCode(error.code) ??
           "An unknown error occurred",
       };
     }

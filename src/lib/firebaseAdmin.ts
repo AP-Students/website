@@ -8,14 +8,14 @@ admin.initializeApp({
 });
 
 // Function to set custom claims
-const setCustomClaims = async (uid: string) => {
-  try {
-    // Set custom user claims
-    await admin.auth().setCustomUserClaims(uid, { admin: true });
-  } catch (error) {
-    console.error('Error setting custom claims:', error);
-  }
-};
+// const setCustomClaims = async (uid: string) => {
+//   try {
+//     // Set custom user claims
+//     await admin.auth().setCustomUserClaims(uid, { admin: true });
+//   } catch (error) {
+//     console.error('Error setting custom claims:', error);
+//   }
+// };
 
-// Example usage (Args is uid)
-setCustomClaims('DxMgvV6dWYOM6PmBShujOvLm52'); 
+// Example usage (Args is uid) -> Should only be used for testing purposes; do not deploy with this uncommented
+// setCustomClaims('uid'); 

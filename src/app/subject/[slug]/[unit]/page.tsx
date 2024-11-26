@@ -4,8 +4,8 @@ import TestRenderer from "@/app/questions/testRenderer";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { Subject } from "@/types";
-import { QuestionFormat } from "@/types/questions";
+import { type Subject } from "@/types";
+import { type QuestionFormat } from "@/types/questions";
 
 const pathname = window.location.pathname;
 
@@ -27,8 +27,8 @@ const Page = () => {
           const unitIndex = parseInt(unitId!, 10) - 1;
 
           const time =
-            data && data.units[unitIndex] && data.units[unitIndex].test!.time;
-          setTime((time && time / 60) || 20);
+            data?.units[unitIndex]?.test!.time;
+          setTime((time && time / 60) ?? 20);
           const testName = data && data.title + " Unit " + (unitIndex + 1);
           setTestName(testName);
 
@@ -41,13 +41,15 @@ const Page = () => {
         } else {
           console.error("Subject document does not exist!");
         }
-      } catch (error: any) {
-        console.error("Error fetching subject data:", error.message);
+      } catch (error: unknown) {
+        console.error("Error fetching subject data:", error);
       }
     };
 
-    fetchQuestions();
-  }, []);
+    fetchQuestions().catch((error) => {
+      console.error("Error fetching subject data:", error);
+    });
+  }, [collectionId, unitId]);
 
   // Render TestRenderer only for clients without admin privileges
 

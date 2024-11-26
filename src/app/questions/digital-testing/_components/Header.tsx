@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from "react";
-import ToolsDropdown from "./ToolsDropdown";
 
 interface HeaderProps {
   examName: string;
@@ -31,7 +30,7 @@ const Header: React.FC<HeaderProps> = ({
     }, 1000);
 
     return () => clearInterval(timer); // Clean up interval on component unmount
-  }, []);
+  }, [setSubmittedAnswers]);
 
   // Close directions when clicking outside
   useEffect(() => {

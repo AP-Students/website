@@ -14,7 +14,7 @@ export class QuestionsAddCard implements BlockToolConstructable {
   private config: ToolConfig;
   private data: any;
   public instanceId: string;
-  private questions: QuestionFormat[];
+  public questions: QuestionFormat[];
 
   constructor({ data, config }: BlockToolConstructorOptions<any, any>) {
     this.data = data;

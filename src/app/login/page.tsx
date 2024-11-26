@@ -6,7 +6,7 @@ import { useAuthHandlers } from "@/lib/auth";
 import React, { useState } from "react";
 import Link from "next/link";
 import Button from "@/components/login/submitButton";
-import { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
+import type { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -174,7 +174,7 @@ export default function Login() {
         <div className="my-8"></div>
 
         <div className="flex justify-center text-black">
-          <span className="pr-2">Don't have an account?</span>
+          <span className="pr-2">Don&apos;t have an account?</span>
           <Link className="hover:underline" href="/signup">
             Sign up
           </Link>

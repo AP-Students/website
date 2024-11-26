@@ -1,10 +1,10 @@
-import { OutputBlockData, type OutputData } from "@editorjs/editorjs";
+import type { OutputBlockData, OutputData } from "@editorjs/editorjs";
 import edjsParser from "editorjs-parser";
 import katex from "katex";
 import hljs from "highlight.js";
 import "@/styles/highlightjs.css";
 import { useEffect, useRef } from "react";
-import { createRoot, Root } from "react-dom/client";
+import { createRoot, type Root } from "react-dom/client";
 import { QuestionsOutput } from "./custom_questions/QuestionInstance";
 import type { QuestionFormat } from "@/types/questions";
 import "@/app/article-creator/katexStyling.css";
@@ -12,7 +12,14 @@ import { getUser } from "@/components/hooks/users";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { getKey } from "./FetchArticleFunctions";
-import { error } from "console";
+import { QuestionsAddCard } from "./custom_questions/QuestionsAddCard";
+
+// TS will complain if I dont build an interface for docSnap.data(). This way I can access blocks type through inferance of docSnap.data().
+interface DocumentData {
+  data: {
+    blocks: OutputBlockData[];
+  };
+}
 
 const customParsers = {
   alert: (data: { align: string; message: string; type: string }) => {
@@ -121,11 +128,12 @@ const Renderer = (props: { content: OutputData }) => {
           const docSnap = await getDoc(docRef);
 
           if (docSnap.exists()) {
-            const data = docSnap.data().data.blocks as OutputBlockData[];
+            const docData = docSnap.data() as DocumentData;
+            const data = docData.data.blocks;
 
             // Process data.blocks only once
             data.forEach((block) => {
-              if (block.type === "questionsAddCard") {
+              if (block.data instanceof QuestionsAddCard) {
                 const instanceId = block.data.instanceId;
                 const storageKey = `questions_${instanceId}`;
 
@@ -168,8 +176,8 @@ const Renderer = (props: { content: OutputData }) => {
       // Proceed to render the components
       if (containerRef.current) {
         props.content.blocks.forEach((block) => {
-          if (block.type === "questionsAddCard") {
-            const instanceId = block.data.instanceId as String;
+          if (block.data instanceof QuestionsAddCard) {
+            const instanceId = block.data.instanceId;
             const placeholder = containerRef.current!.querySelector(
               `.questions-block-${instanceId}`,
             );

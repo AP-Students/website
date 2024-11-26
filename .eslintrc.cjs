@@ -12,6 +12,12 @@ const config = {
   ],
   rules: {
     "@typescript-eslint/array-type": "off",
+    '@typescript-eslint/ban-ts-comment': [
+      'error',
+      {
+        'ts-ignore': 'allow-with-description', // Allows ts-ignore with comments
+      },
+    ],
     "@typescript-eslint/consistent-type-definitions": "off",
     "@typescript-eslint/consistent-type-imports": [
       "warn",

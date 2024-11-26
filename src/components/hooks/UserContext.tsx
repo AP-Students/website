@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { getUser } from "./users";
-import { User } from "@/types/user";
+import type { User } from "@/types/user";
 
 interface UserContextType {
   user: User | null;
@@ -35,7 +35,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   useEffect(() => {
-    fetchUser();
+    fetchUser().catch((error) => {
+      console.error("Error fetching user:", error);
+      setLoading(false);
+    });
   }, []);
 
   const updateUser = async () => {

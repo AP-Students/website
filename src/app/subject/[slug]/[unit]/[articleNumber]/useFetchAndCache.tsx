@@ -6,12 +6,18 @@ import {
   revertTableObjectToArray,
   getKey,
 } from "@/app/article-creator/_components/FetchArticleFunctions";
-import { Subject } from "@/types";
-import { Content } from "@/types/content";
+import { type Subject } from "@/types";
+import { type Content } from "@/types/content";
+import { type User } from "@/types/user";
+import { type OutputData } from "@editorjs/editorjs";
+
+type Params = {
+  slug: string; // Add other properties if necessary
+};
 
 const CACHE_EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
 
-export const useFetchAndCache = (user: any, params: any) => {
+export const useFetchAndCache = (user: User | null, params: Params) => {
   const [subject, setSubject] = useState<Subject | null>(null);
   const [content, setContent] = useState<Content | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,7 +54,7 @@ export const useFetchAndCache = (user: any, params: any) => {
   // Retrieve cached subject with expiration check
   const getCachedSubject = async (title: string) => {
     const db = await openDatabase();
-    const cached = await db.get("subject", title);
+    const cached = await db.get("subject", title) as { title: string; data: Subject; timestamp: number };
     if (cached && Date.now() - cached.timestamp < CACHE_EXPIRATION_MS) {
       return cached.data;
     }
@@ -58,7 +64,7 @@ export const useFetchAndCache = (user: any, params: any) => {
   // Retrieve cached content with expiration check
   const getCachedContent = async (title: string) => {
     const db = await openDatabase();
-    const cached = await db.get("content", title);
+    const cached = await db.get("content", title) as { title: string; data: Content; timestamp: number };
     if (cached && Date.now() - cached.timestamp < CACHE_EXPIRATION_MS) {
       return cached.data;
     }
@@ -93,7 +99,7 @@ export const useFetchAndCache = (user: any, params: any) => {
           const pageDocRef = doc(db, "pages", key);
           const pageDocSnap = await getDoc(pageDocRef);
           if (pageDocSnap.exists()) {
-            const data = pageDocSnap.data()?.data;
+            const data = pageDocSnap.data()?.data as OutputData;
             revertTableObjectToArray(data);
             const contentData = { ...pageDocSnap.data(), data } as Content;
             setContent(contentData);
@@ -109,7 +115,10 @@ export const useFetchAndCache = (user: any, params: any) => {
       }
     };
 
-    fetchData();
+    fetchData().catch((error) => {
+      console.error("Error fetching subject or content data:", error);
+    });
+    //eslint-disable react-hooks/exhaustive-deps - Do this because it only triggers for component mount; rest of vars dont change. 
   }, []);
 
   return { subject, content, loading, error };
