@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import katex from "katex";
-import { questionInput } from "@/types/questions";
+import { type questionInput } from "@/types/questions";
 import "@/app/article-creator/katexStyling.css";
+import Image from "next/image"
 
 interface Props {
   content: questionInput;
@@ -35,7 +36,7 @@ export function getFileFromIndexedDB(name: string): Promise<File | null> {
 
   
         fileRequest.onsuccess = () => {
-          const fileBlob = fileRequest.result;
+          const fileBlob = fileRequest.result as File | Promise<File | null> | null;
           if (fileBlob) {
             resolve(fileBlob); // Return the file directly
           } else {
@@ -92,18 +93,21 @@ export const RenderContent: React.FC<Props> = ({ content }) => {
     // See if the file is stored in IndexedDB (cached) first, then check if we can pull from Firebase Storage
     if (content.fileKey) {
       getFileFromIndexedDB(content.fileKey).then((file) => {
-        // @ts-ignore - file is an object incasing file, not the file itself
-        if (file && file.file) {
-        // @ts-ignore - file is an object incasing file, not the file itself
-          const fileURL = URL.createObjectURL(file.file);
+        // @ts-expect-error - file is an object incasing file, not the file itself
+        if (file?.file) {
+          // @ts-expect-error - file is an object incasing file, not the file itself
+          const fileURL = URL.createObjectURL(file.file as Blob | MediaSource);
           
           if (content.fileKey!.startsWith("image/")) {
             setElements((prev) => [
               ...prev,
               <div key={content.fileKey} className="my-2">
-                <img
+                <Image
                   src={fileURL}
                   alt="Uploaded image"
+                  width={16}         
+                  height={9}         
+                  layout="responsive"
                   className="h-auto max-w-full"
                 />
               </div>,
@@ -125,6 +129,8 @@ export const RenderContent: React.FC<Props> = ({ content }) => {
             URL.revokeObjectURL(fileURL);
           };
         }
+      }).catch((error) => {
+        console.error("Error retrieving file from IndexedDB:", error);
       });
     }else if(content.fileURL) {
       // Set elements to the fileURL directly 
@@ -132,9 +138,12 @@ export const RenderContent: React.FC<Props> = ({ content }) => {
         setElements((prev) => [
           ...prev,
           <div key={content.fileKey} className="my-2">
-            <img
-              src={content.fileURL}
+            <Image
+              src={content.fileURL!}
               alt="Uploaded image"
+              width={16}         
+              height={9}         
+              layout="responsive"
               className="h-auto max-w-full"
             />
           </div>,
@@ -151,7 +160,7 @@ export const RenderContent: React.FC<Props> = ({ content }) => {
         ]);
       }
     } 
-  }, [content.fileKey]);
+  }, [content.fileKey, content.fileURL]);
 
   // useEffect to trigger rendering of text and file content
   useEffect(() => {

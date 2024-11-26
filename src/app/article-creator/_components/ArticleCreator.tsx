@@ -11,7 +11,7 @@ import { getUser, getUserAccess } from "@/components/hooks/users";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheckCircle } from "@fortawesome/free-solid-svg-icons";
 import { getFileFromIndexedDB } from "./custom_questions/RenderAdvancedTextbox";
-import { QuestionFormat } from "@/types/questions";
+import { type QuestionFormat } from "@/types/questions";
 import Renderer from "./Renderer";
 import { revertTableObjectToArray, getKey } from "./FetchArticleFunctions";
 
@@ -78,28 +78,24 @@ function ArticleCreator({ className }: { className?: string }) {
   });
 
   useEffect(() => {
-    const fetchSubject = async () => {
-      try {
-        const userAccess = await getUserAccess();
-        if (userAccess && (userAccess === "admin" || userAccess === "member")) {
-          const key = getKey(); 
-          const docRef = doc(db, "pages", key);
-          const docSnap = await getDoc(docRef);
-          const data = docSnap.data()?.data as OutputData;
-          revertTableObjectToArray(data);
+    (async () => {
+      const userAccess = await getUserAccess();
+      if (userAccess && (userAccess === "admin" || userAccess === "member")) {
+        const key = getKey();
+        const docRef = doc(db, "pages", key);
+        const docSnap = await getDoc(docRef);
+        const data = docSnap.data()?.data as OutputData;
+        revertTableObjectToArray(data);
 
-          setInitialData(data);
-          setData(data);
-        }
-      } catch (error: any) {
-        console.log("Error fetching subject data:", error.message);
+        setInitialData(data);
+        setData(data);
       }
-    };
-
-    fetchSubject();
+    })().catch((error) =>{
+      console.error("Error fetching data:", error);
+    });
   }, []);
 
-  const handleSave = async () => {
+  const openSaveModal = async () => {
     if (!data) {
       alert("Please enter the content.");
       return;
@@ -107,192 +103,212 @@ function ArticleCreator({ className }: { className?: string }) {
 
     setShowDropdown(true); // Show the dropdown to select the title
   };
-  const handleTitleSelect = async () => {
+
+  const handleSave = async () => {
     const user = await getUser();
     const pathParts = window.location.pathname.split("/").slice(-3);
-
+  
     if (!user || (user.access !== "admin" && user.access !== "member")) {
       alert("User is not authorized to perform this action.");
       return;
     }
-
+  
     const newArticle = {
       id: uuidv4(),
       createdAt: new Date(),
-      creator: user!,
+      creator: user,
       title: pathParts.join("/"),
       data,
     };
-
+  
     try {
       const docRef = doc(db, "pages", pathParts.join("-"));
-
+  
       // Function to process questions and upload files
-      const processQuestions = async (questions: QuestionFormat[]) => {
-        if (!user || (user.access !== "admin" && user.access !== "member")) {
-          alert("User is not authorized to perform this action.");
-          return;
-        }
+      const processQuestions = async (
+        questions: QuestionFormat[],
+      ): Promise<QuestionFormat[]> => {
+        // Collect all unique fileKeys from questions
 
-        return await Promise.all(
-          questions.map(async (questionInstance: QuestionFormat) => {
-            let updatedQuestion = { ...questionInstance };
-            const storage = getStorage();
-
-            // Create an array of promises for the body, options, and explanation uploads
-            const uploadPromises: Promise<any>[] = [];
-
-            // Handle body fileKey
-            if (updatedQuestion.question?.fileKey) {
-              uploadPromises.push(
-                (async () => {
-                  const fileObj = await getFileFromIndexedDB(
-                    updatedQuestion.question.fileKey!,
-                  );
-                  // @ts-ignore - fileObj is obj with id and file
-                  const file = fileObj?.file;
-
-                  if (file && file instanceof File) {
-                    const storageRef = ref(storage, `${questionInstance.question.fileKey}`);
-                    const snapshot = await uploadBytes(storageRef, file);
-                    const downloadURL = await getDownloadURL(snapshot.ref);
-
-                    updatedQuestion = {
-                      ...updatedQuestion,
-                      question: {
-                        ...updatedQuestion.question,
-                        fileURL: downloadURL,
-                      },
-                    };
-                  }
-                })(),
-              );
+        const allFileKeys = new Set<string>();
+  
+        questions.forEach((question) => {
+          if (question.question?.fileKey) {
+            allFileKeys.add(question.question.fileKey);
+          }
+          if (question.explanation?.fileKey) {
+            allFileKeys.add(question.explanation.fileKey);
+          }
+          if (question.content?.fileKey) {
+            allFileKeys.add(question.content.fileKey);
+          }
+          question.options.forEach((option) => {
+            if (option.value.fileKey) {
+              allFileKeys.add(option.value.fileKey);
             }
+          });
+        });
+  
+        // Read all files from IndexedDB
+        const fileKeyToFile = new Map<string, File>();
+  
+        await Promise.all(
+          Array.from(allFileKeys).map(async (fileKey) => {
+            const fileObj = await getFileFromIndexedDB(fileKey);
 
-            // Handle options with fileKeys (batching file uploads for options)
-            const updatedOptionsPromises = questionInstance.options.map(
-              async (option) => {
-                if (option.value.fileKey) {
-                  const fileObj = await getFileFromIndexedDB(
-                    option.value.fileKey,
-                  );
-                  // @ts-ignore - fileObj is obj with id and file
-                  const file = fileObj?.file;
+            
+            // @ts-expect-error: fileObj is returned as an object with 1 attr "file"; You must access file to actually get the file contents but TS doesnt know that
+            const file = fileObj?.file as File;
 
-                  if (file && file instanceof File) {
-                    const storageRef = ref(storage, `${option.value.fileKey}`);
-                    const snapshot = await uploadBytes(storageRef, file);
-                    const downloadURL = await getDownloadURL(snapshot.ref);
-
-                    return {
-                      ...option,
-                      value: {
-                        ...option.value,
-                        fileURL: downloadURL,
-                      },
-                    };
-                  }
-                }
-                return option; // Return the original option if no fileKey
-              },
-            );
-
-            // Add the options uploads to the uploadPromises
-            uploadPromises.push(
-              Promise.all(updatedOptionsPromises).then((updatedOptions) => {
-                updatedQuestion.options = updatedOptions;
-              }),
-            );
-
-            // Handle explanation fileKey
-            if (questionInstance.explanation?.fileKey) {
-              uploadPromises.push(
-                (async () => {
-                  const fileObj = await getFileFromIndexedDB(
-                    questionInstance.explanation.fileKey!,
-                  );
-                  // @ts-ignore - fileObj is obj with id and file
-                  const file = fileObj?.file;
-
-                  if (file && file instanceof File) {
-                    const storageRef = ref(
-                      storage,
-                      `${questionInstance.explanation.fileKey}`,
-                    );
-                    const snapshot = await uploadBytes(storageRef, file);
-                    const downloadURL = await getDownloadURL(snapshot.ref);
-
-                    updatedQuestion.explanation = {
-                      ...questionInstance.explanation,
-                      fileURL: downloadURL,
-                    };
-                  }
-                })(),
-              );
+            if (file) {
+              fileKeyToFile.set(fileKey, file);
+            } else {
+              console.warn(`File not found or invalid for fileKey: ${fileKey}`);
             }
-
-            // Wait for all file uploads to complete
-            await Promise.all(uploadPromises);
-
-            return updatedQuestion;
           }),
         );
+  
+        // Upload all files and get download URLs
+        const storage = getStorage();
+        const fileKeyToDownloadURL = new Map<string, string>();
+  
+        // Todo: Check whether the file already exists in the file base (Will save significant costs)
+        await Promise.all(
+          Array.from(fileKeyToFile.entries()).map(async ([fileKey, file]) => {
+            const storageRef = ref(storage, fileKey);
+            const snapshot = await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            fileKeyToDownloadURL.set(fileKey, downloadURL);
+          }),
+        );
+  
+        // Update questions with download URLs
+        const updatedQuestions = questions.map((question) => {
+          const updatedQuestion: QuestionFormat = { ...question };
+  
+          // Update question body fileURL
+          if (updatedQuestion.question?.fileKey) {
+            const downloadURL = fileKeyToDownloadURL.get(
+              updatedQuestion.question.fileKey,
+            );
+            if (downloadURL) {
+              updatedQuestion.question = {
+                ...updatedQuestion.question,
+                fileURL: downloadURL,
+              };
+            }
+          }
+  
+          // Update explanation fileURL
+          if (updatedQuestion.explanation?.fileKey) {
+            const downloadURL = fileKeyToDownloadURL.get(
+              updatedQuestion.explanation.fileKey,
+            );
+            if (downloadURL) {
+              updatedQuestion.explanation = {
+                ...updatedQuestion.explanation,
+                fileURL: downloadURL,
+              };
+            }
+          }
+  
+          // Update content fileURL
+          if (updatedQuestion.content?.fileKey) {
+            const downloadURL = fileKeyToDownloadURL.get(
+              updatedQuestion.content.fileKey,
+            );
+            if (downloadURL) {
+              updatedQuestion.content = {
+                ...updatedQuestion.content,
+                fileURL: downloadURL,
+              };
+            }
+          }
+  
+          // Update options fileURLs
+          updatedQuestion.options = updatedQuestion.options.map((option) => {
+            if (option.value.fileKey) {
+              const downloadURL = fileKeyToDownloadURL.get(option.value.fileKey);
+              if (downloadURL) {
+                return {
+                  ...option,
+                  value: {
+                    ...option.value,
+                    fileURL: downloadURL,
+                  },
+                };
+              }
+            }
+            return option;
+          });
+  
+          return updatedQuestion;
+        });
+  
+        return updatedQuestions;
       };
+  
+      // Also a pain to deal with because blocks are not fun to deal with
 
-      const processTable = async (tableData: any) => { // tableData is an object with a content property that is an array of arrays.
-        const table = tableData.content as any[][];  
-        
-        const tableAsObject = table.reduce((acc, row, index) => {
-          acc[`row${index}`] = row;
-          return acc;
-        }, {} as Record<string, any[]>); 
-      
+      /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
+      const processTable = async (tableData: any) => {
+        // tableData is an object with a content property that is an array of arrays.
+        console.log("tableData", tableData);
+
+        const table = tableData.content as any[][];
+  
+        const tableAsObject = table.reduce(
+          (acc, row, index) => {
+            acc[`row${index}`] = row;
+            return acc;
+          },
+          {} as Record<string, any[]>,
+        );
+  
         return tableAsObject;
       };
-      
-
+  
       // Traverse through data to find QuestionFormat[] arrays
-      const updatedData = await Promise.all(
-        Object.entries(data.blocks).map(async ([key, value]) => {
-          // Check if the array contains objects of type QuestionFormat
-          if (value.type === "questionsAddCard") {
+      const updatedDataBlocks = await Promise.all(
+        data.blocks.map(async (block) => {
+          // Check if the block is of type 'questionsAddCard'
+          if (block.type === "questionsAddCard") {
             const updatedQuestions = await processQuestions(
-              value.data.questions as QuestionFormat[],
+              block.data.questions as QuestionFormat[],
             );
-            value.data.questions = updatedQuestions;
-            return value;
+            block.data.questions = updatedQuestions;
+            return block;
           }
-
-          if(value.type === "table") {
-            const updatedTable = await processTable(value.data);
-            value.data.content = updatedTable;
-            return value;
+  
+          if (block.type === "table") {
+            const updatedTable = await processTable(block.data);
+            block.data.content = updatedTable;
+            return block;
           }
-
-
-          return value; // If not an array of questions, return original value
+  
+          return block; // If not a questions block, return original block
         }),
       );
 
-      // @ts-ignore - blocks is an Array
-      newArticle.data.blocks = updatedData;
+      /* eslint-enable */
+  
+      newArticle.data.blocks = updatedDataBlocks;
       await setDoc(docRef, newArticle);
-
+  
       alert(`Article saved: ${docRef.id}`);
     } catch (error) {
       console.error("Error saving article:", error);
-      
       alert("Error saving article.");
     }
-
+  
     setShowDropdown(false);
   };
-
+  
   return (
     <>
       <button
         className="group relative ml-auto mt-4 flex items-center rounded-md bg-green-500 p-2 text-white hover:bg-green-600 md:mr-4 lg:mr-8"
-        onClick={handleSave}
+        onClick={openSaveModal}
       >
         <FontAwesomeIcon icon={faCheckCircle} />
 
@@ -309,7 +325,7 @@ function ArticleCreator({ className }: { className?: string }) {
             <div className="mt-3 flex min-w-36 justify-between">
               <button
                 className="rounded-md bg-green-500 p-2 text-white hover:bg-green-600"
-                onClick={() => handleTitleSelect()}
+                onClick={() => handleSave()}
               >
                 Save
               </button>
@@ -330,7 +346,7 @@ function ArticleCreator({ className }: { className?: string }) {
           className,
         )}
       >
-        <div className="px-8 overflow-y-auto rounded border p-4">
+        <div className="overflow-y-auto rounded border p-4 px-8">
           <Editor content={initialData} setData={setData} />
         </div>
 

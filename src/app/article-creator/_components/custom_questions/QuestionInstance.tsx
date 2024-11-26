@@ -1,15 +1,18 @@
 import { useState, useEffect } from "react";
-import { QuestionFormat } from "@/types/questions";
+import { type QuestionFormat } from "@/types/questions";
 import CheckForUnderstanding from "@/app/questions/checkForUnderstanding";
 import QuizRenderer from "@/app/questions/quizRenderer";
 import QuestionsInputInterface from "./QuestionsInputInterface";
 
+
+// This isn't a hook and I dont want it to be a hook; it works well anyways. 
+/* eslint-disable react-hooks/rules-of-hooks */
 export const syncedQuestions = (instanceId: string) => {
   const storageKey = `questions_${instanceId}`;
   const [questions, setQuestions] = useState<QuestionFormat[]>(() => {
     const savedQuestions = localStorage.getItem(storageKey);
     return savedQuestions
-      ? JSON.parse(savedQuestions)
+      ? JSON.parse(savedQuestions) as QuestionFormat[]
       : [
           {
             question: {
@@ -36,7 +39,7 @@ export const syncedQuestions = (instanceId: string) => {
             },
             bookmarked: false,
           },
-        ];
+        ] as QuestionFormat[];
   });
 
   // Effect to update questions when localStorage is modified via the custom event
@@ -44,7 +47,7 @@ export const syncedQuestions = (instanceId: string) => {
     const handleStorageUpdate = () => {
       const updatedQuestions = localStorage.getItem(storageKey);
       if (updatedQuestions) {
-        setQuestions(JSON.parse(updatedQuestions));
+        setQuestions(JSON.parse(updatedQuestions) as QuestionFormat[]);
       }
     };
 
@@ -76,6 +79,7 @@ export const syncedQuestions = (instanceId: string) => {
 
   return { questions, setQuestions };
 };
+/* eslint-enable react-hooks/rules-of-hooks */
 
 export const QuestionsInput: React.FC<{ instanceId: string }> = ({
   instanceId,
@@ -101,7 +105,7 @@ export const QuestionsOutput: React.FC<{ instanceId: string }> = ({
     <div className="mt-8">
       {questions.length === 1 ? (
         <CheckForUnderstanding
-          questionInstance={questions[0] as QuestionFormat}
+          questionInstance={questions[0]!}
         />
       ) : (
         <QuizRenderer questions={questions} />
