@@ -1,39 +1,42 @@
-"use client";
 import Link from "next/link";
 import React from "react";
 
 interface SectionProps {
   title: string;
   numofCol: string;
-  backgroundColor: string;
+  borderColor: string;
   courses: string[];
 }
 
 const APsection: React.FC<SectionProps> = ({
   title,
   courses,
-  backgroundColor,
+  borderColor,
   numofCol,
 }) => {
-  const domainName = window.location.origin;
-  const currentPath = window.location.pathname;
-
   return (
     <>
       <div
-        className={`col-span-3 rounded-lg p-10 text-white ${numofCol}`}
+        className={`col-span-3 rounded-lg p-6 shadow ${numofCol}`}
         style={{
-          background: backgroundColor,
+          border: `1px solid ${borderColor}`,
         }}
       >
-        <h3 className="text-4xl font-bold text-white">{title}</h3>
+        <h3
+          className="text-4xl font-bold"
+          style={{
+            color: `${borderColor}`,
+          }}
+        >
+          {title}
+        </h3>
         <ul
-          className={`mt-5 columns-1 space-y-4 text-lg ${listMobile(+numofCol.replace(/[^1-9]/g, ""))}`}
+          className={`mt-1 columns-1 space-y-2 text-lg ${listMobile(+numofCol.replace(/[^1-9]/g, ""))}`}
         >
           {courses.map((course, index) => (
             <li key={index} className="break-inside-avoid-column">
               <Link
-                href={`${domainName}/${currentPath}/subject/${formatCourseName(course)}`}
+                href={`/subject/${formatCourseName(course)}`}
                 className="hover:underline"
               >
                 {course}

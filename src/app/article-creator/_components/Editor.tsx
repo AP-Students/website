@@ -117,11 +117,11 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
   },
 };
 
-const Editor = ({ setData }: { setData: (data: OutputData) => void }) => {
+const Editor = ({ setData, content }: { setData: (data: OutputData) => void, content: OutputData }) => {
   const { editor, isEditorReady } = useEditor({
     holder: "editorjs",
     tools: EDITOR_TOOLS,
-    data: {
+    data: content ||  {
       time: Date.now(),
       blocks: [
         {
@@ -155,13 +155,13 @@ const Editor = ({ setData }: { setData: (data: OutputData) => void }) => {
       api.saver
         .save()
         .then((outputData) => {
-          console.log("Saving successful: ", outputData);
           setData(outputData);
         })
         .catch((error) => {
           console.error("Saving failed: ", error);
         });
     },
+    
   });
 
   useEffect(() => {
@@ -180,7 +180,7 @@ const Editor = ({ setData }: { setData: (data: OutputData) => void }) => {
         }
       }
     };
-  }, [editor]);
+  }, [editor]); 
 
   return (
     <div className="flex flex-col gap-y-4">

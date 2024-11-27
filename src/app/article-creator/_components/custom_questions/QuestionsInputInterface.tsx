@@ -2,48 +2,103 @@
 
 import React, { useState } from "react";
 import { QuestionFormat } from "@/types/questions";
+import { Trash, CirclePlus } from "lucide-react";
+import AdvancedTextbox from "./AdvancedTextbox";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   questions: QuestionFormat[];
   setQuestions: (questions: QuestionFormat[]) => void;
+  testRenderer?: boolean;
 }
 
 const QuestionsInputInterface: React.FC<Props> = ({
   questions,
   setQuestions,
+  testRenderer = false,
 }) => {
   const [error, setError] = useState<string>("");
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [collapsed, setCollapsed] = useState<boolean[]>(
+    Array(questions.length).fill(false),
+  );
+
+  const toggleCollapse = (index: number) => {
+    setCollapsed((prev) => {
+      const newCollapsed = [...prev];
+      newCollapsed[index] = !newCollapsed[index];
+      return newCollapsed;
+    });
+  };
 
   const addQuestion = () => {
     setQuestions([
       ...questions,
       {
-        body: "",
-        title: "",
-        displayNumAnswers: true,
+        question: {
+          value: "",
+        },
+        type: "mcq",
         options: [
-          { value: "", id: "1" },
-          { value: "", id: "2" },
-          { value: "", id: "3" },
-          { value: "", id: "4" },
+          {
+            value: {
+              value: "",
+            },
+            id: "1",
+          },
+          { value: { value: "" }, id: "2" },
+          { value: { value: "" }, id: "3" },
+          { value: { value: "" }, id: "4" },
         ],
-        correct: [],
-        course_id: "",
-        unit_ids: [],
-        subunit_ids: [],
+        answers: [""],
+        explanation: {
+          value: "",
+        },
+        content: {
+          value: "",
+        },
+        bookmarked: false,
       },
     ]);
+    setCollapsed((prev) => [...prev, false]); // Ensure new question starts as expanded
   };
 
   const removeQuestion = (index: number) => {
     const newQuestions = questions.filter((_, i) => i !== index);
     setQuestions(newQuestions);
     setError("");
+    setCollapsed((prev) => prev.filter((_, i) => i !== index));
+    setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1));
   };
 
   const updateQuestion = (index: number, updatedQuestion: QuestionFormat) => {
     const newQuestions = [...questions];
     newQuestions[index] = updatedQuestion;
+    setQuestions(newQuestions);
+  };
+
+  const addOption = (qIndex: number) => {
+    const newQuestions = [...questions];
+    const newOptions = [
+      ...newQuestions[qIndex]!.options,
+      {
+        value: {
+          value: "",
+        },
+        id: Date.now().toString(),
+      },
+    ];
+    newQuestions[qIndex]!.options = newOptions;
+    setQuestions(newQuestions);
+  };
+
+  const deleteOption = (qIndex: number, oIndex: number) => {
+    const newQuestions = [...questions];
+    const newOptions = newQuestions[qIndex]!.options.filter(
+      (_, index) => index !== oIndex,
+    );
+    newQuestions[qIndex]!.options = newOptions;
     setQuestions(newQuestions);
   };
 
@@ -68,97 +123,144 @@ const QuestionsInputInterface: React.FC<Props> = ({
 
   return (
     <div className="mb-4 rounded border p-4">
-      {questions.map((question, qIndex) => (
+      {questions.map((questionInstance, qIndex) => (
         <div key={qIndex} className="mb-4 rounded border p-4">
-          <div>
-            <label>{"Question: " + (qIndex + 1)}</label>
-            <input
-              type="text"
-              value={question.body}
-              onChange={(e) =>
-                updateQuestion(qIndex, { ...question, body: e.target.value })
-              }
-              className="w-full border p-2"
-            />
-          </div>
-          <div>
-            <label>Options:</label>
-            {question.options.map((option, oIndex) => (
-              <div key={oIndex}>
-                <input
-                  type="text"
-                  value={option.value}
-                  onChange={(e) => {
-                    const newOptions = [...question.options];
-                    if (newOptions[oIndex]) {
-                      newOptions[oIndex].value = e.target.value;
-                      updateQuestion(qIndex, {
-                        ...question,
-                        options: newOptions,
-                      });
-                    }
-                  }}
-                  className="w-full border p-2"
+          <Button
+            onClick={() => toggleCollapse(qIndex)}
+            className="flex w-full justify-between text-left text-lg font-bold"
+          >
+            {"Question: " + (qIndex + 1)}
+          </Button>
+          {!collapsed[qIndex] && (
+            <div>
+              {testRenderer && (
+                <div className="my-4">
+                  <label>Content:</label>
+                  <AdvancedTextbox
+                    questions={questions}
+                    setQuestions={setQuestions}
+                    origin={"content"}
+                    qIndex={qIndex}
+                  />
+                </div>
+              )}
+
+              <div>
+                <label>Question:</label>
+                <AdvancedTextbox
+                  questions={questions}
+                  setQuestions={setQuestions}
+                  origin={"question"}
+                  qIndex={qIndex}
                 />
               </div>
-            ))}
-          </div>
-          <div>
-            <label>Correct Answer(s):</label>
-            <input
-              type="text"
-              value={question.correct.join(",")} // Convert array back to string for input display
-              placeholder={
-                question.type === "mcq"
-                  ? "Enter the correct answer. (eg 1)"
-                  : "Enter correct answer(s) separated by no spaced commas (eg: 1,3)"
-              }
-              onChange={(e) => {
-                const inputValue = e.target.value;
 
-                const correctAnswers = inputValue
-                  .split(",")
-                  .map((answer) => answer.trim());
-                updateQuestion(qIndex, {
-                  ...question,
-                  correct: correctAnswers,
-                });
-                validateCorrectAnswer(inputValue, question.type);
-              }}
-              className="w-full border p-2"
-            />
-            {error && <div className="text-red-500">{error}</div>}
-          </div>
-          <div className="flex items-center">
-            <label className="mr-2">Display Number of Answers: </label>
-            <input
-              type="checkbox"
-              checked={question.displayNumAnswers}
-              onChange={(e) =>
-                updateQuestion(qIndex, {
-                  ...question,
-                  displayNumAnswers: e.target.checked,
-                })
-              }
-              className="border p-2"
-            />
-          </div>
-          <button
-            type="button"
-            className="mt-4 rounded-md border border-red-500 bg-red-500 px-2 py-1 text-white  hover:bg-white hover:text-red-500"
-            onClick={() => removeQuestion(qIndex)}
-          >
-            Delete Question
-          </button>
+              <div className="my-4">
+                <span className="text-lg font-bold">Options</span>
+                {questionInstance.options.map((option, oIndex) => (
+                  <div key={oIndex} className="mb-2 min-w-full">
+                    <div className="flex justify-between">
+                      Option {oIndex + 1}
+                      <button
+                        type="button"
+                        onClick={() => deleteOption(qIndex, oIndex)}
+                        className="text-red-500 hover:text-red-600"
+                      >
+                        <Trash size={20} />
+                      </button>
+                    </div>
+                    <AdvancedTextbox
+                      questions={questions}
+                      setQuestions={setQuestions}
+                      origin={"option"}
+                      qIndex={qIndex}
+                      oIndex={oIndex}
+                      placeholder="Enter option here..."
+                    />
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => addOption(qIndex)}
+                  className="flex items-center text-green-500 hover:text-green-600"
+                >
+                  Add option <CirclePlus className="ml-1 inline" />
+                </button>
+              </div>
+
+              <div className="my-4">
+                <label htmlFor="correctAnswer">Correct answer(s)</label>
+                <Input
+                  id="correctAnswer"
+                  type="text"
+                  value={questionInstance.answers.join(",")}
+                  placeholder={
+                    questionInstance.type === "mcq"
+                      ? "Example: 1"
+                      : "Example: 1,3"
+                  }
+                  onChange={(e) => {
+                    const inputValue = e.target.value;
+                    const correctAnswers = inputValue
+                      .split(",")
+                      .map((answer) => answer.trim());
+                    updateQuestion(qIndex, {
+                      ...questionInstance,
+                      answers: correctAnswers,
+                    });
+                    validateCorrectAnswer(inputValue, questionInstance.type);
+                  }}
+                  className="w-fit grow"
+                />
+                {error && <div className="text-red-500">{error}</div>}
+              </div>
+
+              <div className="my-4">
+                <label>Explanation (optional)</label>
+                <AdvancedTextbox
+                  questions={questions}
+                  setQuestions={setQuestions}
+                  origin={"explanation"}
+                  qIndex={qIndex}
+                  placeholder="Explain the answer here..."
+                />
+              </div>
+
+              <div>
+                <label>Question type:</label>
+                <select
+                  value={questionInstance.type}
+                  onChange={(e) =>
+                    updateQuestion(qIndex, {
+                      ...questionInstance,
+                      type: e.target.value as "mcq" | "multi-answer",
+                    })
+                  }
+                  className="w-full border p-2"
+                >
+                  <option value="mcq">MCQ</option>
+                  <option value="multi-answer">Multi-Answer</option>
+                </select>
+              </div>
+
+              <button
+                type="button"
+                className="mt-4 rounded-md border border-red-500 bg-red-500 px-3 py-1 text-white transition-colors hover:bg-white hover:text-red-500"
+                onClick={() => removeQuestion(qIndex)}
+              >
+                Delete question
+              </button>
+            </div>
+          )}
         </div>
       ))}
 
       <button
         type="button"
-        className="mt-4 rounded-md border border-green-500 bg-green-500 p-2 px-2 py-1 text-white hover:bg-white hover:text-green-500"
+        className="rounded-md border border-green-500 bg-green-500 px-3 py-1 text-white transition-colors hover:bg-white hover:text-green-500"
         onClick={addQuestion}
       >
-        Add Question
+        Add question
       </button>
     </div>
   );

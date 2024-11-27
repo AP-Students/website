@@ -3,5 +3,5 @@ export interface User {
   displayName: string;
   email: string;
   photoURL?: string;
-  admin: boolean;
+  access: "admin" | "member" | "user";
 }

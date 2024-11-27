@@ -14,7 +14,8 @@ const outfit = Outfit({
 });
 
 export default function Signup() {
-  const { signInWithGoogle, signUpWithEmail } = useAuthHandlers();
+  const { signInWithGoogle, signUpWithGoogle, signUpWithEmail } =
+    useAuthHandlers();
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -113,7 +114,7 @@ export default function Signup() {
     >
       <form
         onSubmit={handleSignUp}
-        className="w-full max-w-md rounded-2xl border border-gray-300 bg-destructive-foreground p-8 shadow-sm"
+        className="w-full max-w-md rounded-lg border bg-white p-8 shadow-sm"
       >
         <h1 className="mb-8 text-4xl">Sign up for FiveHive</h1>
 
@@ -125,11 +126,11 @@ export default function Signup() {
           </div>
         )}
 
-        <div className="mb-10 space-y-4">
+        <div className="space-y-4">
           <input
             type="text"
             placeholder="What should we call you?"
-            className="w-full rounded-full border border-gray-400 px-4 py-2"
+            className="w-full rounded-md border border-gray-300 px-3 py-2"
             id="username"
             name="username"
             required
@@ -137,7 +138,7 @@ export default function Signup() {
           <input
             type="email"
             placeholder="Email"
-            className="w-full rounded-full border border-gray-400 px-4 py-2"
+            className="w-full rounded-md border border-gray-300 px-3 py-2"
             id="email"
             name="email"
             required
@@ -146,14 +147,14 @@ export default function Signup() {
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Password"
-              className="w-full rounded-full border border-gray-400 px-4 py-2"
+              className="w-full rounded-md border border-gray-300 px-3 py-2"
               id="password"
               name="password"
               required
             />
             <button
               type="button"
-              className="absolute inset-y-0 right-0 px-3 text-sm text-gray-500"
+              className="absolute inset-y-0 right-0 px-3 text-sm text-gray-400"
               onClick={togglePasswordVisibility}
             >
               {showPassword ? ShowPassword() : HidePassword()}
@@ -164,7 +165,7 @@ export default function Signup() {
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Confirm Password"
-              className="w-full rounded-full border border-gray-400 px-4 py-2"
+              className="w-full rounded-md border border-gray-300 px-3 py-2"
               id="confirmPassword"
               name="confirmPassword"
               required
@@ -175,9 +176,9 @@ export default function Signup() {
           </Button>
         </div>
 
-        <div className="my-6 border-t border-gray-400"></div>
+        <div className="my-8 border-t border-gray-300"></div>
 
-        <div className="mt-8 space-y-4">
+        <div className="space-y-4">
           <Button
             icon={
               <svg
@@ -207,16 +208,14 @@ export default function Signup() {
               </svg>
             }
             className="text-xl"
-            onClick={signInWithGoogle}
+            onClick={signUpWithGoogle}
             type="button"
           >
             Sign up with Google
           </Button>
         </div>
 
-        <div className="my-8"></div>
-
-        <div className="flex justify-center text-black">
+        <div className="mt-8 flex justify-center">
           <span className="pr-2">Already have an account?</span>
           <Link className="hover:underline" href="/login">
             Log in

@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { QuestionFormat } from "@/types/questions";
-
-import CheckForUnderstanding from "@/components/questions/checkForUnderstanding";
-import QuizRenderer from "@/components/questions/quizRenderer";
+import CheckForUnderstanding from "@/app/questions/checkForUnderstanding";
+import QuizRenderer from "@/app/questions/quizRenderer";
 import QuestionsInputInterface from "./QuestionsInputInterface";
 
-const useSyncedQuestions = (instanceId: string) => {
+export const useSyncedQuestions = (instanceId: string) => {
   const storageKey = `questions_${instanceId}`;
   const [questions, setQuestions] = useState<QuestionFormat[]>(() => {
     const savedQuestions = localStorage.getItem(storageKey);
@@ -13,22 +12,50 @@ const useSyncedQuestions = (instanceId: string) => {
       ? JSON.parse(savedQuestions)
       : [
           {
-            body: "",
-            title: "",
-            displayNumAnswers: true,
+            question: {
+              value: "",
+            },
+            type: "mcq",
             options: [
-              { value: "", id: "1" },
-              { value: "", id: "2" },
-              { value: "", id: "3" },
-              { value: "", id: "4" },
+              {
+                value: {
+                  value: "",
+                },
+                id: "1",
+              },
+              { value: { value: "" }, id: "2" },
+              { value: { value: "" }, id: "3" },
+              { value: { value: "" }, id: "4" },
             ],
-            correct: [],
-            course_id: "",
-            unit_ids: [],
-            subunit_ids: [],
+            answers: [""],
+            explanation: {
+              value: "",
+            },
+            content: {
+              value: "",
+            },
+            bookmarked: false,
           },
         ];
   });
+
+  // Effect to update questions when localStorage is modified via the custom event
+  useEffect(() => {
+    const handleStorageUpdate = () => {
+      const updatedQuestions = localStorage.getItem(storageKey);
+      if (updatedQuestions) {
+        setQuestions(JSON.parse(updatedQuestions));
+      }
+    };
+
+    // Listen for custom event triggered by QuestionsAddCard
+    window.addEventListener("questionsUpdated", handleStorageUpdate);
+
+    // Clean up event listener on component unmount
+    return () => {
+      window.removeEventListener("questionsUpdated", handleStorageUpdate);
+    };
+  }, [storageKey]);
 
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(questions));
@@ -50,7 +77,9 @@ const useSyncedQuestions = (instanceId: string) => {
   return { questions, setQuestions };
 };
 
-export const QuestionsInput: React.FC<{ instanceId: string }> = ({ instanceId }) => {
+export const QuestionsInput: React.FC<{ instanceId: string }> = ({
+  instanceId,
+}) => {
   const { questions, setQuestions } = useSyncedQuestions(instanceId);
 
   return (
@@ -63,13 +92,17 @@ export const QuestionsInput: React.FC<{ instanceId: string }> = ({ instanceId })
   );
 };
 
-export const QuestionsOutput: React.FC<{ instanceId: string }> = ({ instanceId }) => {
+export const QuestionsOutput: React.FC<{ instanceId: string }> = ({
+  instanceId,
+}) => {
   const { questions } = useSyncedQuestions(instanceId);
 
   return (
     <div className="mt-8">
       {questions.length === 1 ? (
-        <CheckForUnderstanding questions={questions} currentQuestionIndex={0} />
+        <CheckForUnderstanding
+          questionInstance={questions[0] as QuestionFormat}
+        />
       ) : (
         <QuizRenderer questions={questions} />
       )}

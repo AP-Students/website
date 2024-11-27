@@ -16,9 +16,7 @@ const Page = () => {
             Comprehensive guides and resources for every AP class.
           </p>
         </div>
-        <div className="grid grid-cols-3 gap-4 lg:gap-8">
-          <APLibrary />
-        </div>
+        <APLibrary />
       </div>
 
       <Footer />

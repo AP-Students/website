@@ -1,18 +1,24 @@
-export interface Option {
+export type questionInput = {
   value: string;
+  fileKey?: string | "";
+  fileURL?: string | "";
+}
+
+export interface Option {
+  value: questionInput;
   id: string;
 }
 
 export interface QuestionFormat {
-  body: string;
-  title: string;
-  displayNumAnswers: boolean;
-  options: Option[];
-  correct: string[];
-  course_id: string;
-  unit_ids: string[];
-  subunit_ids: string[];
+  question: questionInput; // What the question is 
+  type: "mcq" | "multi-answer"; // Type of question - toggles betwen 1 choice vs multiple choices
+  options: Option[]; // What the client can select as an answer to the question
+  answers: string[]; // The correct answer(s)
+  explanation: questionInput; // Explanation of the question
+  content: questionInput; // Leftside content to be shown for test renderer
+  bookmarked?: boolean | false; // for test renderer
 }
+
 
 export interface Props {
   questions: QuestionFormat[];

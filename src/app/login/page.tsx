@@ -77,7 +77,7 @@ export default function Login() {
     >
       <form
         onSubmit={handleLogin}
-        className="w-full max-w-md rounded-2xl border border-gray-300 bg-destructive-foreground p-8 shadow-sm"
+        className="w-full max-w-md rounded-lg border bg-white p-8 shadow-sm"
       >
         <h1 className="mb-8 text-4xl">Log in to FiveHive</h1>
 
@@ -89,11 +89,11 @@ export default function Login() {
           </div>
         )}
 
-        <div className="mb-10 space-y-4">
+        <div className="space-y-4">
           <input
             type="text"
             placeholder="Email or username"
-            className="w-full rounded-full border border-gray-400 px-4 py-2"
+            className="w-full rounded-md border border-gray-300 px-3 py-2"
             id="email"
             name="email"
             required
@@ -102,7 +102,7 @@ export default function Login() {
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Password"
-              className="w-full rounded-full border border-gray-400 px-4 py-2"
+              className="w-full rounded-md border border-gray-300 px-3 py-2"
               id="password"
               name="password"
               required
@@ -115,7 +115,7 @@ export default function Login() {
               {showPassword ? <ShowPassword /> : <HidePassword />}
             </button>
           </div>
-          <div className="mb-10 text-right">
+          <div className="text-right">
             <Link
               className="text-sm text-gray-400 hover:underline"
               href="/login/reset"
@@ -128,9 +128,9 @@ export default function Login() {
           </Button>
         </div>
 
-        <div className="my-6 border-t border-gray-500"></div>
+        <div className="my-8 border-t border-gray-300"></div>
 
-        <div className="mt-8 space-y-4">
+        <div className="space-y-4">
           <Button
             icon={
               <svg
