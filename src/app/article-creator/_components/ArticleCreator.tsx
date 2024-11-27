@@ -302,23 +302,20 @@ function ArticleCreator({ className }: { className?: string }) {
       </button>
 
       {showDropdown && (
-        <div className="modal fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="modal-content z-60 rounded-md bg-white p-4">
-            {/* Save Button for Confirming the Selection */}
-            <div className="mt-3 flex min-w-36 justify-between">
-              <button
-                className="rounded-md bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
-                onClick={() => handleTitleSelect()}
-              >
-                Save
-              </button>
-              <button
-                className="rounded-md bg-red-500 p-2 text-white hover:bg-red-600"
-                onClick={() => setShowDropdown(false)}
-              >
-                Cancel
-              </button>
-            </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="flex gap-8 rounded-lg bg-white p-4">
+            <button
+              className="rounded-md bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+              onClick={() => handleTitleSelect()}
+            >
+              Save
+            </button>
+            <button
+              className="rounded-md bg-red-500 px-4 py-2 text-white hover:bg-red-600"
+              onClick={() => setShowDropdown(false)}
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
