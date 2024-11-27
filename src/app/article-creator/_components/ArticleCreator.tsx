@@ -81,7 +81,7 @@ function ArticleCreator({ className }: { className?: string }) {
       try {
         const userAccess = await getUserAccess();
         if (userAccess && (userAccess === "admin" || userAccess === "member")) {
-          const key = getKey(); 
+          const key = getKey();
           const docRef = doc(db, "pages", key);
           const docSnap = await getDoc(docRef);
           const data = docSnap.data()?.data as OutputData;
@@ -152,7 +152,10 @@ function ArticleCreator({ className }: { className?: string }) {
                   const file = fileObj?.file;
 
                   if (file && file instanceof File) {
-                    const storageRef = ref(storage, `${questionInstance.question.fileKey}`);
+                    const storageRef = ref(
+                      storage,
+                      `${questionInstance.question.fileKey}`,
+                    );
                     const snapshot = await uploadBytes(storageRef, file);
                     const downloadURL = await getDownloadURL(snapshot.ref);
 
@@ -238,17 +241,20 @@ function ArticleCreator({ className }: { className?: string }) {
         );
       };
 
-      const processTable = async (tableData: any) => { // tableData is an object with a content property that is an array of arrays.
-        const table = tableData.content as any[][];  
-        
-        const tableAsObject = table.reduce((acc, row, index) => {
-          acc[`row${index}`] = row;
-          return acc;
-        }, {} as Record<string, any[]>); 
-      
+      const processTable = async (tableData: any) => {
+        // tableData is an object with a content property that is an array of arrays.
+        const table = tableData.content as any[][];
+
+        const tableAsObject = table.reduce(
+          (acc, row, index) => {
+            acc[`row${index}`] = row;
+            return acc;
+          },
+          {} as Record<string, any[]>,
+        );
+
         return tableAsObject;
       };
-      
 
       // Traverse through data to find QuestionFormat[] arrays
       const updatedData = await Promise.all(
@@ -262,12 +268,11 @@ function ArticleCreator({ className }: { className?: string }) {
             return value;
           }
 
-          if(value.type === "table") {
+          if (value.type === "table") {
             const updatedTable = await processTable(value.data);
             value.data.content = updatedTable;
             return value;
           }
-
 
           return value; // If not an array of questions, return original value
         }),
@@ -280,7 +285,7 @@ function ArticleCreator({ className }: { className?: string }) {
       alert(`Article saved: ${docRef.id}`);
     } catch (error) {
       console.error("Error saving article:", error);
-      
+
       alert("Error saving article.");
     }
 
@@ -290,7 +295,7 @@ function ArticleCreator({ className }: { className?: string }) {
   return (
     <>
       <button
-        className="ml-auto mt-4 flex items-center rounded-md bg-blue-500 px-3 py-2 text-white hover:bg-blue-600"
+        className="ml-auto mt-4 flex items-center rounded-md bg-blue-500 px-3 py-2 text-white hover:bg-blue-600 md:mr-4 lg:mr-8"
         onClick={handleSave}
       >
         <CloudUpload className="mr-2 inline" /> Save Article
@@ -299,40 +304,16 @@ function ArticleCreator({ className }: { className?: string }) {
       {showDropdown && (
         <div className="modal fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="modal-content z-60 rounded-md bg-white p-4">
-            <h2 className="mb-3 text-lg font-bold">
-              Select AP Class for Title
-            </h2>
-            <input
-              type="text"
-              className="mb-3 w-full rounded-md border p-2"
-              placeholder="Search for a class..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <ul className="class-list max-h-80 overflow-y-auto">
-              {filteredClasses.map((apClass) => (
-                <li
-                  key={apClass}
-                  className={`cursor-pointer rounded-md p-2 hover:bg-gray-200 ${
-                    selectedClass === apClass ? "bg-gray-300" : ""
-                  }`}
-                  onClick={() => setSelectedClass(apClass)}
-                >
-                  {apClass}
-                </li>
-              ))}
-            </ul>
-
             {/* Save Button for Confirming the Selection */}
             <div className="mt-3 flex min-w-36 justify-between">
               <button
                 className="rounded-md bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
-                onClick={() => handleTitleSelect(selectedClass)} // Use the selected class
+                onClick={() => handleTitleSelect()}
               >
                 Save
               </button>
               <button
-                className="rounded-md bg-gray-500 px-4 py-2 text-white hover:bg-gray-600"
+                className="rounded-md bg-red-500 p-2 text-white hover:bg-red-600"
                 onClick={() => setShowDropdown(false)}
               >
                 Cancel
@@ -348,7 +329,7 @@ function ArticleCreator({ className }: { className?: string }) {
           className,
         )}
       >
-        <div className="px-8 overflow-y-auto rounded border p-4">
+        <div className="overflow-y-auto rounded border p-4 px-8">
           <Editor content={initialData} setData={setData} />
         </div>
 
