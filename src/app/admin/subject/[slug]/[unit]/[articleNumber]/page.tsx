@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 const Page = ({ params }: { params: { slug: string } }) => {
-  const { user, loading} = useUser();
+  const { user, loading } = useUser();
 
   const router = useRouter();
   const pathname = usePathname();
@@ -23,23 +23,19 @@ const Page = ({ params }: { params: { slug: string } }) => {
     if ((!user || user?.access === "user") && !loading) {
       router.push("/");
     }
-  }, [user]); 
+  }, [user]);
 
   return (
-    <div className="relative flex grow flex-col">
+    <div className="flex h-screen grow flex-col">
       <Navbar className="w-full px-10 xl:px-20" variant="secondary" />
-      <div className="relative flex grow flex-col">
-        <div className="relative mt-[5.5rem] flex min-h-screen justify-between gap-x-16 px-10 xl:px-20">
-          <div className="grow">
-            <h1 className="flex justify-center py-8 text-5xl font-black">
-              {formattedTitle}
-            </h1>
-            <ArticleCreator className="mt-4 grow" />
-          </div>
-        </div>
-
-        <Footer className="mx-0 w-full max-w-none px-10 xl:px-20" />
+      <div className="mt-[4rem] px-10 xl:px-20">
+        <h1 className="pb-8 text-center text-5xl font-bold">
+          {formattedTitle}
+        </h1>
+        <ArticleCreator className="mt-4" />
       </div>
+
+      <Footer className="mx-0 mt-auto w-full max-w-none px-10 xl:px-20" />
     </div>
   );
 };
