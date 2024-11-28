@@ -8,7 +8,6 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { v4 as uuidv4 } from "uuid";
 import { getUser, getUserAccess } from "@/components/hooks/users";
-import { CloudUpload } from "lucide-react";
 import { getFileFromIndexedDB } from "./custom_questions/RenderAdvancedTextbox";
 import { QuestionFormat } from "@/types/questions";
 import Renderer from "./Renderer";
@@ -295,10 +294,10 @@ function ArticleCreator({ className }: { className?: string }) {
   return (
     <>
       <button
-        className="ml-auto mt-4 flex items-center rounded-md bg-blue-500 px-3 py-2 text-white hover:bg-blue-600 md:mr-4 lg:mr-8"
+        className="ml-auto block rounded bg-blue-500 px-4 py-2 text-white transition-colors hover:bg-blue-600"
         onClick={handleSave}
       >
-        <CloudUpload className="mr-2 inline" /> Save Article
+        Save Changes
       </button>
 
       {showDropdown && (
