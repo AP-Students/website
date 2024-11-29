@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import { auth } from "@/lib/firebase";
 import Link from "next/link";
 import { UserProvider, useUser } from "../hooks/UserContext";
+import Image from "next/image";
 
 const SignedInPfp = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -16,11 +17,6 @@ const SignedInPfp = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
 
-  const handleChangePfp = () => {
-    console.log("user", user);
-    console.log("Changing profile picture...");
-  };
-
   return (
     <UserProvider>
       <div className="relative">
@@ -29,9 +25,11 @@ const SignedInPfp = () => {
           <span>{user.displayName}</span>
           <div onClick={toggleDropdown} className="relative cursor-pointer">
             {user.photoURL ? (
-              <img
+              <Image
                 src={user.photoURL}
                 alt={user.displayName || user.email}
+                width={40}
+                height={40}
                 style={{ width: "40px", borderRadius: "50%" }}
               />
             ) : (
@@ -55,19 +53,8 @@ const SignedInPfp = () => {
         {/* Dropdown Menu */}
         {isDropdownOpen && (
           <div className="absolute right-0 mt-2 max-w-48 whitespace-nowrap rounded-lg border border-gray-200 bg-white shadow-lg">
-            {/* <div className="px-4 py-2 w-full">
-            <span>{user.displayName || user.email}</span>
-          </div>
-          <hr className="border-gray-200" />
-          <button
-            onClick={handleChangePfp}
-            className="block px-4 py-2 text-left hover:bg-gray-100 w-full"
-          >
-            Change Profile Picture
-          </button>
-          <hr className="border-gray-200" /> */}
 
-            {user.access === "admin" && (
+            {(user.access === "admin" || user.access === "member") && (
               <Link
                 className="block w-full px-4 py-2 text-left hover:bg-gray-100"
                 href="/admin"
@@ -91,7 +78,11 @@ const SignedInPfp = () => {
 
 export default SignedInPfp;
 
-const signOutUser = () => {
-  signOut(auth);
-  window.location.reload();
+const signOutUser = async () => {
+  try {
+    await signOut(auth); 
+    window.location.reload(); 
+  } catch (error) {
+    console.error("Error signing out:", error); 
+  }
 };

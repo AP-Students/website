@@ -8,7 +8,7 @@ import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import Link from "next/link";
 import apClassesData from "@/app/admin/apClasses.json";
-import { Subject } from "@/types";
+import type { Subject } from "@/types";
 import Navbar from "@/components/ui/navbar";
 import Footer from "@/components/ui/footer";
 import usePathname from "@/components/client/pathname";
@@ -59,7 +59,8 @@ const Page = ({ params }: { params: { slug: string } }) => {
   const chapterInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    const fetchSubject = async () => {
+    // Fetch subject data
+    (async () => {
       try {
         if (user && (user?.access === "admin" || user?.access === "member")) {
           const docRef = doc(db, "subjects", params.slug);
@@ -75,7 +76,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
                     .toLowerCase()
                     .replace(/[^a-z1-9 ]+/g, "")
                     .replace(/\s/g, "-") === params.slug,
-              ) || "";
+              ) ?? "";
             setSubject(emptyData);
           }
         }
@@ -84,14 +85,15 @@ const Page = ({ params }: { params: { slug: string } }) => {
       } finally {
         setLoading(false);
       }
-    };
-    fetchSubject();
-  }, [user]);
+    })().catch((error) => {
+      console.error("Error fetching questions:", error);
+    });
+  }, [user, params.slug, setError, setLoading]);
 
   const addUnit = () => {
-    if (!newUnitTitle.trim()) return;
+    if (!newUnitTitle.trim() || !subject) return;
     const newUnit = {
-      unit: subject!.units.length + 1,
+      unit: subject.units.length + 1,
       title: newUnitTitle,
       chapters: [
         {
@@ -106,32 +108,34 @@ const Page = ({ params }: { params: { slug: string } }) => {
         instanceId: "",
       },
     };
-    setSubject({ ...subject!, units: [...subject?.units!, newUnit] });
+    setSubject({ ...subject, units: [...subject.units, newUnit] });
     setNewUnitTitle("");
   };
 
   const deleteUnit = (unitIndex: number) => {
-    const updatedUnits = [...subject?.units!];
+    if(!subject) return
+    const updatedUnits = [...subject.units];
     updatedUnits.splice(unitIndex, 1);
-    setSubject({ ...subject!, units: updatedUnits });
+    setSubject({ ...subject, units: updatedUnits });
   };
 
   const addChapter = (unitIndex: number) => {
-    if (!newChapterTitle.trim()) return;
+    if (!newChapterTitle.trim() || !subject) return;
     const newChapter = {
-      chapter: subject!.units[unitIndex]!.chapters.length + 1 || 1,
+      chapter: subject.units[unitIndex]!.chapters.length + 1 || 1,
       title: newChapterTitle,
     };
-    const updatedUnits = [...subject?.units!];
+    const updatedUnits = [...subject?.units];
     updatedUnits[unitIndex]!.chapters.push(newChapter);
-    setSubject({ ...subject!, units: updatedUnits });
+    setSubject({ ...subject, units: updatedUnits });
     setNewChapterTitle("");
   };
 
   const editUnitTitle = (unitIndex: number, newTitle: string) => {
-    const updatedUnits = [...subject?.units!];
+    if(!subject) return
+    const updatedUnits = [...subject.units];
     updatedUnits[unitIndex]!.title = newTitle;
-    setSubject({ ...subject!, units: updatedUnits });
+    setSubject({ ...subject, units: updatedUnits });
     setEditingUnit({ unitIndex: null });
   };
 
@@ -140,16 +144,18 @@ const Page = ({ params }: { params: { slug: string } }) => {
     chapterIndex: number,
     newTitle: string,
   ) => {
-    const updatedUnits = [...subject?.units!];
+    if(!subject) return
+    const updatedUnits = [...subject.units];
     updatedUnits[unitIndex]!.chapters[chapterIndex]!.title = newTitle;
-    setSubject({ ...subject!, units: updatedUnits });
+    setSubject({ ...subject, units: updatedUnits });
     setEditingChapter({ unitIndex: null, chapterIndex: null });
   };
 
   const deleteChapter = (unitIndex: number, chapterIndex: number) => {
-    const updatedUnits = [...subject?.units!];
+    if(!subject) return
+    const updatedUnits = [...subject.units];
     updatedUnits[unitIndex]!.chapters.splice(chapterIndex, 1);
-    setSubject({ ...subject!, units: updatedUnits });
+    setSubject({ ...subject, units: updatedUnits });
   };
 
   const handleSave = async () => {
@@ -164,7 +170,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
   const optInForUnitTest = (unitIndex: number): void => {
     const updatedSubject = { ...subject! };
     console.log("Updated subject:", updatedSubject);
-    if (updatedSubject && updatedSubject.units[unitIndex]?.test) {
+    if (updatedSubject?.units[unitIndex]?.test) {
       updatedSubject.units[unitIndex].test.optedIn = true;
       updatedSubject.units[unitIndex].test.instanceId =
         `test_${params.slug}_${unitIndex}`;
@@ -174,7 +180,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
   const optOutOfUnitTest = (unitIndex: number): void => {
     const updatedSubject = { ...subject! };
-    if (updatedSubject && updatedSubject.units[unitIndex]?.test) {
+    if (updatedSubject?.units[unitIndex]?.test) {
       updatedSubject.units[unitIndex].test.optedIn = false;
     }
     setSubject(updatedSubject);
@@ -196,7 +202,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
         <main className="container max-w-3xl flex-grow px-4 py-8 md:px-10 lg:px-14 2xl:px-20">
           <h1 className="text-center text-4xl font-bold">{subject?.title}</h1>
           <h2 className="min-w-full px-4 py-6 text-center text-2xl font-black underline md:px-10 lg:px-14 2xl:px-20">
-            BEFORE CLICKING ANY LINKS OR LEAVING THE PAGE, click "Save Changes"
+            BEFORE CLICKING ANY LINKS OR LEAVING THE PAGE, click &quot;Save Changes&quot;
             at the bottom of this page to avoid losing your changes.
           </h2>
           <div className="mb-8 space-y-4">
@@ -313,7 +319,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
                       </Button>
                     </div>
 
-                    {unit.test && unit.test.optedIn ? (
+                    {unit.test?.optedIn ? (
                       <div className="flex items-center">
                         <Link
                           href={`${pathname.split("/").slice(0, 4).join("/")}/${unitIndex + 1}`}

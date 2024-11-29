@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect, type ReactNode } from "react";
-import { X } from "lucide-react";
 
 export interface Highlight {
   id: string;
@@ -141,7 +140,7 @@ export default function Highlighter({
     allOverlays.forEach((overlay) => {
       const element = overlay as HTMLElement;
       const overlayIndex = parseInt(
-        element.getAttribute("data-question-index") || "-1",
+        element.getAttribute("data-question-index") ?? "-1",
         10,
       );
       element.style.display = overlayIndex === questionIndex ? "block" : "none";

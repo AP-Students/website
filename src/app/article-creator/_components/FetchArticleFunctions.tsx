@@ -1,5 +1,10 @@
 import { type OutputData } from "@editorjs/editorjs";
 
+
+// If you looked at article creator yk, you'll see this
+// But basically idk the block structure/types, so I can't really typecheck except use any
+
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment */
 export const revertTableObjectToArray = (data: OutputData) => {
   const table = data.blocks.find((block) => block.type === "table");
   if (table) {
@@ -20,6 +25,8 @@ export const revertTableObjectToArray = (data: OutputData) => {
     };
   }
 };
+
+/* eslint-enable */
 
 export const getKey = () => {
   const pathParts = window.location.pathname.split("/").slice(-3);

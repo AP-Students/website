@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { getAllUsers, updateUserRole } from "@/components/hooks/users";
-import { User } from "@/types/user";
+import type { User } from "@/types/user";
 
 export const useUserManagement = (authUser: User | null) => {
   const [users, setUsers] = useState<User[]>([]);
@@ -9,6 +9,7 @@ export const useUserManagement = (authUser: User | null) => {
 
   const fetchUsers = async () => {
     if (authUser && authUser.access === "admin") {
+      // In the future encapsulate this try catch into a different function
       try {
         const fetchedUsers = await getAllUsers();
         setUsers(fetchedUsers);
@@ -24,7 +25,12 @@ export const useUserManagement = (authUser: User | null) => {
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchUsers().catch((error) => {
+      console.error("Error fetching users:", error);
+    });
+    // Can do this because this useEffect is supposed to trigger when the component mounts, and thats it.
+    // Also theres a "try catch statement" in the fetchUsers function (if else statement should be fine)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleRoleChange = async (
@@ -40,7 +46,9 @@ export const useUserManagement = (authUser: User | null) => {
       try {
         await updateUserRole(authUser, selectedUser.uid, newRole);
         alert(`Role updated to ${newRole} for ${selectedUser.displayName}`);
-        fetchUsers();
+        // fetchUsers().catch((error) => {
+        //   console.error("Error fetching users:", error);
+        // });
       } catch (error) {
         console.error("Error updating user role:", error);
         alert("Failed to update user role.");

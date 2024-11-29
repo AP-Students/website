@@ -1,19 +1,21 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { getUser } from "./users";
-import { User } from "@/types/user";
-
+import type { User } from "@/types/user";
 
 interface UserContextType {
   user: User | null;
   loading: boolean;
   error: string | null;
-  setError: (error: string | null) => void; 
-  setLoading: (loading: boolean) => void;  
+  setError: (error: string | null) => void;
+  setLoading: (loading: boolean) => void;
+  updateUser: () => Promise<void>; // New method to force a user state update
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +25,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       setError(null);
       const fetchedUser = await getUser();
-      if(fetchedUser) {
+      if (fetchedUser) {
         setUser(fetchedUser);
       }
       setLoading(false);
@@ -33,11 +35,22 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    fetchUser();
+    fetchUser().catch((error) => {
+      console.error("Error fetching user:", error);
+      setLoading(false);
+    });
   }, []);
 
-  if(loading){
-    return <div className="flex min-h-screen items-center justify-center text-3xl">Loading...</div>;
+  const updateUser = async () => {
+    await fetchUser();
+  };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-3xl">
+        Loading...
+      </div>
+    );
   }
 
   if (error) {
@@ -49,7 +62,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   return (
-    <UserContext.Provider value={{ user, loading, error, setError, setLoading }}>
+    <UserContext.Provider
+      value={{ user, loading, error, setError, setLoading, updateUser }}
+    >
       {children}
     </UserContext.Provider>
   );
@@ -57,7 +72,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useUser = (): UserContextType => {
   const context = useContext(UserContext);
-  
+
   if (context === undefined) {
     throw new Error("useUser must be used within a UserProvider");
   }

@@ -1,7 +1,7 @@
 export type questionInput = {
   value: string;
-  fileKey?: string | "";
-  fileURL?: string | "";
+  fileKey?: string;
+  fileURL?: string;
 }
 
 export interface Option {
@@ -16,7 +16,7 @@ export interface QuestionFormat {
   answers: string[]; // The correct answer(s)
   explanation: questionInput; // Explanation of the question
   content: questionInput; // Leftside content to be shown for test renderer
-  bookmarked?: boolean | false; // for test renderer
+  bookmarked?: boolean; // for test renderer
 }
 
 

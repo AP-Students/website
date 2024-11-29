@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 function usePathname() {
   const [pathname, setPathname] = useState(window.location.pathname);
@@ -10,12 +10,12 @@ function usePathname() {
 
   // Initial path setup and event listeners for navigation events
   if (typeof window !== "undefined") {
-    window.addEventListener('popstate', handlePathChange);
-    window.addEventListener('pushstate', handlePathChange);
+    window.addEventListener("popstate", handlePathChange);
+    window.addEventListener("pushstate", handlePathChange);
 
     // Clean up by overriding these methods if the hook will be used across multiple components
-    const originalPushState = history.pushState;
-    const originalReplaceState = history.replaceState;
+    const originalPushState = history.pushState.bind(history);
+    const originalReplaceState = history.replaceState.bind(history);
 
     history.pushState = function (...args) {
       originalPushState.apply(this, args);

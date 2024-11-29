@@ -1,16 +1,14 @@
 "use client";
 import React, { useState } from "react";
 import { MdNavigateNext, MdNavigateBefore } from "react-icons/md";
-import { QuestionFormat } from "@/types/questions";
+import type { QuestionFormat } from "@/types/questions";
 import { RenderContent } from "@/app/article-creator/_components/custom_questions/RenderAdvancedTextbox";
 
 interface QuizRendererProps {
   questions: QuestionFormat[];
 }
 
-interface Answers {
-  [questionIndex: number]: string[];
-}
+type Answers = Record<number, string[]>;
 
 const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
@@ -29,7 +27,7 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
   };
 
   const toggleAnswer = (optionId: string): string[] => {
-    const currentAnswers = answers[currentQuestionIndex] || [];
+    const currentAnswers = answers[currentQuestionIndex] ?? [];
     return currentAnswers.includes(optionId)
       ? currentAnswers.filter((id) => id !== optionId)
       : [...currentAnswers, optionId];

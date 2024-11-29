@@ -1,6 +1,6 @@
 import { auth, db } from "@/lib/firebase";
-import { User as FirebaseUser, getAuth } from "firebase/auth";
-import { User } from "@/types/user";
+import type { User as FirebaseUser } from "firebase/auth";
+import type { User } from "@/types/user";
 import {
   collection,
   doc,
@@ -11,7 +11,7 @@ import {
 
 // Cached user state
 let cachedUser: User | null = null;
-let cacheTimestamp: number | null = null;
+const cacheTimestamp: number | null = null;
 
 // Expiration time in milliseconds (24 hours = 24 * 60 * 60 * 1000)
 const CACHE_EXPIRATION_TIME = 24 * 60 * 60 * 1000;
@@ -29,7 +29,7 @@ export const getUserAccess = async (): Promise<string | null> => {
   if (user) {
     const userAccessDoc = await getDoc(doc(db, "users", user.uid));
     if (userAccessDoc.exists()) {
-      const accessLevel = userAccessDoc.get("access"); // Fetch only the "access" field
+      const accessLevel = userAccessDoc.get("access") as string; // Fetch only the "access" field
       return accessLevel; // Return the access level
     }
   }
@@ -37,7 +37,6 @@ export const getUserAccess = async (): Promise<string | null> => {
 };
 
 export const getUser = async (): Promise<User | null> => {
-  
   if (cachedUser && isCacheValid()) {
     // Update the access property if the user is already cached
     const newAccess = await getUserAccess();
@@ -54,38 +53,51 @@ export const getUser = async (): Promise<User | null> => {
   // No cached user, call original function
   return new Promise<User | null>((resolve, reject) => {
     const unsubscribe = auth.onAuthStateChanged(
-      async (firebaseUser: FirebaseUser | null) => {
+      (firebaseUser: FirebaseUser | null) => {
         if (firebaseUser === null) {
           resolve(null);
+          unsubscribe();
+          return;
         }
 
-        try {
-          const userDocRef = doc(db, "users", firebaseUser!.uid);
-          const userDoc = await getDoc(userDocRef);
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            const mappedUser: User = {
-              uid: firebaseUser!.uid,
-              displayName:
-                userData.displayName || firebaseUser!.displayName || undefined,
-              email: userData.email || firebaseUser!.email || "",
-              photoURL:
-                userData?.photoURL || firebaseUser!.photoURL || undefined,
-              access: userData.access || "user",
-            };
+        // Define the async function inside the synchronous callback
+        const fetchUserData = async () => {
+          try {
+            const userDocRef = doc(db, "users", firebaseUser.uid);
+            const userDoc = await getDoc(userDocRef);
 
-            // Cache the user object
-            cachedUser = mappedUser;
+            if (userDoc.exists()) {
+              const userData = userDoc.data() as User;
+              const mappedUser: User = {
+                uid: firebaseUser.uid,
+                displayName:
+                  userData.displayName ?? firebaseUser.displayName ?? "",
+                email: userData.email ?? firebaseUser.email ?? "",
+                photoURL:
+                  userData.photoURL ?? firebaseUser.photoURL ?? undefined,
+                access: userData.access ?? "user",
+              };
 
-            // Return the mapped user
-            resolve(mappedUser);
-          } else {
-            resolve(null);
+              // Cache the user object
+              cachedUser = mappedUser;
+
+              // Return the mapped user
+              resolve(mappedUser);
+            } else {
+              resolve(null);
+            }
+          } catch (error) {
+            reject(error);
+          } finally {
+            unsubscribe();
           }
-        } catch (error) {
+        };
+
+        // Call the async function
+        fetchUserData().catch((error) => {
           reject(error);
-        }
-        unsubscribe();
+          unsubscribe();
+        });
       },
       reject,
     );
@@ -93,10 +105,10 @@ export const getUser = async (): Promise<User | null> => {
 };
 
 // Fetch all users from Firestore
-export const getAllUsers = async (): Promise<User[]> => {
-  let users: User[] = [];
+let users: User[] = [];
 
-  if (users) {
+export const getAllUsers = async (): Promise<User[]> => {
+  if (users.length > 0) {
     return users;
   }
 

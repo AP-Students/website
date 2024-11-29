@@ -1,6 +1,6 @@
-import React, { useRef, useCallback, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
-import { QuestionFormat, questionInput } from "@/types/questions";
+import { type QuestionFormat, type questionInput } from "@/types/questions";
 import { QuestionsInput } from "./QuestionInstance";
 import { Paperclip, Trash } from "lucide-react";
 import { deleteObject, getStorage, ref } from "firebase/storage";
@@ -80,30 +80,26 @@ export default function AdvancedTextbox({
   // Initialize currentText and fileExists when question gets loaded from db if any
   useEffect(() => {
     if (origin === "option" && oIndex !== undefined) {
-      if (
-        questionInstance!.options[oIndex] &&
-        questionInstance!.options[oIndex]!.value &&
-        questionInstance!.options[oIndex]!.value.value
-      ) {
-        setCurrentText(questionInstance!.options[oIndex]!.value.value);
+      if (questionInstance!.options[oIndex]?.value?.value) {
+        setCurrentText(questionInstance!.options[oIndex].value.value);
       }
 
-      if (
-        questionInstance!.options[oIndex] &&
-        questionInstance!.options[oIndex]!.value &&
-        questionInstance!.options[oIndex]!.value.fileKey
-      ) {
+      if (questionInstance!.options[oIndex]?.value?.fileKey) {
         setFileExists(true);
       }
-    } else if (origin === "question" || origin === "explanation" || origin === "content") {
-      if (questionInstance![origin] && questionInstance![origin].value) {
+    } else if (
+      origin === "question" ||
+      origin === "explanation" ||
+      origin === "content"
+    ) {
+      if (questionInstance![origin]?.value) {
         setCurrentText(questionInstance![origin].value);
       }
-      if (questionInstance![origin] && questionInstance![origin].fileKey) {
+      if (questionInstance![origin]?.fileKey) {
         setFileExists(true);
       }
     }
-  }, [questionInstance]);
+  }, [questionInstance, oIndex, origin]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Keys are being handled by EditorJS rather than default behavior, so we need to block the EditorJS behavior
@@ -125,7 +121,11 @@ export default function AdvancedTextbox({
     setCurrentText(newText);
     // Clone the current question to avoid direct mutation
     const updatedQuestions = [...questions];
-    if (origin === "question" || origin === "explanation" || origin === "content") {
+    if (
+      origin === "question" ||
+      origin === "explanation" ||
+      origin === "content"
+    ) {
       const updatedQuestion: QuestionFormat = {
         ...questionInstance!,
         [origin]: {
@@ -164,7 +164,7 @@ export default function AdvancedTextbox({
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
 
-    if (file?.type.startsWith("image/") || file?.type.startsWith("audio/")) {
+    if (file?.type.startsWith("image/") ?? file?.type.startsWith("audio/")) {
       // Store the file in IndexedDB using the unique ID
       storeFileInIndexedDB(`${file.type}-${file.lastModified}`, file);
 
@@ -189,7 +189,8 @@ export default function AdvancedTextbox({
         questionInput.fileKey = `${file.type}-${file.lastModified}`;
         updatedQuestion.explanation = questionInput;
         setFileExists(true);
-      } if (origin === "content") {
+      }
+      if (origin === "content") {
         const questionInput: questionInput = { ...updatedQuestion.content };
         questionInput.fileKey = `${file.type}-${file.lastModified}`;
         updatedQuestion.content = questionInput;
@@ -227,10 +228,19 @@ export default function AdvancedTextbox({
     const updatedQuestions = [...questions];
     const updatedQuestion: QuestionFormat = { ...questionInstance! };
 
-    if (origin === "question" || origin === "explanation" || origin === "content") {
+    if (
+      origin === "question" ||
+      origin === "explanation" ||
+      origin === "content"
+    ) {
       const questionInput: questionInput = { ...updatedQuestion[origin] };
-      deleteFileFromIndexedDB(questionInput.fileKey!);
-      deleteFileFromStorage(questionInput.fileKey!);
+
+      deleteFileFromIndexedDB(questionInput.fileKey!).catch((error) => {
+        console.error("Error deleting file from IndexedDB:", error);
+      });
+      deleteFileFromStorage(questionInput.fileKey!).catch((error) => {
+        console.error("Error deleting file from Storage:", error);
+      });
 
       questionInput.fileKey = "";
       questionInput.fileURL = "";
@@ -239,8 +249,13 @@ export default function AdvancedTextbox({
       const optionInput: questionInput = {
         ...updatedQuestion.options[oIndex]!.value,
       };
-      deleteFileFromIndexedDB(optionInput.fileKey!);
-      deleteFileFromStorage(optionInput.fileKey!);
+
+      deleteFileFromIndexedDB(optionInput.fileKey!).catch((error) => {
+        console.error("Error deleting file from IndexedDB:", error);
+      });
+      deleteFileFromStorage(optionInput.fileKey!).catch((error) => {
+        console.error("Error deleting file from Storage:", error);
+      });
 
       optionInput.fileKey = "";
       optionInput.fileURL = "";
@@ -261,7 +276,7 @@ export default function AdvancedTextbox({
         onChange={handleTextChange}
         onKeyDown={handleKeyDown}
         placeholder={
-          placeholder ||
+          placeholder ??
           "Type or drag and drop here (only 1 file allowed). Latex syntax starts with $@ and ends with $ (eg: $@e^{ipi} + 1 = 0$)"
         }
       />

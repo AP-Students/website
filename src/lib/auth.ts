@@ -10,10 +10,12 @@ import {
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "./firebase"; // Firestore instance
 import { useRouter } from "next/navigation";
-import { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
+import { type FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
+import { useUser } from "@/components/hooks/UserContext";
 
 export const useAuthHandlers = () => {
   const router = useRouter();
+  const { updateUser } = useUser(); // Get the updateUser function
 
   const getMessageFromCode = (code: string): string | undefined => {
     return code.split("/").pop()?.replaceAll("-", " ");
@@ -50,18 +52,18 @@ export const useAuthHandlers = () => {
       });
 
       router.push("/");
-      // Allows time for db to store user, then refreshes page to reload user and replace sign up + login page. 
+      // Allows time for db to store user, then refreshes page to reload user and replace sign up + login page.
       setTimeout(() => {
         router.refresh();
       }, 500);
-    } catch (e: any) {
+    } catch (e: unknown) {
       const error = e as FirebaseAuthError;
 
       throw {
         code: error.code,
         message:
-          error.message ||
-          getMessageFromCode(error.code) ||
+          error.message ??
+          getMessageFromCode(error.code) ??
           "There was an error in sign up",
       };
     }
@@ -86,18 +88,17 @@ export const useAuthHandlers = () => {
         };
       }
 
+
       router.push("/");
-      setTimeout(() => {
-        router.refresh();
-      }, 500);
+      await updateUser();
       return userCredential;
-    } catch (e: any) {
+    } catch (e: unknown) {
       const error = e as FirebaseAuthError;
       throw {
         code: error.code,
         message:
-          error.message ||
-          getMessageFromCode(error.code) ||
+          error.message ??
+          getMessageFromCode(error.code) ??
           "There was an error in login",
       };
     }
@@ -124,13 +125,13 @@ export const useAuthHandlers = () => {
       setTimeout(() => {
         router.refresh();
       }, 500);
-    } catch (e: any) {
+    } catch (e: unknown) {
       const error = e as FirebaseAuthError;
       throw {
         code: error.code,
         message:
-          error.message ||
-          getMessageFromCode(error.code) ||
+          error.message ??
+          getMessageFromCode(error.code) ??
           "There was an error signing up with Google",
       };
     }
@@ -139,39 +140,33 @@ export const useAuthHandlers = () => {
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
 
-    try {
-      const userCredential = await signInWithPopup(auth, provider);
-      const user = userCredential.user;
+    const userCredential = await signInWithPopup(auth, provider);
+    const user = userCredential.user;
 
-      // Check if user data exists in Firestore
-      const userDocRef = doc(db, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
+    // Check if user data exists in Firestore
+    const userDocRef = doc(db, "users", user.uid);
+    const userDoc = await getDoc(userDocRef);
 
-      if (!userDoc.exists()) {
-        throw {
-          code: "auth/invalid-email",
-        };
-      }
-
-      router.push("/");
-      setTimeout(() => {
-        router.refresh();
-      }, 500);
-      
-    } catch (error) {
+    if (!userDoc.exists()) {
+      throw {
+        code: "auth/invalid-email",
+      };
     }
+
+    router.push("/");
+    await updateUser();
   };
 
   const forgotPassword = async (email: string) => {
     try {
       await sendPasswordResetEmail(auth, email);
-    } catch (e: any) {
+    } catch (e: unknown) {
       const error = e as FirebaseAuthError;
       throw {
         code: error.code,
         message:
-          error.message ||
-          getMessageFromCode(error.code) ||
+          error.message ??
+          getMessageFromCode(error.code) ??
           "An unknown error occurred",
       };
     }

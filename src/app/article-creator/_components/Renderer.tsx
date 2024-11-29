@@ -1,17 +1,25 @@
-import { type OutputData } from "@editorjs/editorjs";
+import type { OutputBlockData, OutputData } from "@editorjs/editorjs";
 import edjsParser from "editorjs-parser";
 import katex from "katex";
 import hljs from "highlight.js";
 import "@/styles/highlightjs.css";
 import { useEffect, useRef } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot, type Root } from "react-dom/client";
 import { QuestionsOutput } from "./custom_questions/QuestionInstance";
-import { QuestionFormat } from "@/types/questions";
+import type { QuestionFormat } from "@/types/questions";
 import "@/app/article-creator/katexStyling.css";
 import { getUser } from "@/components/hooks/users";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { getKey } from "./FetchArticleFunctions";
+import { QuestionsAddCard } from "./custom_questions/QuestionsAddCard";
+
+// TS will complain if I dont build an interface for docSnap.data(). This way I can access blocks type through inferance of docSnap.data().
+interface DocumentData {
+  data: {
+    blocks: OutputBlockData[];
+  };
+}
 
 const customParsers = {
   alert: (data: { align: string; message: string; type: string }) => {
@@ -91,12 +99,12 @@ const customParsers = {
 
   questionsAddCard: (data: { instanceId: string; content: QuestionFormat }) => {
     const instanceUUID = data.instanceId;
-    const content = JSON.stringify(data.content);
+    // const content = JSON.stringify(data.content);
     return `<div class="questions-block-${instanceUUID}"></div>`;
   },
 };
 
-const rootMap = new Map<Element, any>();
+const rootMap = new Map<Element, Root>();
 
 const Renderer = (props: { content: OutputData }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -120,11 +128,12 @@ const Renderer = (props: { content: OutputData }) => {
           const docSnap = await getDoc(docRef);
 
           if (docSnap.exists()) {
-            const data = docSnap.data().data.blocks;
+            const docData = docSnap.data() as DocumentData;
+            const data = docData.data.blocks;
 
             // Process data.blocks only once
-            data.forEach((block: any) => {
-              if (block.type === "questionsAddCard") {
+            data.forEach((block) => {
+              if (block.data instanceof QuestionsAddCard) {
                 const instanceId = block.data.instanceId;
                 const storageKey = `questions_${instanceId}`;
 
@@ -134,7 +143,7 @@ const Renderer = (props: { content: OutputData }) => {
                     (questionInstance: QuestionFormat) => ({
                       ...questionInstance,
                       questionInstance: questionInstance.question || { value: "" }, 
-                      options: questionInstance.options.map((option: any) => ({
+                      options: questionInstance.options.map((option) => ({
                         ...option,
                         value: option.value || { value: "" }, 
                       })),
@@ -167,7 +176,7 @@ const Renderer = (props: { content: OutputData }) => {
       // Proceed to render the components
       if (containerRef.current) {
         props.content.blocks.forEach((block) => {
-          if (block.type === "questionsAddCard") {
+          if (block.data instanceof QuestionsAddCard) {
             const instanceId = block.data.instanceId;
             const placeholder = containerRef.current!.querySelector(
               `.questions-block-${instanceId}`,
@@ -190,10 +199,10 @@ const Renderer = (props: { content: OutputData }) => {
       }
     };
 
-    
-
     // Call the fetchData function
-    fetchData();
+    fetchData().catch((error) => {
+      console.error("Error fetching data:", error);
+    });
   }, [props.content]);
   if (!props.content) return null;
 
