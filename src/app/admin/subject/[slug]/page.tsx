@@ -116,6 +116,10 @@ const Page = ({ params }: { params: { slug: string } }) => {
     if(!subject) return
     const updatedUnits = [...subject.units];
     updatedUnits.splice(unitIndex, 1);
+    // You need to go through the rest of the units behind the deleted unit and decrement their unit numbers
+    for (let i = unitIndex; i < updatedUnits.length; i++) {
+      updatedUnits[i]!.unit -= 1;
+    }
     setSubject({ ...subject, units: updatedUnits });
   };
 
@@ -133,6 +137,10 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
   const editUnitTitle = (unitIndex: number, newTitle: string) => {
     if(!subject) return
+    if(newTitle.trim().length === 0){
+      alert("Title cannot be empty.");
+      return
+    }
     const updatedUnits = [...subject.units];
     updatedUnits[unitIndex]!.title = newTitle;
     setSubject({ ...subject, units: updatedUnits });
@@ -145,6 +153,10 @@ const Page = ({ params }: { params: { slug: string } }) => {
     newTitle: string,
   ) => {
     if(!subject) return
+    if(newTitle.trim().length === 0){
+      alert("Title cannot be empty.");
+      return
+    }
     const updatedUnits = [...subject.units];
     updatedUnits[unitIndex]!.chapters[chapterIndex]!.title = newTitle;
     setSubject({ ...subject, units: updatedUnits });
@@ -155,6 +167,10 @@ const Page = ({ params }: { params: { slug: string } }) => {
     if(!subject) return
     const updatedUnits = [...subject.units];
     updatedUnits[unitIndex]!.chapters.splice(chapterIndex, 1);
+    // You need to go through the rest of the units behind the deleted chapter and decrement their chapter numbers
+    for (let i = chapterIndex; i < updatedUnits[unitIndex]!.chapters.length; i++) {
+      updatedUnits[unitIndex]!.chapters[i]!.chapter--;
+    }
     setSubject({ ...subject, units: updatedUnits });
   };
 

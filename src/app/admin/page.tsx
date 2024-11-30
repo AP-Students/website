@@ -40,7 +40,7 @@ const Page = () => {
     router.push("/");
     return null;
   }
-  
+
   return (
     <div>
       <Navbar />
@@ -68,7 +68,7 @@ const Page = () => {
                   {!error &&
                     users.map(
                       // If error, it will show error message. Otherwise, it will show users
-                      (u,) => (
+                      (u) => (
                         <li
                           key={u.uid}
                           className="grid cursor-pointer grid-cols-1 gap-4 rounded-md border p-4 text-center shadow-md hover:bg-gray-200 md:grid-cols-2 lg:grid-cols-3"
@@ -140,7 +140,11 @@ const Page = () => {
                     await handleRoleChange(selectedUser, "member");
                     closeModal(); // Runs only after handleRoleChange succeeds
                   } catch (error) {
-                    alert(error instanceof Error ? error.message : "An unexpected error occurred.");
+                    alert(
+                      error instanceof Error
+                        ? error.message
+                        : "An unexpected error occurred.",
+                    );
                   }
                 }}
               >
@@ -153,7 +157,11 @@ const Page = () => {
                     await handleRoleChange(selectedUser, "member");
                     closeModal(); // Runs only after handleRoleChange succeeds
                   } catch (error) {
-                    alert(error instanceof Error ? error.message : "An unexpected error occurred.");
+                    alert(
+                      error instanceof Error
+                        ? error.message
+                        : "An unexpected error occurred.",
+                    );
                   }
                 }}
               >
