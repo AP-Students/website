@@ -72,7 +72,16 @@ const Page = () => {
                         <li
                           key={u.uid}
                           className="grid cursor-pointer grid-cols-1 gap-4 rounded-md border p-4 text-center shadow-md hover:bg-gray-200 md:grid-cols-2 lg:grid-cols-3"
-                          onClick={() => openModal(u)}
+                          onClick={() => 
+                          {
+                            if (u.access === "admin") {
+                              alert("Admins cannot demote other admins");
+                              return;
+                            }else{
+                              openModal(u)
+                            }
+                          }
+                            }
                         >
                           <div className="hidden font-bold lg:block">
                             {u.displayName}

@@ -56,7 +56,6 @@ export default function Login() {
           tempErrors.push(
             "Email doesn't exist. Please sign up to join FiveHive.",
           );
-          console.log("temp errors", tempErrors);
           break;
         case "auth/invalid-credential":
           tempErrors.push("Incorrect password.");

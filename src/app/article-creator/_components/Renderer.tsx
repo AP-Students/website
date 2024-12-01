@@ -176,7 +176,9 @@ const Renderer = (props: { content: OutputData }) => {
       // Proceed to render the components
       if (containerRef.current) {
         props.content.blocks.forEach((block) => {
-          if (block.data instanceof QuestionsAddCard) {
+          /* eslint-disable */ // InstanceOf doesnt seem to work so Im just using this as a substitute 
+          if (block.type === "questionsAddCard") {
+            
             const instanceId = block.data.instanceId;
             const placeholder = containerRef.current!.querySelector(
               `.questions-block-${instanceId}`,
@@ -195,6 +197,7 @@ const Renderer = (props: { content: OutputData }) => {
               root.render(<QuestionsOutput instanceId={instanceId.toString()} />);
             }
           }
+          /* eslint-enable */
         });
       }
     };
