@@ -6,7 +6,7 @@ import { useAuthHandlers } from "@/lib/auth";
 import React, { type FormEvent, useState } from "react";
 import Link from "next/link";
 import Button from "@/components/login/submitButton";
-import { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
+import type { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -14,7 +14,7 @@ const outfit = Outfit({
 });
 
 export default function Signup() {
-  const { signInWithGoogle, signUpWithGoogle, signUpWithEmail } =
+  const { signUpWithGoogle, signUpWithEmail } =
     useAuthHandlers();
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
@@ -81,7 +81,7 @@ export default function Signup() {
         formObject.email as string,
         formObject.password as string,
       );
-    } catch (e: any) {
+    } catch (e: unknown) {
       const error = e as FirebaseAuthError;
       switch (error.code) {
         case "auth/email-already-in-use":

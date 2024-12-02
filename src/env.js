@@ -25,7 +25,6 @@ export const env = createEnv({
   },
 
   // Runtime environment variables
-  // @ts-ignore
   runtimeEnv: {
     FIREBASE_ADMIN_PROJECT_ID: process.env.FIREBASE_ADMIN_PROJECT_ID,
     FIREBASE_ADMIN_PRIVATE_KEY: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(

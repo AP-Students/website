@@ -118,7 +118,7 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
 };
 
 const Editor = ({ setData, content }: { setData: (data: OutputData) => void, content: OutputData }) => {
-  const { editor, isEditorReady } = useEditor({
+  const { editor } = useEditor({
     holder: "editorjs",
     tools: EDITOR_TOOLS,
     data: content ||  {
@@ -151,7 +151,7 @@ const Editor = ({ setData, content }: { setData: (data: OutputData) => void, con
       version: "2.30.2",
     },
     placeholder: "Press '/' to see available blocks",
-    onChange: (api, event) => {
+    onChange: (api) => {
       api.saver
         .save()
         .then((outputData) => {

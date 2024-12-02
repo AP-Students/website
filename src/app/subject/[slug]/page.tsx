@@ -11,8 +11,7 @@ import UnitAccordion from "@/components/subjectHomepage/unit-accordion";
 import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { getUser } from "@/components/hooks/users";
-import { User } from "@/types/user";
-import Link from "next/link";
+import { type User } from "@/types/user";
 import usePathname from "@/components/client/pathname";
 
 const Page = ({ params }: { params: { slug: string } }) => {
@@ -33,7 +32,9 @@ const Page = ({ params }: { params: { slug: string } }) => {
       }
     };
 
-    fetchUser();
+    fetchUser().catch((error) => {
+      console.error("Error fetching user:", error);
+    });
   }, []);
 
   useEffect(() => {
@@ -55,9 +56,11 @@ const Page = ({ params }: { params: { slug: string } }) => {
     };
 
     if (user !== undefined) {
-      fetchSubject();
+      fetchSubject().catch((error) => {
+        console.error("Error fetching user:", error);
+      });;
     }
-  }, [user]);
+  }, [user, params.slug]);
 
   if (loading) {
     return (
@@ -66,7 +69,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
       </div>
     );
   }
-  if (error || !subject) {
+  if (error ?? !subject) {
     return (
       <div className="flex min-h-screen items-center justify-center text-3xl">
         {error}

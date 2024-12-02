@@ -2,7 +2,7 @@
 
 import TestRenderer from "@/app/questions/testRenderer";
 import QuestionsInputInterface from "@/app/article-creator/_components/custom_questions/QuestionsInputInterface";
-import { useSyncedQuestions } from "@/app/article-creator/_components/custom_questions/QuestionInstance";
+import { syncedQuestions } from "@/app/article-creator/_components/custom_questions/QuestionInstance";
 import Navbar from "@/components/ui/navbar";
 import { useUser } from "@/components/hooks/UserContext";
 import { db } from "@/lib/firebase";
@@ -10,8 +10,9 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { getUserAccess } from "@/components/hooks/users";
 import { useEffect, useState } from "react";
-import { Subject } from "@/types";
+import type { Subject, Unit } from "@/types";
 import usePathname from "@/components/client/pathname";
+import type { QuestionFormat } from "@/types/questions";
 
 const Page = () => {
   const pathname = usePathname();
@@ -23,43 +24,36 @@ const Page = () => {
 
   const [testName, setTestName] = useState<string>("");
   const [time, setTime] = useState<number>(0);
-  const { questions, setQuestions } = useSyncedQuestions(instanceId);
+  const { questions, setQuestions } = syncedQuestions(instanceId);
 
   useEffect(() => {
-    const fetchItems = async () => {
-      try {
-        const userAccess = await getUserAccess();
-        if (userAccess && (userAccess === "admin" || userAccess === "member")) {
-          const docRef = doc(db, "subjects", collectionId!);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            const data = docSnap.data() as Subject;
-            const unitIndex = parseInt(unitId!, 10) - 1;
+    // Fetch questions
+    (async () => {
+      const userAccess = await getUserAccess();
+      if (userAccess && (userAccess === "admin" || userAccess === "member")) {
+        const docRef = doc(db, "subjects", collectionId!);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data() as Subject;
+          const unitIndex = parseInt(unitId!, 10) - 1;
 
-            const time =
-              data && data.units[unitIndex] && data.units[unitIndex].test!.time;
-            setTime((time && time / 60) || 20);
-            const testName = data && data.title;
-            setTestName(testName);
-            const questions =
-              data &&
-              data.units[unitIndex] &&
-              data.units[unitIndex].test!.questions;
+          const time = data?.units?.[unitIndex]?.test?.time;
+          setTime((time && time / 60) ?? 20);
+          const testName = data?.title;
+          setTestName(testName);
+          const questions = data?.units[unitIndex]?.test!.questions;
 
-            if (questions) {
-              setQuestions(questions);
-            } else {
-              setQuestions(useSyncedQuestions(instanceId).questions);
-            }
+          if (questions) {
+            setQuestions(questions);
+          } else {
+            setQuestions(syncedQuestions(instanceId).questions);
           }
         }
-      } catch (error: any) {
-        console.log("Error fetching subject data:", error.message);
       }
-    };
-
-    fetchItems();
-  }, []);
+    })().catch((error) => {
+      console.error("Error fetching questions:", error);
+    });
+  },[collectionId, unitId, instanceId, setQuestions]);
 
   const handleSave = async () => {
     try {
@@ -70,18 +64,19 @@ const Page = () => {
       const docSnap = await getDoc(subjectRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
-        const units = data.units;
+        const units = data.units as Unit[];
 
-        const sanitizedQuestions = removeUndefined(questions);
+        const sanitizedQuestions = removeUndefined(questions) as QuestionFormat[];
 
         // Update the specific unit in the array
         units[unitIndex] = {
-          ...units[unitIndex],
+          ...units[unitIndex]!,
           test: {
             ...units[unitIndex]?.test,
             optedIn: true,
             questions: sanitizedQuestions,
-            time: time * 60, //Convert minutes to seconds
+            time: time * 60, // Convert minutes to seconds
+            instanceId: instanceId ?? "",
           },
         };
 
@@ -115,7 +110,7 @@ const Page = () => {
           <h1 className="mb-2 text-center text-4xl font-bold">{testName}</h1>
           {/* Time Input for Admins */}
           <div className="mb-6 flex items-center gap-4">
-            <div className="bg-blue-600 text-white px-2 py-1 rounded-sm">
+            <div className="rounded-sm bg-blue-600 px-2 py-1 text-white">
               Set Time: {time} minutes
             </div>
             <input
@@ -167,6 +162,9 @@ const Page = () => {
 
 export default Page;
 
+// Recursive types are pain so Im just gonna do this
+
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 const removeUndefined = (obj: any): any => {
   if (Array.isArray(obj)) {
     return obj.map((item) => removeUndefined(item));
@@ -180,3 +178,5 @@ const removeUndefined = (obj: any): any => {
   }
   return obj;
 };
+/* eslint-enable */
+

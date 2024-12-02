@@ -6,7 +6,7 @@ import { useAuthHandlers } from "@/lib/auth";
 import React, { useState } from "react";
 import Link from "next/link";
 import Button from "@/components/login/submitButton";
-import { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
+import type { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -15,6 +15,8 @@ const outfit = Outfit({
 
 export default function Login() {
   const { signInWithGoogle, signInWithEmail } = useAuthHandlers();
+  
+  
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -47,13 +49,14 @@ export default function Login() {
     setLoading(true);
     try {
       await signInWithEmail(email, password);
-    } catch (e: any) {
+    } catch (e) {
       const error = e as FirebaseAuthError;
       switch (error.code) {
         case "auth/invalid-email":
           tempErrors.push(
             "Email doesn't exist. Please sign up to join FiveHive.",
           );
+          console.log("temp errors", tempErrors);
           break;
         case "auth/invalid-credential":
           tempErrors.push("Incorrect password.");
@@ -66,6 +69,7 @@ export default function Login() {
           break;
       }
     }
+
     setErrors(tempErrors);
     setLoading(false);
     return;
@@ -170,7 +174,7 @@ export default function Login() {
         <div className="my-8"></div>
 
         <div className="flex justify-center text-black">
-          <span className="pr-2">Don't have an account?</span>
+          <span className="pr-2">Don&apos;t have an account?</span>
           <Link className="hover:underline" href="/signup">
             Sign up
           </Link>

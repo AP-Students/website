@@ -1,5 +1,3 @@
-import test from "node:test";
-
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>{
   children: string;
   icon?: React.ReactNode;
