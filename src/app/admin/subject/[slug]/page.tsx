@@ -113,9 +113,13 @@ const Page = ({ params }: { params: { slug: string } }) => {
   };
 
   const deleteUnit = (unitIndex: number) => {
-    if(!subject) return
+    if (!subject) return;
     const updatedUnits = [...subject.units];
     updatedUnits.splice(unitIndex, 1);
+    // You need to go through the rest of the units behind the deleted unit and decrement their unit numbers
+    for (let i = unitIndex; i < updatedUnits.length; i++) {
+      updatedUnits[i]!.unit -= 1;
+    }
     setSubject({ ...subject, units: updatedUnits });
   };
 
@@ -132,11 +136,16 @@ const Page = ({ params }: { params: { slug: string } }) => {
   };
 
   const editUnitTitle = (unitIndex: number, newTitle: string) => {
-    if(!subject) return
-    const updatedUnits = [...subject.units];
-    updatedUnits[unitIndex]!.title = newTitle;
-    setSubject({ ...subject, units: updatedUnits });
-    setEditingUnit({ unitIndex: null });
+    if (!subject) return;
+    if (newTitle.trim().length === 0) {
+      alert("Title cannot be empty.");
+      return;
+    } else {
+      const updatedUnits = [...subject.units];
+      updatedUnits[unitIndex]!.title = newTitle;
+      setSubject({ ...subject, units: updatedUnits });
+      setEditingUnit({ unitIndex: null });
+    }
   };
 
   const editChapterTitle = (
@@ -144,17 +153,30 @@ const Page = ({ params }: { params: { slug: string } }) => {
     chapterIndex: number,
     newTitle: string,
   ) => {
-    if(!subject) return
-    const updatedUnits = [...subject.units];
-    updatedUnits[unitIndex]!.chapters[chapterIndex]!.title = newTitle;
-    setSubject({ ...subject, units: updatedUnits });
-    setEditingChapter({ unitIndex: null, chapterIndex: null });
+    if (!subject) return;
+    if (newTitle.trim().length === 0) {
+      alert("Title cannot be empty.");
+      return;
+    } else {
+      const updatedUnits = [...subject.units];
+      updatedUnits[unitIndex]!.chapters[chapterIndex]!.title = newTitle;
+      setSubject({ ...subject, units: updatedUnits });
+      setEditingChapter({ unitIndex: null, chapterIndex: null });
+    }
   };
 
   const deleteChapter = (unitIndex: number, chapterIndex: number) => {
-    if(!subject) return
+    if (!subject) return;
     const updatedUnits = [...subject.units];
     updatedUnits[unitIndex]!.chapters.splice(chapterIndex, 1);
+    // You need to go through the rest of the units behind the deleted chapter and decrement their chapter numbers
+    for (
+      let i = chapterIndex;
+      i < updatedUnits[unitIndex]!.chapters.length;
+      i++
+    ) {
+      updatedUnits[unitIndex]!.chapters[i]!.chapter--;
+    }
     setSubject({ ...subject, units: updatedUnits });
   };
 
@@ -169,7 +191,6 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
   const optInForUnitTest = (unitIndex: number): void => {
     const updatedSubject = { ...subject! };
-    console.log("Updated subject:", updatedSubject);
     if (updatedSubject?.units[unitIndex]?.test) {
       updatedSubject.units[unitIndex].test.optedIn = true;
       updatedSubject.units[unitIndex].test.instanceId =
@@ -202,8 +223,9 @@ const Page = ({ params }: { params: { slug: string } }) => {
         <main className="container max-w-3xl flex-grow px-4 py-8 md:px-10 lg:px-14 2xl:px-20">
           <h1 className="text-center text-4xl font-bold">{subject?.title}</h1>
           <h2 className="min-w-full px-4 py-6 text-center text-2xl font-black underline md:px-10 lg:px-14 2xl:px-20">
-            BEFORE CLICKING ANY LINKS OR LEAVING THE PAGE, click &quot;Save Changes&quot;
-            at the bottom of this page to avoid losing your changes.
+            BEFORE CLICKING ANY LINKS OR LEAVING THE PAGE, click &quot;Save
+            Changes&quot; at the bottom of this page to avoid losing your
+            changes.
           </h2>
           <div className="mb-8 space-y-4">
             {subject?.units.map((unit, unitIndex) => (

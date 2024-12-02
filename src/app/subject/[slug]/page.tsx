@@ -79,7 +79,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
   return (
     <div className="relative flex min-h-screen">
-      <SubjectSidebar subject={subject} pathname={pathname} />
+      <SubjectSidebar subject={subject} />
 
       <div className="relative flex grow flex-col">
         <Navbar className="w-full px-10 xl:px-20" variant="secondary" />
