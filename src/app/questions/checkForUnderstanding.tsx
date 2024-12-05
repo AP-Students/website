@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { MdOutlineRefresh } from "react-icons/md";
+import { RotateCw } from "lucide-react";
 import type { QuestionFormat } from "@/types/questions";
 import { RenderContent } from "@/app/article-creator/_components/custom_questions/RenderAdvancedTextbox";
 
@@ -16,7 +16,7 @@ const CheckForUnderstanding: React.FC<Props> = ({ questionInstance }) => {
   const handleSelectOption = (id: string) => {
     const numAnswers = questionInstance.answers.length;
     if (!submitted) {
-      if (numAnswers === 1){
+      if (numAnswers === 1) {
         setSelectedOptions([id]);
         return;
       }
@@ -49,7 +49,6 @@ const CheckForUnderstanding: React.FC<Props> = ({ questionInstance }) => {
 
   return (
     <div className="max-w-6xl bg-primary-foreground p-4 md:p-6 lg:p-8">
-
       <div className="markdown text-xl font-bold md:text-2xl lg:text-3xl">
         <RenderContent content={questionInstance.question} />
       </div>
@@ -102,7 +101,7 @@ const CheckForUnderstanding: React.FC<Props> = ({ questionInstance }) => {
             className={`flex max-w-[50%] items-center justify-center rounded bg-gray-500 py-2 pl-3 pr-4 text-white hover:bg-gray-600`}
             onClick={handleRetry}
           >
-            <MdOutlineRefresh size={24} style={{ color: "white" }} />
+            <RotateCw size={24} className="mr-2" />
             <span>Retry</span>
           </button>
         </div>
