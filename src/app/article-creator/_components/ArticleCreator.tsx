@@ -91,7 +91,7 @@ function ArticleCreator({ className }: { className?: string }) {
         setInitialData(data);
         setData(data);
       }
-    })().catch((error) =>{
+    })().catch((error) => {
       console.error("Error fetching data:", error);
     });
   }, []);
@@ -108,12 +108,12 @@ function ArticleCreator({ className }: { className?: string }) {
   const handleSave = async () => {
     const user = await getUser();
     const pathParts = window.location.pathname.split("/").slice(-3);
-  
+
     if (!user || (user.access !== "admin" && user.access !== "member")) {
       alert("User is not authorized to perform this action.");
       return;
     }
-  
+
     const newArticle = {
       id: uuidv4(),
       createdAt: new Date(),
@@ -121,10 +121,10 @@ function ArticleCreator({ className }: { className?: string }) {
       title: pathParts.join("/"),
       data,
     };
-  
+
     try {
       const docRef = doc(db, "pages", pathParts.join("-"));
-  
+
       // Function to process questions and upload files
       const processQuestions = async (
         questions: QuestionFormat[],
@@ -132,7 +132,7 @@ function ArticleCreator({ className }: { className?: string }) {
         // Collect all unique fileKeys from questions
 
         const allFileKeys = new Set<string>();
-  
+
         questions.forEach((question) => {
           if (question.question?.fileKey) {
             allFileKeys.add(question.question.fileKey);
@@ -149,15 +149,14 @@ function ArticleCreator({ className }: { className?: string }) {
             }
           });
         });
-  
+
         // Read all files from IndexedDB
         const fileKeyToFile = new Map<string, File>();
-  
+
         await Promise.all(
           Array.from(allFileKeys).map(async (fileKey) => {
             const fileObj = await getFileFromIndexedDB(fileKey);
 
-            
             // @ts-expect-error: fileObj is returned as an object with 1 attr "file"; You must access file to actually get the file contents but TS doesnt know that
             const file = fileObj?.file as File;
 
@@ -168,11 +167,11 @@ function ArticleCreator({ className }: { className?: string }) {
             }
           }),
         );
-  
+
         // Upload all files and get download URLs
         const storage = getStorage();
         const fileKeyToDownloadURL = new Map<string, string>();
-  
+
         // Todo: Check whether the file already exists in the file base (Will save significant costs)
         await Promise.all(
           Array.from(fileKeyToFile.entries()).map(async ([fileKey, file]) => {
@@ -182,11 +181,11 @@ function ArticleCreator({ className }: { className?: string }) {
             fileKeyToDownloadURL.set(fileKey, downloadURL);
           }),
         );
-  
+
         // Update questions with download URLs
         const updatedQuestions = questions.map((question) => {
           const updatedQuestion: QuestionFormat = { ...question };
-  
+
           // Update question body fileURL
           if (updatedQuestion.question?.fileKey) {
             const downloadURL = fileKeyToDownloadURL.get(
@@ -199,7 +198,7 @@ function ArticleCreator({ className }: { className?: string }) {
               };
             }
           }
-  
+
           // Update explanation fileURL
           if (updatedQuestion.explanation?.fileKey) {
             const downloadURL = fileKeyToDownloadURL.get(
@@ -212,7 +211,7 @@ function ArticleCreator({ className }: { className?: string }) {
               };
             }
           }
-  
+
           // Update content fileURL
           if (updatedQuestion.content?.fileKey) {
             const downloadURL = fileKeyToDownloadURL.get(
@@ -225,11 +224,13 @@ function ArticleCreator({ className }: { className?: string }) {
               };
             }
           }
-  
+
           // Update options fileURLs
           updatedQuestion.options = updatedQuestion.options.map((option) => {
             if (option.value.fileKey) {
-              const downloadURL = fileKeyToDownloadURL.get(option.value.fileKey);
+              const downloadURL = fileKeyToDownloadURL.get(
+                option.value.fileKey,
+              );
               if (downloadURL) {
                 return {
                   ...option,
@@ -242,22 +243,20 @@ function ArticleCreator({ className }: { className?: string }) {
             }
             return option;
           });
-  
+
           return updatedQuestion;
         });
-  
+
         return updatedQuestions;
       };
-  
+
       // Also a pain to deal with because blocks are not fun to deal with
 
       /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
       const processTable = async (tableData: any) => {
         // tableData is an object with a content property that is an array of arrays.
-        console.log("tableData", tableData);
-
         const table = tableData.content as any[][];
-  
+
         const tableAsObject = table.reduce(
           (acc, row, index) => {
             acc[`row${index}`] = row;
@@ -265,10 +264,10 @@ function ArticleCreator({ className }: { className?: string }) {
           },
           {} as Record<string, any[]>,
         );
-  
+
         return tableAsObject;
       };
-  
+
       // Traverse through data to find QuestionFormat[] arrays
       const updatedDataBlocks = await Promise.all(
         data.blocks.map(async (block) => {
@@ -280,29 +279,29 @@ function ArticleCreator({ className }: { className?: string }) {
             block.data.questions = updatedQuestions;
             return block;
           }
-  
+
           if (block.type === "table") {
             const updatedTable = await processTable(block.data);
             block.data.content = updatedTable;
             return block;
           }
-  
+
           return block; // If not a questions block, return original block
         }),
       );
 
       /* eslint-enable */
-  
+
       newArticle.data.blocks = updatedDataBlocks;
       await setDoc(docRef, newArticle);
-  
+
       alert(`Article saved: ${docRef.id}`);
       setUnsavedChanges(false);
     } catch (error) {
       console.error("Error saving article:", error);
       alert("Error saving article.");
     }
-  
+
     setShowDropdown(false);
   };
   
