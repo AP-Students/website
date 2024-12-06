@@ -8,10 +8,13 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { v4 as uuidv4 } from "uuid";
 import { getUser, getUserAccess } from "@/components/hooks/users";
+import { Save } from "lucide-react";
 import { getFileFromIndexedDB } from "./custom_questions/RenderAdvancedTextbox";
 import { type QuestionFormat } from "@/types/questions";
 import Renderer from "./Renderer";
 import { revertTableObjectToArray, getKey } from "./FetchArticleFunctions";
+import { Blocker } from "@/app/admin/subject/_components/navigation-block";
+import { Button } from "@/components/ui/button";
 
 function ArticleCreator({ className }: { className?: string }) {
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
@@ -252,8 +255,6 @@ function ArticleCreator({ className }: { className?: string }) {
       /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
       const processTable = async (tableData: any) => {
         // tableData is an object with a content property that is an array of arrays.
-        console.log("tableData", tableData);
-
         const table = tableData.content as any[][];
 
         const tableAsObject = table.reduce(
@@ -295,6 +296,7 @@ function ArticleCreator({ className }: { className?: string }) {
       await setDoc(docRef, newArticle);
 
       alert(`Article saved: ${docRef.id}`);
+      setUnsavedChanges(false);
     } catch (error) {
       console.error("Error saving article:", error);
       alert("Error saving article.");
@@ -302,15 +304,18 @@ function ArticleCreator({ className }: { className?: string }) {
 
     setShowDropdown(false);
   };
+  
+  const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
 
   return (
     <>
-      <button
-        className="ml-auto block rounded bg-blue-500 px-4 py-2 text-white transition-colors hover:bg-blue-600"
-        onClick={openSaveModal}
-      >
-        Save Changes
-      </button>
+      {unsavedChanges && <Blocker />}
+
+      <div className="flex justify-end">
+        <Button className="bg-blue-500 hover:bg-blue-600" onClick={openSaveModal}>
+          <Save className="mr-2" /> Save Changes
+        </Button>
+      </div>
 
       {showDropdown && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -333,16 +338,21 @@ function ArticleCreator({ className }: { className?: string }) {
 
       <div
         className={cn(
-          "grid grid-cols-1 divide-y-2 sm:grid-cols-2 sm:divide-x-2 sm:divide-y-0",
+          "grid grid-cols-1 sm:grid-cols-2 pb-8",
           className,
         )}
       >
-        <div className="overflow-y-auto rounded border p-4 px-8">
-          <Editor content={initialData} setData={setData} />
+        <div className="overflow-y-auto rounded border border-gray-300 p-4 px-8">
+          <Editor
+            content={initialData}
+            setData={setData}
+            setUnsavedChanges={setUnsavedChanges}
+          />
         </div>
 
         <div className="px-8">
-          <h2 className="pb-8 opacity-50">Preview:</h2>
+          <div className="my-4 pb-4 opacity-50">Output:</div>
+
           <Renderer content={data} />
         </div>
       </div>

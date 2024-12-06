@@ -53,7 +53,7 @@ const formatCourseName = (courseName: string) => {
   return courseName
     .replace(/AP /g, "")
     .toLowerCase()
-    .replace(/[^a-z1-9 &]+/g, "")
+    .replace(/[^a-z1-9 ]+/g, "")
     .replace(/\s+/g, "-");
 };
 

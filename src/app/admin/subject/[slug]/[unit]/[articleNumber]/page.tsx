@@ -1,10 +1,13 @@
 "use client";
 import ArticleCreator from "@/app/article-creator/_components/ArticleCreator";
 import { useUser } from "@/components/hooks/UserContext";
-import Footer from "@/components/ui/footer";
-import Navbar from "@/components/ui/navbar";
+import { buttonVariants } from "@/components/ui/button";
+import { ArrowLeft, UserRoundCog } from "lucide-react";
+
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { Link } from "../../../_components/link";
+import { cn } from "@/lib/utils";
 
 const Page = () => {
   const { user, loading } = useUser();
@@ -13,12 +16,10 @@ const Page = () => {
   const pathname = usePathname();
 
   // Using link to format unique title (eg, limits-and-continuity-1)
-  const pathParts = pathname.split("/").slice(-2);
-  const formattedTitle =
-    `Lesson ${pathParts[1]?.charAt(0).toUpperCase() + pathParts[1]!.slice(1)} of ${pathParts[0]?.charAt(0).toUpperCase() + pathParts[0]!.slice(1)}`.replace(
-      /-/g,
-      " ",
-    );
+  const pathParts = pathname.split("/").slice(-3);
+  const formattedSubject = `SUBJECT: ${pathParts[0]}`.replace(/-/g, " ");
+  const formattedUnit = `UNIT: ${pathParts[1]}`.replace(/-/g, " ");
+  const formattedLesson = `Lesson ${pathParts[2]}`;
 
   useEffect(() => {
     if ((!user || user?.access === "user") && !loading) {
@@ -27,16 +28,31 @@ const Page = () => {
   }, [user, loading, router]);
 
   return (
-    <div className="flex h-screen grow flex-col">
-      <Navbar className="w-full px-10 xl:px-20" variant="secondary" />
-      <div className="mt-[4rem] px-10 xl:px-20">
-        <h1 className="pb-8 text-center text-5xl font-bold">
-          {formattedTitle}
-        </h1>
-        <ArticleCreator className="mt-4" />
+    <div className="flex grow flex-col px-10 pt-20 xl:px-20">
+      <div className="flex flex-col gap-2">
+        <Link
+          className={cn(buttonVariants({ variant: "outline" }), "w-min")}
+          href={`/admin`}
+        >
+          <UserRoundCog className="mr-2" />
+          Return to Admin Dashboard
+        </Link>
+        <Link
+          className={cn(buttonVariants({ variant: "outline" }), "w-min")}
+          href={`/admin/subject/${pathParts[0]}`}
+        >
+          <ArrowLeft className="mr-2" />
+          Return to Subject
+        </Link>
       </div>
-
-      <Footer className="mx-0 mt-auto w-full max-w-none px-10 xl:px-20" />
+      <h1 className="py-8 text-2xl capitalize">
+        {formattedSubject}
+        <br />
+        {formattedUnit}
+        <br />
+        <span className="text-4xl font-bold">{formattedLesson}</span>
+      </h1>
+      <ArticleCreator className="mt-4 grow" />
     </div>
   );
 };

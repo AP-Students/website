@@ -1,17 +1,24 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, ChevronUp, Edit, Trash, PlusCircle } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Edit,
+  Trash,
+  PlusCircle,
+  ArrowLeft,
+  Save,
+} from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useUser } from "@/components/hooks/UserContext";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import Link from "next/link";
+import { Link } from "../_components/link";
 import apClassesData from "@/app/admin/apClasses.json";
 import type { Subject } from "@/types";
-import Navbar from "@/components/ui/navbar";
-import Footer from "@/components/ui/footer";
 import usePathname from "@/components/client/pathname";
+import { Blocker } from "../_components/navigation-block";
 
 const apClasses = apClassesData.apClasses;
 
@@ -57,6 +64,8 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
   const unitTitleInputRef = useRef<HTMLInputElement | null>(null);
   const chapterInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
 
   useEffect(() => {
     // Fetch subject data
@@ -110,13 +119,19 @@ const Page = ({ params }: { params: { slug: string } }) => {
     };
     setSubject({ ...subject, units: [...subject.units, newUnit] });
     setNewUnitTitle("");
+    setUnsavedChanges(true);
   };
 
   const deleteUnit = (unitIndex: number) => {
-    if(!subject) return
+    if (!subject) return;
     const updatedUnits = [...subject.units];
     updatedUnits.splice(unitIndex, 1);
+    // You need to go through the rest of the units behind the deleted unit and decrement their unit numbers
+    for (let i = unitIndex; i < updatedUnits.length; i++) {
+      updatedUnits[i]!.unit -= 1;
+    }
     setSubject({ ...subject, units: updatedUnits });
+    setUnsavedChanges(true);
   };
 
   const addChapter = (unitIndex: number) => {
@@ -129,14 +144,21 @@ const Page = ({ params }: { params: { slug: string } }) => {
     updatedUnits[unitIndex]!.chapters.push(newChapter);
     setSubject({ ...subject, units: updatedUnits });
     setNewChapterTitle("");
+    setUnsavedChanges(true);
   };
 
   const editUnitTitle = (unitIndex: number, newTitle: string) => {
-    if(!subject) return
-    const updatedUnits = [...subject.units];
-    updatedUnits[unitIndex]!.title = newTitle;
-    setSubject({ ...subject, units: updatedUnits });
-    setEditingUnit({ unitIndex: null });
+    if (!subject) return;
+    if (newTitle.trim().length === 0) {
+      alert("Title cannot be empty.");
+      return;
+    } else {
+      const updatedUnits = [...subject.units];
+      updatedUnits[unitIndex]!.title = newTitle;
+      setSubject({ ...subject, units: updatedUnits });
+      setEditingUnit({ unitIndex: null });
+      setUnsavedChanges(true);
+    }
   };
 
   const editChapterTitle = (
@@ -144,24 +166,40 @@ const Page = ({ params }: { params: { slug: string } }) => {
     chapterIndex: number,
     newTitle: string,
   ) => {
-    if(!subject) return
-    const updatedUnits = [...subject.units];
-    updatedUnits[unitIndex]!.chapters[chapterIndex]!.title = newTitle;
-    setSubject({ ...subject, units: updatedUnits });
-    setEditingChapter({ unitIndex: null, chapterIndex: null });
+    if (!subject) return;
+    if (newTitle.trim().length === 0) {
+      alert("Title cannot be empty.");
+      return;
+    } else {
+      const updatedUnits = [...subject.units];
+      updatedUnits[unitIndex]!.chapters[chapterIndex]!.title = newTitle;
+      setSubject({ ...subject, units: updatedUnits });
+      setEditingChapter({ unitIndex: null, chapterIndex: null });
+      setUnsavedChanges(true);
+    }
   };
 
   const deleteChapter = (unitIndex: number, chapterIndex: number) => {
-    if(!subject) return
+    if (!subject) return;
     const updatedUnits = [...subject.units];
     updatedUnits[unitIndex]!.chapters.splice(chapterIndex, 1);
+    // You need to go through the rest of the units behind the deleted chapter and decrement their chapter numbers
+    for (
+      let i = chapterIndex;
+      i < updatedUnits[unitIndex]!.chapters.length;
+      i++
+    ) {
+      updatedUnits[unitIndex]!.chapters[i]!.chapter--;
+    }
     setSubject({ ...subject, units: updatedUnits });
+    setUnsavedChanges(true);
   };
 
   const handleSave = async () => {
     try {
       await setDoc(doc(db, "subjects", params.slug), subject);
       alert("Subject units and chapters saved.");
+      setUnsavedChanges(false);
     } catch (error) {
       console.error("Error saving:", error);
     }
@@ -169,13 +207,13 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
   const optInForUnitTest = (unitIndex: number): void => {
     const updatedSubject = { ...subject! };
-    console.log("Updated subject:", updatedSubject);
     if (updatedSubject?.units[unitIndex]?.test) {
       updatedSubject.units[unitIndex].test.optedIn = true;
       updatedSubject.units[unitIndex].test.instanceId =
         `test_${params.slug}_${unitIndex}`;
     }
     setSubject(updatedSubject);
+    setUnsavedChanges(true);
   };
 
   const optOutOfUnitTest = (unitIndex: number): void => {
@@ -184,6 +222,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
       updatedSubject.units[unitIndex].test.optedIn = false;
     }
     setSubject(updatedSubject);
+    setUnsavedChanges(true);
   };
 
   if (!subject) {
@@ -196,16 +235,27 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
   return (
     <>
-      <div className="relative min-h-screen">
-        <Navbar />
+      {unsavedChanges && <Blocker />}
 
-        <main className="container max-w-3xl flex-grow px-4 py-8 md:px-10 lg:px-14 2xl:px-20">
-          <h1 className="text-center text-4xl font-bold">{subject?.title}</h1>
-          <h2 className="min-w-full px-4 py-6 text-center text-2xl font-black underline md:px-10 lg:px-14 2xl:px-20">
-            BEFORE CLICKING ANY LINKS OR LEAVING THE PAGE, click &quot;Save Changes&quot;
-            at the bottom of this page to avoid losing your changes.
-          </h2>
-          <div className="mb-8 space-y-4">
+      <div className="relative min-h-screen">
+        <main className="container max-w-3xl flex-grow px-4 pb-8 pt-20 md:px-10 lg:px-14 2xl:px-20">
+          <div className="flex justify-between">
+            <Link
+              className={buttonVariants({ variant: "outline" })}
+              href="/admin"
+            >
+              <ArrowLeft className="mr-2" />
+              Return to Admin Dashboard
+            </Link>
+            <Button
+              className="bg-blue-500 hover:bg-blue-600"
+              onClick={handleSave}
+            >
+              <Save className="mr-2" /> Save Changes
+            </Button>
+          </div>
+          <h1 className="mt-8 text-4xl font-bold">{subject?.title}</h1>
+          <div className="my-4 space-y-4">
             {subject?.units.map((unit, unitIndex) => (
               <div key={unit.unit} className="rounded-lg border shadow-sm">
                 <div className="flex items-center">
@@ -364,12 +414,8 @@ const Page = ({ params }: { params: { slug: string } }) => {
               <PlusCircle className="mr-2" /> Add Unit
             </Button>
           </div>
-          <Button className="bg-blue-600 text-white" onClick={handleSave}>
-            Save Changes
-          </Button>
         </main>
       </div>
-      <Footer />
     </>
   );
 };
