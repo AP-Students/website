@@ -117,11 +117,19 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
   },
 };
 
-const Editor = ({ setData, content }: { setData: (data: OutputData) => void, content: OutputData }) => {
+const Editor = ({
+  setUnsavedChanges,
+  setData,
+  content,
+}: {
+  setUnsavedChanges: (unsavedChanges: boolean) => void;
+  setData: (data: OutputData) => void;
+  content: OutputData;
+}) => {
   const { editor } = useEditor({
     holder: "editorjs",
     tools: EDITOR_TOOLS,
-    data: content ||  {
+    data: content || {
       time: Date.now(),
       blocks: [
         {
@@ -152,6 +160,7 @@ const Editor = ({ setData, content }: { setData: (data: OutputData) => void, con
     },
     placeholder: "Press '/' to see available blocks",
     onChange: (api) => {
+      setUnsavedChanges(true);
       api.saver
         .save()
         .then((outputData) => {
@@ -161,7 +170,6 @@ const Editor = ({ setData, content }: { setData: (data: OutputData) => void, con
           console.error("Saving failed: ", error);
         });
     },
-    
   });
 
   useEffect(() => {
@@ -180,7 +188,7 @@ const Editor = ({ setData, content }: { setData: (data: OutputData) => void, con
         }
       }
     };
-  }, [editor]); 
+  }, [editor]);
 
   return (
     <div className="flex flex-col gap-y-4">

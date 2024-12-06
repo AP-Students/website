@@ -8,12 +8,13 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { v4 as uuidv4 } from "uuid";
 import { getUser, getUserAccess } from "@/components/hooks/users";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheckCircle } from "@fortawesome/free-solid-svg-icons";
+import { Save } from "lucide-react";
 import { getFileFromIndexedDB } from "./custom_questions/RenderAdvancedTextbox";
 import { type QuestionFormat } from "@/types/questions";
 import Renderer from "./Renderer";
 import { revertTableObjectToArray, getKey } from "./FetchArticleFunctions";
+import { Blocker } from "@/app/admin/subject/_components/navigation-block";
+import { Button } from "@/components/ui/button";
 
 function ArticleCreator({ className }: { className?: string }) {
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
@@ -295,6 +296,7 @@ function ArticleCreator({ className }: { className?: string }) {
       await setDoc(docRef, newArticle);
 
       alert(`Article saved: ${docRef.id}`);
+      setUnsavedChanges(false);
     } catch (error) {
       console.error("Error saving article:", error);
       alert("Error saving article.");
@@ -302,60 +304,56 @@ function ArticleCreator({ className }: { className?: string }) {
 
     setShowDropdown(false);
   };
+  
+  const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
 
   return (
     <>
-      <button
-        className="group relative ml-auto mt-4 flex items-center rounded-md bg-green-500 p-2 text-white hover:bg-green-600 md:mr-4 lg:mr-8"
-        onClick={openSaveModal}
-      >
-        <FontAwesomeIcon icon={faCheckCircle} />
+      {unsavedChanges && <Blocker />}
 
-        {/* Tooltip */}
-        <span className="absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 transform whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white group-hover:flex">
-          Submit content
-        </span>
-      </button>
+      <div className="flex justify-end">
+        <Button className="bg-blue-500 hover:bg-blue-600" onClick={openSaveModal}>
+          <Save className="mr-2" /> Save Changes
+        </Button>
+      </div>
 
       {showDropdown && (
-        <div className="modal fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="modal-content z-60 rounded-md bg-white p-4">
-            {/* Save Button for Confirming the Selection */}
-            <div className="mt-3 flex min-w-36 justify-between">
-              <button
-                className="rounded-md bg-green-500 p-2 text-white hover:bg-green-600"
-                onClick={() => handleSave()}
-              >
-                Save
-              </button>
-              <button
-                className="rounded-md bg-red-500 p-2 text-white hover:bg-red-600"
-                onClick={() => setShowDropdown(false)}
-              >
-                Close
-              </button>
-            </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="flex gap-8 rounded-lg bg-white p-4">
+            <button
+              className="rounded-md bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+              onClick={() => handleSave()}
+            >
+              Save
+            </button>
+            <button
+              className="rounded-md bg-red-500 px-4 py-2 text-white hover:bg-red-600"
+              onClick={() => setShowDropdown(false)}
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
 
       <div
         className={cn(
-          "grid grid-cols-1 divide-y-2 sm:grid-cols-2 sm:divide-x-2 sm:divide-y-0",
+          "grid grid-cols-1 sm:grid-cols-2 pb-8",
           className,
         )}
       >
-        <div className="max-h-[75vh] overflow-y-auto rounded border p-4 px-8">
-          <Editor content={initialData} setData={setData} />
+        <div className="overflow-y-auto rounded border border-gray-300 p-4 px-8">
+          <Editor
+            content={initialData}
+            setData={setData}
+            setUnsavedChanges={setUnsavedChanges}
+          />
         </div>
 
         <div className="px-8">
-          <div className="mb-4 pb-4 opacity-50">Output:</div>
+          <div className="my-4 pb-4 opacity-50">Output:</div>
 
-          {/* Render the editor output */}
-          <div className="max-h-[75vh] overflow-y-auto rounded border p-4 px-8">
-            <Renderer content={data} />
-          </div>
+          <Renderer content={data} />
         </div>
       </div>
     </>
