@@ -1,9 +1,9 @@
 "use client";
 import Footer from "@/components/global/footer";
 import Navbar from "@/components/global/navbar";
-import SubjectBreadcrumb from "@/components/subjectHomepage/subject-breadcrumb";
-import SubjectSidebar from "@/components/subjectHomepage/subject-sidebar";
-import TableOfContents from "@/components/subjectHomepage/table-of-contents";
+import SubjectBreadcrumb from "@/components/subject/subject-breadcrumb";
+import SubjectSidebar from "@/components/subject/subject-sidebar";
+import TableOfContents from "@/components/subject/table-of-contents";
 import { useUser } from "@/components/hooks/UserContext";
 import Renderer from "@/components/article-creator/Renderer";
 import { useFetchAndCache } from "./useFetchAndCache";

@@ -13,7 +13,7 @@ import { getFileFromIndexedDB } from "./custom_questions/RenderAdvancedTextbox";
 import { type QuestionFormat } from "@/types/questions";
 import Renderer from "./Renderer";
 import { revertTableObjectToArray, getKey } from "./FetchArticleFunctions";
-import { Blocker } from "@/app/admin/subject/_components/navigation-block";
+import { Blocker } from "@/components/subject/navigation-block";
 import { Button } from "@/components/ui/button";
 
 function ArticleCreator({ className }: { className?: string }) {

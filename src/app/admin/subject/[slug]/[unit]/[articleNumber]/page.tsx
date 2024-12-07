@@ -3,12 +3,9 @@ import ArticleCreator from "@/components/article-creator/ArticleCreator";
 import { useUser } from "@/components/hooks/UserContext";
 import { buttonVariants } from "@/components/ui/button";
 import { ArrowLeft, UserRoundCog } from "lucide-react";
-
-import Footer from "@/components/global/footer";
-import Navbar from "@/components/global/navbar";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { Link } from "../../../_components/link";
+import { Link } from "../../../../../../components/subject/link";
 import { cn } from "@/lib/utils";
 
 const Page = () => {

@@ -15,12 +15,10 @@ import { useUser } from "@/components/hooks/UserContext";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import Link from "next/link";
-import apClassesData from "@/pages/admin/apClasses.json";
+import apClassesData from "@/components/apClasses.json";
 import type { Subject } from "@/types";
-import Navbar from "@/components/global/navbar";
-import Footer from "@/components/global/footer";
 import usePathname from "@/components/client/pathname";
-import { Blocker } from "../_components/navigation-block";
+import { Blocker } from "../../../../components/subject/navigation-block";
 
 const apClasses = apClassesData.apClasses;
 

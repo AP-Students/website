@@ -5,7 +5,7 @@ import type { User } from "@/types/user";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUserManagement } from "./useUserManagement";
-import apClassesData from "./apClasses.json";
+import apClassesData from "@/components/apClasses.json";
 import { useUser } from "../../components/hooks/UserContext";
 
 const apClasses = apClassesData.apClasses;
