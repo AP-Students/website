@@ -16,6 +16,22 @@ import { revertTableObjectToArray, getKey } from "./FetchArticleFunctions";
 import { Blocker } from "@/components/subject/navigation-block";
 import { Button } from "@/components/ui/button";
 
+// Define a type for Table Data
+interface TableData {
+  content: string[][]; // 2D array representing table rows and columns
+  rows: number;
+  cols: number;
+}
+
+// Define a type for Image Data
+interface ImageData {
+  caption: string;
+  stretched: boolean;
+  url: string; // Base64 string or a URL
+  withBackground: boolean;
+  withBorder: boolean;
+}
+
 function ArticleCreator({ className }: { className?: string }) {
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
   const [initialData, setInitialData] = useState<OutputData>({
@@ -251,9 +267,8 @@ function ArticleCreator({ className }: { className?: string }) {
       };
 
       // Also a pain to deal with because blocks are not fun to deal with
-
       /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
-      const processTable = async (tableData: any) => {
+      const processTable = async (tableData: TableData) => {
         // tableData is an object with a content property that is an array of arrays.
         const table = tableData.content as any[][];
 
@@ -267,6 +282,47 @@ function ArticleCreator({ className }: { className?: string }) {
 
         return tableAsObject;
       };
+
+      const processImage = async (imageData: ImageData): Promise<{ fileKey: string, caption?: string, url: string }> => {
+        const storage = getStorage();
+      
+        const { url, caption } = imageData; // Extract Base64 URL and metadata
+        if (!url || !url.startsWith("data:image/")) {
+          console.warn("Invalid image data URL:", url);
+        }
+
+        console.log("Passed guard clause");
+      
+        // Decode Base64 into a Blob
+        const blob = base64ToBlob(url);
+
+        console.log("Decoded Blob:", blob);
+      
+        // Generate a unique file key for the image
+        const fileKey = `images/${caption || `image-${Date.now()}`}`;
+      
+        // Upload Blob to Firebase Storage
+        const storageRef = ref(storage, fileKey);
+        const snapshot = await uploadBytes(storageRef, blob);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+      
+        console.log("Image uploaded to:", downloadURL);
+      
+        // Return updated image data with Firebase URL reference
+        return { fileKey, caption, url: downloadURL };
+      };
+      
+      // Utility: Convert Base64 string to a Blob
+      const base64ToBlob = (base64: string): Blob => {
+        const [prefix, data] = base64.split(",");
+        const contentType = prefix?.match(/:(.*?);/)?.[1] || "";
+        const byteCharacters = atob(data!);
+        const byteNumbers = Array.from(byteCharacters, (char) => char.charCodeAt(0));
+        const byteArray = new Uint8Array(byteNumbers);
+      
+        return new Blob([byteArray], { type: contentType });
+      };
+      
 
       // Traverse through data to find QuestionFormat[] arrays
       const updatedDataBlocks = await Promise.all(
@@ -283,6 +339,15 @@ function ArticleCreator({ className }: { className?: string }) {
           if (block.type === "table") {
             const updatedTable = await processTable(block.data);
             block.data.content = updatedTable;
+            return block;
+          }
+
+          // Process images
+          if (block.type === "image") {
+            console.log("block", block);
+            const updatedImage = await processImage(block.data);
+            block.data = updatedImage; // Replace the block data with the updated content
+            console.log("updated blockData", block);
             return block;
           }
 
@@ -304,7 +369,7 @@ function ArticleCreator({ className }: { className?: string }) {
 
     setShowDropdown(false);
   };
-  
+
   const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
 
   return (
@@ -312,7 +377,10 @@ function ArticleCreator({ className }: { className?: string }) {
       {unsavedChanges && <Blocker />}
 
       <div className="flex justify-end">
-        <Button className="bg-blue-500 hover:bg-blue-600" onClick={openSaveModal}>
+        <Button
+          className="bg-blue-500 hover:bg-blue-600"
+          onClick={openSaveModal}
+        >
           <Save className="mr-2" /> Save Changes
         </Button>
       </div>
@@ -336,12 +404,7 @@ function ArticleCreator({ className }: { className?: string }) {
         </div>
       )}
 
-      <div
-        className={cn(
-          "grid grid-cols-1 sm:grid-cols-2 pb-8",
-          className,
-        )}
-      >
+      <div className={cn("grid grid-cols-1 pb-8 sm:grid-cols-2", className)}>
         <div className="overflow-y-auto rounded border border-gray-300 p-4 px-8">
           <Editor
             content={initialData}

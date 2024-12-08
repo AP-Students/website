@@ -7,7 +7,7 @@ import { useEffect, useRef } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { QuestionsOutput } from "./custom_questions/QuestionInstance";
 import type { QuestionFormat } from "@/types/questions";
-import "@/components/article-creator/katexStyling.css";
+import "@/styles/katexStyling.css";
 import { getUser } from "@/components/hooks/users";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";

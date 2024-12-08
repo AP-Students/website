@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import katex from "katex";
 import { type questionInput } from "@/types/questions";
-import "@/components/article-creator/katexStyling.css";
+import "@/styles/katexStyling.css";
 import Image from "next/image"
 
 interface Props {
