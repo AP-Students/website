@@ -3,8 +3,8 @@
 // https://github.com/vercel/next.js/discussions/42016
 
 import {
-  Dispatch,
-  SetStateAction,
+  type Dispatch,
+  type SetStateAction,
   createContext,
   useContext,
   useEffect,

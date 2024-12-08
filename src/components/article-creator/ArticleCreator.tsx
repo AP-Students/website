@@ -283,46 +283,43 @@ function ArticleCreator({ className }: { className?: string }) {
         return tableAsObject;
       };
 
-      const processImage = async (imageData: ImageData): Promise<{ fileKey: string, caption?: string, url: string }> => {
+      const processImage = async (
+        imageData: ImageData,
+      ): Promise<{ fileKey: string; caption?: string; url: string }> => {
         const storage = getStorage();
-      
+
         const { url, caption } = imageData; // Extract Base64 URL and metadata
-        if (!url || !url.startsWith("data:image/")) {
+        if (!url?.startsWith("data:image/")) {
           console.warn("Invalid image data URL:", url);
         }
 
-        console.log("Passed guard clause");
-      
         // Decode Base64 into a Blob
         const blob = base64ToBlob(url);
 
-        console.log("Decoded Blob:", blob);
-      
         // Generate a unique file key for the image
         const fileKey = `images/${caption || `image-${Date.now()}`}`;
-      
+
         // Upload Blob to Firebase Storage
         const storageRef = ref(storage, fileKey);
         const snapshot = await uploadBytes(storageRef, blob);
         const downloadURL = await getDownloadURL(snapshot.ref);
-      
-        console.log("Image uploaded to:", downloadURL);
-      
+
         // Return updated image data with Firebase URL reference
         return { fileKey, caption, url: downloadURL };
       };
-      
+
       // Utility: Convert Base64 string to a Blob
       const base64ToBlob = (base64: string): Blob => {
         const [prefix, data] = base64.split(",");
-        const contentType = prefix?.match(/:(.*?);/)?.[1] || "";
+        const contentType = prefix?.match(/:(.*?);/)?.[1] ?? "";
         const byteCharacters = atob(data!);
-        const byteNumbers = Array.from(byteCharacters, (char) => char.charCodeAt(0));
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        );
         const byteArray = new Uint8Array(byteNumbers);
-      
+
         return new Blob([byteArray], { type: contentType });
       };
-      
 
       // Traverse through data to find QuestionFormat[] arrays
       const updatedDataBlocks = await Promise.all(
@@ -337,17 +334,15 @@ function ArticleCreator({ className }: { className?: string }) {
           }
 
           if (block.type === "table") {
-            const updatedTable = await processTable(block.data);
+            const updatedTable = await processTable(block.data as TableData);
             block.data.content = updatedTable;
             return block;
           }
 
           // Process images
           if (block.type === "image") {
-            console.log("block", block);
-            const updatedImage = await processImage(block.data);
+            const updatedImage = await processImage(block.data as ImageData);
             block.data = updatedImage; // Replace the block data with the updated content
-            console.log("updated blockData", block);
             return block;
           }
 

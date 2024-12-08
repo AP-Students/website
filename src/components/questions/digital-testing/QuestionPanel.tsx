@@ -1,7 +1,7 @@
 import { type QuestionFormat } from "@/types/questions";
 import { useState } from "react";
 import clsx from "clsx";
-import "@/pages/questions/digital-testing/styles/strikeThrough.css";
+import "@/styles/strikeThrough.css";
 import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
 
 interface QuestionPanelProps {
