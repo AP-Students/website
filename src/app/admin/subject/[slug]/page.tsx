@@ -18,7 +18,7 @@ import Link from "next/link";
 import apClassesData from "@/components/apClasses.json";
 import type { Subject } from "@/types";
 import usePathname from "@/components/client/pathname";
-import { Blocker } from "../../../../components/subject/navigation-block";
+import { Blocker } from "@/components/subject/navigation-block";
 
 const apClasses = apClassesData.apClasses;
 
@@ -61,7 +61,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
   }>({ unitIndex: null, chapterIndex: null });
 
   const [newUnitTitle, setNewUnitTitle] = useState("");
-  
+
   // Initialize newChapterTitles as an empty array
   const [newChapterTitles, setNewChapterTitles] = useState<string[]>([]);
 
@@ -143,7 +143,9 @@ const Page = ({ params }: { params: { slug: string } }) => {
     }
     setSubject({ ...subject, units: updatedUnits });
     // Remove the corresponding chapter title entry
-    setNewChapterTitles((prev) => prev.filter((_, index) => index !== unitIndex));
+    setNewChapterTitles((prev) =>
+      prev.filter((_, index) => index !== unitIndex),
+    );
     setUnsavedChanges(true);
   };
 
@@ -158,7 +160,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
     setSubject({ ...subject, units: updatedUnits });
     // Reset the newChapterTitle for this unit
     setNewChapterTitles((prev) =>
-      prev.map((title, index) => (index === unitIndex ? "" : title))
+      prev.map((title, index) => (index === unitIndex ? "" : title)),
     );
     setUnsavedChanges(true);
   };
@@ -374,8 +376,8 @@ const Page = ({ params }: { params: { slug: string } }) => {
                         onChange={(e) =>
                           setNewChapterTitles((prev) =>
                             prev.map((title, index) =>
-                              index === unitIndex ? e.target.value : title
-                            )
+                              index === unitIndex ? e.target.value : title,
+                            ),
                           )
                         }
                         placeholder="New chapter title"

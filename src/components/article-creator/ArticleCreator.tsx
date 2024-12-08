@@ -289,9 +289,6 @@ function ArticleCreator({ className }: { className?: string }) {
         const storage = getStorage();
 
         const { url, caption } = imageData; // Extract Base64 URL and metadata
-        if (!url?.startsWith("data:image/")) {
-          console.warn("Invalid image data URL:", url);
-        }
 
         // Decode Base64 into a Blob
         const blob = base64ToBlob(url);
@@ -340,7 +337,8 @@ function ArticleCreator({ className }: { className?: string }) {
           }
 
           // Process images
-          if (block.type === "image") {
+          if (block.type === "image" && block.data.url.startsWith("data:image/")) {
+            console.log("Blockdata", block.data);
             const updatedImage = await processImage(block.data as ImageData);
             block.data = updatedImage; // Replace the block data with the updated content
             return block;
