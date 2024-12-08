@@ -59,8 +59,11 @@ const Page = ({ params }: { params: { slug: string } }) => {
     unitIndex: number | null;
     chapterIndex: number | null;
   }>({ unitIndex: null, chapterIndex: null });
+
   const [newUnitTitle, setNewUnitTitle] = useState("");
-  const [newChapterTitle, setNewChapterTitle] = useState("");
+  
+  // Initialize newChapterTitles as an empty array
+  const [newChapterTitles, setNewChapterTitles] = useState<string[]>([]);
 
   const unitTitleInputRef = useRef<HTMLInputElement | null>(null);
   const chapterInputRef = useRef<HTMLInputElement | null>(null);
@@ -76,6 +79,9 @@ const Page = ({ params }: { params: { slug: string } }) => {
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
             setSubject(docSnap.data() as Subject);
+            // Initialize newChapterTitles with empty strings for each unit
+            const unitsLength = (docSnap.data() as Subject).units.length;
+            setNewChapterTitles(Array(unitsLength).fill(""));
           } else {
             emptyData.title =
               apClasses.find(
@@ -87,6 +93,9 @@ const Page = ({ params }: { params: { slug: string } }) => {
                     .replace(/\s/g, "-") === params.slug,
               ) ?? "";
             setSubject(emptyData);
+            // Initialize newChapterTitles with empty strings for each unit in emptyData
+            const unitsLength = emptyData.units.length;
+            setNewChapterTitles(Array(unitsLength).fill(""));
           }
         }
       } catch (error) {
@@ -119,6 +128,8 @@ const Page = ({ params }: { params: { slug: string } }) => {
     };
     setSubject({ ...subject, units: [...subject.units, newUnit] });
     setNewUnitTitle("");
+    // Add a new entry for the new unit in newChapterTitles
+    setNewChapterTitles((prev) => [...prev, ""]);
     setUnsavedChanges(true);
   };
 
@@ -131,19 +142,24 @@ const Page = ({ params }: { params: { slug: string } }) => {
       updatedUnits[i]!.unit -= 1;
     }
     setSubject({ ...subject, units: updatedUnits });
+    // Remove the corresponding chapter title entry
+    setNewChapterTitles((prev) => prev.filter((_, index) => index !== unitIndex));
     setUnsavedChanges(true);
   };
 
   const addChapter = (unitIndex: number) => {
-    if (!newChapterTitle.trim() || !subject) return;
+    if (!newChapterTitles[unitIndex]?.trim() || !subject) return;
     const newChapter = {
       chapter: subject.units[unitIndex]!.chapters.length + 1 || 1,
-      title: newChapterTitle,
+      title: newChapterTitles[unitIndex],
     };
-    const updatedUnits = [...subject?.units];
+    const updatedUnits = [...subject.units];
     updatedUnits[unitIndex]!.chapters.push(newChapter);
     setSubject({ ...subject, units: updatedUnits });
-    setNewChapterTitle("");
+    // Reset the newChapterTitle for this unit
+    setNewChapterTitles((prev) =>
+      prev.map((title, index) => (index === unitIndex ? "" : title))
+    );
     setUnsavedChanges(true);
   };
 
@@ -178,7 +194,6 @@ const Page = ({ params }: { params: { slug: string } }) => {
   };
 
   const deleteChapter = (unitIndex: number, chapterIndex: number) => {
-    if (!subject) return;
     if (!subject) return;
     const updatedUnits = [...subject.units];
     updatedUnits[unitIndex]!.chapters.splice(chapterIndex, 1);
@@ -355,8 +370,14 @@ const Page = ({ params }: { params: { slug: string } }) => {
                     ))}
                     <div className="mt-4 flex gap-2">
                       <Input
-                        value={newChapterTitle}
-                        onChange={(e) => setNewChapterTitle(e.target.value)}
+                        value={newChapterTitles[unitIndex] || ""}
+                        onChange={(e) =>
+                          setNewChapterTitles((prev) =>
+                            prev.map((title, index) =>
+                              index === unitIndex ? e.target.value : title
+                            )
+                          )
+                        }
                         placeholder="New chapter title"
                         className="w-1/2"
                       />
