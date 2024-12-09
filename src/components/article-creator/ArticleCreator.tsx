@@ -100,21 +100,15 @@ function ArticleCreator({ className }: { className?: string }) {
       const userAccess = await getUserAccess();
       if (userAccess && (userAccess === "admin" || userAccess === "member")) {
         const key = getKey();
-        const { subject, content, loading, error } = useFetchAndCache({slug: key});
 
-        if(content?.data){
-          setInitialData(content.data);
-          setData(content.data);
-        }
+        const docRef = doc(db, "pages", key);
+        const docSnap = await getDoc(docRef);
+        const data = docSnap.data()?.data as OutputData;
+
         
-        // const docRef = doc(db, "pages", key);
-        // const docSnap = await getDoc(docRef);
-        // const data = docSnap.data()?.data as OutputData;
-
-
-        // revertTableObjectToArray(data);
-        // setInitialData(data);
-        // setData(data);
+        revertTableObjectToArray(data);
+        setInitialData(data);
+        setData(data);
       }
     })().catch((error) => {
       console.error("Error fetching data:", error);
@@ -371,7 +365,7 @@ function ArticleCreator({ className }: { className?: string }) {
 
     setShowDropdown(false);
   };
-
+  
   const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
 
   return (
@@ -406,7 +400,12 @@ function ArticleCreator({ className }: { className?: string }) {
         </div>
       )}
 
-      <div className={cn("grid grid-cols-1 pb-8 sm:grid-cols-2", className)}>
+      <div
+        className={cn(
+          "grid grid-cols-1 sm:grid-cols-2 pb-8",
+          className,
+        )}
+      >
         <div className="overflow-y-auto rounded border border-gray-300 p-4 px-8">
           <Editor
             content={initialData}

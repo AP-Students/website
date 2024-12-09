@@ -94,7 +94,7 @@ export const useFetchAndCache = (params: Params, admin?: boolean) => {
         }
 
         // Fetch content from cache or Firestore
-        const key = getKey(); // This is probably where the issue is steming from for content? why tf is it getting key here?
+        const key = getKey(); // This is probably where the issue is steming from for content? 
         const cachedContent = await getCachedContent(key);
         if (cachedContent) {
           setContent(cachedContent);

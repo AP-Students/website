@@ -175,6 +175,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
       updatedUnits[unitIndex]!.title = newTitle;
       setSubject({ ...subject, units: updatedUnits });
       setEditingUnit({ unitIndex: null });
+      setUnsavedChanges(true);
     }
   };
 
@@ -192,6 +193,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
       updatedUnits[unitIndex]!.chapters[chapterIndex]!.title = newTitle;
       setSubject({ ...subject, units: updatedUnits });
       setEditingChapter({ unitIndex: null, chapterIndex: null });
+      setUnsavedChanges(true);
     }
   };
 

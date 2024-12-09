@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { MdNavigateNext, MdNavigateBefore } from "react-icons/md";
+import { ChevronRight, ChevronLeft } from "lucide-react";
 import type { QuestionFormat } from "@/types/questions";
 import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
 
@@ -99,11 +99,11 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
       </div>
 
       {showResults && questionInstance.explanation && (
-        <div className="mt-4 p-3 border bg-green-100 rounded-md">
-          <strong>Explanation:</strong> <RenderContent content={questionInstance.explanation} />
+        <div className="mt-4 rounded-md border bg-green-100 p-3">
+          <strong>Explanation:</strong>
+          <RenderContent content={questionInstance.explanation} />
         </div>
       )}
-
 
       <div className="mt-4 flex justify-between">
         {currentQuestionIndex > 0 && (
@@ -111,7 +111,7 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
             className="flex items-center rounded bg-gray-500 py-2 pl-3 pr-4 text-white hover:bg-gray-600"
             onClick={() => navigateQuestions(-1)}
           >
-            <MdNavigateBefore size={24} style={{ color: "white" }} />
+            <ChevronLeft size={24} />
             <span>Previous</span>
           </button>
         )}
@@ -120,7 +120,7 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
             className="ml-auto flex items-center rounded bg-gray-500 py-2 pl-3 pr-4 text-white hover:bg-gray-600"
             onClick={() => navigateQuestions(1)}
           >
-            <MdNavigateNext size={24} style={{ color: "white" }} />
+            <ChevronRight size={24} />
             <span>Next</span>
           </button>
         )}
