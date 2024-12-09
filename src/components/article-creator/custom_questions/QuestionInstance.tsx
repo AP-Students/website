@@ -45,6 +45,7 @@ export const syncedQuestions = (instanceId: string) => {
   // Effect to update questions when localStorage is modified via the custom event
   useEffect(() => {
     const handleStorageUpdate = () => {
+      console.log("Storage Key", storageKey);
       const updatedQuestions = localStorage.getItem(storageKey);
       if (updatedQuestions) {
         setQuestions(JSON.parse(updatedQuestions) as QuestionFormat[]);

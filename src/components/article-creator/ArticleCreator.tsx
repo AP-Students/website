@@ -15,7 +15,6 @@ import Renderer from "./Renderer";
 import { revertTableObjectToArray, getKey } from "./FetchArticleFunctions";
 import { Blocker } from "@/components/subject/navigation-block";
 import { Button } from "@/components/ui/button";
-import { useFetchAndCache } from "@/app/subject/[slug]/[unit]/[articleNumber]/useFetchAndCache";
 
 // Define a type for Table Data
 interface TableData {
@@ -104,7 +103,6 @@ function ArticleCreator({ className }: { className?: string }) {
         const docRef = doc(db, "pages", key);
         const docSnap = await getDoc(docRef);
         const data = docSnap.data()?.data as OutputData;
-
         
         revertTableObjectToArray(data);
         setInitialData(data);

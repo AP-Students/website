@@ -35,6 +35,7 @@ const Page = ({
       </div>
     );
   }
+
   if (subject && content) {
     return (
       <div className="relative flex min-h-screen">

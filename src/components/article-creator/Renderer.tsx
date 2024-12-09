@@ -107,7 +107,7 @@ const Renderer = (props: { content: OutputData }) => {
 
         // Process data.blocks only once
         data.forEach((block) => {
-          if (block.data instanceof QuestionsAddCard) {
+          if (block.type === "questionsAddCard") {
             const instanceId = block.data.instanceId;
             const storageKey = `questions_${instanceId}`;
 

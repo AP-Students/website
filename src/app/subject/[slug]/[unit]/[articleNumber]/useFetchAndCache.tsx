@@ -55,7 +55,11 @@ export const useFetchAndCache = (params: Params, admin?: boolean) => {
   // Retrieve cached subject with expiration check
   const getCachedSubject = async (title: string) => {
     const db = await openDatabase();
-    const cached = await db.get("subject", title) as { title: string; data: Subject; timestamp: number };
+    const cached = (await db.get("subject", title)) as {
+      title: string;
+      data: Subject;
+      timestamp: number;
+    };
     if (cached && Date.now() - cached.timestamp < CACHE_EXPIRATION_MS) {
       return cached.data;
     }
@@ -65,7 +69,11 @@ export const useFetchAndCache = (params: Params, admin?: boolean) => {
   // Retrieve cached content with expiration check
   const getCachedContent = async (title: string) => {
     const db = await openDatabase();
-    const cached = await db.get("content", title) as { title: string; data: Content; timestamp: number };
+    const cached = (await db.get("content", title)) as {
+      title: string;
+      data: Content;
+      timestamp: number;
+    };
     if (cached && Date.now() - cached.timestamp < CACHE_EXPIRATION_MS) {
       return cached.data;
     }
@@ -85,7 +93,7 @@ export const useFetchAndCache = (params: Params, admin?: boolean) => {
           if (subjectDocSnap.exists()) {
             const data = subjectDocSnap.data() as Subject;
             setSubject(data);
-            if(!admin){
+            if (!admin) {
               await cacheSubject(params.slug, data);
             }
           } else {
@@ -94,7 +102,7 @@ export const useFetchAndCache = (params: Params, admin?: boolean) => {
         }
 
         // Fetch content from cache or Firestore
-        const key = getKey(); // This is probably where the issue is steming from for content? 
+        const key = getKey(); // This is probably where the issue is steming from for content?
         const cachedContent = await getCachedContent(key);
         if (cachedContent) {
           setContent(cachedContent);
@@ -111,6 +119,8 @@ export const useFetchAndCache = (params: Params, admin?: boolean) => {
             setError("Content not found. That's probably us, not you.");
           }
         }
+
+        // console.log("content", content!.data);
       } catch (error) {
         setError("Failed to fetch subject or content data.");
       } finally {
@@ -121,7 +131,7 @@ export const useFetchAndCache = (params: Params, admin?: boolean) => {
     fetchData().catch((error) => {
       console.error("Error fetching subject or content data:", error);
     });
-    //eslint-disable react-hooks/exhaustive-deps - Do this because it only triggers for component mount; rest of vars dont change. 
+    //eslint-disable react-hooks/exhaustive-deps - Do this because it only triggers for component mount; rest of vars dont change.
   }, []);
 
   return { subject, content, loading, error };
