@@ -15,6 +15,7 @@ import Renderer from "./Renderer";
 import { revertTableObjectToArray, getKey } from "./FetchArticleFunctions";
 import { Blocker } from "@/components/subject/navigation-block";
 import { Button } from "@/components/ui/button";
+import { useFetchAndCache } from "@/app/subject/[slug]/[unit]/[articleNumber]/useFetchAndCache";
 
 // Define a type for Table Data
 interface TableData {
@@ -99,13 +100,21 @@ function ArticleCreator({ className }: { className?: string }) {
       const userAccess = await getUserAccess();
       if (userAccess && (userAccess === "admin" || userAccess === "member")) {
         const key = getKey();
-        const docRef = doc(db, "pages", key);
-        const docSnap = await getDoc(docRef);
-        const data = docSnap.data()?.data as OutputData;
-        revertTableObjectToArray(data);
+        const { subject, content, loading, error } = useFetchAndCache({slug: key});
 
-        setInitialData(data);
-        setData(data);
+        if(content?.data){
+          setInitialData(content.data);
+          setData(content.data);
+        }
+        
+        // const docRef = doc(db, "pages", key);
+        // const docSnap = await getDoc(docRef);
+        // const data = docSnap.data()?.data as OutputData;
+
+
+        // revertTableObjectToArray(data);
+        // setInitialData(data);
+        // setData(data);
       }
     })().catch((error) => {
       console.error("Error fetching data:", error);

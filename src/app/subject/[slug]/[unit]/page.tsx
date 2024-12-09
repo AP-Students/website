@@ -6,13 +6,15 @@ import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { type Subject } from "@/types";
 import { type QuestionFormat } from "@/types/questions";
-
-const pathname = window.location.pathname;
+import usePathname from "@/components/client/pathname";
 
 const Page = () => {
+  const pathname = usePathname();
+  
   const instanceId = pathname.split("/").slice(-2).join("_");
   const collectionId = instanceId.split("_")[0];
   const unitId = instanceId.split("_")[1];
+
   const [testName, setTestName] = useState<string>("");
   const [time, setTime] = useState<number>(0);
   const [questions, setQuestions] = useState<QuestionFormat[] | null>(null);

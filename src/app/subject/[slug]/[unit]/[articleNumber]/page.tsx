@@ -4,7 +4,6 @@ import Navbar from "@/components/global/navbar";
 import SubjectBreadcrumb from "@/components/subject/subject-breadcrumb";
 import SubjectSidebar from "@/components/subject/subject-sidebar";
 import TableOfContents from "@/components/subject/table-of-contents";
-import { useUser } from "@/components/hooks/UserContext";
 import Renderer from "@/components/article-creator/Renderer";
 import { useFetchAndCache } from "./useFetchAndCache";
 import "katex/dist/katex.min.css";
@@ -16,9 +15,7 @@ const Page = ({
 }: {
   params: { slug: string; unit: string; articleNumber: string };
 }) => {
-  console.log("params", params);
-  const { user } = useUser();
-  const { subject, content, loading, error } = useFetchAndCache(user, params); // Fetch with cache
+  const { subject, content, loading, error } = useFetchAndCache(params); // Fetch with cache
 
   const formattedTitle = `Article ${params.articleNumber} of ${params.unit}.`
     .replace(/-/g, " ")

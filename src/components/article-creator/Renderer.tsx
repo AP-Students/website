@@ -8,18 +8,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { QuestionsOutput } from "./custom_questions/QuestionInstance";
 import type { QuestionFormat } from "@/types/questions";
 import "@/styles/katexStyling.css";
-import { getUser } from "@/components/hooks/users";
-import { db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
-import { getKey } from "./FetchArticleFunctions";
 import { QuestionsAddCard } from "./custom_questions/QuestionsAddCard";
-
-// TS will complain if I dont build an interface for docSnap.data(). This way I can access blocks type through inferance of docSnap.data().
-interface DocumentData {
-  data: {
-    blocks: OutputBlockData[];
-  };
-}
 
 const customParsers = {
   alert: (data: { align: string; message: string; type: string }) => {
@@ -111,74 +100,61 @@ const Renderer = (props: { content: OutputData }) => {
   const dataFetched = useRef<boolean>(false);
   const instanceIdsLoaded = useRef<Set<string>>(new Set());
 
-  
   useEffect(() => {
     const fetchData = async () => {
-      if (!dataFetched.current) {
-        const key = getKey();
-        const user = await getUser();
+      try {
+        const data = props.content.blocks;
 
-        if (!user) {
-          return;
-        }
+        // Process data.blocks only once
+        data.forEach((block) => {
+          if (block.data instanceof QuestionsAddCard) {
+            const instanceId = block.data.instanceId;
+            const storageKey = `questions_${instanceId}`;
 
-        try {
-          // Load questions from Firestore, if available
-          const docRef = doc(db, "pages", key);
-          const docSnap = await getDoc(docRef);
+            // Check if this instanceId has already been processed
+            if (!instanceIdsLoaded.current.has(instanceId)) {
+              const questionsFromDb: QuestionFormat[] =
+                block.data.questions.map(
+                  (questionInstance: QuestionFormat) => ({
+                    ...questionInstance,
+                    questionInstance: questionInstance.question || {
+                      value: "",
+                    },
+                    options: questionInstance.options.map((option) => ({
+                      ...option,
+                      value: option.value || { value: "" },
+                    })),
+                    answers: questionInstance.answers || [],
+                    explanation: questionInstance.explanation || {
+                      value: "",
+                    },
+                  }),
+                );
 
-          if (docSnap.exists()) {
-            const docData = docSnap.data() as DocumentData;
-            const data = docData.data.blocks;
+              // Update local storage (Will be used line XXX)
+              localStorage.setItem(storageKey, JSON.stringify(questionsFromDb));
 
-            // Process data.blocks only once
-            data.forEach((block) => {
-              if (block.data instanceof QuestionsAddCard) {
-                const instanceId = block.data.instanceId;
-                const storageKey = `questions_${instanceId}`;
+              // Trigger a manual event to notify listeners that localStorage was updated
+              const event = new Event("questionsUpdated");
+              window.dispatchEvent(event);
 
-                // Check if this instanceId has already been processed
-                if (!instanceIdsLoaded.current.has(instanceId)) {
-                  const questionsFromDb: QuestionFormat[] = block.data.questions.map(
-                    (questionInstance: QuestionFormat) => ({
-                      ...questionInstance,
-                      questionInstance: questionInstance.question || { value: "" }, 
-                      options: questionInstance.options.map((option) => ({
-                        ...option,
-                        value: option.value || { value: "" }, 
-                      })),
-                      answers: questionInstance.answers || [],
-                      explanation: questionInstance.explanation || { value: "" },
-                    }),
-                  );
-
-                  // Update local storage
-                  localStorage.setItem(storageKey, JSON.stringify(questionsFromDb));
-
-                  // Trigger a manual event to notify listeners that localStorage was updated
-                  const event = new Event("questionsUpdated");
-                  window.dispatchEvent(event);
-
-                  // Mark this instanceId as loaded
-                  instanceIdsLoaded.current.add(instanceId);
-                }
-              }
-            });
-
-            // Set dataFetched to true after processing all blocks
-            dataFetched.current = true;
+              // Mark this instanceId as loaded
+              instanceIdsLoaded.current.add(instanceId);
+            }
           }
-        } catch (error) {
-          console.error("Error fetching questions from Firestore:", error);
-        }
+        });
+
+        // Set dataFetched to true after processing all blocks
+        dataFetched.current = true;
+      } catch (error) {
+        console.error("Error fetching questions from Firestore:", error);
       }
 
       // Proceed to render the components
       if (containerRef.current) {
         props.content.blocks.forEach((block) => {
-          /* eslint-disable */ // InstanceOf doesnt seem to work so Im just using this as a substitute 
+          /* eslint-disable */ // InstanceOf doesnt seem to work so Im just using this as a substitute
           if (block.type === "questionsAddCard") {
-            
             const instanceId = block.data.instanceId;
             const placeholder = containerRef.current!.querySelector(
               `.questions-block-${instanceId}`,
@@ -194,7 +170,9 @@ const Renderer = (props: { content: OutputData }) => {
               }
 
               // Render the component
-              root.render(<QuestionsOutput instanceId={instanceId.toString()} />);
+              root.render(
+                <QuestionsOutput instanceId={instanceId.toString()} />,
+              );
             }
           }
           /* eslint-enable */

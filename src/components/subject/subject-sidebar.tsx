@@ -10,14 +10,16 @@ import { Button } from "@/components/ui/button";
 import { type Subject } from "@/types";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import usePathname from "../client/pathname";
 
 type Props = {
   subject: Subject;
 };
 
-const pathname = window.location.pathname;
+// const pathname = window.location.pathname;
 
 const SubjectSidebar = (props: Props) => {
+  const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
