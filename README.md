@@ -1,29 +1,234 @@
-# Create T3 App
+# FiveHive
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+![FiveHive Logo](path-to-your-logo.png)
 
-## What's next? How do I make an app with this?
+**Empowering AP Students with Free, Volunteer-Driven Resources**
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+---
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+## Table of Contents
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+- [About FiveHive](#about-fivehive)
+- [Our Mission](#our-mission)
+- [Teams & Positions Available](#teams--positions-available)
+  - [Survey & FAQ Team](#survey--faq-team)
+  - [Review Session (Materials/Lecture) Team](#review-session-materialslecture-team)
+  - [Outreach Team](#outreach-team)
+  - [Website Team](#website-team)
+- [Benefits of Joining](#benefits-of-joining)
+- [Testimonials](#testimonials)
+- [How to Apply](#how-to-apply)
+- [Contact Us](#contact-us)
+- [Follow Us](#follow-us)
 
-## Learn More
+---
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+## About FiveHive
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+Are you passionate about empowering AP students and creating impactful educational resources? FiveHive offers volunteers the opportunity to host review sessions, deliver lectures, develop mock exams/unit exams/lesson notes, and write comprehensive FAQs for each AP subject based on student surveys—reaching thousands of students nationwide.
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
+With over 70 volunteers contributing a combined 10,000+ volunteer hours, FiveHive is dedicated to expanding its reach and impact. Whether you're looking to gain valuable leadership experience for college or internships, or simply want to make a meaningful difference for tens of thousands of students struggling with AP courses, FiveHive is the perfect platform.
 
-## How do I deploy this?
+---
 
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+## Our Mission
+
+To provide free, volunteer-driven resources to the broader AP community, including:
+
+- **Regular Live Review Sessions**: Featuring slides, notes, and problem sets.
+- **Mock and Unit Exams**: Tailored to AP standards.
+- **Comprehensive Lesson Notes and FAQs**: Covering all 40 AP subjects.
+- **Collaborative Website**: Hosting all resources and encouraging global collaboration.
+
+---
+
+## Teams & Positions Available
+
+### Survey & FAQ Team
+
+**Position Overview:**
+- **Survey Creation**: Develop surveys for each AP subject to gather student insights.
+- **Data Analysis**: Analyze survey data using Google Sheets.
+- **FAQ Documentation**: Compile analyzed data into comprehensive FAQs for each AP course.
+
+**Qualifications:**
+- Proficiency in Google Forms, Sheets, and Docs.
+- Attention to detail and ability to spot question biases.
+
+**Responsibilities:**
+- Create and improve surveys.
+- Analyze and present data.
+- Compile FAQs to assist current and prospective students.
+
+**Weekly Time Commitment:**
+- 1-2 hours per week.
+
+[**Apply Here**](#)
+
+### Review Session (Materials/Lecture) Team
+
+**Position Overview:**
+- **Materials Team**: Create problem sets, mock exams, and study guides.
+- **Lecture Team**: Develop lecture guides and conduct live review sessions.
+
+**Qualifications:**
+- Familiarity with at least one AP subject (score of 4 or 5).
+- Strong time management and collaboration skills.
+- **Preferred**: Experience in tutoring, lecturing, or content creation.
+
+**Responsibilities:**
+- Develop and peer-review educational materials.
+- Lead or assist in live lectures.
+- Engage with the community on Discord.
+
+**Weekly Time Commitment:**
+- 2-4 hours per week.
+
+[**Apply Here**](#)
+
+### Outreach Team
+
+**Position Overview:**
+- **Graphic Design**: Create visually appealing posts and review guides.
+- **Video Production**: Develop short and long-form video content.
+
+**Qualifications:**
+- Familiarity with at least one AP subject or willingness to research.
+- **Graphic Design**: Experience with Canva or other graphic design tools.
+- **Video Production**: Experience with video editing software (e.g., iMovie, Premiere Pro). Access to a mic and/or camera is preferred.
+
+**Responsibilities:**
+- Design and produce content to promote FiveHive.
+- Manage and grow our social media presence.
+- Collaborate on brainstorming and feedback sessions.
+
+**Weekly Time Commitment:**
+- 1-3 hours per week.
+
+[**Apply Here**](#)
+
+### Website Team
+
+**Position Overview:**
+- **Frontend Developers**: Focus on design, UI, and UX using TypeScript, React, and NextJS.
+- **Backend Developers**: Handle logic, performance, security, and database maintenance with Firebase.
+- **Fullstack Developers**: Manage both frontend and backend tasks, including deployment and major overhauls.
+
+**Qualifications:**
+- Proficiency in TypeScript, React, NextJS, and GitHub.
+- **Frontend**: Experience with Tailwind CSS and React hooks.
+- **Backend**: Experience with Firebase.
+- **Fullstack**: Combination of frontend and backend skills.
+
+**Responsibilities:**
+- Develop and maintain the FiveHive website.
+- Implement new features and fix bugs.
+- Ensure website performance and security.
+
+**Weekly Time Commitment:**
+- Flexible; expect 10-20 hours per month.
+
+[**Apply Here**](#)
+
+---
+
+## Benefits of Joining
+
+### College and Program Applications
+- Quantifiable impact (e.g., leading sessions, contributing to FAQs).
+- Valuable experiences and skills for interviews and essays.
+
+### Impact
+- Influence the development of resources used by thousands of AP students.
+- Recognition as a contributor on all documentation and websites.
+
+### Experience
+- Gain skills in data analysis, content creation, leadership, and more.
+- Opportunities to explore and develop new passions.
+
+### Leadership and Team-Building
+- Manage teams and projects.
+- Develop leadership skills applicable to future endeavors.
+
+### Community and Learning
+- Engage with a supportive community of volunteers.
+- Enhance your understanding of AP subjects through teaching and material creation.
+
+### Flexibility
+- Asynchronous work allows you to contribute from anywhere and at your own pace.
+
+---
+
+## Testimonials
+
+> “As someone who worked on the AP Statistics FAQ document, I not only learned how to use Google Sheets and Excel for data analysis, but it also made me realize how fun data analysis can be (at least for me). I was so inspired that I eventually conducted an independent research project involving a lot of data analysis, learnt the R language on my own, and published a sole-authored research paper on it. In addition, during my time helping on AP (not only on the AP Statistics FAQ but also as a helper and review session host), I realized that I loved teaching and tutoring. I branched out to other volunteer tutoring programs, and did so much that I talked about these experiences the most on my college applications and I’m still talking about them to this day! I truly believe that without AP Students and the AP Statistics FAQ that I helped out with, I would not be at where I am right now. That’s why I want to expand this into something much bigger to not only help struggling AP students, but also to hopefully inspire FiveHive volunteers (that’s you!) in pursuing newly founded passions.”
+>
+> — **Lance, FiveHive Lead**
+
+> “It’s great to know that my practice tests and lectures have a tangible effect on students around the world!”  
+> — **Cameron, Math/CS Lecture Lead**
+
+> “My time at FiveHive has been super helpful in shaping both my technical data analysis skills and soft collaborative skills. It’s been rewarding working with people across different backgrounds.”  
+> — **Michael, Data Analysis Lead**
+
+---
+
+## How to Apply
+
+### Interested in a Leadership Role?
+Members who stay active and excel will have opportunities to move up to leadership roles. Exceptional applicants demonstrating extraordinary leadership skills may be offered leadership positions immediately.
+
+### Interested in Multiple Teams?
+You can apply to multiple teams by copying and pasting the general FiveHive application portions for each team you wish to join.
+
+### Teachers and Educators
+Teachers and educators do not need to apply via the forms. Please contact Lance for more information on how you can help:
+- **Discord**: @lance856
+- **Email**: [lance@fivehive.org](mailto:lance@fivehive.org)
+
+### General Inquiries
+- **Discord**: @lance856
+
+### Apply Today!
+- [Survey & FAQ Team: Apply Here](#)
+- [Review Session (Materials/Lecture) Team: Apply Here](#)
+- [Outreach Team: Apply Here](#)
+- [Website Team: Apply Here](#)
+
+---
+
+## Contact Us
+
+For any questions or additional information, feel free to reach out:
+
+- **FiveHive Lead**: @lance856 on Discord | [lance@fivehive.org](mailto:lance@fivehive.org)
+- **Survey & FAQ Team Leads**:
+  - @cpoabcdefg (Whole-Team Co-Lead)
+  - @truthl3ss (Data Analysis Co-Lead)
+  - @yuegelica (FAQ Doc Co-Lead)
+- **Review Session Team Leads**:
+  - @cam_cummins_ (Math/CS Lecture Co-Lead)
+  - @usee2 (Science Co-Lead)
+  - @steelcrow. (English Lead)
+  - @mmbcsmen (Social Studies Lead)
+  - @lance856 (Other Subjects)
+- **Outreach Team Leads**:
+  - @froge43
+  - @eaten123
+- **Website Team Lead**:
+  - @.manning.
+
+---
+
+## Follow Us
+
+Stay updated with our latest resources and announcements:
+
+- **Instagram**: [@fivehiveorg](https://www.instagram.com/fivehiveorg/)
+- **TikTok**: [@fivehive](https://www.tiktok.com/@fivehive)
+
+---
+
+**Join FiveHive Today and Make a Difference in the AP Community!**
+
+---
