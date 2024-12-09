@@ -3,7 +3,6 @@ import Footer from "@/components/global/footer";
 import Navbar from "@/components/global/navbar";
 import SubjectBreadcrumb from "@/components/subject/subject-breadcrumb";
 import SubjectSidebar from "@/components/subject/subject-sidebar";
-import TableOfContents from "@/components/subject/table-of-contents";
 import Renderer from "@/components/article-creator/Renderer";
 import { useFetchAndCache } from "./useFetchAndCache";
 import "katex/dist/katex.min.css";
