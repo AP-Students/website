@@ -53,8 +53,6 @@ const Page = ({
               </h1>
               <Renderer content={content.data} />
             </div>
-
-            <TableOfContents title="UNITS" subject={subject} />
           </div>
 
           <Footer className="mx-0 w-full max-w-none px-10 xl:px-20" />

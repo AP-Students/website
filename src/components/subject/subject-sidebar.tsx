@@ -16,8 +16,6 @@ type Props = {
   subject: Subject;
 };
 
-// const pathname = window.location.pathname;
-
 const SubjectSidebar = (props: Props) => {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);

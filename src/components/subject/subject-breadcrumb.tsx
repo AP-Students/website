@@ -25,7 +25,7 @@ const SubjectBreadcrumb = ({ subject }: Props) => {
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbLink href={router}>{subject.title}</BreadcrumbLink>
+          <BreadcrumbLink href={router.split("/").slice(0, 3).join("/")}>{subject.title}</BreadcrumbLink>
         </BreadcrumbItem>
       </BreadcrumbList>
     </Breadcrumb>
