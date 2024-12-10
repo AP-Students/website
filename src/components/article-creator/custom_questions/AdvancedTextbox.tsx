@@ -162,9 +162,11 @@ export default function AdvancedTextbox({
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const file = e.target.files?.[0] as File;
 
-    if (file?.type.startsWith("image/") ?? file?.type.startsWith("audio/")) {
+    // Eslint wants ?? instead of ||, but that doesnt work. 
+    /* eslint-disable next-line */
+    if (file.type.startsWith("image/") || file.type.startsWith("audio/")) {
       // Store the file in IndexedDB using the unique ID
       storeFileInIndexedDB(`${file.type}-${file.lastModified}`, file);
 
