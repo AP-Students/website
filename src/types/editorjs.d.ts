@@ -36,7 +36,7 @@ declare module "editorjs-parser" {
 
   interface EmbedConfig {
     useProvidedLength?: boolean;
-  }
+  }  
 
   interface QuoteConfig {
     applyAlignment?: boolean;

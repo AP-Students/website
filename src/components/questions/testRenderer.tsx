@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { Bookmark } from "lucide-react";
-import Header from "./digital-testing/_components/Header";
-import QuestionPanel from "./digital-testing/_components/QuestionPanel";
-import Footer from "./digital-testing/_components/Footer";
+import Header from "./digital-testing/Header";
+import QuestionPanel from "./digital-testing/QuestionPanel";
+import Footer from "./digital-testing/Footer";
 import type { QuestionFormat } from "@/types/questions";
-import { RenderContent } from "../article-creator/_components/custom_questions/RenderAdvancedTextbox";
+import { RenderContent } from "../../components/article-creator/custom_questions/RenderAdvancedTextbox";
 import Highlighter, {
   type Highlight,
-} from "./digital-testing/_components/Highlighter";
-import ReviewPage from "./digital-testing/_components/ReviewPage";
+} from "./digital-testing/Highlighter";
+import ReviewPage from "./digital-testing/ReviewPage";
 import clsx from "clsx";
 
 interface Props {

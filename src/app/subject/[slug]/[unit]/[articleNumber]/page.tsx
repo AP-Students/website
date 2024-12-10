@@ -1,11 +1,9 @@
 "use client";
-import Footer from "@/components/ui/footer";
-import Navbar from "@/components/ui/navbar";
-import SubjectBreadcrumb from "@/components/subjectHomepage/subject-breadcrumb";
-import SubjectSidebar from "@/components/subjectHomepage/subject-sidebar";
-import TableOfContents from "@/components/subjectHomepage/table-of-contents";
-import { useUser } from "@/components/hooks/UserContext";
-import Renderer from "@/app/article-creator/_components/Renderer";
+import Footer from "@/components/global/footer";
+import Navbar from "@/components/global/navbar";
+import SubjectBreadcrumb from "@/components/subject/subject-breadcrumb";
+import SubjectSidebar from "@/components/subject/subject-sidebar";
+import Renderer from "@/components/article-creator/Renderer";
 import { useFetchAndCache } from "./useFetchAndCache";
 import "katex/dist/katex.min.css";
 
@@ -16,9 +14,7 @@ const Page = ({
 }: {
   params: { slug: string; unit: string; articleNumber: string };
 }) => {
-  console.log("params", params);
-  const { user } = useUser();
-  const { subject, content, loading, error } = useFetchAndCache(user, params); // Fetch with cache
+  const { subject, content, loading, error } = useFetchAndCache(params); // Fetch with cache
 
   const formattedTitle = `Article ${params.articleNumber} of ${params.unit}.`
     .replace(/-/g, " ")
@@ -39,6 +35,7 @@ const Page = ({
       </div>
     );
   }
+
   if (subject && content) {
     return (
       <div className="relative flex min-h-screen">
@@ -56,8 +53,6 @@ const Page = ({
               </h1>
               <Renderer content={content.data} />
             </div>
-
-            <TableOfContents title="UNITS" subject={subject} />
           </div>
 
           <Footer className="mx-0 w-full max-w-none px-10 xl:px-20" />

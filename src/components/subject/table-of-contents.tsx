@@ -46,7 +46,7 @@ const TableOfContents = ({ title, subject }: Props) => {
         {subject.units.map((unit) => (
           <div key={unit.unit}>
             <Link
-              href={`${router}#${unit.title}`}
+              href={`${router.split("/").slice(0, 3).join("/")}#${unit.title}`}
               key={unit.title}
               className={cn(
                 "flex items-center gap-3 text-base font-medium opacity-50 transition-all hover:text-primary/70 hover:opacity-100",

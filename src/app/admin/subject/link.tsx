@@ -2,7 +2,7 @@
 import { startTransition } from "react";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
-import { useIsBlocked } from "./navigation-block";
+import { useIsBlocked } from "@/app/admin/subject/navigation-block";
 
 /**
  * A custom Link component that wraps Next.js's next/link component.
@@ -33,6 +33,8 @@ export function Link({
         }
 
         startTransition(() => {
+          // Wont happen because href will always cast to a string
+          /* eslint-disable-next-line */
           const url = href.toString();
           if (replace) {
             router.replace(url);

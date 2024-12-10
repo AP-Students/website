@@ -1,11 +1,11 @@
 "use client";
-import Navbar from "@/components/ui/navbar";
-import Footer from "@/components/ui/footer";
+import Navbar from "@/components/global/navbar";
+import Footer from "@/components/global/footer";
 import type { User } from "@/types/user";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUserManagement } from "./useUserManagement";
-import apClassesData from "./apClasses.json";
+import apClassesData from "@/components/apClasses.json";
 import { useUser } from "../../components/hooks/UserContext";
 
 const apClasses = apClassesData.apClasses;

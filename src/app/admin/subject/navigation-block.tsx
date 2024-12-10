@@ -3,8 +3,8 @@
 // https://github.com/vercel/next.js/discussions/42016
 
 import {
-  Dispatch,
-  SetStateAction,
+  type Dispatch,
+  type SetStateAction,
   createContext,
   useContext,
   useEffect,
@@ -13,6 +13,7 @@ import {
 
 export const NavigationBlockerContext = createContext<
   [isBlocked: boolean, setBlocked: Dispatch<SetStateAction<boolean>>]
+  /* eslint-disable-next-line */
 >([false, () => {}]);
 
 export function NavigationBlockerProvider({

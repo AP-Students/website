@@ -1,8 +1,8 @@
 import { type QuestionFormat } from "@/types/questions";
 import { useState } from "react";
 import clsx from "clsx";
-import "@/app/questions/digital-testing/styles/strikeThrough.css";
-import { RenderContent } from "@/app/article-creator/_components/custom_questions/RenderAdvancedTextbox";
+import "@/styles/strikeThrough.css";
+import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
 
 interface QuestionPanelProps {
   showEliminationTools: boolean;

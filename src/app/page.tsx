@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { Accordion } from "@/components/ui/accordion";
 import { ChevronRight } from "lucide-react";
-import Navbar from "@/components/ui/navbar";
+import Navbar from "@/components/global/navbar";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import Footer from "@/components/ui/footer";
+import Footer from "@/components/global/footer";
 import APLibrary from "@/components/landingPage/APLibrary";
 import FAQ from "@/components/landingPage/FAQ";
 

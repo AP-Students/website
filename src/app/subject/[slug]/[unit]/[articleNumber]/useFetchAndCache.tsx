@@ -5,19 +5,20 @@ import { db } from "@/lib/firebase";
 import {
   revertTableObjectToArray,
   getKey,
-} from "@/app/article-creator/_components/FetchArticleFunctions";
+} from "@/components/article-creator/FetchArticleFunctions";
 import { type Subject } from "@/types";
 import { type Content } from "@/types/content";
-import { type User } from "@/types/user";
 import { type OutputData } from "@editorjs/editorjs";
 
 type Params = {
   slug: string; // Add other properties if necessary
 };
 
-const CACHE_EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
+const CACHE_EXPIRATION_MS = 2 * 24 * 60 * 60 * 1000; // 48 hrs in milliseconds
 
-export const useFetchAndCache = (user: User | null, params: Params) => {
+// params: { slug: string; unit: string; articleNumber: string }
+// admin: Used to prevent caches === rapid feedback
+export const useFetchAndCache = (params: Params, admin?: boolean) => {
   const [subject, setSubject] = useState<Subject | null>(null);
   const [content, setContent] = useState<Content | null>(null);
   const [loading, setLoading] = useState(true);
@@ -54,7 +55,11 @@ export const useFetchAndCache = (user: User | null, params: Params) => {
   // Retrieve cached subject with expiration check
   const getCachedSubject = async (title: string) => {
     const db = await openDatabase();
-    const cached = await db.get("subject", title) as { title: string; data: Subject; timestamp: number };
+    const cached = (await db.get("subject", title)) as {
+      title: string;
+      data: Subject;
+      timestamp: number;
+    };
     if (cached && Date.now() - cached.timestamp < CACHE_EXPIRATION_MS) {
       return cached.data;
     }
@@ -64,7 +69,11 @@ export const useFetchAndCache = (user: User | null, params: Params) => {
   // Retrieve cached content with expiration check
   const getCachedContent = async (title: string) => {
     const db = await openDatabase();
-    const cached = await db.get("content", title) as { title: string; data: Content; timestamp: number };
+    const cached = (await db.get("content", title)) as {
+      title: string;
+      data: Content;
+      timestamp: number;
+    };
     if (cached && Date.now() - cached.timestamp < CACHE_EXPIRATION_MS) {
       return cached.data;
     }
@@ -84,14 +93,16 @@ export const useFetchAndCache = (user: User | null, params: Params) => {
           if (subjectDocSnap.exists()) {
             const data = subjectDocSnap.data() as Subject;
             setSubject(data);
-            await cacheSubject(params.slug, data); // Cache subject
+            if (!admin) {
+              await cacheSubject(params.slug, data);
+            }
           } else {
             setError("Subject not found. That's probably us, not you.");
           }
         }
 
         // Fetch content from cache or Firestore
-        const key = getKey();
+        const key = getKey(); // This is probably where the issue is steming from for content?
         const cachedContent = await getCachedContent(key);
         if (cachedContent) {
           setContent(cachedContent);
@@ -108,6 +119,8 @@ export const useFetchAndCache = (user: User | null, params: Params) => {
             setError("Content not found. That's probably us, not you.");
           }
         }
+
+        // console.log("content", content!.data);
       } catch (error) {
         setError("Failed to fetch subject or content data.");
       } finally {
@@ -118,7 +131,7 @@ export const useFetchAndCache = (user: User | null, params: Params) => {
     fetchData().catch((error) => {
       console.error("Error fetching subject or content data:", error);
     });
-    //eslint-disable react-hooks/exhaustive-deps - Do this because it only triggers for component mount; rest of vars dont change. 
+    //eslint-disable react-hooks/exhaustive-deps - Do this because it only triggers for component mount; rest of vars dont change.
   }, []);
 
   return { subject, content, loading, error };

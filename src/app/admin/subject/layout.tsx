@@ -1,7 +1,7 @@
 import {
   BlockBrowserNavigation,
   NavigationBlockerProvider,
-} from "./_components/navigation-block";
+} from "./navigation-block";
 
 export default function DashboardLayout({
   children,

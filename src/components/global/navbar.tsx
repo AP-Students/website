@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { Button } from "./button";
+import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
 import {
   Sheet,
@@ -11,7 +11,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { MenuIcon } from "lucide-react";
-import SignedInPfp from "./SignedInPfp";
+import SignedInPfp from "../login/SignedInPfp";
 import { UserProvider, useUser } from "../hooks/UserContext";
 
 const links = [

@@ -1,9 +1,9 @@
 "use client";
 
-import TestRenderer from "@/app/questions/testRenderer";
-import QuestionsInputInterface from "@/app/article-creator/_components/custom_questions/QuestionsInputInterface";
-import { syncedQuestions } from "@/app/article-creator/_components/custom_questions/QuestionInstance";
-import Navbar from "@/components/ui/navbar";
+import TestRenderer from "@/components/questions/testRenderer";
+import QuestionsInputInterface from "@/components/article-creator/custom_questions/QuestionsInputInterface";
+import { syncedQuestions } from "@/components/article-creator/custom_questions/QuestionInstance";
+import Navbar from "@/components/global/navbar";
 import { useUser } from "@/components/hooks/UserContext";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";

@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { RotateCw } from "lucide-react";
 import type { QuestionFormat } from "@/types/questions";
-import { RenderContent } from "@/app/article-creator/_components/custom_questions/RenderAdvancedTextbox";
+import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
 
 interface Props {
   questionInstance: QuestionFormat;
