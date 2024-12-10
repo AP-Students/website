@@ -334,10 +334,7 @@ function ArticleCreator({ className }: { className?: string }) {
 
           // because of .type, its inferable that block.data is of an image, but idk where the type is defined.
           /* eslint-disable-next-line */
-          if (
-            block.type === "image" &&
-            block.data.url.startsWith("data:image/")
-          ) {
+          if (block.type === "image" && block.data.url.startsWith("data:image/")) {
             const updatedImage = await processImage(block.data as ImageData);
             block.data = updatedImage; // Replace the block data with the updated content
             return block;

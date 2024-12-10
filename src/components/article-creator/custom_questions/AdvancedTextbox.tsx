@@ -162,10 +162,13 @@ export default function AdvancedTextbox({
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] as File;
+    const file = e.target.files?.[0];
 
-    // Eslint wants ?? instead of ||, but that doesnt work. 
-    /* eslint-disable next-line */
+    if (!file) {
+      alert("No file selected or file is undefined. Please try uploading the file again, or contact support");
+      return; // Early return if file is not defined
+    }
+
     if (file.type.startsWith("image/") || file.type.startsWith("audio/")) {
       // Store the file in IndexedDB using the unique ID
       storeFileInIndexedDB(`${file.type}-${file.lastModified}`, file);

@@ -119,8 +119,6 @@ export const useFetchAndCache = (params: Params, admin?: boolean) => {
             setError("Content not found. That's probably us, not you.");
           }
         }
-
-        // console.log("content", content!.data);
       } catch (error) {
         setError("Failed to fetch subject or content data.");
       } finally {

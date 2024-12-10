@@ -28,7 +28,9 @@ const loadFromLocalStorage = () => {
   const storedUser = localStorage.getItem("cachedUser");
   const storedTimestamp = localStorage.getItem("cacheTimestamp");
   if (storedUser && storedTimestamp) {
+    /* eslint-disable @typescript-eslint/no-unsafe-assignment */
     const parsedUser: User = JSON.parse(storedUser);
+    /* eslint-enable */
     const timestamp = parseInt(storedTimestamp, 10);
     if (Date.now() - timestamp < CACHE_EXPIRATION_TIME) {
       cachedUser = parsedUser;
@@ -68,7 +70,6 @@ export const getUser = async (): Promise<User | null> => {
 
   // If we have a cached user and it's still valid, return it
   if (cachedUser && isCacheValid()) {
-    console.log("No call to firebase C:");
     return cachedUser;
   }
 
@@ -104,7 +105,6 @@ export const getUser = async (): Promise<User | null> => {
               // Save to localStorage for persistence
               saveToLocalStorage(mappedUser);
 
-              console.log("fetchUserData");
               resolve(mappedUser);
             } else {
               resolve(null);

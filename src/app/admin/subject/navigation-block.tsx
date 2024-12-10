@@ -53,10 +53,8 @@ export function Blocker() {
 export function BlockBrowserNavigation() {
   const isBlocked = useIsBlocked();
   useEffect(() => {
-    // console.log({ isBlocked });
     if (isBlocked) {
       const showModal = (event: BeforeUnloadEvent) => {
-        // console.log("showModal");
         event.preventDefault();
       };
 
