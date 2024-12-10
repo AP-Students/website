@@ -1,4 +1,4 @@
-import type { OutputBlockData, OutputData } from "@editorjs/editorjs";
+import type { OutputData } from "@editorjs/editorjs";
 import edjsParser from "editorjs-parser";
 import katex from "katex";
 import hljs from "highlight.js";
@@ -8,7 +8,6 @@ import { createRoot, type Root } from "react-dom/client";
 import { QuestionsOutput } from "./custom_questions/QuestionInstance";
 import type { QuestionFormat } from "@/types/questions";
 import "@/styles/katexStyling.css";
-import { QuestionsAddCard } from "./custom_questions/QuestionsAddCard";
 
 const customParsers = {
   alert: (data: { align: string; message: string; type: string }) => {
@@ -108,13 +107,18 @@ const Renderer = (props: { content: OutputData }) => {
         // Process data.blocks only once
         data.forEach((block) => {
           if (block.type === "questionsAddCard") {
-            const instanceId = block.data.instanceId;
+            // block.data is a <string, any> and since its part of editorjs, im not changing the type. 
+            // As long as editorjs doesnt depricate in a way that affects this, then this should be fine
+            /* eslint-disable-next-line */
+            const instanceId = block.data.instanceId as string;
             const storageKey = `questions_${instanceId}`;
 
             // Check if this instanceId has already been processed
             if (!instanceIdsLoaded.current.has(instanceId)) {
+              /* eslint-disable */
               const questionsFromDb: QuestionFormat[] =
                 block.data.questions.map(
+                  /* eslint-enable */
                   (questionInstance: QuestionFormat) => ({
                     ...questionInstance,
                     questionInstance: questionInstance.question || {

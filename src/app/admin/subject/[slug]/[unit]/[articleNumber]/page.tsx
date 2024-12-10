@@ -5,7 +5,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { ArrowLeft, UserRoundCog } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { Link } from "@/components/subject/link";
+import { Link } from "@/app/admin/subject/link";
 import { cn } from "@/lib/utils";
 
 const Page = () => {

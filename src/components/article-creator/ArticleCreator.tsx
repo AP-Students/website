@@ -13,7 +13,7 @@ import { getFileFromIndexedDB } from "./custom_questions/RenderAdvancedTextbox";
 import { type QuestionFormat } from "@/types/questions";
 import Renderer from "./Renderer";
 import { revertTableObjectToArray, getKey } from "./FetchArticleFunctions";
-import { Blocker } from "@/components/subject/navigation-block";
+import { Blocker } from "@/app/admin/subject/navigation-block";
 import { Button } from "@/components/ui/button";
 
 // Define a type for Table Data
@@ -33,7 +33,6 @@ interface ImageData {
 }
 
 function ArticleCreator({ className }: { className?: string }) {
-  const [showDropdown, setShowDropdown] = useState<boolean>(false);
   const [initialData, setInitialData] = useState<OutputData>({
     time: Date.now(),
     blocks: [
@@ -113,16 +112,12 @@ function ArticleCreator({ className }: { className?: string }) {
     });
   }, []);
 
-  const openSaveModal = async () => {
+  const handleSave = async () => {
     if (!data) {
       alert("Please enter the content.");
       return;
     }
 
-    setShowDropdown(true); // Show the dropdown to select the title
-  };
-
-  const handleSave = async () => {
     const user = await getUser();
     const pathParts = window.location.pathname.split("/").slice(-3);
 
@@ -337,7 +332,8 @@ function ArticleCreator({ className }: { className?: string }) {
             return block;
           }
 
-          // Process images
+          // because of .type, its inferable that block.data is of an image, but idk where the type is defined. 
+          /* eslint-disable-next-line */
           if (block.type === "image" && block.data.url.startsWith("data:image/")) {
             console.log("Blockdata", block.data);
             const updatedImage = await processImage(block.data as ImageData);
@@ -360,8 +356,6 @@ function ArticleCreator({ className }: { className?: string }) {
       console.error("Error saving article:", error);
       alert("Error saving article.");
     }
-
-    setShowDropdown(false);
   };
   
   const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
@@ -373,30 +367,11 @@ function ArticleCreator({ className }: { className?: string }) {
       <div className="flex justify-end">
         <Button
           className="bg-blue-500 hover:bg-blue-600"
-          onClick={openSaveModal}
+          onClick={() => handleSave()}
         >
           <Save className="mr-2" /> Save Changes
         </Button>
       </div>
-
-      {showDropdown && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="flex gap-8 rounded-lg bg-white p-4">
-            <button
-              className="rounded-md bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
-              onClick={() => handleSave()}
-            >
-              Save
-            </button>
-            <button
-              className="rounded-md bg-red-500 px-4 py-2 text-white hover:bg-red-600"
-              onClick={() => setShowDropdown(false)}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
 
       <div
         className={cn(

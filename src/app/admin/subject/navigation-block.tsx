@@ -13,6 +13,7 @@ import {
 
 export const NavigationBlockerContext = createContext<
   [isBlocked: boolean, setBlocked: Dispatch<SetStateAction<boolean>>]
+  /* eslint-disable-next-line */
 >([false, () => {}]);
 
 export function NavigationBlockerProvider({

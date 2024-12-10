@@ -14,11 +14,11 @@ import { Input } from "@/components/ui/input";
 import { useUser } from "@/components/hooks/UserContext";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import Link from "next/link";
+import { Link } from "@/app/admin/subject/link";
 import apClassesData from "@/components/apClasses.json";
 import type { Subject } from "@/types";
 import usePathname from "@/components/client/pathname";
-import { Blocker } from "@/components/subject/navigation-block";
+import { Blocker } from "@/app/admin/subject/navigation-block";
 
 const apClasses = apClassesData.apClasses;
 
@@ -374,7 +374,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
                     ))}
                     <div className="mt-4 flex gap-2">
                       <Input
-                        value={newChapterTitles[unitIndex] || ""}
+                        value={newChapterTitles[unitIndex] ?? ""}
                         onChange={(e) =>
                           setNewChapterTitles((prev) =>
                             prev.map((title, index) =>
