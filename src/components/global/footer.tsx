@@ -39,13 +39,13 @@ export default function Footer({ className }: { className?: string }) {
             </li>
           ))}
           <li>
-            <a
+            <Link
               href="https://discord.com/invite/apstudents"
               className="text-[#2E0F0FB2] hover:underline"
               target="_blank"
             >
               Discord
-            </a>
+            </Link>
           </li>
         </ul>
       </div>
