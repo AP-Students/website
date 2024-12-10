@@ -109,20 +109,8 @@ const Page = () => {
 
         <div className="my-6 flex flex-col items-center justify-center">
           <h1 className="mb-2 text-center text-4xl font-bold">{testName}</h1>
-          {/* Time Input for Admins */}
-          <div className="mb-6 flex items-center gap-4">
-            <div className="rounded-sm bg-blue-600 px-2 py-1 text-white">
-              Set Time: {time} minutes
-            </div>
-            <input
-              type="number"
-              value={time}
-              onChange={(e) => setTime(parseInt(e.target.value) || 0)}
-              placeholder="Set time in minutes"
-              className="rounded border p-2 text-lg"
-              min="0"
-            />
-          </div>
+          {/* For convience, not re-rendering effficency */}
+          <TimeInput time={time} setTime={setTime} />
           <Button className="bg-blue-600 text-white" onClick={handleSave}>
             Save Changes
           </Button>
@@ -162,6 +150,24 @@ const Page = () => {
 };
 
 export default Page;
+
+function TimeInput({ time, setTime }: { time: number; setTime: (time: number) => void }) {
+  return (
+    <div className="mb-6 flex items-center gap-4">
+      <div className="rounded-sm bg-blue-600 px-2 py-1 text-white">
+        Set Time: {time} minutes
+      </div>
+      <input
+        type="number"
+        value={time}
+        onChange={(e) => setTime(parseInt(e.target.value) || 0)}
+        placeholder="Set time in minutes"
+        className="rounded border p-2 text-lg"
+        min="0"
+      />
+    </div>
+  );
+}
 
 // Recursive types are pain so Im just gonna do this
 
