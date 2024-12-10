@@ -47,7 +47,9 @@ const emptyData: Subject = {
 
 const Page = ({ params }: { params: { slug: string } }) => {
   const pathname = usePathname();
-  const { user, error, setError, setLoading } = useUser();
+  const { user, error, setError } = useUser();
+
+  const [loading, setLoading] = useState<boolean>(false);
   const [subject, setSubject] = useState<Subject>();
   const [expandedUnits, setExpandedUnits] = useState<number[]>([]);
 
@@ -243,6 +245,14 @@ const Page = ({ params }: { params: { slug: string } }) => {
     setUnsavedChanges(true);
   };
 
+  if(loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-3xl">
+        Loading...
+      </div>
+    );
+  }
+
   if (!subject) {
     return (
       <div className="flex min-h-screen items-center justify-center text-3xl">
@@ -322,7 +332,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
                         key={chapter.chapter}
                         className="mb-3 flex items-center justify-between gap-4"
                       >
-                        <a
+                        <Link
                           className={buttonVariants({ variant: "outline" })}
                           href={`${pathname.split("/").slice(0, 4).join("/")}/${unit.title
                             .toLowerCase()
@@ -330,7 +340,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
                             .replace(/\s/g, "-")}/${chapter.chapter}`}
                         >
                           Edit Content
-                        </a>
+                        </Link>
 
                         {editingChapter.unitIndex === unitIndex &&
                         editingChapter.chapterIndex === chapterIndex ? (

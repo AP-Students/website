@@ -4,12 +4,11 @@ import { useUser } from "@/components/hooks/UserContext";
 import { buttonVariants } from "@/components/ui/button";
 import { ArrowLeft, UserRoundCog } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { Link } from "@/app/admin/subject/link";
 import { cn } from "@/lib/utils";
 
 const Page = () => {
-  const { user, loading } = useUser();
+  const { user } = useUser();
 
   const router = useRouter();
   const pathname = usePathname();
@@ -20,11 +19,10 @@ const Page = () => {
   const formattedUnit = `UNIT: ${pathParts[1]}`.replace(/-/g, " ");
   const formattedLesson = `Lesson ${pathParts[2]}`;
 
-  useEffect(() => {
-    if ((!user || user?.access === "user") && !loading) {
-      router.push("/");
-    }
-  }, [user, loading, router]);
+  if (!user || user.access === "user") {
+    router.push("/");
+    return null;
+  }
 
   return (
     <div className="flex grow flex-col px-10 pt-20 xl:px-20">

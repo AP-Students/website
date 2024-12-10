@@ -30,6 +30,7 @@ const Page = () => {
     // Fetch questions
     (async () => {
       const userAccess = await getUserAccess();
+      console.log("userAccess", userAccess);
       if (userAccess && (userAccess === "admin" || userAccess === "member")) {
         const docRef = doc(db, "subjects", collectionId!);
         const docSnap = await getDoc(docRef);
