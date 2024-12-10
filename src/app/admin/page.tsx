@@ -7,34 +7,13 @@ import { useRouter } from "next/navigation";
 import { useUserManagement } from "./useUserManagement";
 import apClassesData from "@/components/apClasses.json";
 import { useUser } from "../../components/hooks/UserContext";
+import { type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 const apClasses = apClassesData.apClasses;
 
 const Page = () => {
   const { user } = useUser();
-  const [searchTermAPClasses, setSearchTermAPClasses] = useState<string>("");
-  const [searchTermUsers, setSearchTermUsers] = useState<string>("");
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const router = useRouter();
-
-  // Filter AP classes based on search term
-  const filteredClasses = apClasses.filter((apClass) =>
-    apClass.toLowerCase().includes(searchTermAPClasses.toLowerCase()),
-  );
-
-  // Users here is refering to the FiveHive users propagated in the changeUserRole (only seen by admins)
-  const { users, error, handleRoleChange } = useUserManagement(user);
-
-  const openModal = (user: User) => {
-    setSelectedUser(user);
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedUser(null);
-  };
 
   if (!user || user.access === "user") {
     router.push("/");
@@ -51,88 +30,121 @@ const Page = () => {
             Admin Dashboard
           </h1>
 
-          {user.access === "admin" && (
-            <>
-              <p className="w-full text-pretty text-lg opacity-70 sm:text-lg lg:text-xl">
-                Change User Role
-              </p>
-              <div className="mb-4 rounded-lg border p-4 shadow-sm">
-                <input
-                  type="text"
-                  className="mb-3 w-full rounded-md border p-2"
-                  placeholder="Search for a user..."
-                  value={searchTermUsers}
-                  onChange={(e) => setSearchTermUsers(e.target.value)}
-                />
-                <ul className="class-list max-h-60 overflow-y-auto">
-                  {!error &&
-                    users.map(
-                      // If error, it will show error message. Otherwise, it will show users
-                      (u) => (
-                        <li
-                          key={u.uid}
-                          className="grid cursor-pointer grid-cols-1 gap-4 rounded-md border p-4 text-center shadow-md hover:bg-gray-200 md:grid-cols-2 lg:grid-cols-3"
-                          onClick={() => 
-                          {
-                            if (u.access === "admin") {
-                              alert("Admins cannot demote other admins");
-                              return;
-                            }else{
-                              openModal(u)
-                            }
-                          }
-                            }
-                        >
-                          <div className="hidden font-bold lg:block">
-                            {u.displayName}
-                          </div>
-                          <div className="font-normal md:font-bold lg:font-normal">
-                            {u.email}
-                          </div>
-                          <div className="font-bold">{u.access}</div>
-                        </li>
-                      ),
-                    )}
-                </ul>
-              </div>
-            </>
-          )}
+          {user.access === "admin" && <AdminPanel user={user} />}
 
-          <p className="w-full text-pretty text-lg opacity-70 sm:text-lg lg:text-xl">
-            Select AP Course
-          </p>
-          <div className="rounded-lg border p-4 shadow-sm">
-            <input
-              type="text"
-              className="mb-3 w-full rounded-md border p-2"
-              placeholder="Search for a class..."
-              value={searchTermAPClasses}
-              onChange={(e) => setSearchTermAPClasses(e.target.value)}
-            />
-            <ul className="class-list max-h-60 overflow-y-auto">
-              {filteredClasses.map((apClass: string) => (
-                <li
-                  key={apClass}
-                  className="cursor-pointer rounded-md p-2 hover:bg-gray-200"
-                  onClick={() =>
-                    router.push(
-                      `/admin/subject/${apClass
-                        .replace(/AP /g, "")
-                        .toLowerCase()
-                        .replace(/[^a-z1-9 ]+/g, "")
-                        .replace(/\s/g, "-")}`,
-                    )
-                  }
-                >
-                  {apClass}
-                </li>
-              ))}
-            </ul>
-          </div>
+          <SelectCourse router={router} />
         </div>
       </div>
 
       <Footer />
+    </div>
+  );
+};
+
+function SelectCourse({ router }: { router: AppRouterInstance }) {
+  const [searchTermAPClasses, setSearchTermAPClasses] = useState<string>("");
+
+  // Filter AP classes based on search term
+  const filteredClasses = apClasses.filter((apClass) =>
+    apClass.toLowerCase().includes(searchTermAPClasses.toLowerCase()),
+  );
+
+  return (
+    <>
+      <p className="w-full text-pretty text-lg opacity-70 sm:text-lg lg:text-xl">
+        Select AP Course
+      </p>
+      <div className="rounded-lg border p-4 shadow-sm">
+        <input
+          type="text"
+          className="mb-3 w-full rounded-md border p-2"
+          placeholder="Search for a class..."
+          value={searchTermAPClasses}
+          onChange={(e) => setSearchTermAPClasses(e.target.value)}
+        />
+        <ul className="class-list max-h-60 overflow-y-auto">
+          {filteredClasses.map((apClass: string) => (
+            <li
+              key={apClass}
+              className="cursor-pointer rounded-md p-2 hover:bg-gray-200"
+              onClick={() =>
+                router.push(
+                  `/admin/subject/${apClass
+                    .replace(/AP /g, "")
+                    .toLowerCase()
+                    .replace(/[^a-z1-9 ]+/g, "")
+                    .replace(/\s/g, "-")}`,
+                )
+              }
+            >
+              {apClass}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </>
+  );
+}
+
+function AdminPanel({ user }: { user: User }) {
+  // Users here is refering to the FiveHive users propagated in the changeUserRole (only seen by admins)
+  const { users, error, handleRoleChange } = useUserManagement(user);
+  const [searchTermUsers, setSearchTermUsers] = useState<string>("");
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+  const openModal = (user: User) => {
+    setSelectedUser(user);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedUser(null);
+  };
+
+  return (
+    <>
+      <p className="w-full text-pretty text-lg opacity-70 sm:text-lg lg:text-xl">
+        Change User Role
+      </p>
+      <div className="mb-4 rounded-lg border p-4 shadow-sm">
+        <input
+          type="text"
+          className="mb-3 w-full rounded-md border p-2"
+          placeholder="Search for a user..."
+          value={searchTermUsers}
+          onChange={(e) => setSearchTermUsers(e.target.value)}
+        />
+        <ul className="class-list max-h-60 overflow-y-auto">
+          {!error &&
+            users.map(
+              // If error, it will show error message. Otherwise, it will show users
+              (u) => (
+                <li
+                  key={u.uid}
+                  className="grid cursor-pointer grid-cols-1 gap-4 rounded-md border p-4 text-center shadow-md hover:bg-gray-200 md:grid-cols-2 lg:grid-cols-3"
+                  onClick={() => {
+                    if (u.access === "admin") {
+                      alert("Admins cannot demote other admins");
+                      return;
+                    } else {
+                      openModal(u);
+                    }
+                  }}
+                >
+                  <div className="hidden font-bold lg:block">
+                    {u.displayName}
+                  </div>
+                  <div className="font-normal md:font-bold lg:font-normal">
+                    {u.email}
+                  </div>
+                  <div className="font-bold">{u.access}</div>
+                </li>
+              ),
+            )}
+        </ul>
+      </div>
 
       {/* Modal for Role Change */}
       {isModalOpen && selectedUser && (
@@ -186,8 +198,8 @@ const Page = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
-};
+}
 
 export default Page;

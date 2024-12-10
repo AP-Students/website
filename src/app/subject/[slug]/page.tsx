@@ -10,8 +10,6 @@ import TableOfContents from "@/components/subject/table-of-contents";
 import UnitAccordion from "@/components/subject/unit-accordion";
 import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
-import { getUser } from "@/components/hooks/users";
-import { type User } from "@/types/user";
 import usePathname from "@/components/client/pathname";
 
 const Page = ({ params }: { params: { slug: string } }) => {
@@ -20,22 +18,6 @@ const Page = ({ params }: { params: { slug: string } }) => {
   const [subject, setSubject] = useState<Subject | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null | undefined>(undefined);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const fetchedUser = await getUser();
-        setUser(fetchedUser);
-      } catch (error) {
-        console.error("Error fetching user:", error);
-      }
-    };
-
-    fetchUser().catch((error) => {
-      console.error("Error fetching user:", error);
-    });
-  }, []);
 
   useEffect(() => {
     const fetchSubject = async () => {
@@ -55,12 +37,10 @@ const Page = ({ params }: { params: { slug: string } }) => {
       }
     };
 
-    if (user !== undefined) {
-      fetchSubject().catch((error) => {
-        console.error("Error fetching user:", error);
-      });;
-    }
-  }, [user, params.slug]);
+    fetchSubject().catch((error) => {
+      console.error("Error fetching user:", error);
+    });
+  }, [params.slug]);
 
   if (loading) {
     return (
