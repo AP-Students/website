@@ -102,7 +102,7 @@ function ArticleCreator({ className }: { className?: string }) {
         const docRef = doc(db, "pages", key);
         const docSnap = await getDoc(docRef);
         const data = docSnap.data()?.data as OutputData;
-        
+
         revertTableObjectToArray(data);
         setInitialData(data);
         setData(data);
@@ -332,9 +332,12 @@ function ArticleCreator({ className }: { className?: string }) {
             return block;
           }
 
-          // because of .type, its inferable that block.data is of an image, but idk where the type is defined. 
+          // because of .type, its inferable that block.data is of an image, but idk where the type is defined.
           /* eslint-disable-next-line */
-          if (block.type === "image" && block.data.url.startsWith("data:image/")) {
+          if (
+            block.type === "image" &&
+            block.data.url.startsWith("data:image/")
+          ) {
             const updatedImage = await processImage(block.data as ImageData);
             block.data = updatedImage; // Replace the block data with the updated content
             return block;
@@ -356,7 +359,7 @@ function ArticleCreator({ className }: { className?: string }) {
       alert("Error saving article.");
     }
   };
-  
+
   const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
 
   return (
@@ -372,13 +375,9 @@ function ArticleCreator({ className }: { className?: string }) {
         </Button>
       </div>
 
-      <div
-        className={cn(
-          "grid grid-cols-1 sm:grid-cols-2 pb-8",
-          className,
-        )}
-      >
-        <div className="overflow-y-auto rounded border border-gray-300 p-4 px-8">
+      <div className={cn("grid grid-cols-1 pb-8 sm:grid-cols-2", className)}>
+        {/* Left column: Editor */}
+        <div className="h-[calc(100vh-4rem)] overflow-y-auto rounded border border-gray-300 p-4 px-8">
           <Editor
             content={initialData}
             setData={setData}
@@ -386,9 +385,9 @@ function ArticleCreator({ className }: { className?: string }) {
           />
         </div>
 
-        <div className="px-8">
+        {/* Right column: Renderer */}
+        <div className="h-[calc(100vh-4rem)] overflow-y-auto px-8">
           <div className="my-4 pb-4 opacity-50">Output:</div>
-
           <Renderer content={data} />
         </div>
       </div>
