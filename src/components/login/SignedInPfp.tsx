@@ -81,6 +81,13 @@ export default SignedInPfp;
 const signOutUser = async () => {
   try {
     await signOut(auth); 
+
+    // Clear cached user and timestamp from localStorage
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("cachedUser");
+      localStorage.removeItem("cacheTimestamp");
+    }
+
     window.location.reload(); 
   } catch (error) {
     console.error("Error signing out:", error); 

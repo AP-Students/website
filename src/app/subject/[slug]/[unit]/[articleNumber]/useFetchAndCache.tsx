@@ -14,7 +14,7 @@ type Params = {
   slug: string; // Add other properties if necessary
 };
 
-const CACHE_EXPIRATION_MS = 2 * 24 * 60 * 60 * 1000; // 48 hrs in milliseconds
+const CACHE_EXPIRATION_MS = 2 * 24 * 60 * 60 * 1000; // 48 hrs in milliseconds (Probably increase this signficiantly)
 
 // params: { slug: string; unit: string; articleNumber: string }
 // admin: Used to prevent caches === rapid feedback

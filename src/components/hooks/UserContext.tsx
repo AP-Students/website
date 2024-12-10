@@ -13,6 +13,7 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
+// We need to cache this...
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
