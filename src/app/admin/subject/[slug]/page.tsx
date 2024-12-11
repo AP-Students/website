@@ -13,7 +13,7 @@ import { Link } from "@/app/admin/subject/link";
 import apClassesData from "@/components/apClasses.json";
 import type { Subject } from "@/types";
 import { Blocker } from "@/app/admin/subject/navigation-block";
-import SubjectDisplay from "./SubjectDisplay";
+import UnitDisplay from "./UnitDisplay";
 
 const apClasses = apClassesData.apClasses;
 
@@ -162,7 +162,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
           <div className="my-4 space-y-4">
             {subject?.units.map((unit, unitIndex) => (
               // This doesnt actually increase efficency; just for abstraction.
-              <SubjectDisplay
+              <UnitDisplay
                 unit={unit}
                 unitIndex={unitIndex}
                 subject={subject}

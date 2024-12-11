@@ -1,11 +1,12 @@
 import { buttonVariants, Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Unit, Subject } from "@/types";
-import { Edit, Trash, ChevronUp, ChevronDown, Link, PlusCircle } from "lucide-react";
+import { Edit, Trash, ChevronUp, ChevronDown, PlusCircle } from "lucide-react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
 
-export default function SubjectDisplay({
+export default function UnitDisplay({
     unit,
     unitIndex,
     subject,
