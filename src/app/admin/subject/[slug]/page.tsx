@@ -163,6 +163,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
             {subject?.units.map((unit, unitIndex) => (
               // This doesnt actually increase efficency; just for abstraction.
               <UnitDisplay
+                key={unitIndex}
                 unit={unit}
                 unitIndex={unitIndex}
                 subject={subject}
