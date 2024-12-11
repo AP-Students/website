@@ -1,6 +1,6 @@
 import { buttonVariants, Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Unit, Subject } from "@/types";
+import type { Unit, Subject } from "@/types";
 import { Edit, Trash, ChevronUp, ChevronDown, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -119,7 +119,7 @@ export default function UnitDisplay({
     };
   
     const optInForUnitTest = (unitIndex: number): void => {
-      const updatedSubject = { ...subject! };
+      const updatedSubject = { ...subject };
       if (updatedSubject?.units[unitIndex]?.test) {
         updatedSubject.units[unitIndex].test.optedIn = true;
         updatedSubject.units[unitIndex].test.instanceId =
@@ -130,7 +130,7 @@ export default function UnitDisplay({
     };
   
     const optOutOfUnitTest = (unitIndex: number): void => {
-      const updatedSubject = { ...subject! };
+      const updatedSubject = { ...subject };
       if (updatedSubject?.units[unitIndex]?.test) {
         updatedSubject.units[unitIndex].test.optedIn = false;
       }

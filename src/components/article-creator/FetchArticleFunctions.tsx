@@ -1,4 +1,4 @@
-import { QuestionFormat } from "@/types/questions";
+import type { QuestionFormat } from "@/types/questions";
 import { type OutputData } from "@editorjs/editorjs";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getFileFromIndexedDB } from "./custom_questions/RenderAdvancedTextbox";

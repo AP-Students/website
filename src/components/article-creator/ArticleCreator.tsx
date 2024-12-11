@@ -122,7 +122,8 @@ function ArticleCreator({ className }: { className?: string }) {
 
       const updatedDataBlocks = await Promise.all(
         data.blocks.map(async (block) => {
-          // Check if the block is of type 'questionsAddCard'
+          // because of .type, its inferable that block.data is of an questions, so you can assert .data.questions as QuestionFormat[]
+          /* eslint-disable */
           if (block.type === "questionsAddCard") {
             const updatedQuestions = await processQuestions(
               block.data.questions as QuestionFormat[],
@@ -137,8 +138,7 @@ function ArticleCreator({ className }: { className?: string }) {
             return block;
           }
 
-          // because of .type, its inferable that block.data is of an image, but idk where the type is defined.
-          /* eslint-disable-next-line */
+          // because of .type, its inferable that block.data is of an image
           if (block.type === "image" && block.data.url.startsWith("data:image/")) {
             const updatedImage = await processImage(block.data);
             block.data = updatedImage; // Replace the block data with the updated content
