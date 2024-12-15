@@ -1,4 +1,3 @@
-// lib/manageUser.ts
 import { auth, db } from "@/lib/firebase";
 import {
   updateProfile,
@@ -14,7 +13,12 @@ import { doc, updateDoc, deleteDoc } from "firebase/firestore";
  */
 function mapAuthError(error: unknown): string {
   let code = "";
-  if (typeof error === "object" && error !== null && "code" in error && typeof error.code === "string") {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string"
+  ) {
     code = error.code;
   }
   switch (code) {
@@ -45,7 +49,7 @@ function mapAuthError(error: unknown): string {
  */
 export async function updateDisplayName(
   uid: string,
-  displayName: string
+  displayName: string,
 ): Promise<void> {
   if (!uid || !displayName) {
     throw new Error("User ID and display name are required.");
@@ -94,7 +98,7 @@ export async function updatePassword(newPassword: string): Promise<void> {
  */
 export async function updatePhotoURL(
   uid: string,
-  photoURL: string
+  photoURL: string,
 ): Promise<void> {
   if (!uid || !photoURL) {
     throw new Error("User ID and photo URL are required.");
