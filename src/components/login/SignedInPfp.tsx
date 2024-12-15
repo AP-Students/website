@@ -90,7 +90,7 @@ const signOutUser = async () => {
     // Clear cached user and timestamp from localStorage
     if (typeof window !== "undefined") {
       localStorage.removeItem("cachedUser");
-      localStorage.removeItem("cacheTimestamp");
+      localStorage.removeItem("cacheUserTimestamp");
     }
 
     window.location.reload();
