@@ -1,17 +1,11 @@
 "use client";
 
 import "@/styles/globals.css";
-import { Outfit } from "next/font/google";
 import { useAuthHandlers } from "@/lib/auth";
 import React, { useState } from "react";
 import Link from "next/link";
 import Button from "@/components/login/submitButton";
 import type { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
-
-const outfit = Outfit({
-  subsets: ["latin"],
-  variable: "--font-outfit",
-});
 
 export default function Login() {
   const { forgotPassword } = useAuthHandlers();
@@ -65,7 +59,7 @@ export default function Login() {
 
   return (
     <div
-      className={`${outfit.variable} flex min-h-screen items-center justify-center bg-primary-foreground font-sans`}
+      className={`flex min-h-screen items-center justify-center bg-primary-foreground`}
     >
       <form
         onSubmit={resetPassword}
@@ -92,7 +86,7 @@ export default function Login() {
           <input
             type="text"
             placeholder="Email or username"
-            className="w-full rounded-full border border-gray-400 px-4 py-2"
+            className="w-full rounded-md border border-gray-300 px-3 py-2"
             id="email"
             name="email"
             required

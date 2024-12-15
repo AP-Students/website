@@ -1,8 +1,6 @@
-// app/user/manage/page.tsx
 "use client";
 
 import "@/styles/globals.css";
-import { Outfit } from "next/font/google";
 import React, { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/login/submitButton";
@@ -17,21 +15,16 @@ import {
 import ReauthenticateModal from "@/components/auth/ReauthenticateModal";
 import Image from "next/image";
 
-const outfit = Outfit({
-  subsets: ["latin"],
-  variable: "--font-outfit",
-});
-
 interface ManagementForm extends HTMLFormElement {
   displayName: {
-    value: string
-  },
+    value: string;
+  };
   password: {
-    value: string
-  },
+    value: string;
+  };
   photoURL: {
-    value: string
-  },
+    value: string;
+  };
 }
 
 export default function UserManagementPage() {
@@ -149,7 +142,7 @@ export default function UserManagementPage() {
       // Redirect to "/login"
       router.push("/login");
     } catch (error: unknown) {
-      setErrors((prev) => ({ ...prev, general: error as string}));
+      setErrors((prev) => ({ ...prev, general: error as string }));
     }
   };
 
@@ -191,9 +184,9 @@ export default function UserManagementPage() {
 
   return (
     <div
-      className={`${outfit.variable} flex min-h-screen items-center justify-center bg-primary-foreground font-sans`}
+      className={`flex min-h-screen items-center justify-center bg-primary-foreground`}
     >
-      <div className="w-full max-w-3xl rounded-lg bg-white p-8 shadow-lg">
+      <div className="w-full max-w-3xl rounded-lg border bg-white p-8 shadow-sm">
         <button
           onClick={() => router.back()}
           className="mb-6 text-blue-500 hover:underline"
@@ -204,7 +197,8 @@ export default function UserManagementPage() {
           FiveHive Account
         </h1>
         <p className="mb-8 text-gray-600">
-          Manage your account details below. Click &quot;Save Changes&quot; to update.
+          Manage your account details below. Click &quot;Save Changes&quot; to
+          update.
         </p>
 
         {errors.general && (
@@ -279,8 +273,10 @@ export default function UserManagementPage() {
             {photoPreview && (
               <Image
                 src={photoPreview}
+                width={96}
+                height={96}
                 alt="Profile Preview"
-                className="mt-4 h-24 w-24 rounded-full border"
+                className="rounded-full"
               />
             )}
             <input

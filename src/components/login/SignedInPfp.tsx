@@ -50,10 +50,8 @@ const SignedInPfp = () => {
           </div>
         </div>
 
-        {/* Dropdown Menu */}
         {isDropdownOpen && (
           <div className="absolute right-0 mt-2 max-w-48 whitespace-nowrap rounded-lg border border-gray-200 bg-white shadow-lg">
-
             {(user.access === "admin" || user.access === "member") && (
               <Link
                 className="block w-full px-4 py-2 text-left hover:bg-gray-100"
@@ -64,10 +62,10 @@ const SignedInPfp = () => {
             )}
 
             <Link
-              href="/user/manage"
+              href="/account"
               className="block w-full px-4 py-2 text-left hover:bg-gray-100"
             >
-              Manage Account
+              Account Settings
             </Link>
 
             <button
@@ -87,7 +85,7 @@ export default SignedInPfp;
 
 const signOutUser = async () => {
   try {
-    await signOut(auth); 
+    await signOut(auth);
 
     // Clear cached user and timestamp from localStorage
     if (typeof window !== "undefined") {
@@ -95,8 +93,8 @@ const signOutUser = async () => {
       localStorage.removeItem("cacheTimestamp");
     }
 
-    window.location.reload(); 
+    window.location.reload();
   } catch (error) {
-    console.error("Error signing out:", error); 
+    console.error("Error signing out:", error);
   }
 };
