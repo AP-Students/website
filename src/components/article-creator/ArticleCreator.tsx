@@ -179,7 +179,7 @@ function ArticleCreator({ className }: { className?: string }) {
 
       <div className={cn("grid grid-cols-1 pb-8 sm:grid-cols-2", className)}>
         {/* Left column: Editor */}
-        <div className="h-[calc(100vh-4rem)] overflow-y-auto rounded border border-gray-300 p-4 px-8">
+        <div className="p-4 px-8">
           <Editor
             content={initialData}
             setData={setData}
@@ -188,7 +188,7 @@ function ArticleCreator({ className }: { className?: string }) {
         </div>
 
         {/* Right column: Renderer */}
-        <div className="h-[calc(100vh-4rem)] overflow-y-auto px-8">
+        <div className="px-8">
           <div className="my-4 pb-4 opacity-50">Output:</div>
           <Renderer content={data} />
         </div>

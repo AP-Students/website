@@ -19,7 +19,11 @@ const Page = () => {
   const formattedUnit = `UNIT: ${pathParts[1]}`.replace(/-/g, " ");
   const formattedLesson = `Lesson ${pathParts[2]}`;
 
-  if (!user || user.access === "user") {
+  if(!user) {
+    return <div className="flex h-screen items-center justify-center text-3xl"> Authenticating user </div>;
+  }
+
+  if (user.access === "user") {
     router.push("/");
     return null;
   }
