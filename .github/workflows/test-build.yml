@@ -19,6 +19,22 @@ jobs:
           # This is the node version I've been using
           node-version: 18
 
+      - name: Create .env file
+        run: |
+          echo "FIREBASE_ADMIN_PROJECT_ID=" > .env
+          echo "FIREBASE_ADMIN_PRIVATE_KEY=" >> .env
+          echo "FIREBASE_ADMIN_CLIENT_EMAIL=" >> .env
+          echo "FIREBASE_SERVICE_ACCOUNT_KEY=" >> .env
+          echo "DISCORD_CLIENT_ID=" >> .env
+          echo "DISCORD_CLIENT_SECRET=" >> .env
+          echo "REDIRECT_URI=" >> .env
+          echo "NEXT_PUBLIC_FIREBASE_API_KEY=" >> .env
+          echo "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=" >> .env
+          echo "NEXT_PUBLIC_FIREBASE_PROJECT_ID=" >> .env
+          echo "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=" >> .env
+          echo "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=" >> .env
+          echo "NEXT_PUBLIC_FIREBASE_APP_ID=" >> .env
+
       - name: Install Dependencies
         run: npm install
 
