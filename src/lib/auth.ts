@@ -167,15 +167,15 @@ export const useAuthHandlers = () => {
       throw {
         code: error.code,
         message:
-          error.message ||
-          getMessageFromCode(error.code) ||
+          error.message ?? 
+          getMessageFromCode(error.code) ?? 
           "An unknown error occurred",
       };
     }
   };
 
   const undoEmailChange = async (code: string) => {
-    applyActionCode(auth, code);
+    await applyActionCode(auth, code);
   };
 
   return {

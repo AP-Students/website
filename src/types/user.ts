@@ -5,4 +5,5 @@ export interface User {
   photoURL?: string;
   access: "admin" | "member" | "user";
   createdWith: "email" | "google";
+  createdAt: Date,
 }

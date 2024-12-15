@@ -3,24 +3,36 @@
 
 import "@/styles/globals.css";
 import { Outfit } from "next/font/google";
-import React, { useEffect, useState, FormEvent } from "react";
+import React, { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/login/submitButton";
 import { getUser } from "@/components/hooks/users";
-import { User } from "@/types/user";
+import type { User } from "@/types/user";
 import {
   updateDisplayName,
-  updateEmailAddress,
   updatePhotoURL,
   updatePassword,
   deleteAccount,
 } from "@/lib/manageUser";
 import ReauthenticateModal from "@/components/auth/ReauthenticateModal";
+import Image from "next/image";
 
 const outfit = Outfit({
   subsets: ["latin"],
   variable: "--font-outfit",
 });
+
+interface ManagementForm extends HTMLFormElement {
+  displayName: {
+    value: string
+  },
+  password: {
+    value: string
+  },
+  photoURL: {
+    value: string
+  },
+}
 
 export default function UserManagementPage() {
   const router = useRouter();
@@ -34,8 +46,6 @@ export default function UserManagementPage() {
     "email" | "password" | "delete" | null
   >(null);
 
-  // Temporary states to hold new values until reauthentication is successful
-  const [tempEmail, setTempEmail] = useState<string>("");
   const [tempPassword, setTempPassword] = useState<string>("");
 
   useEffect(() => {
@@ -43,7 +53,7 @@ export default function UserManagementPage() {
       try {
         const fetchedUser = await getUser();
         setUser(fetchedUser);
-        setPhotoPreview(fetchedUser.photoURL || "");
+        setPhotoPreview(fetchedUser?.photoURL ?? "");
       } catch (error) {
         setErrors((prev) => ({
           ...prev,
@@ -53,18 +63,17 @@ export default function UserManagementPage() {
         setLoading(false);
       }
     }
-    fetchUser();
+    void fetchUser();
   }, []);
 
-  const handleUpdateDisplayName = async (event: FormEvent<HTMLFormElement>) => {
+  const handleUpdateDisplayName = async (event: FormEvent<ManagementForm>) => {
     event.preventDefault();
     setErrors({});
     setSuccessMessage(null);
 
-    const displayName = (
-      event.currentTarget.displayName.value as string
-    ).trim();
+    const displayName = event.currentTarget.displayName.value.trim();
     if (!user) return;
+    if (!displayName) return;
     if (displayName === user.displayName) return;
 
     try {
@@ -73,17 +82,17 @@ export default function UserManagementPage() {
         prevUser ? { ...prevUser, displayName } : prevUser,
       );
       setSuccessMessage("Display name updated successfully.");
-    } catch (error: any) {
-      setErrors((prev) => ({ ...prev, displayName: error }));
+    } catch (error: unknown) {
+      setErrors((prev) => ({ ...prev, displayName: error as string }));
     }
   };
 
-  const handleUpdatePassword = async (event: FormEvent<HTMLFormElement>) => {
+  const handleUpdatePassword = async (event: FormEvent<ManagementForm>) => {
     event.preventDefault();
     setErrors({});
     setSuccessMessage(null);
 
-    const newPassword = (event.currentTarget.password.value as string).trim();
+    const newPassword = event.currentTarget.password.value.trim();
     if (!newPassword) {
       setErrors((prev) => ({ ...prev, password: "Password cannot be empty." }));
       return;
@@ -101,17 +110,17 @@ export default function UserManagementPage() {
       await updatePassword(tempPassword);
       setSuccessMessage("Password updated successfully.");
       setTempPassword("");
-    } catch (error: any) {
-      setErrors((prev) => ({ ...prev, password: error }));
+    } catch (error: unknown) {
+      setErrors((prev) => ({ ...prev, password: error as string }));
     }
   };
 
-  const handleUpdatePhotoURL = async (event: FormEvent<HTMLFormElement>) => {
+  const handleUpdatePhotoURL = async (event: FormEvent<ManagementForm>) => {
     event.preventDefault();
     setErrors({});
     setSuccessMessage(null);
 
-    const photoURL = (event.currentTarget.photoURL.value as string).trim();
+    const photoURL = event.currentTarget.photoURL.value.trim();
     if (!user) return;
     if (photoURL === user.photoURL) return;
 
@@ -120,8 +129,8 @@ export default function UserManagementPage() {
       setUser((prevUser) => (prevUser ? { ...prevUser, photoURL } : prevUser));
       setPhotoPreview(photoURL);
       setSuccessMessage("Photo URL updated successfully.");
-    } catch (error: any) {
-      setErrors((prev) => ({ ...prev, photoURL: error }));
+    } catch (error: unknown) {
+      setErrors((prev) => ({ ...prev, photoURL: error as string }));
     }
   };
 
@@ -139,25 +148,24 @@ export default function UserManagementPage() {
       await deleteAccount();
       // Redirect to "/login"
       router.push("/login");
-    } catch (error: any) {
-      setErrors((prev) => ({ ...prev, general: error }));
+    } catch (error: unknown) {
+      setErrors((prev) => ({ ...prev, general: error as string}));
     }
   };
 
   const closeReauthModal = () => {
     setReauthModalOpen(false);
     setReauthAction(null);
-    setTempEmail("");
     setTempPassword("");
   };
 
-  const onReauthSuccess = () => {
+  const onReauthSuccess = async () => {
     if (!reauthAction) return;
 
     if (reauthAction === "password" && tempPassword) {
-      handleConfirmUpdatePassword();
+      await handleConfirmUpdatePassword();
     } else if (reauthAction === "delete") {
-      handleConfirmDeleteAccount();
+      await handleConfirmDeleteAccount();
     }
   };
 
@@ -196,7 +204,7 @@ export default function UserManagementPage() {
           FiveHive Account
         </h1>
         <p className="mb-8 text-gray-600">
-          Manage your account details below. Click "Save Changes" to update.
+          Manage your account details below. Click &quot;Save Changes&quot; to update.
         </p>
 
         {errors.general && (
@@ -269,7 +277,7 @@ export default function UserManagementPage() {
               Profile Picture URL
             </label>
             {photoPreview && (
-              <img
+              <Image
                 src={photoPreview}
                 alt="Profile Preview"
                 className="mt-4 h-24 w-24 rounded-full border"

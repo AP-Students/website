@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/sheet";
 import { MenuIcon } from "lucide-react";
 import SignedInPfp from "../login/SignedInPfp";
-import { UserProvider, useUser } from "../hooks/UserContext";
+import { useUser } from "../hooks/UserContext";
 
 const links = [
   {

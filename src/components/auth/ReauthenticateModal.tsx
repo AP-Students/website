@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, FormEvent, useEffect } from "react";
+import React, { useState, type FormEvent, useEffect } from "react";
 import { auth } from "@/lib/firebase";
 import {
   EmailAuthProvider,
   GoogleAuthProvider,
   reauthenticateWithPopup,
   reauthenticateWithCredential,
-  AuthError,
+  type AuthError,
 } from "firebase/auth";
 
 interface ReauthenticateModalProps {
@@ -57,7 +57,7 @@ const ReauthenticateModal: React.FC<ReauthenticateModalProps> = ({
           setLoading(false);
           return;
         }
-        const credential = EmailAuthProvider.credential(user.email || "", password);
+        const credential = EmailAuthProvider.credential(user.email ?? "", password);
         await reauthenticateWithCredential(user, credential);
       } else if (accountType === "google") {
         const provider = new GoogleAuthProvider();

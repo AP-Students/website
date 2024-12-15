@@ -5,7 +5,7 @@ import { Outfit } from "next/font/google";
 import { useAuthHandlers } from "@/lib/auth";
 import React, { type FormEvent, useState } from "react";
 import Button from "@/components/login/submitButton";
-import { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
+import type { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
 import Link from "next/link";
 
 const outfit = Outfit({
@@ -85,7 +85,7 @@ export default function PasswordResetPage({ code }: { code: string }) {
       alert(
         "Password reset successful. You can now log in with your new password.",
       );
-    } catch (e: any) {
+    } catch (e: unknown) {
       const error = e as FirebaseAuthError;
       switch (error.code) {
         case "auth/expired-action-code":

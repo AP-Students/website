@@ -4,8 +4,6 @@ import {
   updateProfile,
   deleteUser,
   updatePassword as firebaseUpdatePassword,
-  updateEmail as firebaseUpdateEmail,
-  User as FirebaseUser,
 } from "firebase/auth";
 import { doc, updateDoc, deleteDoc } from "firebase/firestore";
 
@@ -14,9 +12,12 @@ import { doc, updateDoc, deleteDoc } from "firebase/firestore";
  * @param error - The error thrown by Firebase Auth.
  * @returns A user-friendly error message.
  */
-function mapAuthError(error: any): string {
-  const errorCode = error.code;
-  switch (errorCode) {
+function mapAuthError(error: unknown): string {
+  let code = "";
+  if (typeof error === "object" && error !== null && "code" in error && typeof error.code === "string") {
+    code = error.code;
+  }
+  switch (code) {
     case "auth/invalid-password":
     case "auth/wrong-password":
       return "The password is incorrect.";
@@ -59,7 +60,7 @@ export async function updateDisplayName(
     await updateProfile(user, { displayName });
     const userDocRef = doc(db, "users", uid);
     await updateDoc(userDocRef, { displayName });
-  } catch (error: any) {
+  } catch (error: unknown) {
     throw mapAuthError(error);
   }
 }
@@ -81,7 +82,7 @@ export async function updatePassword(newPassword: string): Promise<void> {
 
   try {
     await firebaseUpdatePassword(user, newPassword);
-  } catch (error: any) {
+  } catch (error: unknown) {
     throw mapAuthError(error);
   }
 }
@@ -115,7 +116,7 @@ export async function updatePhotoURL(
     await updateProfile(user, { photoURL });
     const userDocRef = doc(db, "users", uid);
     await updateDoc(userDocRef, { photoURL });
-  } catch (error: any) {
+  } catch (error: unknown) {
     throw mapAuthError(error);
   }
 }
@@ -138,7 +139,7 @@ export async function deleteAccount(): Promise<void> {
     // Then delete Firebase user
     await deleteUser(user);
     // Optionally, you can also sign out the user here if not already handled
-  } catch (error: any) {
+  } catch (error: unknown) {
     throw mapAuthError(error);
   }
 }
