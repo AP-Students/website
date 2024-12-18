@@ -19,6 +19,7 @@ import apClassesData from "@/components/apClasses.json";
 import type { Subject } from "@/types";
 import usePathname from "@/components/client/pathname";
 import { Blocker } from "@/app/admin/subject/navigation-block";
+import { formatSlug } from "@/lib/utils";
 
 const apClasses = apClassesData.apClasses;
 
@@ -86,11 +87,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
             emptyData.title =
               apClasses.find(
                 (apClass) =>
-                  apClass
-                    .replace(/AP /g, "")
-                    .toLowerCase()
-                    .replace(/[^a-z1-9 ]+/g, "")
-                    .replace(/\s/g, "-") === params.slug,
+                  formatSlug(apClass.replace(/AP /g, "")) === params.slug,
               ) ?? "";
             setSubject(emptyData);
             // Initialize newChapterTitles with empty strings for each unit in emptyData

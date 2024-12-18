@@ -7,8 +7,6 @@ import Renderer from "@/components/article-creator/Renderer";
 import { useFetchAndCache } from "./useFetchAndCache";
 import "katex/dist/katex.min.css";
 
-
-
 const Page = ({
   params,
 }: {

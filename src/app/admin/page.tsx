@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useUserManagement } from "./useUserManagement";
 import apClassesData from "@/components/apClasses.json";
 import { useUser } from "../../components/hooks/UserContext";
+import { formatSlug } from "@/lib/utils";
 
 const apClasses = apClassesData.apClasses;
 
@@ -72,16 +73,14 @@ const Page = () => {
                         <li
                           key={u.uid}
                           className="grid cursor-pointer grid-cols-1 gap-4 rounded-md border p-4 text-center shadow-md hover:bg-gray-200 md:grid-cols-2 lg:grid-cols-3"
-                          onClick={() => 
-                          {
+                          onClick={() => {
                             if (u.access === "admin") {
                               alert("Admins cannot demote other admins");
                               return;
-                            }else{
-                              openModal(u)
+                            } else {
+                              openModal(u);
                             }
-                          }
-                            }
+                          }}
                         >
                           <div className="hidden font-bold lg:block">
                             {u.displayName}
@@ -116,11 +115,9 @@ const Page = () => {
                   className="cursor-pointer rounded-md p-2 hover:bg-gray-200"
                   onClick={() =>
                     router.push(
-                      `/admin/subject/${apClass
-                        .replace(/AP /g, "")
-                        .toLowerCase()
-                        .replace(/[^a-z1-9 ]+/g, "")
-                        .replace(/\s/g, "-")}`,
+                      `/admin/subject/${formatSlug(
+                        apClass.replace(/AP /g, ""),
+                      )}`,
                     )
                   }
                 >
