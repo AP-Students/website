@@ -24,6 +24,10 @@ const links = [
     name: "practice",
     href: "/practice",
   },
+  {
+    name: "Apply Here",
+    href: "https://docs.google.com/document/d/1nV0nmzRKbgmVucE93ujft6tY-rQ-xPxLEahjuSpFz3s/edit",
+  },
 ];
 
 const Navbar = ({
@@ -94,6 +98,27 @@ const Navbar = ({
 
         <MobileNavbar />
       </div>
+
+      {/* Unclosable Popup */}
+      <div className="w-full bg-yellow-300 px-4 py-2 text-center text-yellow-900 shadow-md md:py-4 text-lg">
+        <span className="text-sm font-semibold md:text-base">
+          This is a demo.{" "}
+          Check out an{" "}
+          <Link
+            href="/subject/music-theory"
+            className="text-yellow-800 underline hover:text-yellow-700"
+          >
+            example subject.
+          </Link>{" "}
+          <Link
+            href="https://docs.google.com/document/d/1nV0nmzRKbgmVucE93ujft6tY-rQ-xPxLEahjuSpFz3s/edit"
+            className="text-yellow-800 underline hover:text-yellow-700"
+          >
+            Apply here
+          </Link>{" "}
+          to join the team and help us out!
+        </span>
+      </div>
     </>
   );
 };
@@ -108,7 +133,6 @@ const MobileNavbar = () => {
         <SheetContent className="bg-primary-foreground">
           <SheetHeader>
             <SheetTitle className="flex w-full">
-              {" "}
               <SheetTrigger asChild>
                 <Link className="inline-block" href={"/"}>
                   <Image
