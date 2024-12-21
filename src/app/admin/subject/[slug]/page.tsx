@@ -85,12 +85,13 @@ const Page = ({ params }: { params: { slug: string } }) => {
           }
         }
       } catch (error) {
-        console.error("Error fetching subject data:", error);
         setError("Failed to fetch subject data.");
       } finally {
         setLoading(false);
       }
-    })();
+    })().catch((error) => {
+      console.error("Error fetching subject:", error);
+    });
   }, [user, params.slug, setError, setLoading]);
 
   const addUnit = () => {
@@ -156,7 +157,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
       return;
     } else {
       const updatedUnits = [...subject.units];
-      updatedUnits[unitIndex]!.chapters[chapterIndex]! = newTitle;
+      updatedUnits[unitIndex]!.chapters[chapterIndex] = newTitle;
       setSubject({ ...subject, units: updatedUnits });
       setEditingChapter({ unitIndex: null, chapterIndex: null });
       setUnsavedChanges(true);

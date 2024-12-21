@@ -12,7 +12,7 @@ import { Save } from "lucide-react";
 import { getFileFromIndexedDB } from "./custom_questions/RenderAdvancedTextbox";
 import { type QuestionFormat } from "@/types/questions";
 import Renderer from "./Renderer";
-import { revertTableObjectToArray, getKey } from "./FetchArticleFunctions";
+import { revertTableObjectToArray } from "./FetchArticleFunctions";
 import { Blocker } from "@/app/admin/subject/navigation-block";
 import { Button } from "@/components/ui/button";
 
@@ -113,7 +113,7 @@ function ArticleCreator({ className }: { className?: string }) {
     })().catch((error) => {
       console.error("Error fetching data:", error);
     });
-  }, []);
+  }, [subject, unit, chapter]);
 
   const handleSave = async () => {
     if (!data) {
@@ -337,10 +337,7 @@ function ArticleCreator({ className }: { className?: string }) {
 
           // because of .type, its inferable that block.data is of an image, but idk where the type is defined.
           /* eslint-disable-next-line */
-          if (
-            block.type === "image" &&
-            block.data.url.startsWith("data:image/")
-          ) {
+          if (block.type === "image" && block.data.url.startsWith("data:image/")) {
             const updatedImage = await processImage(block.data as ImageData);
             block.data = updatedImage; // Replace the block data with the updated content
             return block;

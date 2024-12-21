@@ -33,8 +33,8 @@ const Page = ({
   if (subject && content) {
     const unitIndex = Number(params.unit.split("-")[1]) - 1;
     const chapterIndex = Number(params.articleNumber.split("-")[1]) - 1;
-    const unitTitle = subject.units[unitIndex]?.title!;
-    const chapterTitle = subject.units[unitIndex]?.chapters[chapterIndex]!;
+    const unitTitle = subject.units[unitIndex]?.title ?? "Unit";
+    const chapterTitle = subject.units[unitIndex]?.chapters[chapterIndex] ?? "Chapter";
 
     return (
       <div className="relative flex min-h-screen">

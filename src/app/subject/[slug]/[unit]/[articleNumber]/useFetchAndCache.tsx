@@ -87,7 +87,8 @@ export const useFetchAndCache = (params: Params, admin?: boolean) => {
       try {
         // Fetch subject from cache or Firestore
         const cachedSubject = await getCachedSubject(params.slug);
-        if (cachedSubject) { // TODO: skip if admin or member
+        if (cachedSubject) {
+          // TODO: skip if admin or member
           setSubject(cachedSubject);
         } else {
           const subjectDocRef = doc(db, "subjects", params.slug);
@@ -138,7 +139,16 @@ export const useFetchAndCache = (params: Params, admin?: boolean) => {
       console.error("Error fetching subject or content data:", error);
     });
     //eslint-disable react-hooks/exhaustive-deps - Do this because it only triggers for component mount; rest of vars dont change.
-  }, []);
+  }, [
+    admin,
+    cacheContent,
+    cacheSubject,
+    params.slug,
+    params.unit,
+    params.articleNumber,
+    getCachedSubject,
+    getCachedContent,
+  ]);
 
   return { subject, content, loading, error };
 };
