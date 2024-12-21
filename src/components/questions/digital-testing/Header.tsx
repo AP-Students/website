@@ -33,7 +33,7 @@ const Header: React.FC<HeaderProps> = ({
     if (remainingTime <= 0) {
       setSubmittedAnswers(true);
     }
-  }, [remainingTime, setSubmittedAnswers]);
+  }, [remainingTime]);
 
   // Close directions when clicking outside
   useEffect(() => {

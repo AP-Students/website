@@ -113,7 +113,7 @@ function ArticleCreator({ className }: { className?: string }) {
     })().catch((error) => {
       console.error("Error fetching data:", error);
     });
-  }, [subject, unit, chapter]);
+  }, []);
 
   const handleSave = async () => {
     if (!data) {
