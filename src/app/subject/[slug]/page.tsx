@@ -31,13 +31,13 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
   const setSubject = (subject: Subject | null) => {
     if (!subject) {
-      setSubject(null);
+      setSubjectHidden(null);
       return;
     }
     if (subject.units.length > 0){
       subject.units = [subject.units[0] as Unit]
     }
-    setSubject(subject);
+    setSubjectHidden(subject);
   };
 
   useEffect(() => {
