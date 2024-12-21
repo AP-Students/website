@@ -14,6 +14,7 @@ import { getUser } from "@/components/hooks/users";
 import { type User } from "@/types/user";
 import usePathname from "@/components/client/pathname";
 import { notFound } from "next/navigation";
+import type { Unit } from "@/types";
 
 const Page = ({ params }: { params: { slug: string } }) => {
 
@@ -23,10 +24,21 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
   const pathname = usePathname();
 
-  const [subject, setSubject] = useState<Subject | null>(null);
+  const [subject, setSubjectHidden] = useState<Subject | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<User | null | undefined>(undefined);
+
+  const setSubject = (subject: Subject | null) => {
+    if (!subject) {
+      setSubject(null);
+      return;
+    }
+    if (subject.units.length > 0){
+      subject.units = [subject.units[0] as Unit]
+    }
+    setSubject(subject);
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
