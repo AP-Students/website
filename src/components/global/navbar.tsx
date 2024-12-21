@@ -1,4 +1,3 @@
-"use client";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "../ui/button";
@@ -11,8 +10,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { MenuIcon } from "lucide-react";
-import SignedInPfp from "../login/SignedInPfp";
-import { useUser } from "../hooks/UserContext";
 
 const links = [
   {
@@ -36,8 +33,6 @@ const Navbar = ({
   variant?: "primary" | "secondary";
   className?: string;
 }) => {
-  const { user } = useUser();
-
   return (
     <>
       <div
@@ -73,21 +68,15 @@ const Navbar = ({
             variant === "primary" && "grow basis-0",
           )}
         >
-          {user ? (
-            <>
-              <SignedInPfp />
-            </>
-          ) : (
-            <>
-              <NavbarLink href={"/signup"}>Sign up</NavbarLink>
+          <>
+            <NavbarLink href={"/signup"}>Sign up</NavbarLink>
 
-              <Link href={"/login"}>
-                <Button className="text-md px-5 py-3 font-semibold text-white">
-                  Log in
-                </Button>
-              </Link>
-            </>
-          )}
+            <Link href={"/login"}>
+              <Button className="text-md px-5 py-3 font-semibold text-white">
+                Log in
+              </Button>
+            </Link>
+          </>
         </div>
       </div>
 
@@ -110,8 +99,6 @@ const Navbar = ({
 };
 
 const MobileNavbar = () => {
-  const { user } = useUser();
-
   return (
     <>
       <Sheet>
@@ -145,21 +132,17 @@ const MobileNavbar = () => {
               </div>
             ))}
 
-            {user ? (
-              <SignedInPfp />
-            ) : (
-              <>
-                <div>
-                  <NavbarLink href={"/signup"} isMobile={true}>
-                    Sign up
-                  </NavbarLink>
-                </div>
+            <>
+              <div>
+                <NavbarLink href={"/signup"} isMobile={true}>
+                  Sign up
+                </NavbarLink>
+              </div>
 
-                <Button className="text-md px-5 py-3 font-semibold text-white">
-                  <Link href={"/login"}>Log in</Link>
-                </Button>
-              </>
-            )}
+              <Button className="text-md px-5 py-3 font-semibold text-white">
+                <Link href={"/login"}>Log in</Link>
+              </Button>
+            </>
           </div>
         </SheetContent>
       </Sheet>
