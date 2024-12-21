@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { type Subject } from "@/types";
 import { type QuestionFormat } from "@/types/questions";
 import usePathname from "@/components/client/pathname";
+import { notFound } from "next/navigation";
 
 const Page = () => {
   const pathname = usePathname();
@@ -14,6 +15,10 @@ const Page = () => {
   const instanceId = pathname.split("/").slice(-2).join("_");
   const collectionId = instanceId.split("_")[0];
   const unitId = instanceId.split("_")[1];
+
+  if (unitId != "music-fundamentals") {
+    return notFound();
+  }
 
   const [testName, setTestName] = useState<string>("");
   const [time, setTime] = useState<number>(0);

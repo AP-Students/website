@@ -13,8 +13,14 @@ import { doc, getDoc } from "firebase/firestore";
 import { getUser } from "@/components/hooks/users";
 import { type User } from "@/types/user";
 import usePathname from "@/components/client/pathname";
+import { notFound } from "next/navigation";
 
 const Page = ({ params }: { params: { slug: string } }) => {
+
+  if (params.slug != "music-theory") {
+    return notFound();
+  }
+
   const pathname = usePathname();
 
   const [subject, setSubject] = useState<Subject | null>(null);
