@@ -6,12 +6,14 @@ import {
   revertTableObjectToArray,
   getKey,
 } from "@/components/article-creator/FetchArticleFunctions";
-import { type Subject } from "@/types";
+import { type Subject } from "@/types/firestore";
 import { type Content } from "@/types/content";
 import { type OutputData } from "@editorjs/editorjs";
 
 type Params = {
-  slug: string; // Add other properties if necessary
+  slug: string;
+  unit: string;
+  articleNumber: string;
 };
 
 const CACHE_EXPIRATION_MS = 2 * 24 * 60 * 60 * 1000; // 48 hrs in milliseconds (Probably increase this signficiantly)
@@ -85,7 +87,7 @@ export const useFetchAndCache = (params: Params, admin?: boolean) => {
       try {
         // Fetch subject from cache or Firestore
         const cachedSubject = await getCachedSubject(params.slug);
-        if (cachedSubject) {
+        if (cachedSubject) { // TODO: skip if admin or member
           setSubject(cachedSubject);
         } else {
           const subjectDocRef = doc(db, "subjects", params.slug);
@@ -107,7 +109,13 @@ export const useFetchAndCache = (params: Params, admin?: boolean) => {
         if (cachedContent) {
           setContent(cachedContent);
         } else {
-          const pageDocRef = doc(db, "pages", key);
+          const pageDocRef = doc(
+            db,
+            "subjects",
+            params.slug,
+            params.unit.split("-").slice(0, 2).join("-"),
+            params.articleNumber.split("-").slice(0, 2).join("-"),
+          );
           const pageDocSnap = await getDoc(pageDocRef);
           if (pageDocSnap.exists()) {
             const data = pageDocSnap.data()?.data as OutputData;

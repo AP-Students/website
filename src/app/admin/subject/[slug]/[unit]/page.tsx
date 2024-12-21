@@ -8,10 +8,9 @@ import { useUser } from "@/components/hooks/UserContext";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
-import { getUserAccess } from "@/components/hooks/users";
 import { useEffect, useState } from "react";
-import type { Subject, Unit } from "@/types";
-import usePathname from "@/components/client/pathname";
+import type { UnitTest } from "@/types/firestore";
+import { usePathname } from "next/navigation";
 import type { QuestionFormat } from "@/types/questions";
 
 const Page = () => {
@@ -22,74 +21,70 @@ const Page = () => {
   const collectionId = instanceId.split("_")[0];
   const unitId = instanceId.split("_")[1];
 
-  const [testName, setTestName] = useState<string>("");
-  const [time, setTime] = useState<number>(0);
+  const [time, setTime] = useState<number>(30);
   const { questions, setQuestions } = syncedQuestions(instanceId);
 
   useEffect(() => {
     // Fetch questions
     (async () => {
-      const userAccess = await getUserAccess();
-      if (userAccess && (userAccess === "admin" || userAccess === "member")) {
-        const docRef = doc(db, "subjects", collectionId!);
+      if (user && (user.access === "admin" || user.access === "member")) {
+        const docRef = doc(
+          db,
+          "subjects",
+          collectionId!,
+          `unit-${unitId}`,
+          "test",
+        );
+
         const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data() as Subject;
-          const unitIndex = parseInt(unitId!, 10) - 1;
 
-          const time = data?.units?.[unitIndex]?.test?.time;
-          setTime((time && time / 60) ?? 20);
-          const testName = data?.title;
-          setTestName(testName);
-          const questions = data?.units[unitIndex]?.test!.questions;
+        if (!docSnap.exists()) {
+          const testData = {
+            questions: [],
+            time: 30 * 60,
+            instanceId: instanceId ?? "",
+          };
 
-          if (questions) {
-            setQuestions(questions);
-          } else {
-            setQuestions(syncedQuestions(instanceId).questions);
-          }
+          await setDoc(docRef, testData, { merge: true });
+        }
+
+        const data = docSnap.data() as UnitTest;
+
+        const time = data.time;
+        setTime((time && time / 60) ?? 20);
+        const questions = data.questions;
+
+        if (questions) {
+          setQuestions(questions);
+        } else {
+          setQuestions(syncedQuestions(instanceId).questions);
         }
       }
     })().catch((error) => {
       console.error("Error fetching questions:", error);
     });
-  },[collectionId, unitId, instanceId, setQuestions]);
+  }, [collectionId, unitId, instanceId, setQuestions]);
 
   const handleSave = async () => {
     try {
-      const unitIndex = parseInt(unitId!, 10) - 1; // Get the unit index from the path
-      const subjectRef = doc(db, "subjects", collectionId!);
+      const testRef = doc(
+        db,
+        "subjects",
+        collectionId!,
+        `unit-${unitId}`,
+        "test",
+      );
 
-      // Retrieve the current document to get the existing units array
-      const docSnap = await getDoc(subjectRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        const units = data.units as Unit[];
+      const sanitizedQuestions = removeUndefined(questions) as QuestionFormat[];
 
-        const sanitizedQuestions = removeUndefined(questions) as QuestionFormat[];
+      const testData = {
+        questions: sanitizedQuestions,
+        time: time * 60, // Convert minutes to seconds
+        instanceId: instanceId ?? "",
+      };
 
-        // Update the specific unit in the array
-        units[unitIndex] = {
-          ...units[unitIndex]!,
-          test: {
-            ...units[unitIndex]?.test,
-            optedIn: true,
-            questions: sanitizedQuestions,
-            time: time * 60, // Convert minutes to seconds
-            instanceId: instanceId ?? "",
-          },
-        };
-
-        // Update the units array in Firestore
-        await setDoc(
-          doc(db, "subjects", collectionId!),
-          { units },
-          { merge: true },
-        );
-        alert("Questions saved successfully.");
-      } else {
-        console.error("Subject document does not exist!");
-      }
+      await setDoc(testRef, testData, { merge: true });
+      alert("Test saved successfully.");
     } catch (error) {
       console.error("Error saving questions:", error);
       alert("Failed to save questions.");
@@ -106,23 +101,19 @@ const Page = () => {
       <div className="relative min-h-screen">
         <Navbar />
 
-        <div className="my-6 flex flex-col items-center justify-center">
-          <h1 className="mb-2 text-center text-4xl font-bold">{testName}</h1>
-          {/* Time Input for Admins */}
-          <div className="mb-6 flex items-center gap-4">
-            <div className="rounded-sm bg-blue-600 px-2 py-1 text-white">
-              Set Time: {time} minutes
-            </div>
-            <input
-              type="number"
-              value={time}
-              onChange={(e) => setTime(parseInt(e.target.value) || 0)}
-              placeholder="Set time in minutes"
-              className="rounded border p-2 text-lg"
-              min="0"
-            />
-          </div>
-          <Button className="bg-blue-600 text-white" onClick={handleSave}>
+        <div className="flex items-center gap-2 p-4">
+          <p>Time Limit: {time} minutes</p>
+          <input
+            type="number"
+            value={time}
+            onChange={(e) => setTime(parseInt(e.target.value) || 0)}
+            className="border px-2 py-1 text-lg"
+            min="0"
+          />
+          <Button
+            className="ml-auto bg-blue-600 hover:bg-blue-700"
+            onClick={handleSave}
+          >
             Save Changes
           </Button>
         </div>
@@ -141,7 +132,6 @@ const Page = () => {
           <div className="flex-1 rounded border p-4">
             <TestRenderer
               time={time}
-              testName={testName}
               inputQuestions={questions}
               adminMode={true}
             />
@@ -179,4 +169,3 @@ const removeUndefined = (obj: any): any => {
   return obj;
 };
 /* eslint-enable */
-

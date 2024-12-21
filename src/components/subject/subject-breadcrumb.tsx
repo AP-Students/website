@@ -7,26 +7,36 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { type Subject } from "@/types";
-import { usePathname } from "next/navigation";
+import { formatSlug } from "@/lib/utils";
+import { Fragment } from "react";
 
 type Props = {
-  subject: Subject;
+  locations: string[];
 };
 
-const SubjectBreadcrumb = ({ subject }: Props) => {
-  const router = usePathname();
-
+const SubjectBreadcrumb = ({ locations }: Props) => {
   return (
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink href="/library">Library</BreadcrumbLink>
         </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbItem>
-          <BreadcrumbLink href={router.split("/").slice(0, 3).join("/")}>{subject.title}</BreadcrumbLink>
-        </BreadcrumbItem>
+        {locations.map((location, index) => (
+          <Fragment key={index}>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink
+                href={
+                  index === 0
+                    ? `/subject/${formatSlug(location.replace(/AP /g, ""))}`
+                    : ``
+                }
+              >
+                {location}
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+          </Fragment>
+        ))}
       </BreadcrumbList>
     </Breadcrumb>
   );

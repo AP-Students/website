@@ -1,13 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 
 interface HeaderProps {
-  examName: string;
   timeRemaining: number; // In seconds
   setSubmittedAnswers: (value: boolean) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
-  examName,
   timeRemaining,
   setSubmittedAnswers,
 }) => {
@@ -22,7 +20,6 @@ const Header: React.FC<HeaderProps> = ({
       setRemainingTime((prevTime) => {
         if (prevTime <= 1) {
           clearInterval(timer); // Stop at 0
-          setSubmittedAnswers(true); // Trigger action at timeout
           return 0;
         }
         return prevTime - 1;
@@ -30,7 +27,13 @@ const Header: React.FC<HeaderProps> = ({
     }, 1000);
 
     return () => clearInterval(timer); // Clean up interval on component unmount
-  }, [setSubmittedAnswers]);
+  }, []);
+
+  useEffect(() => {
+    if (remainingTime <= 0) {
+      setSubmittedAnswers(true);
+    }
+  }, [remainingTime]);
 
   // Close directions when clicking outside
   useEffect(() => {
@@ -58,7 +61,7 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <header className="fixed left-0 top-0 z-[1000] flex w-full items-center justify-between border-b-2 border-gray-300 p-2.5">
       <div className="flex w-full items-center justify-between">
-        <div className="flex-1">{examName}</div>
+        <div className="flex-1">Unit Test</div>
         <div className="flex-1 text-center text-xl font-bold">
           {formatTime(remainingTime)}
         </div>

@@ -13,10 +13,10 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useUser } from "@/components/hooks/UserContext";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, writeBatch } from "firebase/firestore";
 import { Link } from "@/app/admin/subject/link";
 import apClassesData from "@/components/apClasses.json";
-import type { Subject } from "@/types";
+import type { Subject } from "@/types/firestore";
 import usePathname from "@/components/client/pathname";
 import { Blocker } from "@/app/admin/subject/navigation-block";
 import { formatSlug } from "@/lib/utils";
@@ -28,20 +28,9 @@ const emptyData: Subject = {
   title: "",
   units: [
     {
-      unit: 1,
       title: "",
-      chapters: [
-        {
-          chapter: 1,
-          title: "",
-        },
-      ],
-      test: {
-        questions: [],
-        time: 0,
-        optedIn: false,
-        instanceId: "",
-      },
+      chapters: ["Enter a chapter title..."],
+      test: false,
     },
   ],
 };
@@ -96,32 +85,20 @@ const Page = ({ params }: { params: { slug: string } }) => {
           }
         }
       } catch (error) {
+        console.error("Error fetching subject data:", error);
         setError("Failed to fetch subject data.");
       } finally {
         setLoading(false);
       }
-    })().catch((error) => {
-      console.error("Error fetching questions:", error);
-    });
+    })();
   }, [user, params.slug, setError, setLoading]);
 
   const addUnit = () => {
     if (!newUnitTitle.trim() || !subject) return;
     const newUnit = {
-      unit: subject.units.length + 1,
       title: newUnitTitle,
-      chapters: [
-        {
-          chapter: 1,
-          title: "",
-        },
-      ],
-      test: {
-        questions: [],
-        time: 0,
-        optedIn: false,
-        instanceId: "",
-      },
+      chapters: ["Enter a chapter title..."],
+      test: false,
     };
     setSubject({ ...subject, units: [...subject.units, newUnit] });
     setNewUnitTitle("");
@@ -134,10 +111,6 @@ const Page = ({ params }: { params: { slug: string } }) => {
     if (!subject) return;
     const updatedUnits = [...subject.units];
     updatedUnits.splice(unitIndex, 1);
-    // You need to go through the rest of the units behind the deleted unit and decrement their unit numbers
-    for (let i = unitIndex; i < updatedUnits.length; i++) {
-      updatedUnits[i]!.unit -= 1;
-    }
     setSubject({ ...subject, units: updatedUnits });
     // Remove the corresponding chapter title entry
     setNewChapterTitles((prev) =>
@@ -148,12 +121,8 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
   const addChapter = (unitIndex: number) => {
     if (!newChapterTitles[unitIndex]?.trim() || !subject) return;
-    const newChapter = {
-      chapter: subject.units[unitIndex]!.chapters.length + 1 || 1,
-      title: newChapterTitles[unitIndex],
-    };
     const updatedUnits = [...subject.units];
-    updatedUnits[unitIndex]!.chapters.push(newChapter);
+    updatedUnits[unitIndex]!.chapters.push(newChapterTitles[unitIndex]);
     setSubject({ ...subject, units: updatedUnits });
     // Reset the newChapterTitle for this unit
     setNewChapterTitles((prev) =>
@@ -187,7 +156,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
       return;
     } else {
       const updatedUnits = [...subject.units];
-      updatedUnits[unitIndex]!.chapters[chapterIndex]!.title = newTitle;
+      updatedUnits[unitIndex]!.chapters[chapterIndex]! = newTitle;
       setSubject({ ...subject, units: updatedUnits });
       setEditingChapter({ unitIndex: null, chapterIndex: null });
       setUnsavedChanges(true);
@@ -198,22 +167,35 @@ const Page = ({ params }: { params: { slug: string } }) => {
     if (!subject) return;
     const updatedUnits = [...subject.units];
     updatedUnits[unitIndex]!.chapters.splice(chapterIndex, 1);
-    // You need to go through the rest of the units behind the deleted chapter and decrement their chapter numbers
-    for (
-      let i = chapterIndex;
-      i < updatedUnits[unitIndex]!.chapters.length;
-      i++
-    ) {
-      updatedUnits[unitIndex]!.chapters[i]!.chapter--;
-    }
     setSubject({ ...subject, units: updatedUnits });
     setUnsavedChanges(true);
   };
 
   const handleSave = async () => {
     try {
-      await setDoc(doc(db, "subjects", params.slug), subject);
-      alert("Subject units and chapters saved.");
+      const batch = writeBatch(db);
+      subject?.units.forEach((unit, i) => {
+        batch.set(doc(db, "subjects", params.slug), subject);
+
+        unit.chapters.forEach((chapter, j) => {
+          batch.set(
+            doc(
+              db,
+              "subjects",
+              params.slug,
+              `unit-${i + 1}`,
+              `chapter-${j + 1}`,
+            ),
+            {
+              title: chapter,
+            },
+            { merge: true },
+          );
+        });
+      });
+      // TODO: update Firestore security rules
+      await batch.commit();
+      alert("Subject content saved successfully.");
       setUnsavedChanges(false);
     } catch (error) {
       console.error("Error saving:", error);
@@ -222,10 +204,8 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
   const optInForUnitTest = (unitIndex: number): void => {
     const updatedSubject = { ...subject! };
-    if (updatedSubject?.units[unitIndex]?.test) {
-      updatedSubject.units[unitIndex].test.optedIn = true;
-      updatedSubject.units[unitIndex].test.instanceId =
-        `test_${params.slug}_${unitIndex}`;
+    if (updatedSubject.units[unitIndex]) {
+      updatedSubject.units[unitIndex].test = true;
     }
     setSubject(updatedSubject);
     setUnsavedChanges(true);
@@ -233,8 +213,8 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
   const optOutOfUnitTest = (unitIndex: number): void => {
     const updatedSubject = { ...subject! };
-    if (updatedSubject?.units[unitIndex]?.test) {
-      updatedSubject.units[unitIndex].test.optedIn = false;
+    if (updatedSubject.units[unitIndex]?.test) {
+      updatedSubject.units[unitIndex].test = false;
     }
     setSubject(updatedSubject);
     setUnsavedChanges(true);
@@ -272,7 +252,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
           <h1 className="mt-8 text-4xl font-bold">{subject?.title}</h1>
           <div className="my-4 space-y-4">
             {subject?.units.map((unit, unitIndex) => (
-              <div key={unit.unit} className="rounded-lg border shadow-sm">
+              <div key={unitIndex} className="rounded-lg border shadow-sm">
                 <div className="flex items-center">
                   <Edit
                     onClick={() => setEditingUnit({ unitIndex })}
@@ -302,7 +282,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
                       />
                     ) : (
                       <span>
-                        Unit {unit.unit}: {unit.title}
+                        Unit {unitIndex + 1}: {unit.title}
                       </span>
                     )}
                     {expandedUnits.includes(unitIndex) ? (
@@ -316,15 +296,12 @@ const Page = ({ params }: { params: { slug: string } }) => {
                   <div className="border-t p-4">
                     {unit.chapters.map((chapter, chapterIndex) => (
                       <div
-                        key={chapter.chapter}
+                        key={chapterIndex}
                         className="mb-3 flex items-center justify-between gap-4"
                       >
                         <a
                           className={buttonVariants({ variant: "outline" })}
-                          href={`${pathname.split("/").slice(0, 4).join("/")}/${unit.title
-                            .toLowerCase()
-                            .replace(/[^a-z1-9 ]+/g, "")
-                            .replace(/\s/g, "-")}/${chapter.chapter}`}
+                          href={`/admin/subject/${params.slug}/unit-${unitIndex + 1}-${formatSlug(unit.title)}/chapter-${chapterIndex + 1}`}
                         >
                           Edit Content
                         </a>
@@ -333,12 +310,12 @@ const Page = ({ params }: { params: { slug: string } }) => {
                         editingChapter.chapterIndex === chapterIndex ? (
                           <>
                             <p className="text-nowrap px-2">
-                              Chapter {chapter.chapter}:
+                              Chapter {chapterIndex + 1}:
                             </p>
                             <input
                               autoFocus
                               className="-ml-5 w-full"
-                              defaultValue={chapter.title}
+                              defaultValue={chapter}
                               ref={chapterInputRef}
                               onBlur={(e) =>
                                 editChapterTitle(
@@ -356,7 +333,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
                             }
                             className="w-full cursor-pointer rounded-sm px-2 py-1 hover:bg-accent"
                           >
-                            Chapter {chapter.chapter}: {chapter.title}
+                            Chapter {chapterIndex + 1}: {chapter}
                           </p>
                         )}
 
@@ -390,7 +367,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
                       </Button>
                     </div>
 
-                    {unit.test?.optedIn ? (
+                    {unit.test ? (
                       <div className="flex items-center">
                         <Link
                           href={`${pathname.split("/").slice(0, 4).join("/")}/${unitIndex + 1}`}
