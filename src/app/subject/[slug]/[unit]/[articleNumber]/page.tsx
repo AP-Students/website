@@ -6,13 +6,18 @@ import SubjectSidebar from "@/components/subject/subject-sidebar";
 import Renderer from "@/components/article-creator/Renderer";
 import { useFetchAndCache } from "./useFetchAndCache";
 import "katex/dist/katex.min.css";
+import { useUser } from "@/components/hooks/UserContext";
 
 const Page = ({
   params,
 }: {
   params: { slug: string; unit: string; articleNumber: string };
 }) => {
-  const { subject, content, loading, error } = useFetchAndCache(params); // Fetch with cache
+  const { user } = useUser();
+  const { subject, content, loading, error } = useFetchAndCache(
+    params,
+    user?.access === "admin" || user?.access === "member",
+  ); // Fetch with cache
 
   if (loading) {
     return (
@@ -33,8 +38,12 @@ const Page = ({
   if (subject && content) {
     const unitIndex = Number(params.unit.split("-")[1]) - 1;
     const chapterIndex = Number(params.articleNumber.split("-")[1]) - 1;
-    const unitTitle = subject.units[unitIndex]?.title ?? "Unit";
-    const chapterTitle = subject.units[unitIndex]?.chapters[chapterIndex] ?? "Chapter";
+    const unitTitle = subject.units[unitIndex]?.title;
+    const chapterTitle = subject.units[unitIndex]?.chapters[chapterIndex];
+
+    if (!unitTitle || !chapterTitle) {
+      return <div>Error: Unit or chapter not found.</div>;
+    }
 
     return (
       <div className="relative flex min-h-screen">

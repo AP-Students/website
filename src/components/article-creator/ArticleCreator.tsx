@@ -15,6 +15,7 @@ import Renderer from "./Renderer";
 import { revertTableObjectToArray } from "./FetchArticleFunctions";
 import { Blocker } from "@/app/admin/subject/navigation-block";
 import { Button } from "@/components/ui/button";
+import { usePathname } from "next/navigation";
 
 // Define a type for Table Data
 interface TableData {
@@ -93,7 +94,8 @@ function ArticleCreator({ className }: { className?: string }) {
     version: "2.30.2",
   });
 
-  const pathParts = window.location.pathname.split("/").slice(-3);
+  const pathname = usePathname();
+  const pathParts = pathname.split("/").slice(-3);
   const subject = pathParts[0]!;
   const unit = pathParts[1]!.split("-").slice(0, 2).join("-");
   const chapter = pathParts[2]!;

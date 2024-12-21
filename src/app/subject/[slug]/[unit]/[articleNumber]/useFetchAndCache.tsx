@@ -18,7 +18,6 @@ type Params = {
 
 const CACHE_EXPIRATION_MS = 2 * 24 * 60 * 60 * 1000; // 48 hrs in milliseconds (Probably increase this signficiantly)
 
-// params: { slug: string; unit: string; articleNumber: string }
 // admin: Used to prevent caches === rapid feedback
 export const useFetchAndCache = (params: Params, admin?: boolean) => {
   const [subject, setSubject] = useState<Subject | null>(null);
@@ -87,8 +86,7 @@ export const useFetchAndCache = (params: Params, admin?: boolean) => {
       try {
         // Fetch subject from cache or Firestore
         const cachedSubject = await getCachedSubject(params.slug);
-        if (cachedSubject) {
-          // TODO: skip if admin or member
+        if (!admin && cachedSubject) {
           setSubject(cachedSubject);
         } else {
           const subjectDocRef = doc(db, "subjects", params.slug);
@@ -107,7 +105,7 @@ export const useFetchAndCache = (params: Params, admin?: boolean) => {
         // Fetch content from cache or Firestore
         const key = getKey(); // This is probably where the issue is steming from for content?
         const cachedContent = await getCachedContent(key);
-        if (cachedContent) {
+        if (!admin && cachedContent) {
           setContent(cachedContent);
         } else {
           const pageDocRef = doc(
