@@ -16,7 +16,7 @@ const Page = () => {
   const collectionId = instanceId.split("_")[0];
   const unitId = instanceId.split("_")[1];
 
-  if (unitId != "music-fundamentals") {
+  if (unitId != "1") {
     return notFound();
   }
 

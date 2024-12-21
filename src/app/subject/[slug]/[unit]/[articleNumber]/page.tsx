@@ -6,6 +6,7 @@ import SubjectSidebar from "@/components/subject/subject-sidebar";
 import Renderer from "@/components/article-creator/Renderer";
 import { useFetchAndCache } from "./useFetchAndCache";
 import "katex/dist/katex.min.css";
+import { notFound } from "next/navigation";
 
 
 
@@ -14,6 +15,11 @@ const Page = ({
 }: {
   params: { slug: string; unit: string; articleNumber: string };
 }) => {
+
+  if (params.unit != "music-fundamentals") {
+    return notFound();
+  }
+
   const { subject, content, loading, error } = useFetchAndCache(params); // Fetch with cache
 
   const formattedTitle = `Article ${params.articleNumber} of ${params.unit}.`
