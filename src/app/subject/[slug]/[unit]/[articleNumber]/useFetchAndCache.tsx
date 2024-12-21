@@ -139,16 +139,7 @@ export const useFetchAndCache = (params: Params, admin?: boolean) => {
       console.error("Error fetching subject or content data:", error);
     });
     //eslint-disable react-hooks/exhaustive-deps - Do this because it only triggers for component mount; rest of vars dont change.
-  }, [
-    admin,
-    cacheContent,
-    cacheSubject,
-    params.slug,
-    params.unit,
-    params.articleNumber,
-    getCachedSubject,
-    getCachedContent,
-  ]);
+  }, []);
 
   return { subject, content, loading, error };
 };
