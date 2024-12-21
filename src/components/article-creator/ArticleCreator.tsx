@@ -12,7 +12,7 @@ import { Save } from "lucide-react";
 import { getFileFromIndexedDB } from "./custom_questions/RenderAdvancedTextbox";
 import { type QuestionFormat } from "@/types/questions";
 import Renderer from "./Renderer";
-import { revertTableObjectToArray, getKey } from "./FetchArticleFunctions";
+import { revertTableObjectToArray } from "./FetchArticleFunctions";
 import { Blocker } from "@/app/admin/subject/navigation-block";
 import { Button } from "@/components/ui/button";
 
@@ -93,13 +93,16 @@ function ArticleCreator({ className }: { className?: string }) {
     version: "2.30.2",
   });
 
+  const pathParts = window.location.pathname.split("/").slice(-3);
+  const subject = pathParts[0]!;
+  const unit = pathParts[1]!.split("-").slice(0, 2).join("-");
+  const chapter = pathParts[2]!;
+
   useEffect(() => {
     (async () => {
       const userAccess = await getUserAccess();
       if (userAccess && (userAccess === "admin" || userAccess === "member")) {
-        const key = getKey();
-
-        const docRef = doc(db, "pages", key);
+        const docRef = doc(db, "subjects", subject, unit, chapter);
         const docSnap = await getDoc(docRef);
         const data = docSnap.data()?.data as OutputData;
 
@@ -135,7 +138,7 @@ function ArticleCreator({ className }: { className?: string }) {
     };
 
     try {
-      const docRef = doc(db, "pages", pathParts.join("-"));
+      const docRef = doc(db, "subjects", subject, unit, chapter);
 
       // Function to process questions and upload files
       const processQuestions = async (
