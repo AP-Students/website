@@ -5,7 +5,7 @@ import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { type Subject } from "@/types";
-import { type QuestionFormat } from "@/types/questions";
+import { QuestionInput, type QuestionFormat, type Option } from "@/types/questions";
 import usePathname from "@/components/client/pathname";
 import { notFound } from "next/navigation";
 
@@ -22,7 +22,6 @@ const Page = () => {
 
   const [testName, setTestName] = useState<string>("");
   const [time, setTime] = useState<number>(0);
-  const [questions, setQuestions] = useState<QuestionFormat[] | null>(null);
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -39,12 +38,6 @@ const Page = () => {
           const testName = data && data.title + " Unit " + (unitIndex + 1);
           setTestName(testName);
 
-          const questionsData = data?.units[unitIndex]?.test?.questions;
-          if (questionsData) {
-            setQuestions(questionsData);
-          } else {
-            console.log("No questions found for this unit.");
-          }
         } else {
           console.error("Subject document does not exist!");
         }
@@ -58,11 +51,19 @@ const Page = () => {
     });
   }, [collectionId, unitId]);
 
-  // Render TestRenderer only for clients without admin privileges
-
-  if (questions === null) {
-    return <div>Loading...</div>;
-  }
+  const questions: QuestionFormat[] = [
+    {
+      question: {
+        value: "This is the value"
+      } as QuestionInput,
+      type: "mcq",
+      options: [
+        {
+          
+        } as Option
+      ]
+    } as QuestionFormat
+  ]
 
   return (
     <div className="relative min-h-screen">

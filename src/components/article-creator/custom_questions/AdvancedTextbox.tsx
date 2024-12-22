@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
-import { type QuestionFormat, type questionInput } from "@/types/questions";
+import { type QuestionFormat, type QuestionInput } from "@/types/questions";
 import { QuestionsInput } from "./QuestionInstance";
 import { Paperclip, Trash } from "lucide-react";
 import { deleteObject, getStorage, ref } from "firebase/storage";
@@ -177,26 +177,26 @@ export default function AdvancedTextbox({
       const updatedQuestion: QuestionFormat = { ...questionInstance! };
 
       if (origin === "question") {
-        const questionInput: questionInput = { ...updatedQuestion.question };
+        const questionInput: QuestionInput = { ...updatedQuestion.question };
         questionInput.fileKey = `${file.type}-${file.lastModified}`;
         updatedQuestion.question = questionInput;
         setFileExists(true);
       } else if (origin === "option" && oIndex !== undefined) {
         // Update a specific option by oIndex
-        const optionInput: questionInput = {
+        const optionInput: QuestionInput = {
           ...updatedQuestion.options[oIndex]!.value,
         };
         optionInput.fileKey = `${file.type}-${file.lastModified}`;
         updatedQuestion.options[oIndex]!.value = optionInput; // Update only the specified option
         setFileExists(true);
       } else if (origin === "explanation") {
-        const questionInput: questionInput = { ...updatedQuestion.explanation };
+        const questionInput: QuestionInput = { ...updatedQuestion.explanation };
         questionInput.fileKey = `${file.type}-${file.lastModified}`;
         updatedQuestion.explanation = questionInput;
         setFileExists(true);
       }
       if (origin === "content") {
-        const questionInput: questionInput = { ...updatedQuestion.content };
+        const questionInput: QuestionInput = { ...updatedQuestion.content };
         questionInput.fileKey = `${file.type}-${file.lastModified}`;
         updatedQuestion.content = questionInput;
         setFileExists(true);
@@ -238,7 +238,7 @@ export default function AdvancedTextbox({
       origin === "explanation" ||
       origin === "content"
     ) {
-      const questionInput: questionInput = { ...updatedQuestion[origin] };
+      const questionInput: QuestionInput = { ...updatedQuestion[origin] };
 
       deleteFileFromIndexedDB(questionInput.fileKey!).catch((error) => {
         console.error("Error deleting file from IndexedDB:", error);
@@ -251,7 +251,7 @@ export default function AdvancedTextbox({
       questionInput.fileURL = "";
       updatedQuestion[origin] = questionInput;
     } else if (origin === "option" && oIndex !== undefined) {
-      const optionInput: questionInput = {
+      const optionInput: QuestionInput = {
         ...updatedQuestion.options[oIndex]!.value,
       };
 
