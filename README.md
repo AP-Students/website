@@ -1,6 +1,6 @@
 # FiveHive
 
-![FiveHive Logo](path-to-your-logo.png)
+<img width="100" src="./public/logo.png" />
 
 **Empowering AP Students with Free, Volunteer-Driven Resources**
 
