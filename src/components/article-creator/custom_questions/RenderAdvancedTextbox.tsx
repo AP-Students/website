@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import katex from "katex";
-import { type questionInput } from "@/types/questions";
+import { type QuestionInput } from "@/types/questions";
 import "@/styles/katexStyling.css";
 import Image from "next/image"
 
 interface Props {
-  content: questionInput;
+  content: QuestionInput;
 }
 
 // Utility to retrieve a file from IndexedDB based on unique ID

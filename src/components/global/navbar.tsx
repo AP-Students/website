@@ -1,4 +1,3 @@
-"use client";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "../ui/button";
@@ -11,8 +10,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { MenuIcon } from "lucide-react";
-import SignedInPfp from "../login/SignedInPfp";
-import { useUser } from "../hooks/UserContext";
 
 const links = [
   {
@@ -27,6 +24,10 @@ const links = [
     name: "practice",
     href: "/practice",
   },
+  {
+    name: "Apply Here",
+    href: "https://docs.google.com/document/d/1nV0nmzRKbgmVucE93ujft6tY-rQ-xPxLEahjuSpFz3s/edit",
+  },
 ];
 
 const Navbar = ({
@@ -36,8 +37,6 @@ const Navbar = ({
   variant?: "primary" | "secondary";
   className?: string;
 }) => {
-  const { user } = useUser();
-
   return (
     <>
       <div
@@ -73,21 +72,15 @@ const Navbar = ({
             variant === "primary" && "grow basis-0",
           )}
         >
-          {user ? (
-            <>
-              <SignedInPfp />
-            </>
-          ) : (
-            <>
-              <NavbarLink href={"/signup"}>Sign up</NavbarLink>
+          <>
+            <NavbarLink href={"/signup"}>Sign up</NavbarLink>
 
-              <Link href={"/login"}>
-                <Button className="text-md px-5 py-3 font-semibold text-white">
-                  Log in
-                </Button>
-              </Link>
-            </>
-          )}
+            <Link href={"/login"}>
+              <Button className="text-md px-5 py-3 font-semibold text-white">
+                Log in
+              </Button>
+            </Link>
+          </>
         </div>
       </div>
 
@@ -105,13 +98,32 @@ const Navbar = ({
 
         <MobileNavbar />
       </div>
+
+      {/* Unclosable Popup */}
+      <div className="w-full bg-yellow-300 px-4 py-2 text-center text-yellow-900 shadow-md md:py-4 text-lg">
+        <span className="text-sm font-semibold md:text-base">
+          This is a demo.{" "}
+          Check out an{" "}
+          <Link
+            href="/subject/music-theory"
+            className="text-yellow-800 underline hover:text-yellow-700"
+          >
+            example subject.
+          </Link>{" "}
+          <Link
+            href="https://docs.google.com/document/d/1nV0nmzRKbgmVucE93ujft6tY-rQ-xPxLEahjuSpFz3s/edit"
+            className="text-yellow-800 underline hover:text-yellow-700"
+          >
+            Apply here
+          </Link>{" "}
+          to join the team and help us out!
+        </span>
+      </div>
     </>
   );
 };
 
 const MobileNavbar = () => {
-  const { user } = useUser();
-
   return (
     <>
       <Sheet>
@@ -121,7 +133,6 @@ const MobileNavbar = () => {
         <SheetContent className="bg-primary-foreground">
           <SheetHeader>
             <SheetTitle className="flex w-full">
-              {" "}
               <SheetTrigger asChild>
                 <Link className="inline-block" href={"/"}>
                   <Image
@@ -145,21 +156,17 @@ const MobileNavbar = () => {
               </div>
             ))}
 
-            {user ? (
-              <SignedInPfp />
-            ) : (
-              <>
-                <div>
-                  <NavbarLink href={"/signup"} isMobile={true}>
-                    Sign up
-                  </NavbarLink>
-                </div>
+            <>
+              <div>
+                <NavbarLink href={"/signup"} isMobile={true}>
+                  Sign up
+                </NavbarLink>
+              </div>
 
-                <Button className="text-md px-5 py-3 font-semibold text-white">
-                  <Link href={"/login"}>Log in</Link>
-                </Button>
-              </>
-            )}
+              <Button className="text-md px-5 py-3 font-semibold text-white">
+                <Link href={"/login"}>Log in</Link>
+              </Button>
+            </>
           </div>
         </SheetContent>
       </Sheet>

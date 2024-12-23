@@ -1,0 +1,57 @@
+{
+    "title": "AP Music Theory",
+    "units": [
+        {
+            "unit": 1,
+            "chapters": [
+                {
+                    "chapter": 1,
+                    "title": "Pitch and Notation"
+                },
+                {
+                    "title": "Rhythmic Values",
+                    "chapter": 2
+                },
+                {
+                    "title": "Half Steps and Whole Steps",
+                    "chapter": 3
+                },
+                {
+                    "chapter": 4,
+                    "title": "Major Scales and Scale Degrees"
+                },
+                {
+                    "chapter": 5,
+                    "title": "Major Keys and Key Signatures"
+                },
+                {
+                    "title": "Simple and Compound Beat Division",
+                    "chapter": 6
+                },
+                {
+                    "title": "Meter and Time Signature",
+                    "chapter": 7
+                },
+                {
+                    "chapter": 8,
+                    "title": "Rhythmic Patterns"
+                },
+                {
+                    "title": "Tempo",
+                    "chapter": 9
+                },
+                {
+                    "chapter": 10,
+                    "title": "Dynamics and Articulation"
+                }
+            ],
+            "title": "Music Fundamentals I",
+            "test": {
+                "instanceId": "test_music-theory_0",
+                "questions": [],
+                "time": 0,
+                "optedIn": true
+            }
+        }
+    ]
+}

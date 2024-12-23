@@ -4,39 +4,34 @@ import Navbar from "@/components/global/navbar";
 import SubjectBreadcrumb from "@/components/subject/subject-breadcrumb";
 import SubjectSidebar from "@/components/subject/subject-sidebar";
 import Renderer from "@/components/article-creator/Renderer";
-import { useFetchAndCache } from "./useFetchAndCache";
 import "katex/dist/katex.min.css";
-
+import { notFound } from "next/navigation";
+import { subject, units } from "@/lib/subject";
 
 
 const Page = ({
   params,
 }: {
-  params: { slug: string; unit: string; articleNumber: string };
+  params: { articleNumber: string };
 }) => {
-  const { subject, content, loading, error } = useFetchAndCache(params); // Fetch with cache
 
-  const formattedTitle = `Article ${params.articleNumber} of ${params.unit}.`
+  let articleNumber = 0;
+  try {
+    articleNumber = parseInt(params.articleNumber,10);
+  } catch {
+    return notFound();
+  }
+
+  if (articleNumber > 10 || articleNumber < 1){
+    return notFound();
+  }
+
+  const content = units[articleNumber-1]!;
+
+  const formattedTitle = `Article ${params.articleNumber} of Music Fundamentals I.`
     .replace(/-/g, " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center text-3xl">
-        Loading...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex min-h-screen items-center justify-center text-3xl">
-        {error}
-      </div>
-    );
-  }
-
-  if (subject && content) {
     return (
       <div className="relative flex min-h-screen">
         <SubjectSidebar subject={subject} />
@@ -59,9 +54,6 @@ const Page = ({
         </div>
       </div>
     );
-  } else {
-    error;
-  }
 };
 
 export default Page;
