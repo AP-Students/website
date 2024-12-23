@@ -11,9 +11,12 @@ import usePathname from "@/components/client/pathname";
 const Page = () => {
   const pathname = usePathname();
 
-  const instanceId = pathname.split("/").slice(-2).join("_");
-  const collectionId = instanceId.split("_")[0];
-  const unitId = instanceId.split("_")[1];
+  const basePath = pathname.split("/").slice(-4).join("_");
+  const subject = basePath.split("_")[0]!;
+  const unitId = basePath.split("_")[1]?.split("-").at(-1)!;
+  const testId = basePath.split("_")[3]!;
+
+  // const instanceId = [subject, unitId, "test", testId].join("_");
 
   const [time, setTime] = useState<number>(0);
   const [questions, setQuestions] = useState<QuestionFormat[] | null>(null);
@@ -24,10 +27,13 @@ const Page = () => {
         const docRef = doc(
           db,
           "subjects",
-          collectionId!,
-          `unit-${unitId}`,
-          "test",
+          subject,
+          "units",
+          unitId,
+          "tests",
+          testId,
         );
+
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data() as UnitTest;
@@ -52,7 +58,7 @@ const Page = () => {
     fetchQuestions().catch((error) => {
       console.error("Error fetching subject data:", error);
     });
-  }, [collectionId, unitId]);
+  }, [subject, unitId, testId]);
 
   // Render TestRenderer only for clients without admin privileges
 

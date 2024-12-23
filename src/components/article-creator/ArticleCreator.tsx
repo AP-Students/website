@@ -95,16 +95,24 @@ function ArticleCreator({ className }: { className?: string }) {
   });
 
   const pathname = usePathname();
-  const pathParts = pathname.split("/").slice(-3);
+  const pathParts = pathname.split("/").slice(-4);
   const subject = pathParts[0]!;
-  const unit = pathParts[1]!.split("-").slice(0, 2).join("-");
-  const chapter = pathParts[2]!;
+  const unit = pathParts[1]!;
+  const chapter = pathParts[3]!;
 
   useEffect(() => {
     (async () => {
       const userAccess = await getUserAccess();
       if (userAccess && (userAccess === "admin" || userAccess === "member")) {
-        const docRef = doc(db, "subjects", subject, unit, chapter);
+        const docRef = doc(
+          db,
+          "subjects",
+          subject,
+          "units",
+          unit,
+          "chapters",
+          chapter,
+        );
         const docSnap = await getDoc(docRef);
         const data = docSnap.data()?.data as OutputData;
 
@@ -140,7 +148,15 @@ function ArticleCreator({ className }: { className?: string }) {
     };
 
     try {
-      const docRef = doc(db, "subjects", subject, unit, chapter);
+      const docRef = doc(
+        db,
+        "subjects",
+        subject,
+        "units",
+        unit,
+        "chapters",
+        chapter,
+      );
 
       // Function to process questions and upload files
       const processQuestions = async (
@@ -339,7 +355,10 @@ function ArticleCreator({ className }: { className?: string }) {
 
           // because of .type, its inferable that block.data is of an image, but idk where the type is defined.
           /* eslint-disable-next-line */
-          if (block.type === "image" && block.data.url.startsWith("data:image/")) {
+          if (
+            block.type === "image" &&
+            block.data.url.startsWith("data:image/")
+          ) {
             const updatedImage = await processImage(block.data as ImageData);
             block.data = updatedImage; // Replace the block data with the updated content
             return block;
@@ -354,7 +373,7 @@ function ArticleCreator({ className }: { className?: string }) {
       newArticle.data.blocks = updatedDataBlocks;
       await setDoc(docRef, newArticle);
 
-      alert(`Article saved: ${docRef.id}`);
+      alert(`Article saved successfully.`);
       setUnsavedChanges(false);
     } catch (error) {
       console.error("Error saving article:", error);

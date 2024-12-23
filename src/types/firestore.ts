@@ -7,18 +7,22 @@ export type Subject = {
 };
 
 export type Unit = {
+  id: string;
+  order: number;
   title: string;
-  chapters: string[];
+  chapters: Chapter[];
   test: boolean;
+  testId?: string;
 };
 
 export type UnitTest = {
-  instanceId: string;
+  id: string;
   questions: QuestionFormat[];
   time: number;
 };
 
 export type Chapter = {
+  id: string;
   title: string;
   content?: Block;
 };

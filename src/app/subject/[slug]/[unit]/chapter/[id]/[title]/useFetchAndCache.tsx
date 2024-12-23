@@ -13,7 +13,7 @@ import { type OutputData } from "@editorjs/editorjs";
 type Params = {
   slug: string;
   unit: string;
-  articleNumber: string;
+  id: string;
 };
 
 const CACHE_EXPIRATION_MS = 2 * 24 * 60 * 60 * 1000; // 48 hrs in milliseconds (Probably increase this signficiantly)
@@ -112,9 +112,12 @@ export const useFetchAndCache = (params: Params, admin?: boolean) => {
             db,
             "subjects",
             params.slug,
-            params.unit.split("-").slice(0, 2).join("-"),
-            params.articleNumber.split("-").slice(0, 2).join("-"),
+            "units",
+            params.unit.split("-").at(-1)!,
+            "chapters",
+            params.id.split("-").slice(0, 2).join("-"),
           );
+
           const pageDocSnap = await getDoc(pageDocRef);
           if (pageDocSnap.exists()) {
             const data = pageDocSnap.data()?.data as OutputData;
@@ -127,6 +130,7 @@ export const useFetchAndCache = (params: Params, admin?: boolean) => {
           }
         }
       } catch (error) {
+        console.error(error)
         setError("Failed to fetch subject or content data.");
       } finally {
         setLoading(false);

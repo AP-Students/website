@@ -17,9 +17,10 @@ const Page = () => {
   const pathname = usePathname();
 
   const { user } = useUser();
-  const instanceId = pathname.split("/").slice(-2).join("_");
-  const collectionId = instanceId.split("_")[0];
-  const unitId = instanceId.split("_")[1];
+  const instanceId = pathname.split("/").slice(-4).join("_");
+  const subject = instanceId.split("_")[0]!;
+  const unitId = instanceId.split("_")[1]!;
+  const testId = instanceId.split("_")[3]!;
 
   const [time, setTime] = useState<number>(30);
   const { questions, setQuestions } = syncedQuestions(instanceId);
@@ -31,9 +32,11 @@ const Page = () => {
         const docRef = doc(
           db,
           "subjects",
-          collectionId!,
-          `unit-${unitId}`,
-          "test",
+          subject,
+          "units",
+          unitId,
+          "tests",
+          testId,
         );
 
         const docSnap = await getDoc(docRef);
@@ -63,16 +66,18 @@ const Page = () => {
     })().catch((error) => {
       console.error("Error fetching questions:", error);
     });
-  }, [collectionId, unitId, instanceId, setQuestions]);
+  }, [subject, unitId, instanceId, setQuestions]);
 
   const handleSave = async () => {
     try {
       const testRef = doc(
         db,
         "subjects",
-        collectionId!,
-        `unit-${unitId}`,
-        "test",
+        subject,
+        "units",
+        unitId,
+        "tests",
+        testId,
       );
 
       const sanitizedQuestions = removeUndefined(questions) as QuestionFormat[];
