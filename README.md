@@ -63,7 +63,7 @@ To provide free, volunteer-driven resources to the broader AP community, includi
 **Weekly Time Commitment:**
 - 1-2 hours per week.
 
-[**Apply Here**](#)
+[**Apply Here**](https://forms.gle/NDuth9Gq9oYacMdT9)
 
 ### Review Session (Materials/Lecture) Team
 
@@ -84,7 +84,7 @@ To provide free, volunteer-driven resources to the broader AP community, includi
 **Weekly Time Commitment:**
 - 2-4 hours per week.
 
-[**Apply Here**](#)
+[**Apply Here**](https://forms.gle/xf9kPbT4XveivPA66)
 
 ### Outreach Team
 
@@ -105,7 +105,7 @@ To provide free, volunteer-driven resources to the broader AP community, includi
 **Weekly Time Commitment:**
 - 1-3 hours per week.
 
-[**Apply Here**](#)
+[**Apply Here**](https://forms.gle/xRY5Fu3Zji21K6rj8)
 
 ### Website Team
 
@@ -128,7 +128,7 @@ To provide free, volunteer-driven resources to the broader AP community, includi
 **Weekly Time Commitment:**
 - Flexible; expect 10-20 hours per month.
 
-[**Apply Here**](#)
+[**Apply Here**](https://forms.gle/HUCoEpqMZ1rerBer7)
 
 ---
 
