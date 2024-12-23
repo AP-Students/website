@@ -1,31 +1,14 @@
 "use client";
 
 import TestRenderer from "@/components/questions/testRenderer";
-import { db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
-import { useEffect, useState } from "react";
-import { type Subject } from "@/types";
-import { QuestionInput, type QuestionFormat, type Option } from "@/types/questions";
-import usePathname from "@/components/client/pathname";
-import { notFound } from "next/navigation";
+import { subject } from "@/lib/subject";
+import type { QuestionFormat } from "@/types/questions";
 
 const Page = () => {
-  const [testName, setTestName] = useState<string>("AP Music Theory Unit 1 Test");
-  const [time, setTime] = useState<number>(0);
+  const testName= "AP Music Theory Unit 1 Test";
+  const time = subject.units[0]!.test!.time;
 
-  const questions: QuestionFormat[] = [
-    {
-      question: {
-        value: "This is the value"
-      } as QuestionInput,
-      type: "mcq",
-      options: [
-        {
-          
-        } as Option
-      ]
-    } as QuestionFormat
-  ]
+  const questions: QuestionFormat[] = [];
 
   return (
     <div className="relative min-h-screen">

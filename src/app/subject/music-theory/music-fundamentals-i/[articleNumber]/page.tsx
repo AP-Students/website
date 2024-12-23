@@ -4,12 +4,9 @@ import Navbar from "@/components/global/navbar";
 import SubjectBreadcrumb from "@/components/subject/subject-breadcrumb";
 import SubjectSidebar from "@/components/subject/subject-sidebar";
 import Renderer from "@/components/article-creator/Renderer";
-import { useFetchAndCache } from "./useFetchAndCache";
 import "katex/dist/katex.min.css";
 import { notFound } from "next/navigation";
 import { subject, units } from "@/lib/subject";
-import type { Content } from "@/types/content";
-
 
 
 const Page = ({
@@ -29,7 +26,7 @@ const Page = ({
     return notFound();
   }
 
-  let content = units[articleNumber-1] as Content;
+  const content = units[articleNumber-1]!;
 
   const formattedTitle = `Article ${params.articleNumber} of Music Fundamentals I.`
     .replace(/-/g, " ")

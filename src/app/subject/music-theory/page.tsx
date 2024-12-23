@@ -2,25 +2,13 @@
 import { Accordion } from "@/components/ui/accordion";
 import Footer from "@/components/global/footer";
 import Navbar from "@/components/global/navbar";
-import { db } from "@/lib/firebase";
-import { type Subject } from "@/types";
 import SubjectBreadcrumb from "@/components/subject/subject-breadcrumb";
 import SubjectSidebar from "@/components/subject/subject-sidebar";
 import TableOfContents from "@/components/subject/table-of-contents";
 import UnitAccordion from "@/components/subject/unit-accordion";
-import { useEffect, useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
-import { getUser } from "@/components/hooks/users";
-import { type User } from "@/types/user";
-import usePathname from "@/components/client/pathname";
-import { notFound } from "next/navigation";
-import type { Unit } from "@/types";
 import { subject } from "@/lib/subject";
 
 const Page = () => {
-
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
 
   return (
     <div className="relative flex min-h-screen">
