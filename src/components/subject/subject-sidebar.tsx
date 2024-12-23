@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { type Subject } from "@/types";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import usePathname from "../client/pathname";
+import { usePathname } from "next/navigation";
 
 type Props = {
   subject: Subject;
