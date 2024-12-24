@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import type { QuestionFormat } from "@/types/questions";
-import { Trash, CirclePlus } from "lucide-react";
+import { Trash, CirclePlus, ChevronDown, ChevronUp } from "lucide-react";
 import AdvancedTextbox from "./AdvancedTextbox";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -122,14 +122,15 @@ const QuestionsInputInterface: React.FC<Props> = ({
   };
 
   return (
-    <div className="mb-4 rounded border p-4">
+    <div className="mb-4">
       {questions.map((questionInstance, qIndex) => (
         <div key={qIndex} className="mb-4 rounded border p-4">
           <Button
             onClick={() => toggleCollapse(qIndex)}
             className="flex w-full justify-between text-left text-lg font-bold"
           >
-            {"Question: " + (qIndex + 1)}
+            Question: {qIndex + 1}
+            {collapsed[qIndex] ? <ChevronDown /> : <ChevronUp />}
           </Button>
           {!collapsed[qIndex] && (
             <div>

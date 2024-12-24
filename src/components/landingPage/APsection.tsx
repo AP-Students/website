@@ -1,5 +1,6 @@
 import Link from "next/link";
 import React from "react";
+import { formatSlug } from "@/lib/utils";
 
 interface SectionProps {
   title: string;
@@ -36,7 +37,7 @@ const APsection: React.FC<SectionProps> = ({
           {courses.map((course, index) => (
             <li key={index} className="break-inside-avoid-column">
               <Link
-                href={`/subject/${formatCourseName(course)}`}
+                href={`/subject/${formatSlug(course.replace(/AP /g, ""))}`}
                 className="hover:underline"
               >
                 {course}
@@ -47,14 +48,6 @@ const APsection: React.FC<SectionProps> = ({
       </div>
     </>
   );
-};
-
-const formatCourseName = (courseName: string) => {
-  return courseName
-    .replace(/AP /g, "")
-    .toLowerCase()
-    .replace(/[^a-z1-9 ]+/g, "")
-    .replace(/\s+/g, "-");
 };
 
 const listMobile = (columnNumber: number) => {
