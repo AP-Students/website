@@ -9,6 +9,7 @@ import {
 import { type Subject } from "@/types/firestore";
 import { type Content } from "@/types/content";
 import { type OutputData } from "@editorjs/editorjs";
+import { getUser } from "@/components/hooks/users";
 
 type Params = {
   slug: string;
@@ -87,15 +88,17 @@ export const useFetchAndCache = (params: Params, admin?: boolean) => {
       try {
         // Fetch subject from cache or Firestore
         const cachedSubject = await getCachedSubject(params.slug);
-        if (cachedSubject) {
-          // TODO: skip if admin or member
+        const user = await getUser();
+        if (cachedSubject && user?.access === "user") {
           setSubject(cachedSubject);
         } else {
+          console.log("Hitting Firestore for subject data");
           const subjectDocRef = doc(db, "subjects", params.slug);
           const subjectDocSnap = await getDoc(subjectDocRef);
+
           if (subjectDocSnap.exists()) {
             const data = subjectDocSnap.data() as Subject;
-            setSubject(data);
+            setSubject(cachedSubject);
             if (!admin) {
               await cacheSubject(params.slug, data);
             }

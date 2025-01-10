@@ -194,7 +194,8 @@ const Page = ({ params }: { params: { slug: string } }) => {
           );
         });
       });
-      // TODO: update Firestore security rules
+      // TODO: update Firestore security rules 
+      // It already have the correct permissions
       await batch.commit();
       alert("Subject content saved successfully.");
       setUnsavedChanges(false);

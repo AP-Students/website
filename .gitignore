@@ -19,7 +19,10 @@ src/lib/serviceAccountKey.json
 src/lib/AddAdminRoles
 
 # production
-/build
+.firebaserc
+firebase.json
+firebase-debug.log
+firestore-debug.log
 
 # misc
 .DS_Store

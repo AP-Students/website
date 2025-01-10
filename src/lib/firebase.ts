@@ -1,7 +1,10 @@
+"use client"
+
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import {env} from "@/env.js"
+import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
+
+import { env } from "@/env.js";
 
 const firebaseConfig = {
   apiKey: env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -16,6 +19,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+
+connectFirestoreEmulator(db, "127.0.0.1", 8080); 
 
 export { db, auth };
 export default app;

@@ -19,6 +19,7 @@ type Props = {
 const SubjectSidebar = (props: Props) => {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  console.log("props.subject.units", props.subject.units);
 
   return (
     <div

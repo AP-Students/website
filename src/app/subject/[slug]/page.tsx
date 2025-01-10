@@ -10,9 +10,8 @@ import TableOfContents from "@/components/subject/table-of-contents";
 import UnitAccordion from "@/components/subject/unit-accordion";
 import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
-import { getUser } from "@/components/hooks/users";
-import { type User } from "@/types/user";
 import usePathname from "@/components/client/pathname";
+import { useUser } from "@/components/hooks/UserContext";
 
 const Page = ({ params }: { params: { slug: string } }) => {
   const pathname = usePathname();
@@ -20,22 +19,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
   const [subject, setSubject] = useState<Subject | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null | undefined>(undefined);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const fetchedUser = await getUser();
-        setUser(fetchedUser);
-      } catch (error) {
-        console.error("Error fetching user:", error);
-      }
-    };
-
-    fetchUser().catch((error) => {
-      console.error("Error fetching user:", error);
-    });
-  }, []);
+  const { user } = useUser();
 
   useEffect(() => {
     const fetchSubject = async () => {
