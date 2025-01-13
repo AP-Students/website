@@ -12,6 +12,8 @@ import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import usePathname from "@/components/client/pathname";
 import { useUser } from "@/components/hooks/UserContext";
+import { BookOpenCheck } from "lucide-react";
+import Link from "next/link";
 
 const Page = ({ params }: { params: { slug: string } }) => {
   const pathname = usePathname();
@@ -89,6 +91,13 @@ const Page = ({ params }: { params: { slug: string } }) => {
                   pathname={pathname}
                 />
               ))}
+              <Link
+                className="group relative mt-3 flex items-center gap-x-1.5 text-2xl font-medium last:mb-0 hover:underline"
+                href={`${pathname.split("/").slice(0, 3).join("/")}/test`}
+              >
+                <BookOpenCheck className="size-8" />
+                Access Subject Test
+              </Link>
             </Accordion>
           </div>
 

@@ -63,7 +63,7 @@ const Page = () => {
     })().catch((error) => {
       console.error("Error fetching questions:", error);
     });
-  }, [collectionId, unitId, instanceId, setQuestions]);
+  }, [collectionId, unitId, instanceId, setQuestions, user]);
 
   const handleSave = async () => {
     try {

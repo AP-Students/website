@@ -194,7 +194,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
           );
         });
       });
-      // TODO: update Firestore security rules 
+      // TODO: update Firestore security rules
       // It already have the correct permissions
       await batch.commit();
       alert("Subject content saved successfully.");
@@ -413,6 +413,14 @@ const Page = ({ params }: { params: { slug: string } }) => {
             >
               <PlusCircle className="mr-2" /> Add Unit
             </Button>
+          </div>
+          <div className="mt-12 flex items-center justify-center">
+            <Link
+              href={params.slug + "/test"}
+              className="text-white cursor-pointer rounded-xl border bg-green-500 p-2 hover:bg-green-600"
+            >
+              Access Subject Test
+            </Link> 
           </div>
         </main>
       </div>
