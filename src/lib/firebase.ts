@@ -2,7 +2,7 @@
 
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
+import { getFirestore } from "firebase/firestore";
 
 import { env } from "@/env.js";
 
@@ -19,8 +19,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-
-connectFirestoreEmulator(db, "127.0.0.1", 8080); 
 
 export { db, auth };
 export default app;
