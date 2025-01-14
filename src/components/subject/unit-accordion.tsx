@@ -35,9 +35,7 @@ const UnitAccordion = ({ unit, pathname, unitIndex }: Props) => {
         {unit.chapters.map((chapter, chapterIndex) => (
           <Link
             className="group flex items-center gap-x-3 font-semibold last:mb-0"
-            href={`${pathname}/unit-${unitIndex + 1}-${formatSlug(
-              unit.title,
-            )}/chapter-${chapterIndex + 1}-${formatSlug(chapter)}`}
+            href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/chapter/${chapter.id}/${formatSlug(chapter.title)}`}
             key={chapterIndex}
           >
             <div className="flex size-8 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-base font-bold text-white">
@@ -45,14 +43,14 @@ const UnitAccordion = ({ unit, pathname, unitIndex }: Props) => {
             </div>
 
             <div className="text-base font-medium group-hover:underline sm:text-lg">
-              {chapter}
+              {chapter.title}
             </div>
           </Link>
         ))}
         {unit.test && (
           <Link
             className="group mb-3 flex items-center gap-x-3 font-semibold last:mb-0"
-            href={`${pathname.split("/").slice(0, 4).join("/")}/${unitIndex + 1}`}
+            href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/unit-test/${unit.testId}`}
           >
             <BookOpenCheck className="size-8" />
             Unit {unitIndex + 1} Test

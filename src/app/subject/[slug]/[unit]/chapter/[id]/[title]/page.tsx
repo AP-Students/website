@@ -6,13 +6,18 @@ import SubjectSidebar from "@/components/subject/subject-sidebar";
 import Renderer from "@/components/article-creator/Renderer";
 import { useFetchAndCache } from "./useFetchAndCache";
 import "katex/dist/katex.min.css";
+import { useUser } from "@/components/hooks/UserContext";
 
 const Page = ({
   params,
 }: {
-  params: { slug: string; unit: string; articleNumber: string };
+  params: { slug: string; unit: string; id: string };
 }) => {
-  const { subject, content, loading, error } = useFetchAndCache(params); // Fetch with cache
+  const { user } = useUser();
+  const { subject, content, loading, error } = useFetchAndCache(
+    params,
+    user?.access === "admin" || user?.access === "member",
+  );
 
   if (loading) {
     return (
@@ -32,9 +37,15 @@ const Page = ({
 
   if (subject && content) {
     const unitIndex = Number(params.unit.split("-")[1]) - 1;
-    const chapterIndex = Number(params.articleNumber.split("-")[1]) - 1;
-    const unitTitle = subject.units[unitIndex]?.title ?? "Unit";
-    const chapterTitle = subject.units[unitIndex]?.chapters[chapterIndex] ?? "Chapter";
+    const chapterIndex = subject.units[unitIndex]!.chapters.findIndex(
+      (ch) => ch.id === params.id,
+    );
+    const chapter = subject.units[unitIndex]!.chapters[chapterIndex];
+    const unitTitle = subject.units[unitIndex]?.title;
+
+    if (!unitTitle || !chapter) {
+      return <div>Error: Unit or chapter not found.</div>;
+    }
 
     return (
       <div className="relative flex min-h-screen">
@@ -46,11 +57,11 @@ const Page = ({
           <div className="relative mt-[5.5rem] flex min-h-screen justify-between gap-x-16 px-10 xl:px-20">
             <div className="grow md:ml-12">
               <SubjectBreadcrumb
-                locations={[subject.title, unitTitle, chapterTitle]}
+                locations={[subject.title, unitTitle, chapter.title]}
               />
 
               <h1 className="mb-9 mt-1 text-balance text-left text-5xl font-extrabold sm:text-6xl">
-                {unitIndex + 1}.{chapterIndex + 1} - {chapterTitle}
+                {unitIndex + 1}.{chapterIndex + 1} - {chapter.title}
               </h1>
               <Renderer content={content.data} />
             </div>

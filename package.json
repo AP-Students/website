@@ -53,6 +53,7 @@
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.52.1",
     "react-router-dom": "^6.26.1",
+    "short-uuid": "^5.2.0",
     "tailwind": "^4.0.0",
     "tailwind-merge": "^2.4.0",
     "tailwind-scrollbar": "^3.1.0",

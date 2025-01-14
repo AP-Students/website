@@ -3,7 +3,7 @@ import ArticleCreator from "@/components/article-creator/ArticleCreator";
 import { useUser } from "@/components/hooks/UserContext";
 import { buttonVariants } from "@/components/ui/button";
 import { ArrowLeft, UserRoundCog } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { Link } from "@/app/admin/subject/link";
 import { cn } from "@/lib/utils";
@@ -13,12 +13,9 @@ const Page = () => {
 
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  // Using link to format unique title (eg, limits-and-continuity-1)
-  const pathParts = pathname.split("/").slice(-3);
-  const formattedSubject = `SUBJECT: ${pathParts[0]}`.replace(/-/g, " ");
-  const formattedUnit = `UNIT: ${pathParts[1]}`.replace(/-/g, " ");
-  const formattedLesson = `Lesson ${pathParts[2]}`;
+  const pathParts = pathname.split("/").slice(-4);
 
   useEffect(() => {
     if ((!user || user?.access === "user") && !loading) {
@@ -27,7 +24,7 @@ const Page = () => {
   }, [user, loading, router]);
 
   return (
-    <div className="flex grow flex-col px-10 pt-20 xl:px-20">
+    <div className="flex grow flex-col px-10 pt-10 xl:px-20">
       <div className="flex flex-col gap-2">
         <Link
           className={cn(buttonVariants({ variant: "outline" }), "w-min")}
@@ -45,11 +42,11 @@ const Page = () => {
         </Link>
       </div>
       <h1 className="py-8 text-2xl capitalize">
-        {formattedSubject}
+        {decodeURIComponent(searchParams.get("subject") ?? "")}
         <br />
-        {formattedUnit}
+        {decodeURIComponent(searchParams.get("unit") ?? "")}
         <br />
-        <span className="text-4xl font-bold">{formattedLesson}</span>
+        <b>{decodeURIComponent(searchParams.get("chapter") ?? "")}</b>
       </h1>
       <ArticleCreator className="mt-4 grow" />
     </div>

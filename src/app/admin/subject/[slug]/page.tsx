@@ -20,6 +20,15 @@ import type { Subject } from "@/types/firestore";
 import usePathname from "@/components/client/pathname";
 import { Blocker } from "@/app/admin/subject/navigation-block";
 import { formatSlug } from "@/lib/utils";
+import short from "short-uuid";
+
+const translator = short(short.constants.flickrBase58);
+
+function generateShortId() {
+  const timestamp = Date.now().toString(36).slice(-4);
+  const randomPart = translator.new().slice(0, 4);
+  return timestamp + randomPart;
+}
 
 const apClasses = apClassesData.apClasses;
 
@@ -28,8 +37,15 @@ const emptyData: Subject = {
   title: "",
   units: [
     {
-      title: "",
-      chapters: ["Enter a chapter title..."],
+      id: generateShortId(),
+      order: 1,
+      title: "Enter unit title...",
+      chapters: [
+        {
+          id: generateShortId(),
+          title: "Enter chapter title... (double click)",
+        },
+      ],
       test: false,
     },
   ],
@@ -97,8 +113,15 @@ const Page = ({ params }: { params: { slug: string } }) => {
   const addUnit = () => {
     if (!newUnitTitle.trim() || !subject) return;
     const newUnit = {
+      id: generateShortId(),
+      order: subject.units.length + 1,
       title: newUnitTitle,
-      chapters: ["Enter a chapter title..."],
+      chapters: [
+        {
+          id: generateShortId(),
+          title: "Enter a chapter title...",
+        },
+      ],
       test: false,
     };
     setSubject({ ...subject, units: [...subject.units, newUnit] });
@@ -123,7 +146,10 @@ const Page = ({ params }: { params: { slug: string } }) => {
   const addChapter = (unitIndex: number) => {
     if (!newChapterTitles[unitIndex]?.trim() || !subject) return;
     const updatedUnits = [...subject.units];
-    updatedUnits[unitIndex]!.chapters.push(newChapterTitles[unitIndex]);
+    updatedUnits[unitIndex]!.chapters.push({
+      id: generateShortId(),
+      title: newChapterTitles[unitIndex],
+    });
     setSubject({ ...subject, units: updatedUnits });
     // Reset the newChapterTitle for this unit
     setNewChapterTitles((prev) =>
@@ -157,7 +183,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
       return;
     } else {
       const updatedUnits = [...subject.units];
-      updatedUnits[unitIndex]!.chapters[chapterIndex] = newTitle;
+      updatedUnits[unitIndex]!.chapters[chapterIndex]!.title = newTitle;
       setSubject({ ...subject, units: updatedUnits });
       setEditingChapter({ unitIndex: null, chapterIndex: null });
       setUnsavedChanges(true);
@@ -175,22 +201,31 @@ const Page = ({ params }: { params: { slug: string } }) => {
   const handleSave = async () => {
     try {
       const batch = writeBatch(db);
+      subject!.units.forEach((unit, i) => {
+        unit.order = i + 1;
+      });
+      batch.set(doc(db, "subjects", params.slug), subject);
       subject?.units.forEach((unit, i) => {
-        batch.set(doc(db, "subjects", params.slug), subject);
-
+        batch.set(doc(db, "subjects", params.slug, "units", unit.id as string), unit);
         unit.chapters.forEach((chapter, j) => {
+          const chapterDocRef = doc(
+            db,
+            "subjects",
+            params.slug,
+            "units",
+            unit.id as string,
+            "chapters",
+            chapter.id as string,
+          );
+
           batch.set(
-            doc(
-              db,
-              "subjects",
-              params.slug,
-              `unit-${i + 1}`,
-              `chapter-${j + 1}`,
-            ),
+            chapterDocRef,
             {
               title: chapter,
             },
-            { merge: true },
+            {
+              merge: true,
+            },
           );
         });
       });
@@ -208,6 +243,9 @@ const Page = ({ params }: { params: { slug: string } }) => {
     const updatedSubject = { ...subject! };
     if (updatedSubject.units[unitIndex]) {
       updatedSubject.units[unitIndex].test = true;
+      if (!updatedSubject.units[unitIndex].testId) {
+        updatedSubject.units[unitIndex].testId = generateShortId();
+      }
     }
     setSubject(updatedSubject);
     setUnsavedChanges(true);
@@ -235,7 +273,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
       {unsavedChanges && <Blocker />}
 
       <div className="relative min-h-screen">
-        <main className="container max-w-3xl flex-grow px-4 pb-8 pt-20 md:px-10 lg:px-14 2xl:px-20">
+        <main className="container max-w-3xl flex-grow px-4 pb-8 pt-10 md:px-10 lg:px-14 2xl:px-20">
           <div className="flex justify-between">
             <Link
               className={buttonVariants({ variant: "outline" })}
@@ -283,9 +321,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
                         className="border border-blue-500"
                       />
                     ) : (
-                      <span>
-                        Unit {unitIndex + 1}: {unit.title}
-                      </span>
+                      <span>{unit.title}</span>
                     )}
                     {expandedUnits.includes(unitIndex) ? (
                       <ChevronUp />
@@ -303,7 +339,9 @@ const Page = ({ params }: { params: { slug: string } }) => {
                       >
                         <a
                           className={buttonVariants({ variant: "outline" })}
-                          href={`/admin/subject/${params.slug}/unit-${unitIndex + 1}-${formatSlug(unit.title)}/chapter-${chapterIndex + 1}`}
+                          href={encodeURI(
+                            `/admin/subject/${params.slug}/${unit.id}/chapter/${chapter.id}?subject=${encodeURIComponent(subject.title)}&unit=${encodeURIComponent(unit.title)}&chapter=${encodeURIComponent(chapter.title as string)}`,
+                          )}
                         >
                           Edit Content
                         </a>
@@ -317,7 +355,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
                             <input
                               autoFocus
                               className="-ml-5 w-full"
-                              defaultValue={chapter}
+                              defaultValue={chapter.title as string}
                               ref={chapterInputRef}
                               onBlur={(e) =>
                                 editChapterTitle(
@@ -335,7 +373,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
                             }
                             className="w-full cursor-pointer rounded-sm px-2 py-1 hover:bg-accent"
                           >
-                            Chapter {chapterIndex + 1}: {chapter}
+                            Chapter {chapterIndex + 1}: {chapter.title}
                           </p>
                         )}
 
@@ -372,7 +410,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
                     {unit.test ? (
                       <div className="flex items-center">
                         <Link
-                          href={`${pathname.split("/").slice(0, 4).join("/")}/${unitIndex + 1}`}
+                          href={`${pathname}/${unit.id}/test/${unit.testId}`}
                         >
                           <p className="mt-4 text-green-500 hover:underline">
                             Edit Unit Test

@@ -65,9 +65,7 @@ const SubjectSidebar = (props: Props) => {
               value={unit.title}
               key={unitIndex}
             >
-              <AccordionTrigger>
-                Unit {unitIndex + 1} - {unit.title}
-              </AccordionTrigger>
+              <AccordionTrigger>{unit.title}</AccordionTrigger>
 
               <AccordionContent className="flex flex-col gap-x-2 pb-0">
                 <div className="grow">
@@ -75,18 +73,20 @@ const SubjectSidebar = (props: Props) => {
                     <Link
                       className="group relative mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0"
                       key={chapterIndex}
-                      href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${unitIndex + 1}-${formatSlug(unit.title)}/chapter-${chapterIndex + 1}-${formatSlug(chapter)}`}
+                      href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${unitIndex + 1}-${unit.id}/chapter/${chapter.id}/${formatSlug(chapter.title)}`}
                     >
                       <div className="flex size-6 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-[.75rem] text-white">
                         {unitIndex + 1}.{chapterIndex + 1}
                       </div>
-                      <span className="group-hover:underline">{chapter}</span>
+                      <span className="group-hover:underline">
+                        {chapter.title}
+                      </span>
                     </Link>
                   ))}
                   {unit.test && (
                     <Link
                       className="group relative mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0 hover:underline"
-                      href={`${pathname.split("/").slice(0, 3).join("/")}/${unitIndex + 1}`}
+                      href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${unitIndex + 1}-${unit.id}/unit-test/${unit.testId}`}
                     >
                       <BookOpenCheck className="size-6" />
                       Unit {unitIndex + 1} Test
