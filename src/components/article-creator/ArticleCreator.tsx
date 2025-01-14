@@ -357,7 +357,7 @@ function ArticleCreator({ className }: { className?: string }) {
           /* eslint-disable-next-line */
           if (
             block.type === "image" &&
-            block.data.url.startsWith("data:image/")
+            (block.data as ImageData).url.startsWith("data:image/")
           ) {
             const updatedImage = await processImage(block.data as ImageData);
             block.data = updatedImage; // Replace the block data with the updated content
