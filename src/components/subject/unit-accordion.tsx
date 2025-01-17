@@ -26,7 +26,7 @@ const UnitAccordion = ({ unit, pathname, unitIndex }: Props) => {
         id={unit.title}
         className="pb-1.5 text-left text-3xl font-semibold hover:no-underline sm:text-4xl"
       >
-        Unit {unitIndex + 1} - {unit.title}
+        {unit.title}
       </AccordionTrigger>
 
       <hr className="mb-3 mt-1.5 h-1 w-full" />
@@ -53,7 +53,11 @@ const UnitAccordion = ({ unit, pathname, unitIndex }: Props) => {
             href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${unit.testId}`}
           >
             <BookOpenCheck className="size-8" />
-            Unit {unitIndex + 1} Test
+            <div className="group-hover:underline">
+              {unit.title === "Subject Test"
+                ? unit.title
+                : `Unit ${unitIndex + 1} Test`}
+            </div>
           </Link>
         )}
       </AccordionContent>

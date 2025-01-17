@@ -53,7 +53,7 @@ const TableOfContents = ({ title, subject }: Props) => {
                 collapsed && "whitespace-nowrap",
               )}
             >
-              Unit {unitIndex + 1} - {unit.title}
+              {unit.title}
             </Link>
           </div>
         ))}

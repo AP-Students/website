@@ -89,7 +89,9 @@ const SubjectSidebar = (props: Props) => {
                       href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${unit.testId}`}
                     >
                       <BookOpenCheck className="size-6" />
-                      Unit {unitIndex + 1} Test
+                      {unit.title === "Subject Test"
+                        ? unit.title
+                        : `Unit ${unitIndex + 1} Test`}
                     </Link>
                   )}
                 </div>
@@ -97,14 +99,6 @@ const SubjectSidebar = (props: Props) => {
             </AccordionItem>
           ))}
         </Accordion>
-
-        <Link
-          className="group relative mt-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0 hover:underline"
-          href={`${pathname.split("/").slice(0, 3).join("/")}/test/subject`}
-        >
-          <BookOpenCheck className="size-6" />
-          Access Subject Test
-        </Link>
       </div>
     </div>
   );

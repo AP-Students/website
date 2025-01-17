@@ -91,13 +91,6 @@ const Page = ({ params }: { params: { slug: string } }) => {
                   pathname={pathname}
                 />
               ))}
-              <Link
-                className="group relative mt-3 flex items-center gap-x-1.5 text-2xl font-medium last:mb-0 hover:underline"
-                href={`${pathname.split("/").slice(0, 3).join("/")}/test/subject`}
-              >
-                <BookOpenCheck className="size-8" />
-                Access Subject Test
-              </Link>
             </Accordion>
           </div>
 

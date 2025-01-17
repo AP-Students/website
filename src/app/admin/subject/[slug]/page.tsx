@@ -200,12 +200,15 @@ const Page = ({ params }: { params: { slug: string } }) => {
     try {
       const batch = writeBatch(db);
       batch.set(doc(db, "subjects", params.slug), subject);
-      subject?.units.forEach((unit, ) => {
+      subject?.units.forEach((unit) => {
         // Typescript complains that unit.id and chapter.id are of any type, but eslint complains of unnessecary type assertions.
-        // if typeof guard doesn't seem to work 
+        // if typeof guard doesn't seem to work
         /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
-        batch.set(doc(db, "subjects", params.slug, "units", unit.id as string), unit);
-        unit.chapters.forEach((chapter, ) => {
+        batch.set(
+          doc(db, "subjects", params.slug, "units", unit.id as string),
+          unit,
+        );
+        unit.chapters.forEach((chapter) => {
           const chapterDocRef = doc(
             db,
             "subjects",
@@ -451,14 +454,6 @@ const Page = ({ params }: { params: { slug: string } }) => {
             >
               <PlusCircle className="mr-2" /> Add Unit
             </Button>
-          </div>
-          <div className="mt-12 flex items-center justify-center">
-            <Link
-              href={params.slug + "/test/subject"}
-              className="text-white cursor-pointer rounded-xl border bg-green-500 p-2 hover:bg-green-600"
-            >
-              Access Subject Test
-            </Link> 
           </div>
         </main>
       </div>
