@@ -8,7 +8,6 @@ export type Subject = {
 
 export type Unit = {
   id: string;
-  order: number;
   title: string;
   chapters: Chapter[];
   test: boolean;

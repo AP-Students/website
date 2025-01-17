@@ -38,7 +38,6 @@ const emptyData: Subject = {
   units: [
     {
       id: generateShortId(),
-      order: 1,
       title: "Enter unit title...",
       chapters: [
         {
@@ -114,7 +113,6 @@ const Page = ({ params }: { params: { slug: string } }) => {
     if (!newUnitTitle.trim() || !subject) return;
     const newUnit = {
       id: generateShortId(),
-      order: subject.units.length + 1,
       title: newUnitTitle,
       chapters: [
         {
@@ -201,9 +199,6 @@ const Page = ({ params }: { params: { slug: string } }) => {
   const handleSave = async () => {
     try {
       const batch = writeBatch(db);
-      subject!.units.forEach((unit, i) => {
-        unit.order = i + 1;
-      });
       batch.set(doc(db, "subjects", params.slug), subject);
       subject?.units.forEach((unit, ) => {
         // Typescript complains that unit.id and chapter.id are of any type, but eslint complains of unnessecary type assertions.
