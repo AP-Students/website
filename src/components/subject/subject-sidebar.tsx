@@ -86,7 +86,7 @@ const SubjectSidebar = (props: Props) => {
                   {unit.test && (
                     <Link
                       className="group relative mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0 hover:underline"
-                      href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${unitIndex + 1}-${unit.id}/unit-test/${unit.testId}`}
+                      href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${unit.testId}`}
                     >
                       <BookOpenCheck className="size-6" />
                       Unit {unitIndex + 1} Test
@@ -100,7 +100,7 @@ const SubjectSidebar = (props: Props) => {
 
         <Link
           className="group relative mt-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0 hover:underline"
-          href={`${pathname.split("/").slice(0, 3).join("/")}/test`}
+          href={`${pathname.split("/").slice(0, 3).join("/")}/test/subject`}
         >
           <BookOpenCheck className="size-6" />
           Access Subject Test

@@ -50,7 +50,7 @@ const UnitAccordion = ({ unit, pathname, unitIndex }: Props) => {
         {unit.test && (
           <Link
             className="group mb-3 flex items-center gap-x-3 font-semibold last:mb-0"
-            href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/unit-test/${unit.testId}`}
+            href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${unit.testId}`}
           >
             <BookOpenCheck className="size-8" />
             Unit {unitIndex + 1} Test

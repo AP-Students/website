@@ -454,7 +454,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
           </div>
           <div className="mt-12 flex items-center justify-center">
             <Link
-              href={params.slug + "/test"}
+              href={params.slug + "/test/subject"}
               className="text-white cursor-pointer rounded-xl border bg-green-500 p-2 hover:bg-green-600"
             >
               Access Subject Test
