@@ -48,15 +48,15 @@ const CheckForUnderstanding: React.FC<Props> = ({ questionInstance }) => {
   };
 
   return (
-    <div className="max-w-6xl bg-primary-foreground p-4 md:p-6 lg:p-8">
-      <div className="markdown text-xl font-bold md:text-2xl lg:text-3xl">
+    <div className="max-w-6xl rounded-md border border-primary bg-primary-foreground p-4">
+      <div className="markdown text-xl text-foreground">
         <RenderContent content={questionInstance.question} />
       </div>
       <div className="mt-4 grid grid-cols-1 gap-4">
         {questionInstance.options.map((option) => (
           <button
             key={option.id}
-            className={`flex items-center justify-center rounded-lg border px-6 py-4 md:text-lg lg:text-xl
+            className={`rounded-sm border px-3 py-2 text-left
             ${
               submitted
                 ? isAnswerCorrect(option.id)

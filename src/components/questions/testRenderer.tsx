@@ -7,16 +7,13 @@ import QuestionPanel from "./digital-testing/QuestionPanel";
 import Footer from "./digital-testing/Footer";
 import type { QuestionFormat } from "@/types/questions";
 import { RenderContent } from "../../components/article-creator/custom_questions/RenderAdvancedTextbox";
-import Highlighter, {
-  type Highlight,
-} from "./digital-testing/Highlighter";
+import Highlighter, { type Highlight } from "./digital-testing/Highlighter";
 import ReviewPage from "./digital-testing/ReviewPage";
 import clsx from "clsx";
 
 interface Props {
   inputQuestions: QuestionFormat[];
   time: number;
-  testName: string;
   adminMode?: boolean;
 }
 
@@ -59,7 +56,6 @@ const initialQuestions: QuestionFormat[] = [
 
 export default function DigitalTestingPage({
   time,
-  testName,
   inputQuestions,
   adminMode = false,
 }: Props) {
@@ -130,7 +126,6 @@ export default function DigitalTestingPage({
       {!adminMode && (
         <Header
           setSubmittedAnswers={setSubmittedAnswers}
-          examName={testName}
           timeRemaining={time * 60}
         />
       )}
@@ -144,7 +139,7 @@ export default function DigitalTestingPage({
       ) : (
         <div className="flex flex-1 overflow-hidden pt-[52px]">
           {/* If there isn't content on the left, don't show left panel */}
-          {questions[currentQuestionIndex]!.content && (
+          {questions.length > 0 && questions[currentQuestionIndex]!.content && (
             <div className="flex-1">
               <div className="mr-2 mt-4">
                 <Highlighter
@@ -165,7 +160,8 @@ export default function DigitalTestingPage({
                 {currentQuestionIndex + 1}
               </p>
               <button className="flex" onClick={toggleBookmark}>
-                {questions[currentQuestionIndex]!.bookmarked ? (
+                {questions.length > 0 &&
+                questions[currentQuestionIndex]!.bookmarked ? (
                   <>
                     <Bookmark className="mr-1 inline fill-black" /> Bookmarked
                   </>

@@ -13,12 +13,22 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useUser } from "@/components/hooks/UserContext";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, writeBatch } from "firebase/firestore";
 import { Link } from "@/app/admin/subject/link";
 import apClassesData from "@/components/apClasses.json";
-import type { Subject } from "@/types";
+import type { Subject } from "@/types/firestore";
 import usePathname from "@/components/client/pathname";
 import { Blocker } from "@/app/admin/subject/navigation-block";
+import { formatSlug } from "@/lib/utils";
+import short from "short-uuid";
+
+const translator = short(short.constants.flickrBase58);
+
+function generateShortId() {
+  const timestamp = Date.now().toString(36).slice(-4);
+  const randomPart = translator.new().slice(0, 4);
+  return timestamp + randomPart;
+}
 
 const apClasses = apClassesData.apClasses;
 
@@ -27,20 +37,15 @@ const emptyData: Subject = {
   title: "",
   units: [
     {
-      unit: 1,
-      title: "",
+      id: generateShortId(),
+      title: "Enter unit title...",
       chapters: [
         {
-          chapter: 1,
-          title: "",
+          id: generateShortId(),
+          title: "Enter chapter title... (double click)",
         },
       ],
-      test: {
-        questions: [],
-        time: 0,
-        optedIn: false,
-        instanceId: "",
-      },
+      test: false,
     },
   ],
 };
@@ -86,11 +91,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
             emptyData.title =
               apClasses.find(
                 (apClass) =>
-                  apClass
-                    .replace(/AP /g, "")
-                    .toLowerCase()
-                    .replace(/[^a-z1-9 ]+/g, "")
-                    .replace(/\s/g, "-") === params.slug,
+                  formatSlug(apClass.replace(/AP /g, "")) === params.slug,
               ) ?? "";
             setSubject(emptyData);
             // Initialize newChapterTitles with empty strings for each unit in emptyData
@@ -104,27 +105,22 @@ const Page = ({ params }: { params: { slug: string } }) => {
         setLoading(false);
       }
     })().catch((error) => {
-      console.error("Error fetching questions:", error);
+      console.error("Error fetching subject:", error);
     });
   }, [user, params.slug, setError, setLoading]);
 
   const addUnit = () => {
     if (!newUnitTitle.trim() || !subject) return;
     const newUnit = {
-      unit: subject.units.length + 1,
+      id: generateShortId(),
       title: newUnitTitle,
       chapters: [
         {
-          chapter: 1,
-          title: "",
+          id: generateShortId(),
+          title: "Enter a chapter title...",
         },
       ],
-      test: {
-        questions: [],
-        time: 0,
-        optedIn: false,
-        instanceId: "",
-      },
+      test: false,
     };
     setSubject({ ...subject, units: [...subject.units, newUnit] });
     setNewUnitTitle("");
@@ -137,10 +133,6 @@ const Page = ({ params }: { params: { slug: string } }) => {
     if (!subject) return;
     const updatedUnits = [...subject.units];
     updatedUnits.splice(unitIndex, 1);
-    // You need to go through the rest of the units behind the deleted unit and decrement their unit numbers
-    for (let i = unitIndex; i < updatedUnits.length; i++) {
-      updatedUnits[i]!.unit -= 1;
-    }
     setSubject({ ...subject, units: updatedUnits });
     // Remove the corresponding chapter title entry
     setNewChapterTitles((prev) =>
@@ -151,12 +143,11 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
   const addChapter = (unitIndex: number) => {
     if (!newChapterTitles[unitIndex]?.trim() || !subject) return;
-    const newChapter = {
-      chapter: subject.units[unitIndex]!.chapters.length + 1 || 1,
-      title: newChapterTitles[unitIndex],
-    };
     const updatedUnits = [...subject.units];
-    updatedUnits[unitIndex]!.chapters.push(newChapter);
+    updatedUnits[unitIndex]!.chapters.push({
+      id: generateShortId(),
+      title: newChapterTitles[unitIndex],
+    });
     setSubject({ ...subject, units: updatedUnits });
     // Reset the newChapterTitle for this unit
     setNewChapterTitles((prev) =>
@@ -201,22 +192,49 @@ const Page = ({ params }: { params: { slug: string } }) => {
     if (!subject) return;
     const updatedUnits = [...subject.units];
     updatedUnits[unitIndex]!.chapters.splice(chapterIndex, 1);
-    // You need to go through the rest of the units behind the deleted chapter and decrement their chapter numbers
-    for (
-      let i = chapterIndex;
-      i < updatedUnits[unitIndex]!.chapters.length;
-      i++
-    ) {
-      updatedUnits[unitIndex]!.chapters[i]!.chapter--;
-    }
     setSubject({ ...subject, units: updatedUnits });
     setUnsavedChanges(true);
   };
 
   const handleSave = async () => {
     try {
-      await setDoc(doc(db, "subjects", params.slug), subject);
-      alert("Subject units and chapters saved.");
+      const batch = writeBatch(db);
+      batch.set(doc(db, "subjects", params.slug), subject);
+      subject?.units.forEach((unit) => {
+        // Typescript complains that unit.id and chapter.id are of any type, but eslint complains of unnessecary type assertions.
+        // if typeof guard doesn't seem to work
+        /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
+        batch.set(
+          doc(db, "subjects", params.slug, "units", unit.id as string),
+          unit,
+        );
+        unit.chapters.forEach((chapter) => {
+          const chapterDocRef = doc(
+            db,
+            "subjects",
+            params.slug,
+            "units",
+            unit.id as string,
+            "chapters",
+            chapter.id as string,
+          );
+          /* eslint-enable @typescript-eslint/no-unnecessary-type-assertion */
+
+          batch.set(
+            chapterDocRef,
+            {
+              title: chapter,
+            },
+            {
+              merge: true,
+            },
+          );
+        });
+      });
+      // TODO: update Firestore security rules
+      // It already have the correct permissions
+      await batch.commit();
+      alert("Subject content saved successfully.");
       setUnsavedChanges(false);
     } catch (error) {
       console.error("Error saving:", error);
@@ -225,10 +243,11 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
   const optInForUnitTest = (unitIndex: number): void => {
     const updatedSubject = { ...subject! };
-    if (updatedSubject?.units[unitIndex]?.test) {
-      updatedSubject.units[unitIndex].test.optedIn = true;
-      updatedSubject.units[unitIndex].test.instanceId =
-        `test_${params.slug}_${unitIndex}`;
+    if (updatedSubject.units[unitIndex]) {
+      updatedSubject.units[unitIndex].test = true;
+      if (!updatedSubject.units[unitIndex].testId) {
+        updatedSubject.units[unitIndex].testId = generateShortId();
+      }
     }
     setSubject(updatedSubject);
     setUnsavedChanges(true);
@@ -236,8 +255,8 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
   const optOutOfUnitTest = (unitIndex: number): void => {
     const updatedSubject = { ...subject! };
-    if (updatedSubject?.units[unitIndex]?.test) {
-      updatedSubject.units[unitIndex].test.optedIn = false;
+    if (updatedSubject.units[unitIndex]?.test) {
+      updatedSubject.units[unitIndex].test = false;
     }
     setSubject(updatedSubject);
     setUnsavedChanges(true);
@@ -250,13 +269,14 @@ const Page = ({ params }: { params: { slug: string } }) => {
       </div>
     );
   }
-
+  // Lines 347 and 362 have same issue as other eslint error above (line 209)
+  /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
   return (
     <>
       {unsavedChanges && <Blocker />}
 
       <div className="relative min-h-screen">
-        <main className="container max-w-3xl flex-grow px-4 pb-8 pt-20 md:px-10 lg:px-14 2xl:px-20">
+        <main className="container max-w-3xl flex-grow px-4 pb-8 pt-10 md:px-10 lg:px-14 2xl:px-20">
           <div className="flex justify-between">
             <Link
               className={buttonVariants({ variant: "outline" })}
@@ -275,7 +295,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
           <h1 className="mt-8 text-4xl font-bold">{subject?.title}</h1>
           <div className="my-4 space-y-4">
             {subject?.units.map((unit, unitIndex) => (
-              <div key={unit.unit} className="rounded-lg border shadow-sm">
+              <div key={unitIndex} className="rounded-lg border shadow-sm">
                 <div className="flex items-center">
                   <Edit
                     onClick={() => setEditingUnit({ unitIndex })}
@@ -304,9 +324,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
                         className="border border-blue-500"
                       />
                     ) : (
-                      <span>
-                        Unit {unit.unit}: {unit.title}
-                      </span>
+                      <span>{unit.title}</span>
                     )}
                     {expandedUnits.includes(unitIndex) ? (
                       <ChevronUp />
@@ -319,15 +337,14 @@ const Page = ({ params }: { params: { slug: string } }) => {
                   <div className="border-t p-4">
                     {unit.chapters.map((chapter, chapterIndex) => (
                       <div
-                        key={chapter.chapter}
+                        key={chapterIndex}
                         className="mb-3 flex items-center justify-between gap-4"
                       >
                         <a
                           className={buttonVariants({ variant: "outline" })}
-                          href={`${pathname.split("/").slice(0, 4).join("/")}/${unit.title
-                            .toLowerCase()
-                            .replace(/[^a-z1-9 ]+/g, "")
-                            .replace(/\s/g, "-")}/${chapter.chapter}`}
+                          href={encodeURI(
+                            `/admin/subject/${params.slug}/${unit.id}/chapter/${chapter.id}?subject=${encodeURIComponent(subject.title)}&unit=${encodeURIComponent(unit.title)}&chapter=${encodeURIComponent(chapter.title as string)}`,
+                          )}
                         >
                           Edit Content
                         </a>
@@ -336,12 +353,12 @@ const Page = ({ params }: { params: { slug: string } }) => {
                         editingChapter.chapterIndex === chapterIndex ? (
                           <>
                             <p className="text-nowrap px-2">
-                              Chapter {chapter.chapter}:
+                              Chapter {chapterIndex + 1}:
                             </p>
                             <input
                               autoFocus
                               className="-ml-5 w-full"
-                              defaultValue={chapter.title}
+                              defaultValue={chapter.title as string}
                               ref={chapterInputRef}
                               onBlur={(e) =>
                                 editChapterTitle(
@@ -359,7 +376,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
                             }
                             className="w-full cursor-pointer rounded-sm px-2 py-1 hover:bg-accent"
                           >
-                            Chapter {chapter.chapter}: {chapter.title}
+                            Chapter {chapterIndex + 1}: {chapter.title}
                           </p>
                         )}
 
@@ -393,10 +410,10 @@ const Page = ({ params }: { params: { slug: string } }) => {
                       </Button>
                     </div>
 
-                    {unit.test?.optedIn ? (
+                    {unit.test ? (
                       <div className="flex items-center">
                         <Link
-                          href={`${pathname.split("/").slice(0, 4).join("/")}/${unitIndex + 1}`}
+                          href={`${pathname}/${unit.id}/test/${unit.testId}`}
                         >
                           <p className="mt-4 text-green-500 hover:underline">
                             Edit Unit Test

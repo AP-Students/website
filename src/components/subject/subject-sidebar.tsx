@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronsLeft } from "lucide-react";
+import { BookOpenCheck, ChevronsLeft } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -7,8 +7,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { type Subject } from "@/types";
-import { cn } from "@/lib/utils";
+import { type Subject } from "@/types/firestore";
+import { cn, formatSlug } from "@/lib/utils";
 import Link from "next/link";
 import usePathname from "../client/pathname";
 
@@ -53,54 +53,45 @@ const SubjectSidebar = (props: Props) => {
         </Button>
       </div>
 
-      <div className="flex flex-col gap-2 pl-1.5">
+      <div>
         <Accordion
           className={cn(isCollapsed && "animate-hide")}
           type="multiple"
           defaultValue={props.subject.units.map((unit) => unit.title)}
         >
-          {props.subject.units.map((unit) => (
+          {props.subject.units.map((unit, unitIndex) => (
             <AccordionItem
               className="border-none"
               value={unit.title}
-              key={unit.title}
+              key={unitIndex}
             >
-              <AccordionTrigger className="flex justify-center pb-1.5 text-left text-lg font-semibold hover:no-underline">
-                <span>
-                  Unit {unit.unit} - {unit.title}
-                </span>
-              </AccordionTrigger>
+              <AccordionTrigger>{unit.title}</AccordionTrigger>
 
-              <AccordionContent className="flex flex-col gap-x-2 pb-0 pl-3">
-                <div className="flex w-0.5 rounded-full bg-primary/50">
-                  <span className="invisible opacity-0">.</span>
-                </div>
+              <AccordionContent className="flex flex-col gap-x-2 pb-0">
                 <div className="grow">
-                  {unit.chapters.map((chapter) => (
+                  {unit.chapters.map((chapter, chapterIndex) => (
                     <Link
-                      className="group relative mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0 hover:underline"
-                      key={chapter.title}
-                      href={`${pathname.split("/").slice(0, 3).join("/")}/${unit.title
-                        .toLowerCase()
-                        .replace(/[^a-z1-9 ]+/g, "")
-                        .replace(/\s/g, "-")}/${chapter.chapter}`}
+                      className="group relative mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0"
+                      key={chapterIndex}
+                      href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${unitIndex + 1}-${unit.id}/chapter/${chapter.id}/${formatSlug(chapter.title)}`}
                     >
                       <div className="flex size-6 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-[.75rem] text-white">
-                        {unit.unit}.{chapter.chapter}
+                        {unitIndex + 1}.{chapterIndex + 1}
                       </div>
-                      <span>{chapter.title}</span>
+                      <span className="group-hover:underline">
+                        {chapter.title}
+                      </span>
                     </Link>
                   ))}
-                  {unit.test?.optedIn && (
+                  {unit.test && (
                     <Link
                       className="group relative mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0 hover:underline"
-                      key={unit.test.instanceId}
-                      href={`${pathname.split("/").slice(0, 3).join("/")}/${unit.unit}`}
+                      href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${unit.testId}`}
                     >
-                      <div className="flex size-6 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-[.75rem] text-white">
-                        {unit.unit}
-                      </div>
-                      <span>Unit Test</span>
+                      <BookOpenCheck className="size-6" />
+                      {unit.title === "Subject Test"
+                        ? unit.title
+                        : `Unit ${unitIndex + 1} Test`}
                     </Link>
                   )}
                 </div>

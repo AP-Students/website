@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { type Subject } from "@/types";
+import { type Subject } from "@/types/firestore";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 
@@ -43,8 +43,8 @@ const TableOfContents = ({ title, subject }: Props) => {
       </div>
 
       <div className={cn("flex flex-col gap-1", collapsed && "animate-hide")}>
-        {subject.units.map((unit) => (
-          <div key={unit.unit}>
+        {subject.units.map((unit, unitIndex) => (
+          <div key={unitIndex}>
             <Link
               href={`${router.split("/").slice(0, 3).join("/")}#${unit.title}`}
               key={unit.title}
@@ -53,7 +53,7 @@ const TableOfContents = ({ title, subject }: Props) => {
                 collapsed && "whitespace-nowrap",
               )}
             >
-              Unit {unit.unit} - {unit.title}
+              {unit.title}
             </Link>
           </div>
         ))}

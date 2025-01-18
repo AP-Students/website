@@ -6,7 +6,7 @@ import React, { type FormEvent, useState } from "react";
 import Link from "next/link";
 import Button from "@/components/login/submitButton";
 import type { FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
-import { Eye, EyeClosed } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function Signup() {
   const { signUpWithGoogle, signUpWithEmail } = useAuthHandlers();
@@ -151,7 +151,7 @@ export default function Signup() {
               className="absolute inset-y-0 right-0 px-3 text-sm text-gray-400"
               onClick={togglePasswordVisibility}
             >
-              {showPassword ? <Eye /> : <EyeClosed />}
+              {showPassword ? <Eye /> : <EyeOff />}
             </button>
           </div>
 
