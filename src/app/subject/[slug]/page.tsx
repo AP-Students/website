@@ -12,8 +12,6 @@ import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import usePathname from "@/components/client/pathname";
 import { useUser } from "@/components/hooks/UserContext";
-import { BookOpenCheck } from "lucide-react";
-import Link from "next/link";
 
 const Page = ({ params }: { params: { slug: string } }) => {
   const pathname = usePathname();

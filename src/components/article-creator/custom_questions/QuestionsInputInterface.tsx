@@ -25,7 +25,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
     if (collapsed.length === 0 && questions.length > 0) {
       setCollapsed(Array(questions.length).fill(true));
     }
-  }, [questions]);
+  }, [collapsed.length, questions]);
 
   const toggleCollapse = (index: number) => {
     setCollapsed((prev) => {
