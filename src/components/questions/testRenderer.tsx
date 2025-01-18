@@ -122,7 +122,7 @@ export default function DigitalTestingPage({
   };
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex flex-col">
       {!adminMode && (
         <Header
           setSubmittedAnswers={setSubmittedAnswers}
@@ -137,24 +137,22 @@ export default function DigitalTestingPage({
           selectedAnswers={selectedAnswers}
         />
       ) : (
-        <div className="flex flex-1 overflow-hidden pt-[52px]">
+        <div className="flex flex-1 overflow-hidden pt-8">
           {/* If there isn't content on the left, don't show left panel */}
           {questions.length > 0 && questions[currentQuestionIndex]!.content && (
-            <div className="flex-1">
-              <div className="mr-2 mt-4">
-                <Highlighter
-                  questionIndex={currentQuestionIndex}
-                  highlights={contentHighlights[currentQuestionIndex]!}
-                  onUpdateHighlights={handleContentHighlights}
-                >
-                  <RenderContent
-                    content={questions[currentQuestionIndex]!.content}
-                  />
-                </Highlighter>
-              </div>
+            <div className="mr-5 h-[calc(100vh-170px)] flex-1 overflow-y-auto border-y-2 border-gray-300 px-4 py-2">
+              <Highlighter
+                questionIndex={currentQuestionIndex}
+                highlights={contentHighlights[currentQuestionIndex]!}
+                onUpdateHighlights={handleContentHighlights}
+              >
+                <RenderContent
+                  content={questions[currentQuestionIndex]!.content}
+                />
+              </Highlighter>
             </div>
           )}
-          <div className="flex h-fit flex-1 flex-col border-l-2 border-gray-300 p-5">
+          <div className="flex h-[calc(100vh-170px)] flex-1 flex-col overflow-y-auto border-l-2 border-gray-300 p-5">
             <div className="flex h-9 items-center gap-2 bg-gray-200">
               <p className="flex h-full items-center bg-black px-3.5 text-lg font-bold tabular-nums text-white">
                 {currentQuestionIndex + 1}
