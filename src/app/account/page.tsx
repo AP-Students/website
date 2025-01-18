@@ -4,7 +4,7 @@ import "@/styles/globals.css";
 import React, { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/login/submitButton";
-import { getUser } from "@/components/hooks/users";
+import { clearUserCache, getUser } from "@/components/hooks/users";
 import type { User } from "@/types/user";
 import {
   updateDisplayName,
@@ -14,6 +14,7 @@ import {
 } from "@/lib/manageUser";
 import ReauthenticateModal from "@/components/auth/ReauthenticateModal";
 import Image from "next/image";
+import { useUser } from "@/components/hooks/UserContext";
 
 interface ManagementForm extends HTMLFormElement {
   displayName: {
@@ -28,6 +29,7 @@ interface ManagementForm extends HTMLFormElement {
 }
 
 export default function UserManagementPage() {
+  const { updateUser } = useUser();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -74,6 +76,9 @@ export default function UserManagementPage() {
       setUser((prevUser) =>
         prevUser ? { ...prevUser, displayName } : prevUser,
       );
+
+      clearUserCache();
+      await updateUser();
       setSuccessMessage("Display name updated successfully.");
     } catch (error: unknown) {
       setErrors((prev) => ({ ...prev, displayName: error as string }));
@@ -121,6 +126,9 @@ export default function UserManagementPage() {
       await updatePhotoURL(user.uid, photoURL);
       setUser((prevUser) => (prevUser ? { ...prevUser, photoURL } : prevUser));
       setPhotoPreview(photoURL);
+
+      clearUserCache();
+      await updateUser();
       setSuccessMessage("Photo URL updated successfully.");
     } catch (error: unknown) {
       setErrors((prev) => ({ ...prev, photoURL: error as string }));
@@ -188,7 +196,9 @@ export default function UserManagementPage() {
     >
       <div className="w-full max-w-3xl rounded-lg border bg-white p-8 shadow-sm">
         <button
-          onClick={() => router.back()}
+          onClick={() => {
+            router.back()
+          }}
           className="mb-6 text-blue-500 hover:underline"
         >
           ← Back

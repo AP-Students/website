@@ -28,6 +28,7 @@ const loadFromLocalStorage = () => {
   const storedUser = localStorage.getItem("cachedUser");
   const storedTimestamp = localStorage.getItem("cacheUserTimestamp");
   if (storedUser && storedTimestamp) {
+    console.log("hits cached item");
     /* eslint-disable @typescript-eslint/no-unsafe-assignment */
     const parsedUser: User = JSON.parse(storedUser);
     /* eslint-enable */
@@ -41,6 +42,20 @@ const loadFromLocalStorage = () => {
     }
   }
 };
+
+// Kills cache
+export const clearUserCache = (): void => {
+  // In-memory cache cleanup
+  cachedUser = null;
+  cacheTimestamp = null;
+
+  // Local storage cleanup
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("cachedUser");
+    localStorage.removeItem("cacheUserTimestamp");
+  }
+};
+
 
 // Save user to localStorage
 const saveToLocalStorage = (user: User) => {
@@ -88,7 +103,6 @@ const getUserAuthProvider = () => {
   }
   return provider;
 };
-
 export const getUser = async (): Promise<User | null> => {
   // Checks if there is a cached user and if it's still valid
   if (!cachedUser) {

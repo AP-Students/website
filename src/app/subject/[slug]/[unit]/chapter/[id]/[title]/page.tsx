@@ -7,6 +7,7 @@ import Renderer from "@/components/article-creator/Renderer";
 import { useFetchAndCache } from "./useFetchAndCache";
 import "katex/dist/katex.min.css";
 import { useUser } from "@/components/hooks/UserContext";
+import Image from "next/image";
 
 const Page = ({
   params,
@@ -36,6 +37,7 @@ const Page = ({
   }
 
   if (subject && content) {
+    console.log("content", content);
     const unitIndex = Number(params.unit.split("-")[1]) - 1;
     const chapterIndex = subject.units[unitIndex]!.chapters.findIndex(
       (ch) => ch.id === params.id,
@@ -60,9 +62,14 @@ const Page = ({
                 locations={[subject.title, unitTitle, chapter.title]}
               />
 
-              <h1 className="mb-9 mt-1 text-balance text-left text-5xl font-extrabold sm:text-6xl">
+              <h1 className="my-2 text-balance text-left text-5xl font-extrabold sm:text-6xl">
                 {unitIndex + 1}.{chapterIndex + 1} - {chapter.title}
               </h1>
+              <AuthorCredits
+                displayName={content?.creator?.displayName}
+                photoURL={content?.creator?.photoURL ?? ""}
+              />
+
               <Renderer content={content.data} />
             </div>
           </div>
@@ -75,5 +82,26 @@ const Page = ({
     error;
   }
 };
+
+function AuthorCredits({
+  displayName,
+  photoURL,
+}: {
+  displayName: string;
+  photoURL: string;
+}) {
+  return (
+    <div className="flex items-center space-x-2 text-sm text-gray-600 mb-6 md:mb-10">
+      <Image
+        src={photoURL}
+        alt={`${displayName}'s profile`}
+        width={24}
+        height={24}
+        className="rounded-full"
+      />
+      <span className="font-medium ml-3">{displayName}</span>
+    </div>
+  );
+}
 
 export default Page;
