@@ -273,7 +273,7 @@ export default function AdvancedTextbox({
   };
 
   return (
-    <div className="relative mb-2">
+    <div className="relative mb-4">
       <Textarea
         ref={textareaRef}
         value={currentText}
@@ -294,7 +294,7 @@ export default function AdvancedTextbox({
       />
 
       {/* Section under the textarea for upload and delete buttons */}
-      <div className="absolute -top-8 left-1/2 mt-2 flex -translate-x-1/2 gap-6">
+      <div className="mt-2 flex gap-4">
         <button
           type="button"
           className="flex items-center text-blue-500 hover:underline"
