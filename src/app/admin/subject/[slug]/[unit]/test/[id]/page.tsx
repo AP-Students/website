@@ -123,18 +123,15 @@ const Page = () => {
           </Button>
         </div>
 
-        <div className="flex flex-row gap-4 p-4">
-          <div
-            className="flex-1 overflow-y-auto rounded border p-4"
-            style={{ maxHeight: "100vh" }}
-          >
+        <div className="flex max-h-[calc(100vh-254px)] flex-row gap-4 p-4">
+          <div className="flex-1 overflow-y-auto rounded border p-4">
             <QuestionsInputInterface
               questions={questions}
               setQuestions={setQuestions}
               testRenderer={true}
             />
           </div>
-          <div className="flex-1 rounded border p-4">
+          <div className="flex-1 overflow-y-scroll rounded border p-4">
             <TestRenderer
               time={time}
               inputQuestions={questions}
