@@ -18,8 +18,13 @@ next-env.d.ts
 src/lib/serviceAccountKey.json
 src/lib/AddAdminRoles
 
-# production
-/build
+# firebase emulator
+.firebaserc
+firebase.json
+firebase-debug.log
+firestore.indexes.json
+firestore-debug.log
+storage.rules
 
 # misc
 .DS_Store

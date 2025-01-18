@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import type { QuestionFormat } from "@/types/questions";
-import { Trash, CirclePlus } from "lucide-react";
+import { Trash, CirclePlus, ChevronDown, ChevronUp } from "lucide-react";
 import AdvancedTextbox from "./AdvancedTextbox";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 
 interface Props {
   questions: QuestionFormat[];
@@ -20,13 +19,20 @@ const QuestionsInputInterface: React.FC<Props> = ({
 }) => {
   const [error, setError] = useState<string>("");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [collapsed, setCollapsed] = useState<boolean[]>(
-    Array(questions.length).fill(false),
-  );
+  const [collapsed, setCollapsed] = useState<boolean[]>([]);
+
+  useEffect(() => {
+    if (collapsed.length === 0 && questions.length > 0) {
+      setCollapsed(Array(questions.length).fill(true));
+    }
+  }, [collapsed.length, questions]);
 
   const toggleCollapse = (index: number) => {
     setCollapsed((prev) => {
       const newCollapsed = [...prev];
+      if (newCollapsed[index]) {
+        newCollapsed.fill(true);
+      }
       newCollapsed[index] = !newCollapsed[index];
       return newCollapsed;
     });
@@ -61,7 +67,9 @@ const QuestionsInputInterface: React.FC<Props> = ({
         bookmarked: false,
       },
     ]);
-    setCollapsed((prev) => [...prev, false]); // Ensure new question starts as expanded
+
+    // Ensure new question starts as expanded and collapse all other questions
+    setCollapsed((prev) => [...prev].fill(true).concat(false));
   };
 
   const removeQuestion = (index: number) => {
@@ -122,15 +130,24 @@ const QuestionsInputInterface: React.FC<Props> = ({
   };
 
   return (
-    <div className="mb-4 rounded border p-4">
+    <div className="grid gap-3">
       {questions.map((questionInstance, qIndex) => (
-        <div key={qIndex} className="mb-4 rounded border p-4">
-          <Button
+        <div
+          key={qIndex}
+          className="overflow-hidden rounded border border-black px-3 py-2 shadow"
+        >
+          <button
             onClick={() => toggleCollapse(qIndex)}
-            className="flex w-full justify-between text-left text-lg font-bold"
+            className="flex w-full items-center justify-between gap-4 text-ellipsis hover:underline"
           >
-            {"Question: " + (qIndex + 1)}
-          </Button>
+            <span className="shrink-0 font-bold">Question {qIndex + 1}</span>
+            <span className="overflow-hidden text-ellipsis text-nowrap opacity-75">
+              {questionInstance.question.value}
+            </span>
+            <span className="shrink-0">
+              {collapsed[qIndex] ? <ChevronDown /> : <ChevronUp />}
+            </span>
+          </button>
           {!collapsed[qIndex] && (
             <div>
               {testRenderer && (
@@ -184,7 +201,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
                   onClick={() => addOption(qIndex)}
                   className="flex items-center text-green-500 hover:text-green-600"
                 >
-                  Add option <CirclePlus className="ml-1 inline" />
+                  Add option <CirclePlus className="ml-1 size-5" />
                 </button>
               </div>
 
@@ -245,7 +262,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
 
               <button
                 type="button"
-                className="mt-4 rounded-md border border-red-500 bg-red-500 px-3 py-1 text-white transition-colors hover:bg-white hover:text-red-500"
+                className="mt-4 rounded border border-red-500 bg-red-500 px-3 py-1 text-white transition-colors hover:bg-white hover:text-red-500"
                 onClick={() => removeQuestion(qIndex)}
               >
                 Delete question
@@ -257,7 +274,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
 
       <button
         type="button"
-        className="rounded-md border border-green-500 bg-green-500 px-3 py-1 text-white transition-colors hover:bg-white hover:text-green-500"
+        className="rounded border border-green-500 bg-green-500 px-3 py-1 text-white transition-colors hover:bg-white hover:text-green-500"
         onClick={addQuestion}
       >
         Add question

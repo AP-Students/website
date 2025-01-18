@@ -4,42 +4,15 @@ import CheckForUnderstanding from "@/components/questions/checkForUnderstanding"
 import QuizRenderer from "@/components/questions/quizRenderer";
 import QuestionsInputInterface from "./QuestionsInputInterface";
 
-
-// This isn't a hook and I dont want it to be a hook; it works well anyways. 
+// This isn't a hook and I dont want it to be a hook; it works well anyways.
 /* eslint-disable react-hooks/rules-of-hooks */
 export const syncedQuestions = (instanceId: string) => {
   const storageKey = `questions_${instanceId}`;
   const [questions, setQuestions] = useState<QuestionFormat[]>(() => {
     const savedQuestions = localStorage.getItem(storageKey);
     return savedQuestions
-      ? JSON.parse(savedQuestions) as QuestionFormat[]
-      : [
-          {
-            question: {
-              value: "",
-            },
-            type: "mcq",
-            options: [
-              {
-                value: {
-                  value: "",
-                },
-                id: "1",
-              },
-              { value: { value: "" }, id: "2" },
-              { value: { value: "" }, id: "3" },
-              { value: { value: "" }, id: "4" },
-            ],
-            answers: [""],
-            explanation: {
-              value: "",
-            },
-            content: {
-              value: "",
-            },
-            bookmarked: false,
-          },
-        ] as QuestionFormat[];
+      ? (JSON.parse(savedQuestions) as QuestionFormat[])
+      : ([] as QuestionFormat[]);
   });
 
   // Effect to update questions when localStorage is modified via the custom event
@@ -87,7 +60,7 @@ export const QuestionsInput: React.FC<{ instanceId: string }> = ({
   const { questions, setQuestions } = syncedQuestions(instanceId);
 
   return (
-    <div>
+    <div className="my-4 rounded border p-2">
       <QuestionsInputInterface
         questions={questions}
         setQuestions={setQuestions}
@@ -104,12 +77,10 @@ export const QuestionsOutput: React.FC<{ instanceId: string }> = ({
   return (
     <div className="mt-8">
       {questions.length === 1 ? (
-        <CheckForUnderstanding
-          questionInstance={questions[0]!}
-        />
-      ) : (
+        <CheckForUnderstanding questionInstance={questions[0]!} />
+      ) : questions.length > 1 ? (
         <QuizRenderer questions={questions} />
-      )}
+      ) : null}
     </div>
   );
 };

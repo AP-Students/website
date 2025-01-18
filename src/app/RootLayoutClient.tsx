@@ -3,7 +3,7 @@
 import { UserProvider } from "@/components/hooks/UserContext";
 import React from "react";
 
-export default async function  RootLayoutClient({
+export default function RootLayoutClient({
   children,
 }: {
   children: React.ReactNode;

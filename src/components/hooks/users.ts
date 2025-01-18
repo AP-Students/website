@@ -74,6 +74,21 @@ export const getUserAccess = async (): Promise<string | null> => {
   return null;
 };
 
+const getUserAuthProvider = () => {
+  const user = auth.currentUser;
+  let provider = "";
+  if (user) {
+    user.providerData.forEach((info) => {
+      if (info.providerId === "password" && provider !== "google") {
+        provider = "email";
+      } else if (info.providerId === "google.com") {
+        provider = "google";
+      }
+    })
+  }
+  return provider;
+};
+
 export const getUser = async (): Promise<User | null> => {
   // Checks if there is a cached user and if it's still valid
   if (!cachedUser) {
@@ -108,6 +123,8 @@ export const getUser = async (): Promise<User | null> => {
                 email: userData.email ?? firebaseUser.email ?? "",
                 photoURL: userData.photoURL ?? firebaseUser.photoURL ?? undefined,
                 access: userData.access ?? "user",
+                createdWith: userData.createdWith ?? getUserAuthProvider(),
+                createdAt: userData.createdAt ?? new Date(0),
               };
 
               // Cache in memory

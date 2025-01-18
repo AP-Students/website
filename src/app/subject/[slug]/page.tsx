@@ -3,7 +3,7 @@ import { Accordion } from "@/components/ui/accordion";
 import Footer from "@/components/global/footer";
 import Navbar from "@/components/global/navbar";
 import { db } from "@/lib/firebase";
-import { type Subject } from "@/types";
+import { type Subject } from "@/types/firestore";
 import SubjectBreadcrumb from "@/components/subject/subject-breadcrumb";
 import SubjectSidebar from "@/components/subject/subject-sidebar";
 import TableOfContents from "@/components/subject/table-of-contents";
@@ -11,6 +11,7 @@ import UnitAccordion from "@/components/subject/unit-accordion";
 import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import usePathname from "@/components/client/pathname";
+import { useUser } from "@/components/hooks/UserContext";
 
 const Page = ({ params }: { params: { slug: string } }) => {
   const pathname = usePathname();
@@ -18,6 +19,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
   const [subject, setSubject] = useState<Subject | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useUser();
 
   useEffect(() => {
     const fetchSubject = async () => {
@@ -37,10 +39,12 @@ const Page = ({ params }: { params: { slug: string } }) => {
       }
     };
 
-    fetchSubject().catch((error) => {
-      console.error("Error fetching user:", error);
-    });
-  }, [params.slug]);
+    if (user !== undefined) {
+      fetchSubject().catch((error) => {
+        console.error("Error fetching user:", error);
+      });
+    }
+  }, [user, params.slug]);
 
   if (loading) {
     return (
@@ -66,7 +70,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
         <div className="relative mt-[5.5rem] flex min-h-screen justify-between gap-x-16 px-10 xl:px-20">
           <div className="grow">
-            <SubjectBreadcrumb subject={subject} />
+            <SubjectBreadcrumb locations={[subject.title]} />
 
             <h1 className="mb-9 mt-1 text-balance text-left text-5xl font-extrabold sm:text-6xl">
               {subject.title}
@@ -77,10 +81,11 @@ const Page = ({ params }: { params: { slug: string } }) => {
               type="multiple"
               defaultValue={subject.units.map((unit) => unit.title)}
             >
-              {subject.units.map((unit) => (
+              {subject.units.map((unit, unitIndex) => (
                 <UnitAccordion
                   unit={unit}
-                  key={unit.title}
+                  unitIndex={unitIndex}
+                  key={unitIndex}
                   pathname={pathname}
                 />
               ))}

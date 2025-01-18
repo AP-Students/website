@@ -165,7 +165,7 @@ export default function AdvancedTextbox({
     const file = e.target.files?.[0];
 
     if (!file) {
-      alert("No file selected or file is undefined. Please try uploading the file again, or contact support");
+      alert("No file selected. Try uploading again or contact support.");
       return; // Early return if file is not defined
     }
 
@@ -273,10 +273,9 @@ export default function AdvancedTextbox({
   };
 
   return (
-    <div className="relative">
+    <div className="relative mb-4">
       <Textarea
         ref={textareaRef}
-        className="h-20 w-full focus:outline-none"
         value={currentText}
         onChange={handleTextChange}
         onKeyDown={handleKeyDown}
@@ -295,21 +294,21 @@ export default function AdvancedTextbox({
       />
 
       {/* Section under the textarea for upload and delete buttons */}
-      <div className="mt-2 flex space-x-2">
+      <div className="mt-2 flex gap-4">
         <button
           type="button"
-          className="flex items-center rounded-md bg-blue-500 px-3 py-1 text-white transition-colors hover:bg-blue-600"
+          className="flex items-center text-blue-500 hover:underline"
           onClick={handleUploadClick}
         >
-          Add file <Paperclip className="ml-1 inline" />
+          Add file <Paperclip className="ml-1 size-5" />
         </button>
         {fileExists && (
           <button
             type="button"
-            className="flex items-center rounded-md bg-red-500 px-3 py-1 text-white transition-colors hover:bg-red-600"
+            className="flex items-center text-red-500 hover:underline"
             onClick={handleDeleteFile}
           >
-            Delete file <Trash className="ml-1 inline" />
+            Delete file <Trash className="ml-1 size-5" />
           </button>
         )}
       </div>
