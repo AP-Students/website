@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
+import { ChevronDown, ChevronUp, LogOut } from "lucide-react";
 
 interface HeaderProps {
   timeRemaining: number; // In seconds
@@ -9,6 +11,7 @@ const Header: React.FC<HeaderProps> = ({
   timeRemaining,
   setSubmittedAnswers,
 }) => {
+  const pathname = usePathname();
   const [remainingTime, setRemainingTime] = useState(timeRemaining);
   const [showDirections, setShowDirections] = useState(true); // State to control directions visibility
   const directionsRef = useRef<HTMLDivElement>(null); // Ref for detecting outside clicks
@@ -61,19 +64,33 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <header className="fixed left-0 top-0 z-[1000] flex w-full items-center justify-between border-b-2 border-gray-300 p-2.5">
       <div className="flex w-full items-center justify-between">
-        <div className="flex-1">Unit Test</div>
+        <p>Unit Test</p>
+        <button
+          ref={toggleButtonRef}
+          onClick={handleToggleDirections}
+          className="ml-4 flex items-center text-blue-500 hover:underline"
+        >
+          Directions
+          {showDirections ? <ChevronUp /> : <ChevronDown />}
+        </button>
         <div className="flex-1 text-center text-xl font-bold">
           {formatTime(remainingTime)}
         </div>
-        <div className="flex-1 text-right">
-          <button
-            ref={toggleButtonRef}
-            onClick={handleToggleDirections}
-            className="text-blue-500 hover:underline"
-          >
-            Directions <span>{showDirections ? "▲" : "▼"}</span>
-          </button>
-        </div>
+        <a
+          href={pathname.split("/").slice(0, 3).join("/")}
+          onClick={(e) => {
+            if (
+              !confirm(
+                "Exit the test? All progress will be lost. FiveHive does not currently save your progress.",
+              )
+            ) {
+              e.preventDefault();
+            }
+          }}
+          className="ml-16 flex items-center gap-1 hover:underline"
+        >
+          Exit Test <LogOut />
+        </a>
       </div>
 
       {/* Directions panel */}
