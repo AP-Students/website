@@ -197,7 +197,7 @@ export default function UserManagementPage() {
       <div className="w-full max-w-3xl rounded-lg border bg-white p-8 shadow-sm">
         <button
           onClick={() => {
-            router.back()
+            router.back();
           }}
           className="mb-6 text-blue-500 hover:underline"
         >

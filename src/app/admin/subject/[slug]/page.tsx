@@ -50,8 +50,7 @@ const emptyData: Subject = {
     {
       id: generateShortId(),
       title: "Subject Test",
-      chapters: [
-      ],
+      chapters: [],
       test: true,
     },
   ],

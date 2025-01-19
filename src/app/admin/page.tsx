@@ -14,9 +14,14 @@ const apClasses = apClassesData.apClasses;
 const Page = () => {
   const { user } = useUser();
   const router = useRouter();
-  
-  if(!user) {
-    return <div className="flex h-screen items-center justify-center text-3xl"> Authenticating user... </div>;
+
+  if (!user) {
+    return (
+      <div className="flex h-screen items-center justify-center text-3xl">
+        {" "}
+        Authenticating user...{" "}
+      </div>
+    );
   }
 
   if (user.access === "user") {

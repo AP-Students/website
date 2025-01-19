@@ -18,7 +18,7 @@ interface TableData {
 }
 
 // Processing Data:
- // Function to process questions and upload files
+// Function to process questions and upload files
 export const processQuestions = async (
   questions: QuestionFormat[],
 ): Promise<QuestionFormat[]> => {
@@ -121,9 +121,7 @@ export const processQuestions = async (
     // Update options fileURLs
     updatedQuestion.options = updatedQuestion.options.map((option) => {
       if (option.value.fileKey) {
-        const downloadURL = fileKeyToDownloadURL.get(
-          option.value.fileKey,
-        );
+        const downloadURL = fileKeyToDownloadURL.get(option.value.fileKey);
         if (downloadURL) {
           return {
             ...option,
@@ -187,15 +185,11 @@ const base64ToBlob = (base64: string): Blob => {
   const [prefix, data] = base64.split(",");
   const contentType = prefix?.match(/:(.*?);/)?.[1] ?? "";
   const byteCharacters = atob(data!);
-  const byteNumbers = Array.from(byteCharacters, (char) =>
-    char.charCodeAt(0),
-  );
+  const byteNumbers = Array.from(byteCharacters, (char) => char.charCodeAt(0));
   const byteArray = new Uint8Array(byteNumbers);
 
   return new Blob([byteArray], { type: contentType });
 };
-
-
 
 // If you looked at article creator yk, you'll see this
 // But basically idk the block structure/types, so I can't really typecheck except use any

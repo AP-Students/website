@@ -28,7 +28,6 @@ const loadFromLocalStorage = () => {
   const storedUser = localStorage.getItem("cachedUser");
   const storedTimestamp = localStorage.getItem("cacheUserTimestamp");
   if (storedUser && storedTimestamp) {
-    console.log("hits cached item");
     /* eslint-disable @typescript-eslint/no-unsafe-assignment */
     const parsedUser: User = JSON.parse(storedUser);
     /* eslint-enable */
@@ -56,7 +55,6 @@ export const clearUserCache = (): void => {
   }
 };
 
-
 // Save user to localStorage
 const saveToLocalStorage = (user: User) => {
   if (typeof window === "undefined") return;
@@ -78,7 +76,6 @@ export const getUserAccess = async (): Promise<string | null> => {
 
   // Otherwise, grab it from Firestore
   const user = auth.currentUser;
-  console.log(user);
   if (user) {
     const userAccessDoc = await getDoc(doc(db, "users", user.uid));
     if (userAccessDoc.exists()) {
@@ -99,7 +96,7 @@ const getUserAuthProvider = () => {
       } else if (info.providerId === "google.com") {
         provider = "google";
       }
-    })
+    });
   }
   return provider;
 };
@@ -133,9 +130,11 @@ export const getUser = async (): Promise<User | null> => {
               const userData = userDoc.data() as User;
               const mappedUser: User = {
                 uid: firebaseUser.uid,
-                displayName: userData.displayName ?? firebaseUser.displayName ?? "",
+                displayName:
+                  userData.displayName ?? firebaseUser.displayName ?? "",
                 email: userData.email ?? firebaseUser.email ?? "",
-                photoURL: userData.photoURL ?? firebaseUser.photoURL ?? undefined,
+                photoURL:
+                  userData.photoURL ?? firebaseUser.photoURL ?? undefined,
                 access: userData.access ?? "user",
                 createdWith: userData.createdWith ?? getUserAuthProvider(),
                 createdAt: userData.createdAt ?? new Date(0),

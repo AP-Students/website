@@ -37,7 +37,7 @@ const Page = ({
   }
 
   if (subject && content) {
-    console.log("content", content);
+    
     const unitIndex = Number(params.unit.split("-")[1]) - 1;
     const chapterIndex = subject.units[unitIndex]!.chapters.findIndex(
       (ch) => ch.id === params.id,
@@ -91,7 +91,7 @@ function AuthorCredits({
   photoURL: string;
 }) {
   return (
-    <div className="flex items-center space-x-2 text-sm text-gray-600 mb-6 md:mb-10">
+    <div className="mb-6 flex items-center space-x-2 text-sm text-gray-600 md:mb-10">
       <Image
         src={photoURL}
         alt={`${displayName}'s profile`}
@@ -99,7 +99,7 @@ function AuthorCredits({
         height={24}
         className="rounded-full"
       />
-      <span className="font-medium ml-3">{displayName}</span>
+      <span className="ml-3 font-medium">{displayName}</span>
     </div>
   );
 }
