@@ -5,17 +5,17 @@ import Editor from "./Editor";
 import { cn } from "@/lib/utils";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { v4 as uuidv4 } from "uuid";
 import { getUser, getUserAccess } from "@/components/hooks/users";
 import { Save } from "lucide-react";
-import { getFileFromIndexedDB } from "./custom_questions/RenderAdvancedTextbox";
 import { type QuestionFormat } from "@/types/questions";
 import Renderer from "./Renderer";
 import { revertTableObjectToArray } from "./FetchArticleFunctions";
 import { Blocker } from "@/app/admin/subject/navigation-block";
 import { Button } from "@/components/ui/button";
 import { usePathname } from "next/navigation";
+import { getFileFromIndexedDB } from "./custom_questions/RenderAdvancedTextbox";
+import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
 
 // Define a type for Table Data
 interface TableData {
@@ -34,6 +34,7 @@ interface ImageData {
 }
 
 function ArticleCreator({ className }: { className?: string }) {
+  // Needs 2 seperate data states, otherwise there will be constant rendering in the editor => impossible to edit
   const [initialData, setInitialData] = useState<OutputData>({
     time: Date.now(),
     blocks: [
@@ -338,7 +339,8 @@ function ArticleCreator({ className }: { className?: string }) {
       // Traverse through data to find QuestionFormat[] arrays
       const updatedDataBlocks = await Promise.all(
         data.blocks.map(async (block) => {
-          // Check if the block is of type 'questionsAddCard'
+          // because of .type, its inferable that block.data is of an questions, so you can assert .data.questions as QuestionFormat[]
+          /* eslint-disable */
           if (block.type === "questionsAddCard") {
             const updatedQuestions = await processQuestions(
               block.data.questions as QuestionFormat[],
@@ -348,7 +350,7 @@ function ArticleCreator({ className }: { className?: string }) {
           }
 
           if (block.type === "table") {
-            const updatedTable = await processTable(block.data as TableData);
+            const updatedTable = await processTable(block.data);
             block.data.content = updatedTable;
             return block;
           }
@@ -398,7 +400,7 @@ function ArticleCreator({ className }: { className?: string }) {
 
       <div className={cn("grid grid-cols-1 pb-8 sm:grid-cols-2", className)}>
         {/* Left column: Editor */}
-        <div className="h-[calc(100vh-4rem)] overflow-y-auto rounded border border-gray-300 p-4 px-8">
+        <div className="border p-4 px-8">
           <Editor
             content={initialData}
             setData={setData}
@@ -407,7 +409,7 @@ function ArticleCreator({ className }: { className?: string }) {
         </div>
 
         {/* Right column: Renderer */}
-        <div className="h-[calc(100vh-4rem)] overflow-y-auto px-8">
+        <div className="px-8">
           <div className="my-4 pb-4 opacity-50">Output:</div>
           <Renderer content={data} />
         </div>
