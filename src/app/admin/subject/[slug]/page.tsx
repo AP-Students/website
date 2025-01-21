@@ -8,6 +8,8 @@ import {
   PlusCircle,
   ArrowLeft,
   Save,
+  MoveUp,
+  MoveDown,
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +54,7 @@ const emptyData: Subject = {
       title: "Subject Test",
       chapters: [],
       test: true,
+      testId: generateShortId(),
     },
   ],
 };
@@ -114,6 +117,26 @@ const Page = ({ params }: { params: { slug: string } }) => {
       console.error("Error fetching subject:", error);
     });
   }, [user, params.slug, setError, setLoading]);
+
+  const moveUnitDown = (unitIndex: number) => {
+    if (!subject || unitIndex === subject.units.length - 1) return;
+    const updatedUnits = [...subject.units];
+    const temp = updatedUnits[unitIndex]!;
+    updatedUnits[unitIndex] = updatedUnits[unitIndex + 1]!;
+    updatedUnits[unitIndex + 1] = temp;
+    setSubject({ ...subject, units: updatedUnits });
+    setUnsavedChanges(true);
+  };
+
+  const moveUnitUp = (unitIndex: number) => {
+    if (!subject || unitIndex === 0) return;
+    const updatedUnits = [...subject.units];
+    const temp = updatedUnits[unitIndex]!;
+    updatedUnits[unitIndex] = updatedUnits[unitIndex - 1]!;
+    updatedUnits[unitIndex - 1] = temp;
+    setSubject({ ...subject, units: updatedUnits });
+    setUnsavedChanges(true);
+  };
 
   const addUnit = () => {
     if (!newUnitTitle.trim() || !subject) return;
@@ -302,15 +325,26 @@ const Page = ({ params }: { params: { slug: string } }) => {
           <div className="my-4 space-y-4">
             {subject?.units.map((unit, unitIndex) => (
               <div key={unitIndex} className="rounded-lg border shadow-sm">
-                <div className="flex items-center">
+                <div className="flex items-center pl-4">
+                  <MoveUp
+                    className="size-7 cursor-pointer rounded-md transition-transform hover:scale-125"
+                    onClick={() => moveUnitUp(unitIndex)}
+                  />
+                  <MoveDown
+                    className="size-7 cursor-pointer rounded-md transition-transform hover:scale-125"
+                    onClick={() => moveUnitDown(unitIndex)}
+                  />
                   <Edit
                     onClick={() => setEditingUnit({ unitIndex })}
-                    className="ml-4 cursor-pointer hover:text-blue-400"
+                    className="ml-4 size-7 cursor-pointer hover:text-blue-400"
                   />
-
                   <Trash
-                    onClick={() => deleteUnit(unitIndex)}
-                    className="mx-2 cursor-pointer hover:text-red-500"
+                    onClick={() => {
+                      if (confirm("Delete this unit?")) {
+                        deleteUnit(unitIndex);
+                      }
+                    }}
+                    className="mx-2 size-7 cursor-pointer hover:text-red-500"
                   />
                   <button
                     className="flex w-full items-center justify-between p-4 text-lg font-semibold"
