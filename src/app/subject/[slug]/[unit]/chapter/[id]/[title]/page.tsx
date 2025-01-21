@@ -37,7 +37,6 @@ const Page = ({
   }
 
   if (subject && content) {
-    
     const unitIndex = Number(params.unit.split("-")[1]) - 1;
     const chapterIndex = subject.units[unitIndex]!.chapters.findIndex(
       (ch) => ch.id === params.id,

@@ -400,7 +400,7 @@ function ArticleCreator({ className }: { className?: string }) {
 
       <div className={cn("grid grid-cols-1 pb-8 sm:grid-cols-2", className)}>
         {/* Left column: Editor */}
-        <div className="p-4 px-8">
+        <div className="border p-4 px-8">
           <Editor
             content={initialData}
             setData={setData}
