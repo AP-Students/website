@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronUp, LogOut } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface HeaderProps {
   timeRemaining: number; // In seconds
@@ -12,6 +13,7 @@ const Header: React.FC<HeaderProps> = ({
   setSubmittedAnswers,
 }) => {
   const pathname = usePathname();
+  const [showTimer, setShowTimer] = useState(true);
   const [remainingTime, setRemainingTime] = useState(timeRemaining);
   const [showDirections, setShowDirections] = useState(true); // State to control directions visibility
   const directionsRef = useRef<HTMLDivElement>(null); // Ref for detecting outside clicks
@@ -73,8 +75,27 @@ const Header: React.FC<HeaderProps> = ({
           Directions
           {showDirections ? <ChevronUp /> : <ChevronDown />}
         </button>
-        <div className="flex-1 text-center text-xl font-bold">
-          {formatTime(remainingTime)}
+        <div className="flex flex-1 items-center justify-center gap-2">
+          {(showTimer || remainingTime < 5 * 60) && (
+            <p
+              className={cn(
+                "text-xl font-bold",
+                remainingTime < 5 * 60 && "text-red-500",
+              )}
+            >
+              {formatTime(remainingTime)}
+            </p>
+          )}
+          {remainingTime >= 5 * 60 && (
+            <button
+              onClick={() => {
+                setShowTimer(!showTimer);
+              }}
+              className="rounded-full border px-2 transition-colors hover:bg-gray-200"
+            >
+              {showTimer ? "Hide Timer" : "Show Timer"}
+            </button>
+          )}
         </div>
         <a
           href={pathname.split("/").slice(0, 3).join("/")}
