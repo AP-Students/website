@@ -22,11 +22,11 @@ const isCacheValid = (): boolean => {
   return now - cacheTimestamp < CACHE_EXPIRATION_TIME;
 };
 
-// Attempt to load cached user from localStorage
+// Checks if there is a cached user and if it's still valid
 const loadFromLocalStorage = () => {
   if (typeof window === "undefined") return;
   const storedUser = localStorage.getItem("cachedUser");
-  const storedTimestamp = localStorage.getItem("cacheTimestamp");
+  const storedTimestamp = localStorage.getItem("cacheUserTimestamp");
   if (storedUser && storedTimestamp) {
     /* eslint-disable @typescript-eslint/no-unsafe-assignment */
     const parsedUser: User = JSON.parse(storedUser);
@@ -37,8 +37,21 @@ const loadFromLocalStorage = () => {
       cacheTimestamp = timestamp;
     } else {
       localStorage.removeItem("cachedUser");
-      localStorage.removeItem("cacheTimestamp");
+      localStorage.removeItem("cacheUserTimestamp");
     }
+  }
+};
+
+// Kills cache
+export const clearUserCache = (): void => {
+  // In-memory cache cleanup
+  cachedUser = null;
+  cacheTimestamp = null;
+
+  // Local storage cleanup
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("cachedUser");
+    localStorage.removeItem("cacheUserTimestamp");
   }
 };
 
@@ -46,11 +59,22 @@ const loadFromLocalStorage = () => {
 const saveToLocalStorage = (user: User) => {
   if (typeof window === "undefined") return;
   localStorage.setItem("cachedUser", JSON.stringify(user));
-  localStorage.setItem("cacheTimestamp", Date.now().toString());
+  localStorage.setItem("cacheUserTimestamp", Date.now().toString());
 };
 
 // Fetch only user access from Firestore
 export const getUserAccess = async (): Promise<string | null> => {
+  // Checks if there is a cached user and if it's still valid
+  if (!cachedUser) {
+    loadFromLocalStorage();
+  }
+
+  // If we have a cached user and it's still valid, return it
+  if (cachedUser && isCacheValid()) {
+    return cachedUser.access;
+  }
+
+  // Otherwise, grab it from Firestore
   const user = auth.currentUser;
   if (user) {
     const userAccessDoc = await getDoc(doc(db, "users", user.uid));
@@ -72,13 +96,12 @@ const getUserAuthProvider = () => {
       } else if (info.providerId === "google.com") {
         provider = "google";
       }
-    })
+    });
   }
   return provider;
 };
-
 export const getUser = async (): Promise<User | null> => {
-  // Attempt to load from localStorage if not already loaded
+  // Checks if there is a cached user and if it's still valid
   if (!cachedUser) {
     loadFromLocalStorage();
   }
@@ -107,9 +130,11 @@ export const getUser = async (): Promise<User | null> => {
               const userData = userDoc.data() as User;
               const mappedUser: User = {
                 uid: firebaseUser.uid,
-                displayName: userData.displayName ?? firebaseUser.displayName ?? "",
+                displayName:
+                  userData.displayName ?? firebaseUser.displayName ?? "",
                 email: userData.email ?? firebaseUser.email ?? "",
-                photoURL: userData.photoURL ?? firebaseUser.photoURL ?? undefined,
+                photoURL:
+                  userData.photoURL ?? firebaseUser.photoURL ?? undefined,
                 access: userData.access ?? "user",
                 createdWith: userData.createdWith ?? getUserAuthProvider(),
                 createdAt: userData.createdAt ?? new Date(0),

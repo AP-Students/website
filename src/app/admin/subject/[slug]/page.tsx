@@ -47,6 +47,12 @@ const emptyData: Subject = {
       ],
       test: false,
     },
+    {
+      id: generateShortId(),
+      title: "Subject Test",
+      chapters: [],
+      test: true,
+    },
   ],
 };
 
