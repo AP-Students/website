@@ -8,6 +8,8 @@ import { useUserManagement } from "./useUserManagement";
 import apClassesData from "@/components/apClasses.json";
 import { useUser } from "../../components/hooks/UserContext";
 import { type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import Link from "next/link";
+import { formatSlug } from "@/lib/utils";
 
 const apClasses = apClassesData.apClasses;
 
@@ -73,20 +75,13 @@ function SelectCourse({ router }: { router: AppRouterInstance }) {
         />
         <ul className="class-list max-h-60 overflow-y-auto">
           {filteredClasses.map((apClass: string) => (
-            <li
-              key={apClass}
-              className="cursor-pointer rounded-md p-2 hover:bg-gray-200"
-              onClick={() =>
-                router.push(
-                  `/admin/subject/${apClass
-                    .replace(/AP /g, "")
-                    .toLowerCase()
-                    .replace(/[^a-z1-9 ]+/g, "")
-                    .replace(/\s/g, "-")}`,
-                )
-              }
-            >
-              {apClass}
+            <li key={apClass}>
+              <Link
+                className="block rounded-md p-2 hover:bg-gray-200"
+                href={`/admin/subject/${formatSlug(apClass.replace(/AP /g, ""))}`}
+              >
+                {apClass}
+              </Link>
             </li>
           ))}
         </ul>
