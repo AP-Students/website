@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/popover";
 import clsx from "clsx";
 import type { QuestionFormat } from "@/types/questions";
-import { useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 
 interface FooterProps {
   goToQuestion: (index: number) => void;
@@ -15,7 +15,9 @@ interface FooterProps {
   questions: QuestionFormat[];
   selectedAnswers: Record<number, string[]>;
   setShowReviewPage: (showReviewPage: boolean) => void;
-  setSubmittedAnswers: (value: boolean) => void;
+  setSubmitted: (value: boolean) => void;
+  showReviewPage: boolean;
+  submitted: boolean;
 }
 
 export default function Footer({
@@ -25,38 +27,41 @@ export default function Footer({
   questions,
   selectedAnswers,
   setShowReviewPage,
-  setSubmittedAnswers,
+  showReviewPage,
+  setSubmitted,
+  submitted,
 }: FooterProps) {
-  const [next, setNext] = useState("Next");
+  const router = useRouter();
+  const pathname = usePathname();
 
   const handleNext = () => {
-    if (next === "Submit") {
-      setCurrentQuestionIndex(0);
-      setSubmittedAnswers(true);
-      setNext("Next");
-    }
-
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-      if (currentQuestionIndex === questions.length - 2) {
-        setNext("Review");
+    if (showReviewPage) {
+      if (submitted) {
+        if (
+          confirm(
+            "Exit the test? All progress will be lost. FiveHive does not currently save your progress (but we're working on it!).",
+          )
+        ) {
+          router.push(pathname.split("/").slice(0, 3).join("/"));
+        }
+      } else {
+        setCurrentQuestionIndex(0);
+        setShowReviewPage(false);
+        setSubmitted(true);
       }
-    } else if (currentQuestionIndex === questions.length - 1) {
+    } else if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    } else {
       // Review page will === currentQuestionIndex as a convienence; handlePrevious will kick it back to the last question given this logic
       setShowReviewPage(true);
-      setNext("Submit");
     }
   };
 
   const handlePrevious = () => {
-    if (currentQuestionIndex === questions.length) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
-      setNext("Next");
-      setShowReviewPage(false);
-    } else if (currentQuestionIndex > 0) {
-      setNext("Next");
+    if (currentQuestionIndex > 0 && !showReviewPage) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
     }
+    setShowReviewPage(false);
   };
 
   return (
@@ -93,7 +98,10 @@ export default function Footer({
                       !selectedAnswers[i]?.length,
                   },
                 )}
-                onClick={() => goToQuestion(i)}
+                onClick={() => {
+                  goToQuestion(i);
+                  setShowReviewPage(false);
+                }}
               >
                 {i + 1}
                 {question.bookmarked && (
@@ -118,7 +126,13 @@ export default function Footer({
           className="ml-3 rounded-full bg-[#294ad1] px-6 py-2 font-bold text-white hover:bg-[#2a47bb]"
           onClick={handleNext}
         >
-          {next}
+          {currentQuestionIndex === questions.length - 1
+            ? showReviewPage
+              ? submitted
+                ? "Exit"
+                : "Submit"
+              : "Review"
+            : "Next"}
         </button>
       </div>
     </footer>

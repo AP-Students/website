@@ -11,7 +11,7 @@ interface QuestionPanelProps {
   onSelectAnswer: (optionId: string) => void;
   currentQuestionIndex: number; // Pass current question index as a prop
   questionsLength: number;
-  submittedAnswers: boolean;
+  submitted: boolean;
 }
 
 function LetterCircle({
@@ -66,7 +66,7 @@ export default function QuestionPanel({
   onSelectAnswer,
   currentQuestionIndex,
   questionsLength,
-  submittedAnswers,
+  submitted,
 }: QuestionPanelProps) {
   // Array of Sets, each Set represents striked answers for one question
   const [strikedAnswers, setStrikedAnswers] = useState<Set<number>[]>(
@@ -155,7 +155,7 @@ export default function QuestionPanel({
             </div>
           );
         })}
-        {submittedAnswers && (
+        {submitted && (
           <div className="rounded-lg bg-green-100 p-4">
             <h3 className="mb-2 text-lg font-semibold">Explanation:</h3>
             <RenderContent content={questionInstance.explanation} />

@@ -75,7 +75,7 @@ export default function DigitalTestingPage({
   );
 
   const [showEliminationTools, setShowEliminationTools] = useState(false);
-  const [submittedAnswers, setSubmittedAnswers] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [showReviewPage, setShowReviewPage] = useState(false);
   // Maybe later (Good for new features)
   // const [showTools, setShowTools] = useState(false);
@@ -124,17 +124,15 @@ export default function DigitalTestingPage({
   return (
     <div className="flex flex-col">
       {!adminMode && (
-        <Header
-          setSubmittedAnswers={setSubmittedAnswers}
-          timeRemaining={time * 60}
-        />
+        <Header setSubmitted={setSubmitted} timeRemaining={time * 60} />
       )}
-      {showReviewPage && !submittedAnswers ? (
+      {showReviewPage ? (
         <ReviewPage
           goToQuestion={setCurrentQuestionIndex}
           currentQuestionIndex={currentQuestionIndex}
           questions={questions}
           selectedAnswers={selectedAnswers}
+          setShowReviewPage={setShowReviewPage}
         />
       ) : (
         <div className="flex flex-1 overflow-hidden pt-8">
@@ -228,7 +226,7 @@ export default function DigitalTestingPage({
                 onSelectAnswer={handleSelectAnswer}
                 currentQuestionIndex={currentQuestionIndex}
                 questionsLength={questions.length}
-                submittedAnswers={submittedAnswers}
+                submitted={submitted}
               />
             </Highlighter>
           </div>
@@ -241,7 +239,9 @@ export default function DigitalTestingPage({
         questions={questions}
         selectedAnswers={selectedAnswers}
         setShowReviewPage={setShowReviewPage}
-        setSubmittedAnswers={setSubmittedAnswers}
+        showReviewPage={showReviewPage}
+        setSubmitted={setSubmitted}
+        submitted={submitted}
       />
     </div>
   );

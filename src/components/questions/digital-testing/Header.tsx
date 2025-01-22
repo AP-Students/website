@@ -5,12 +5,12 @@ import { cn } from "@/lib/utils";
 
 interface HeaderProps {
   timeRemaining: number; // In seconds
-  setSubmittedAnswers: (value: boolean) => void;
+  setSubmitted: (value: boolean) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
   timeRemaining,
-  setSubmittedAnswers,
+  setSubmitted,
 }) => {
   const pathname = usePathname();
   const [showTimer, setShowTimer] = useState(true);
@@ -36,9 +36,9 @@ const Header: React.FC<HeaderProps> = ({
 
   useEffect(() => {
     if (remainingTime <= 0) {
-      setSubmittedAnswers(true);
+      setSubmitted(true);
     }
-  }, [remainingTime, setSubmittedAnswers]);
+  }, [remainingTime, setSubmitted]);
 
   // Close directions when clicking outside
   useEffect(() => {
