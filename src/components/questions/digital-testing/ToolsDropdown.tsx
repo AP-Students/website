@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import styles from '../styles/ToolsDropdown.module.css';
-import { EllipsisVertical } from 'lucide-react';
+import React, { useState } from "react";
+import styles from "../styles/ToolsDropdown.module.css";
+import { EllipsisVertical } from "lucide-react";
 
 const ToolsDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);

@@ -1,5 +1,5 @@
-import React from 'react';
-import styles from '../styles/frqComponent.module.css';
+import React from "react";
+import styles from "../styles/frqComponent.module.css";
 
 interface FRQComponentProps {
   question: string;
@@ -7,7 +7,11 @@ interface FRQComponentProps {
   onAnswerChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
 }
 
-const FRQComponent: React.FC<FRQComponentProps> = ({ question, answer, onAnswerChange }) => {
+const FRQComponent: React.FC<FRQComponentProps> = ({
+  question,
+  answer,
+  onAnswerChange,
+}) => {
   return (
     <div className={styles.frqComponent}>
       <div className={styles.questionText}>{question}</div>

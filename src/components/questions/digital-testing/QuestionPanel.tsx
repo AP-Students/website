@@ -99,7 +99,8 @@ export default function QuestionPanel({
 
       <div className="grid gap-4">
         {questionInstance.options.map((option, index) => {
-          const isStrikedThrough = strikedAnswers[currentQuestionIndex]?.has(index);
+          const isStrikedThrough =
+            strikedAnswers[currentQuestionIndex]?.has(index);
 
           return (
             <div key={option.id} className="group relative">
