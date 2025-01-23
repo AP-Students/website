@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Bookmark } from "lucide-react";
+import { Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { QuestionFormat } from "@/types/questions";
 import { usePathname } from "next/navigation";
