@@ -3,6 +3,7 @@ import { useState } from "react";
 import clsx from "clsx";
 import "@/styles/strikeThrough.css";
 import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
+import { Check, X } from "lucide-react";
 
 interface QuestionPanelProps {
   showEliminationTools: boolean;
@@ -108,6 +109,14 @@ export default function QuestionPanel({
                 className={clsx(
                   "relative rounded-lg border-2 border-black transition-opacity",
                   isStrikedThrough && "striked-through",
+                  submitted &&
+                    selectedAnswers.includes(option.id) &&
+                    questionInstance.answers.includes(`${index + 1}`) &&
+                    "border-green-500 bg-green-200",
+                  submitted &&
+                    selectedAnswers.includes(option.id) &&
+                    !questionInstance.answers.includes(`${index + 1}`) &&
+                    "border-red-500 bg-red-200",
                 )}
               >
                 <label className="flex cursor-pointer items-center gap-2 p-2">
@@ -121,6 +130,7 @@ export default function QuestionPanel({
                     value={option.id}
                     checked={selectedAnswers.includes(option.id)}
                     onChange={() => onSelectAnswer(option.id)}
+                    disabled={submitted}
                     hidden
                   />
                   <span
@@ -150,6 +160,13 @@ export default function QuestionPanel({
                       )}
                     </div>
                   )}
+
+                  {submitted &&
+                    (questionInstance.answers.includes(`${index + 1}`) ? (
+                      <Check className="ml-auto stroke-green-500 stroke-[3px]" />
+                    ) : (
+                      <X className="ml-auto stroke-red-500 stroke-[3px]" />
+                    ))}
                 </label>
               </div>
             </div>
