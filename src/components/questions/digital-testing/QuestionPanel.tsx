@@ -78,7 +78,7 @@ export default function QuestionPanel({
 
   if (!questionInstance) return null;
 
-  const toggleStrike = (index: number) => {
+  const toggleStrike = (index: number, optionId: string) => {
     const newStrikedAnswers = [...strikedAnswers];
     const currentStrikes = new Set(newStrikedAnswers[currentQuestionIndex]);
 
@@ -86,16 +86,21 @@ export default function QuestionPanel({
       currentStrikes.delete(index);
     } else {
       currentStrikes.add(index);
+
+      if (selectedAnswers.includes(optionId)) {
+        onSelectAnswer(optionId); // Toggle selection off
+      }
     }
 
     newStrikedAnswers[currentQuestionIndex] = currentStrikes;
     setStrikedAnswers(newStrikedAnswers);
   };
 
+
   return (
     <div className="relative">
       <div className="my-4 text-lg">
-        <RenderContent content={questionInstance.question} />
+          <RenderContent content={questionInstance.question} />
       </div>
 
       <div className="grid gap-4">
@@ -125,7 +130,7 @@ export default function QuestionPanel({
                     checked={selectedAnswers.includes(option.id)}
                   />
                   <input
-                    type="radio"
+                    type={questionInstance.type === "mcq" ? "radio" : "checkbox"}
                     name="options"
                     value={option.id}
                     checked={selectedAnswers.includes(option.id)}
@@ -146,7 +151,7 @@ export default function QuestionPanel({
                     <div className="ml-auto flex items-center gap-2">
                       {isStrikedThrough ? (
                         <button
-                          onClick={() => toggleStrike(index)}
+                          onClick={() => toggleStrike(index, option.id)}
                           className="text-sm font-medium text-[#3075c1]"
                         >
                           Undo
@@ -154,7 +159,7 @@ export default function QuestionPanel({
                       ) : (
                         <StrikeButton
                           letter={String.fromCharCode(65 + index)}
-                          onClick={() => toggleStrike(index)}
+                          onClick={() => toggleStrike(index, option.id)}
                           active={isStrikedThrough}
                         />
                       )}

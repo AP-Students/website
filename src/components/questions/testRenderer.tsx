@@ -70,9 +70,6 @@ export default function DigitalTestingPage({
   const [contentHighlights, setContentHighlights] = useState<Highlight[][]>(
     initialQuestions.map(() => []),
   );
-  const [questionHighlights, setQuestionHighlights] = useState<Highlight[][]>(
-    initialQuestions.map(() => []),
-  );
 
   const [showEliminationTools, setShowEliminationTools] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -89,12 +86,6 @@ export default function DigitalTestingPage({
     const updatedHighlights = [...contentHighlights];
     updatedHighlights[currentQuestionIndex] = newHighlights;
     setContentHighlights(updatedHighlights);
-  };
-
-  const handleQuestionHighlights = (newHighlights: Highlight[]) => {
-    const updatedHighlights = [...questionHighlights];
-    updatedHighlights[currentQuestionIndex] = newHighlights;
-    setQuestionHighlights(updatedHighlights);
   };
 
   const toggleBookmark = () => {
@@ -218,11 +209,6 @@ export default function DigitalTestingPage({
                 </svg>
               </button>
             </div>
-            <Highlighter
-              questionIndex={currentQuestionIndex}
-              highlights={questionHighlights[currentQuestionIndex]!}
-              onUpdateHighlights={handleQuestionHighlights}
-            >
               <QuestionPanel
                 showEliminationTools={showEliminationTools}
                 questionInstance={questions[currentQuestionIndex]}
@@ -232,7 +218,6 @@ export default function DigitalTestingPage({
                 questionsLength={questions.length}
                 submitted={submitted}
               />
-            </Highlighter>
           </div>
         </div>
       )}
