@@ -4,18 +4,20 @@ import { ChevronDown, ChevronUp, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface HeaderProps {
-  timeRemaining: number; // In seconds
+  timeRemaining: number; // seconds
   setSubmitted: (value: boolean) => void;
+  submitted: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({
   timeRemaining,
   setSubmitted,
+  submitted,
 }) => {
   const pathname = usePathname();
   const [showTimer, setShowTimer] = useState(true);
   const [remainingTime, setRemainingTime] = useState(timeRemaining);
-  const [showDirections, setShowDirections] = useState(true); // State to control directions visibility
+  const [showDirections, setShowDirections] = useState(true);
   const directionsRef = useRef<HTMLDivElement>(null); // Ref for detecting outside clicks
   const toggleButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -31,7 +33,7 @@ const Header: React.FC<HeaderProps> = ({
       });
     }, 1000);
 
-    return () => clearInterval(timer); // Clean up interval on component unmount
+    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -39,6 +41,12 @@ const Header: React.FC<HeaderProps> = ({
       setSubmitted(true);
     }
   }, [remainingTime, setSubmitted]);
+
+  useEffect(() => {
+    if (submitted) {
+      setShowTimer(false);
+    }
+  }, [submitted]);
 
   // Close directions when clicking outside
   useEffect(() => {
@@ -58,7 +66,6 @@ const Header: React.FC<HeaderProps> = ({
     };
   }, []);
 
-  // Toggle directions visibility when clicking the "Directions" button
   const handleToggleDirections = () => {
     setShowDirections(!showDirections);
   };
@@ -76,7 +83,7 @@ const Header: React.FC<HeaderProps> = ({
           {showDirections ? <ChevronUp /> : <ChevronDown />}
         </button>
         <div className="flex flex-1 items-center justify-center gap-2">
-          {(showTimer || remainingTime < 5 * 60) && (
+          {(showTimer || (remainingTime < 5 * 60 && !submitted)) && (
             <p
               className={cn(
                 "text-xl font-bold",
@@ -114,7 +121,6 @@ const Header: React.FC<HeaderProps> = ({
         </a>
       </div>
 
-      {/* Directions panel */}
       {showDirections && (
         <div
           ref={directionsRef}
@@ -142,7 +148,6 @@ const Header: React.FC<HeaderProps> = ({
 
 export default Header;
 
-// Format time for display
 const formatTime = (time: number) => {
   const hours = Math.floor(time / 3600)
     .toString()

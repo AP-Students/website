@@ -124,7 +124,11 @@ export default function DigitalTestingPage({
   return (
     <div className="flex flex-col">
       {!adminMode && (
-        <Header setSubmitted={setSubmitted} timeRemaining={time * 60} />
+        <Header
+          setSubmitted={setSubmitted}
+          submitted={submitted}
+          timeRemaining={time * 60}
+        />
       )}
       {showReviewPage ? (
         <ReviewPage
