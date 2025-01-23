@@ -246,6 +246,7 @@ export default function DigitalTestingPage({
         showReviewPage={showReviewPage}
         setSubmitted={setSubmitted}
         submitted={submitted}
+        adminMode={adminMode}
       />
     </div>
   );

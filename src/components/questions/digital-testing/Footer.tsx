@@ -18,6 +18,7 @@ interface FooterProps {
   setSubmitted: (value: boolean) => void;
   showReviewPage: boolean;
   submitted: boolean;
+  adminMode: boolean;
 }
 
 export default function Footer({
@@ -30,6 +31,7 @@ export default function Footer({
   showReviewPage,
   setSubmitted,
   submitted,
+  adminMode,
 }: FooterProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -37,7 +39,9 @@ export default function Footer({
   const handleNext = () => {
     if (showReviewPage) {
       if (submitted) {
-        if (
+        if (adminMode) {
+          setSubmitted(false);
+        } else if (
           confirm(
             "Exit the test? All progress will be lost. FiveHive does not currently save your progress (but we're working on it!).",
           )
