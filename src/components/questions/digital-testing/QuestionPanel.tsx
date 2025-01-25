@@ -96,11 +96,10 @@ export default function QuestionPanel({
     setStrikedAnswers(newStrikedAnswers);
   };
 
-
   return (
     <div className="relative">
       <div className="my-4 text-lg">
-          <RenderContent content={questionInstance.question} />
+        <RenderContent content={questionInstance.question} />
       </div>
 
       <div className="grid gap-4">
@@ -130,7 +129,9 @@ export default function QuestionPanel({
                     checked={selectedAnswers.includes(option.id)}
                   />
                   <input
-                    type={questionInstance.type === "mcq" ? "radio" : "checkbox"}
+                    type={
+                      questionInstance.type === "mcq" ? "radio" : "checkbox"
+                    }
                     name="options"
                     value={option.id}
                     checked={selectedAnswers.includes(option.id)}

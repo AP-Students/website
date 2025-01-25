@@ -209,15 +209,15 @@ export default function DigitalTestingPage({
                 </svg>
               </button>
             </div>
-              <QuestionPanel
-                showEliminationTools={showEliminationTools}
-                questionInstance={questions[currentQuestionIndex]}
-                selectedAnswers={selectedAnswers[currentQuestionIndex] ?? []}
-                onSelectAnswer={handleSelectAnswer}
-                currentQuestionIndex={currentQuestionIndex}
-                questionsLength={questions.length}
-                submitted={submitted}
-              />
+            <QuestionPanel
+              showEliminationTools={showEliminationTools}
+              questionInstance={questions[currentQuestionIndex]}
+              selectedAnswers={selectedAnswers[currentQuestionIndex] ?? []}
+              onSelectAnswer={handleSelectAnswer}
+              currentQuestionIndex={currentQuestionIndex}
+              questionsLength={questions.length}
+              submitted={submitted}
+            />
           </div>
         </div>
       )}
