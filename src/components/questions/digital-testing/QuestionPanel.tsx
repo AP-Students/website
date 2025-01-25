@@ -148,7 +148,7 @@ export default function QuestionPanel({
                     <RenderContent content={option.value} />
                   </span>
 
-                  {showEliminationTools && (
+                  {!submitted && showEliminationTools && (
                     <div className="ml-auto flex items-center gap-2">
                       {isStrikedThrough ? (
                         <button
@@ -179,7 +179,7 @@ export default function QuestionPanel({
           );
         })}
         {submitted && (
-          <div className="rounded-lg bg-green-100 p-4">
+          <div className="rounded-lg border bg-gray-100 p-3">
             <h3 className="mb-2 text-lg font-semibold">Explanation:</h3>
             <RenderContent content={questionInstance.explanation} />
           </div>

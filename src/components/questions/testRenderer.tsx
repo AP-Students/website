@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bookmark } from "lucide-react";
+import { Bookmark, Check, X } from "lucide-react";
 import Header from "./digital-testing/Header";
 import QuestionPanel from "./digital-testing/QuestionPanel";
 import Footer from "./digital-testing/Footer";
 import type { QuestionFormat } from "@/types/questions";
 import { RenderContent } from "../../components/article-creator/custom_questions/RenderAdvancedTextbox";
 import Highlighter, { type Highlight } from "./digital-testing/Highlighter";
-import ReviewPage from "./digital-testing/ReviewPage";
+import ReviewPage, { isQuestionCorrect } from "./digital-testing/ReviewPage";
 import clsx from "clsx";
 
 interface Props {
@@ -151,64 +151,75 @@ export default function DigitalTestingPage({
               <p className="flex h-full items-center bg-black px-3.5 text-lg font-bold tabular-nums text-white">
                 {currentQuestionIndex + 1}
               </p>
-              <button className="flex" onClick={toggleBookmark}>
-                {questions.length > 0 &&
-                questions[currentQuestionIndex]!.bookmarked ? (
-                  <>
-                    <Bookmark className="mr-1 inline fill-black" /> Bookmarked
-                  </>
-                ) : (
-                  <>
-                    <Bookmark className="mr-1 inline fill-white" /> Mark for
-                    Review
-                  </>
-                )}
-              </button>
 
-              <button
-                onClick={() => setShowEliminationTools(!showEliminationTools)}
-                className="ml-auto p-1"
-                title="Eliminate options"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="25"
-                  height="25"
-                  viewBox="0 0 20 20"
-                  fill="none"
+              {!submitted ? (
+                <button className="flex" onClick={toggleBookmark}>
+                  {questions.length > 0 &&
+                  questions[currentQuestionIndex]!.bookmarked ? (
+                    <>
+                      <Bookmark className="mr-1 fill-black" /> Bookmarked
+                    </>
+                  ) : (
+                    <>
+                      <Bookmark className="mr-1 fill-white" /> Mark for Review
+                    </>
+                  )}
+                </button>
+              ) : isQuestionCorrect(
+                  questions[currentQuestionIndex]!,
+                  selectedAnswers[currentQuestionIndex] ?? [],
+                ) ? (
+                <Check className="stroke-green-500 stroke-[3px]" />
+              ) : (
+                <X className="stroke-red-500 stroke-[3px]" />
+              )}
+
+              {!submitted && (
+                <button
+                  onClick={() => setShowEliminationTools(!showEliminationTools)}
+                  className="ml-auto p-1"
+                  title="Eliminate options"
                 >
-                  <rect
-                    className={clsx(showEliminationTools && "fill-white")}
-                    x="1"
-                    y="1"
-                    width="18"
-                    height="18"
-                    rx="2"
-                    ry="2"
-                    stroke="#000"
-                    strokeWidth="1"
-                  />
-                  <text
-                    x="4"
-                    y="12"
-                    fontFamily="Arial, sans-serif"
-                    fontSize="6"
-                    fontWeight="bold"
-                    fill="#000"
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="25"
+                    height="25"
+                    viewBox="0 0 20 20"
+                    fill="none"
                   >
-                    ABC
-                  </text>
-                  <line
-                    x1="3"
-                    y1="3"
-                    x2="17"
-                    y2="17"
-                    stroke="#000"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </button>
+                    <rect
+                      className={clsx(showEliminationTools && "fill-white")}
+                      x="1"
+                      y="1"
+                      width="18"
+                      height="18"
+                      rx="2"
+                      ry="2"
+                      stroke="#000"
+                      strokeWidth="1"
+                    />
+                    <text
+                      x="2"
+                      y="13"
+                      fontFamily="Arial, sans-serif"
+                      fontSize="7"
+                      fontWeight="bold"
+                      fill="#000"
+                    >
+                      ABC
+                    </text>
+                    <line
+                      x1="3"
+                      y1="3"
+                      x2="17"
+                      y2="17"
+                      stroke="#000"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
+              )}
             </div>
             <QuestionPanel
               showEliminationTools={showEliminationTools}
