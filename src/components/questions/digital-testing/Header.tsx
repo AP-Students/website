@@ -42,12 +42,6 @@ const Header: React.FC<HeaderProps> = ({
     }
   }, [remainingTime, setSubmitted]);
 
-  useEffect(() => {
-    if (submitted) {
-      setShowTimer(false);
-    }
-  }, [submitted]);
-
   // Close directions when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -83,7 +77,7 @@ const Header: React.FC<HeaderProps> = ({
           {showDirections ? <ChevronUp /> : <ChevronDown />}
         </button>
         <div className="flex flex-1 items-center justify-center gap-2">
-          {(showTimer || (remainingTime < 5 * 60 && !submitted)) && (
+          {!submitted && (showTimer || remainingTime < 5 * 60) && (
             <p
               className={cn(
                 "text-xl font-bold",
@@ -93,7 +87,7 @@ const Header: React.FC<HeaderProps> = ({
               {formatTime(remainingTime)}
             </p>
           )}
-          {remainingTime >= 5 * 60 && (
+          {!submitted && remainingTime >= 5 * 60 && (
             <button
               onClick={() => {
                 setShowTimer(!showTimer);
