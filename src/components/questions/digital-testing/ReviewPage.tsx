@@ -11,6 +11,20 @@ interface FooterProps {
   questions: QuestionFormat[];
   selectedAnswers: Record<number, string[]>;
   setShowReviewPage: (showReviewPage: boolean) => void;
+  submitted: boolean;
+}
+
+function isCorrect(question: QuestionFormat, selected: string[]) {
+  if (question.type === "mcq") {
+    return question.answers.includes(selected[0]!);
+  }
+
+  if (selected.length !== question.answers.length) return false;
+  for (const answer of question.answers) {
+    if (!selected.includes(answer)) return false;
+  }
+
+  return true;
 }
 
 export default function QuestionNavigation({
@@ -18,6 +32,7 @@ export default function QuestionNavigation({
   questions,
   selectedAnswers,
   setShowReviewPage,
+  submitted,
 }: FooterProps) {
   const pathname = usePathname();
 
@@ -53,9 +68,13 @@ export default function QuestionNavigation({
                 }}
                 className={cn(
                   "relative flex h-10 w-10 items-center justify-center text-lg font-medium",
-                  isAnswered
+                  !submitted && isAnswered
                     ? "bg-[#2a47bb] text-white"
                     : "border-2 border-dashed border-gray-400 text-[#2a47bb]",
+                  submitted &&
+                    (isCorrect(question, selectedAnswers[i] ?? [])
+                      ? "border-none bg-green-500 text-white"
+                      : "border-none bg-red-600 text-white"),
                 )}
               >
                 {i + 1}

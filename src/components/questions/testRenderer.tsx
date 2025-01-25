@@ -128,6 +128,7 @@ export default function DigitalTestingPage({
           questions={questions}
           selectedAnswers={selectedAnswers}
           setShowReviewPage={setShowReviewPage}
+          submitted={submitted}
         />
       ) : (
         <div className="flex flex-1 overflow-hidden pt-8">
