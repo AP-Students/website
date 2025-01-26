@@ -15,6 +15,7 @@ import {
 import ReauthenticateModal from "@/components/auth/ReauthenticateModal";
 import Image from "next/image";
 import { useUser } from "@/components/hooks/UserContext";
+import { ArrowLeft } from "lucide-react";
 
 interface ManagementForm extends HTMLFormElement {
   displayName: {
@@ -190,15 +191,15 @@ export default function UserManagementPage() {
   const accountType = user.createdWith === "google" ? "google" : "email";
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-primary-foreground">
-      <div className="w-full max-w-3xl rounded-lg border bg-white p-8 shadow-sm">
+    <div className="flex min-h-screen items-center justify-center py-6 sm:bg-primary-foreground">
+      <div className="w-full max-w-xl rounded-lg bg-white p-8 sm:border sm:shadow-sm">
         <button
           onClick={() => {
             router.back();
           }}
-          className="mb-6 text-blue-500 hover:underline"
+          className="mb-6 flex gap-1 text-blue-500"
         >
-          ← Back
+          <ArrowLeft /> Back
         </button>
         <h1 className="mb-2 text-3xl font-bold text-gray-800">
           FiveHive Account
