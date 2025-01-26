@@ -96,7 +96,6 @@ export default function UserManagementPage() {
       return;
     }
 
-    // Store the new password temporarily
     setTempPassword(newPassword);
     // Open reauthentication modal before proceeding
     setReauthAction("password");
@@ -148,7 +147,6 @@ export default function UserManagementPage() {
     try {
       await deleteAccount();
       clearUserCache();
-      // Redirect to "/login"
       router.push("/login");
     } catch (error: unknown) {
       setErrors((prev) => ({ ...prev, general: error as string }));
@@ -192,9 +190,7 @@ export default function UserManagementPage() {
   const accountType = user.createdWith === "google" ? "google" : "email";
 
   return (
-    <div
-      className={`flex min-h-screen items-center justify-center bg-primary-foreground`}
-    >
+    <div className="flex min-h-screen items-center justify-center bg-primary-foreground">
       <div className="w-full max-w-3xl rounded-lg border bg-white p-8 shadow-sm">
         <button
           onClick={() => {
@@ -204,13 +200,10 @@ export default function UserManagementPage() {
         >
           ← Back
         </button>
-        <h1 className="mb-6 text-3xl font-bold text-gray-800">
+        <h1 className="mb-2 text-3xl font-bold text-gray-800">
           FiveHive Account
         </h1>
-        <p className="mb-8 text-gray-600">
-          Manage your account details below. Click &quot;Save Changes&quot; to
-          update.
-        </p>
+        <p className="mb-6 text-gray-600">Manage your account details below.</p>
 
         {errors.general && (
           <div className="mb-4 rounded-md bg-red-100 p-4 text-red-700">
@@ -237,7 +230,7 @@ export default function UserManagementPage() {
               type="text"
               name="displayName"
               defaultValue={user.displayName}
-              className="rounded-md border border-gray-300 px-4 py-2 text-gray-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-300"
+              className="rounded-md border border-gray-300 px-3 py-2"
               required
             />
             {errors.displayName && (
@@ -261,7 +254,7 @@ export default function UserManagementPage() {
                 type="password"
                 name="password"
                 placeholder="Enter new password"
-                className="rounded-md border border-gray-300 px-4 py-2 text-gray-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-300"
+                className="rounded-md border border-gray-300 px-3 py-2"
                 required
               />
               {errors.password && (
@@ -294,7 +287,7 @@ export default function UserManagementPage() {
               type="url"
               name="photoURL"
               defaultValue={user.photoURL}
-              className="rounded-md border border-gray-300 px-4 py-2 text-gray-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-300"
+              className="rounded-md border border-gray-300 px-3 py-2"
               required
             />
             {errors.photoURL && (
