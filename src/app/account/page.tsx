@@ -147,6 +147,7 @@ export default function UserManagementPage() {
   const handleConfirmDeleteAccount = async () => {
     try {
       await deleteAccount();
+      clearUserCache();
       // Redirect to "/login"
       router.push("/login");
     } catch (error: unknown) {
