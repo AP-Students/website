@@ -44,25 +44,29 @@ const QuestionsInputInterface: React.FC<Props> = ({
       {
         question: {
           value: "",
+          files: [],
         },
         type: "mcq",
         options: [
           {
             value: {
               value: "",
+              files: []
             },
             id: "1",
           },
-          { value: { value: "" }, id: "2" },
-          { value: { value: "" }, id: "3" },
-          { value: { value: "" }, id: "4" },
+          { value: { value: "", files: [] }, id: "2" },
+          { value: { value: "", files: [] }, id: "3" },
+          { value: { value: "", files: [] }, id: "4" },
         ],
         answers: [""],
         explanation: {
           value: "",
+          files: [],
         },
         content: {
           value: "",
+          files: [],
         },
         bookmarked: false,
       },
@@ -93,6 +97,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
       {
         value: {
           value: "",
+          files: [],
         },
         id: Date.now().toString(),
       },

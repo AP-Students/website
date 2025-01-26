@@ -1,7 +1,12 @@
-export type QuestionInput = {
+export interface QuestionFile {
+  key: string;
+  url?: string;
+  name: string;
+}
+
+export interface QuestionInput {
   value: string;
-  fileKey?: string;
-  fileURL?: string;
+  files: QuestionFile[];
 }
 
 export interface Option {

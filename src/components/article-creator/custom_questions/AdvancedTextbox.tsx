@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
-import { type QuestionFormat, type QuestionInput } from "@/types/questions";
+import type { QuestionFile, QuestionFormat, QuestionInput } from "@/types/questions";
 import { QuestionsInput } from "./QuestionInstance";
 import { Paperclip, Trash } from "lucide-react";
 import { deleteObject, getStorage, ref } from "firebase/storage";
@@ -73,7 +73,7 @@ export default function AdvancedTextbox({
 }: Props) {
   const questionInstance = questions[qIndex];
   const [currentText, setCurrentText] = useState<string>("");
-  const [fileExists, setFileExists] = useState<boolean>(false);
+  const [uploadedFiles, setUploadedFiles] = useState<QuestionFile[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -84,9 +84,8 @@ export default function AdvancedTextbox({
         setCurrentText(questionInstance!.options[oIndex].value.value);
       }
 
-      if (questionInstance!.options[oIndex]?.value?.fileKey) {
-        setFileExists(true);
-      }
+      setUploadedFiles(questionInstance!.options[oIndex]?.value?.files ?? []);
+
     } else if (
       origin === "question" ||
       origin === "explanation" ||
@@ -95,9 +94,7 @@ export default function AdvancedTextbox({
       if (questionInstance![origin]?.value) {
         setCurrentText(questionInstance![origin].value);
       }
-      if (questionInstance![origin]?.fileKey) {
-        setFileExists(true);
-      }
+      setUploadedFiles(questionInstance![origin]?.files ?? []);
     }
   }, [questionInstance, oIndex, origin]);
 
@@ -131,7 +128,7 @@ export default function AdvancedTextbox({
         [origin]: {
           ...(questionInstance ? [origin] : QuestionsInput),
           value: newText,
-          fileKey: questionInstance?.question.fileKey, // Keep the file key if it exists
+          files: questionInstance?.question.files, // Keep the files they exist
         }, // Clone question
       };
       updatedQuestions[qIndex] = updatedQuestion;
@@ -144,7 +141,7 @@ export default function AdvancedTextbox({
           {
             value: {
               value: newText,
-              fileKey: questionInstance!.options[oIndex]!.value.fileKey,
+              files: questionInstance!.options[oIndex]!.value.files,
             },
             id: questionInstance!.options[oIndex]!.id,
           },
@@ -162,48 +159,61 @@ export default function AdvancedTextbox({
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const files = e.target.files ?? [];
 
-    if (!file) {
+    if (files.length === 0) {
       alert("No file selected. Try uploading again or contact support.");
       return; // Early return if file is not defined
     }
 
-    if (file.type.startsWith("image/") || file.type.startsWith("audio/")) {
-      // Store the file in IndexedDB using the unique ID
-      storeFileInIndexedDB(`${file.type}-${file.lastModified}`, file);
-
-      const updatedQuestions = [...questions];
-      const updatedQuestion: QuestionFormat = { ...questionInstance! };
-
-      if (origin === "question") {
-        const questionInput: QuestionInput = { ...updatedQuestion.question };
-        questionInput.fileKey = `${file.type}-${file.lastModified}`;
-        updatedQuestion.question = questionInput;
-        setFileExists(true);
-      } else if (origin === "option" && oIndex !== undefined) {
-        // Update a specific option by oIndex
-        const optionInput: QuestionInput = {
-          ...updatedQuestion.options[oIndex]!.value,
-        };
-        optionInput.fileKey = `${file.type}-${file.lastModified}`;
-        updatedQuestion.options[oIndex]!.value = optionInput; // Update only the specified option
-        setFileExists(true);
-      } else if (origin === "explanation") {
-        const questionInput: QuestionInput = { ...updatedQuestion.explanation };
-        questionInput.fileKey = `${file.type}-${file.lastModified}`;
-        updatedQuestion.explanation = questionInput;
-        setFileExists(true);
+    const appendIfNewKey = (files: QuestionFile[], file: File, key: string) => {
+      if (!files.map(file => file.key).includes(key)) {
+        // Recreate the array here so that the set call later will work I think
+        files = [...files, {
+          name: file.name,
+          key
+        }];
       }
-      if (origin === "content") {
-        const questionInput: QuestionInput = { ...updatedQuestion.content };
-        questionInput.fileKey = `${file.type}-${file.lastModified}`;
-        updatedQuestion.content = questionInput;
-        setFileExists(true);
-      }
-      updatedQuestions[qIndex] = updatedQuestion;
+    };
 
-      setQuestions(updatedQuestions);
+    for (const file of files) {
+      if (file.type.startsWith("image/") || file.type.startsWith("audio/")) {
+        const fileKey = `${file.type}-${file.lastModified}`;
+
+        // Store the file in IndexedDB using the unique ID
+        storeFileInIndexedDB(fileKey, file);
+  
+        const updatedQuestions = [...questions];
+        const updatedQuestion: QuestionFormat = { ...questionInstance! };
+  
+        if (origin === "question") {
+          const questionInput: QuestionInput = { ...updatedQuestion.question };
+          appendIfNewKey(questionInput.files, file, fileKey);
+          updatedQuestion.question = questionInput;
+          setUploadedFiles(questionInput.files);
+        } else if (origin === "option" && oIndex !== undefined) {
+          // Update a specific option by oIndex
+          const optionInput: QuestionInput = {
+            ...updatedQuestion.options[oIndex]!.value,
+          };
+          appendIfNewKey(optionInput.files, file, fileKey);
+          updatedQuestion.options[oIndex]!.value = optionInput; // Update only the specified option
+          setUploadedFiles(optionInput.files);
+        } else if (origin === "explanation") {
+          const questionInput: QuestionInput = { ...updatedQuestion.explanation };
+          appendIfNewKey(questionInput.files, file, fileKey);
+          updatedQuestion.explanation = questionInput;
+          setUploadedFiles(questionInput.files);
+        } else if (origin === "content") {
+          const questionInput: QuestionInput = { ...updatedQuestion.content };
+          appendIfNewKey(questionInput.files, file, fileKey);
+          updatedQuestion.content = questionInput;
+          setUploadedFiles(questionInput.files);
+        }
+        updatedQuestions[qIndex] = updatedQuestion;
+  
+        setQuestions(updatedQuestions);
+      }
     }
   };
 
@@ -229,9 +239,28 @@ export default function AdvancedTextbox({
     }
   }
 
-  const handleDeleteFile = () => {
+  const handleDeleteFile = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const fileKey = e.currentTarget.dataset.fileKey;
+
+    if (!fileKey) {
+      alert("Error deleting file, please try again");
+      return;
+    }
+
     const updatedQuestions = [...questions];
     const updatedQuestion: QuestionFormat = { ...questionInstance! };
+
+    const deleteFile = (question: QuestionInput) => {
+      deleteFileFromIndexedDB(fileKey).catch((error) => {
+        console.error("Error deleting file from IndexedDB:", error);
+      });
+      deleteFileFromStorage(fileKey).catch((error) => {
+        console.error("Error deleting file from Storage:", error);
+      });
+
+      question.files = question.files.filter(file => file.key !== fileKey);
+      setUploadedFiles(question.files);
+    };
 
     if (
       origin === "question" ||
@@ -240,36 +269,21 @@ export default function AdvancedTextbox({
     ) {
       const questionInput: QuestionInput = { ...updatedQuestion[origin] };
 
-      deleteFileFromIndexedDB(questionInput.fileKey!).catch((error) => {
-        console.error("Error deleting file from IndexedDB:", error);
-      });
-      deleteFileFromStorage(questionInput.fileKey!).catch((error) => {
-        console.error("Error deleting file from Storage:", error);
-      });
+      deleteFile(questionInput);
 
-      questionInput.fileKey = "";
-      questionInput.fileURL = "";
       updatedQuestion[origin] = questionInput;
     } else if (origin === "option" && oIndex !== undefined) {
       const optionInput: QuestionInput = {
         ...updatedQuestion.options[oIndex]!.value,
       };
 
-      deleteFileFromIndexedDB(optionInput.fileKey!).catch((error) => {
-        console.error("Error deleting file from IndexedDB:", error);
-      });
-      deleteFileFromStorage(optionInput.fileKey!).catch((error) => {
-        console.error("Error deleting file from Storage:", error);
-      });
+      deleteFile(optionInput);
 
-      optionInput.fileKey = "";
-      optionInput.fileURL = "";
       updatedQuestion.options[oIndex]!.value = optionInput;
     }
 
     updatedQuestions[qIndex] = updatedQuestion;
     setQuestions(updatedQuestions);
-    setFileExists(false);
   };
 
   return (
@@ -291,10 +305,22 @@ export default function AdvancedTextbox({
         ref={fileInputRef}
         style={{ display: "none" }}
         onChange={handleFileUpload}
+        multiple
       />
 
       {/* Section under the textarea for upload and delete buttons */}
       <div className="mt-2 flex gap-4">
+        {uploadedFiles.length > 0 && uploadedFiles.map(file => <>
+          <div>{file.name}</div>
+          <button
+            type="button"
+            className="flex items-center text-red-500 hover:underline"
+            onClick={handleDeleteFile}
+            data-file-key={file.key}
+          >
+            Delete file <Trash className="ml-1 size-5" />
+          </button></>
+        )}
         <button
           type="button"
           className="flex items-center text-blue-500 hover:underline"
@@ -302,15 +328,7 @@ export default function AdvancedTextbox({
         >
           Add file <Paperclip className="ml-1 size-5" />
         </button>
-        {fileExists && (
-          <button
-            type="button"
-            className="flex items-center text-red-500 hover:underline"
-            onClick={handleDeleteFile}
-          >
-            Delete file <Trash className="ml-1 size-5" />
-          </button>
-        )}
+        
       </div>
     </div>
   );
