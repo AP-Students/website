@@ -1,6 +1,10 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
-import type { QuestionFile, QuestionFormat, QuestionInput } from "@/types/questions";
+import type {
+  QuestionFile,
+  QuestionFormat,
+  QuestionInput,
+} from "@/types/questions";
 import { QuestionsInput } from "./QuestionInstance";
 import { Paperclip, Trash } from "lucide-react";
 import { deleteObject, getStorage, ref } from "firebase/storage";
@@ -85,7 +89,6 @@ export default function AdvancedTextbox({
       }
 
       setUploadedFiles(questionInstance!.options[oIndex]?.value?.files ?? []);
-
     } else if (
       origin === "question" ||
       origin === "explanation" ||
@@ -159,62 +162,73 @@ export default function AdvancedTextbox({
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files ?? [];
+    const fileList = e.target.files ?? [];
+    const files = Array.from(fileList).filter(
+      (file) =>
+        file.type.startsWith("image/") || file.type.startsWith("audio/"),
+    );
 
     if (files.length === 0) {
-      alert("No file selected. Try uploading again or contact support.");
+      alert(
+        "No valid file selected (photo or audio). Try uploading again or contact support.",
+      );
       return; // Early return if file is not defined
     }
 
-    const appendIfNewKey = (files: QuestionFile[], file: File, key: string) => {
-      if (!files.map(file => file.key).includes(key)) {
-        // Recreate the array here so that the set call later will work I think
-        files = [...files, {
-          name: file.name,
-          key
-        }];
-      }
+    const storeAndAppendIfNewKey = (
+      questionInput: QuestionInput,
+      files: File[],
+    ) => {
+      const newFiles = files.flatMap((file) => {
+        const fileKey = `${file.type}-${file.lastModified}`;
+        if (questionInput.files.map((file) => file.key).includes(fileKey)) {
+          return [];
+        } else {
+          storeFileInIndexedDB(fileKey, file);
+          return [
+            {
+              key: fileKey,
+              name: file.name,
+            },
+          ];
+        }
+      });
+      // Recreate array for set state
+      questionInput.files = [...questionInput.files, ...newFiles];
     };
 
-    for (const file of files) {
-      if (file.type.startsWith("image/") || file.type.startsWith("audio/")) {
-        const fileKey = `${file.type}-${file.lastModified}`;
+    const updatedQuestions = [...questions];
+    const updatedQuestion: QuestionFormat = { ...questionInstance! };
 
-        // Store the file in IndexedDB using the unique ID
-        storeFileInIndexedDB(fileKey, file);
-  
-        const updatedQuestions = [...questions];
-        const updatedQuestion: QuestionFormat = { ...questionInstance! };
-  
-        if (origin === "question") {
-          const questionInput: QuestionInput = { ...updatedQuestion.question };
-          appendIfNewKey(questionInput.files, file, fileKey);
-          updatedQuestion.question = questionInput;
-          setUploadedFiles(questionInput.files);
-        } else if (origin === "option" && oIndex !== undefined) {
-          // Update a specific option by oIndex
-          const optionInput: QuestionInput = {
-            ...updatedQuestion.options[oIndex]!.value,
-          };
-          appendIfNewKey(optionInput.files, file, fileKey);
-          updatedQuestion.options[oIndex]!.value = optionInput; // Update only the specified option
-          setUploadedFiles(optionInput.files);
-        } else if (origin === "explanation") {
-          const questionInput: QuestionInput = { ...updatedQuestion.explanation };
-          appendIfNewKey(questionInput.files, file, fileKey);
-          updatedQuestion.explanation = questionInput;
-          setUploadedFiles(questionInput.files);
-        } else if (origin === "content") {
-          const questionInput: QuestionInput = { ...updatedQuestion.content };
-          appendIfNewKey(questionInput.files, file, fileKey);
-          updatedQuestion.content = questionInput;
-          setUploadedFiles(questionInput.files);
-        }
-        updatedQuestions[qIndex] = updatedQuestion;
-  
-        setQuestions(updatedQuestions);
-      }
+    if (origin === "question") {
+      const questionInput: QuestionInput = { ...updatedQuestion.question };
+      storeAndAppendIfNewKey(questionInput, files);
+      updatedQuestion.question = questionInput;
+      setUploadedFiles(questionInput.files);
+    } else if (origin === "option" && oIndex !== undefined) {
+      // Update a specific option by oIndex
+      const optionInput: QuestionInput = {
+        ...updatedQuestion.options[oIndex]!.value,
+      };
+      storeAndAppendIfNewKey(optionInput, files);
+      updatedQuestion.options[oIndex]!.value = optionInput; // Update only the specified option
+      setUploadedFiles(optionInput.files);
+    } else if (origin === "explanation") {
+      const questionInput: QuestionInput = {
+        ...updatedQuestion.explanation,
+      };
+      storeAndAppendIfNewKey(questionInput, files);
+      updatedQuestion.explanation = questionInput;
+      setUploadedFiles(questionInput.files);
+    } else if (origin === "content") {
+      const questionInput: QuestionInput = { ...updatedQuestion.content };
+      storeAndAppendIfNewKey(questionInput, files);
+      updatedQuestion.content = questionInput;
+      setUploadedFiles(questionInput.files);
     }
+    updatedQuestions[qIndex] = updatedQuestion;
+
+    setQuestions(updatedQuestions);
   };
 
   // Function to delete a file from Firebase Storage
@@ -258,7 +272,7 @@ export default function AdvancedTextbox({
         console.error("Error deleting file from Storage:", error);
       });
 
-      question.files = question.files.filter(file => file.key !== fileKey);
+      question.files = question.files.filter((file) => file.key !== fileKey);
       setUploadedFiles(question.files);
     };
 
@@ -309,18 +323,21 @@ export default function AdvancedTextbox({
       />
 
       {/* Section under the textarea for upload and delete buttons */}
-      <div className="mt-2 flex gap-4">
-        {uploadedFiles.length > 0 && uploadedFiles.map(file => <>
-          <div>{file.name}</div>
-          <button
-            type="button"
-            className="flex items-center text-red-500 hover:underline"
-            onClick={handleDeleteFile}
-            data-file-key={file.key}
-          >
-            Delete file <Trash className="ml-1 size-5" />
-          </button></>
-        )}
+      <div className="mt-2">
+        {uploadedFiles.length > 0 &&
+          uploadedFiles.map((file) => (
+            <div key={file.key} className="space-y-2">
+              <div>{file.name}</div>
+              <button
+                type="button"
+                className="flex items-center text-red-500 hover:underline"
+                onClick={handleDeleteFile}
+                data-file-key={file.key}
+              >
+                Delete file <Trash className="ml-1 size-5" />
+              </button>
+            </div>
+          ))}
         <button
           type="button"
           className="flex items-center text-blue-500 hover:underline"
@@ -328,7 +345,6 @@ export default function AdvancedTextbox({
         >
           Add file <Paperclip className="ml-1 size-5" />
         </button>
-        
       </div>
     </div>
   );
