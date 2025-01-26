@@ -31,10 +31,10 @@ export const processQuestions = async (
       ...(question.question?.files || []),
       ...(question.explanation?.files || []),
       ...(question.content?.files || []),
-      ...(question.options.flatMap(option => option.value.files || [])),
+      ...question.options.flatMap((option) => option.value.files || []),
     ];
-    
-    allFiles.forEach(file => allFileKeys.add(file.key));
+
+    allFiles.forEach((file) => allFileKeys.add(file.key));
   });
 
   // Read all files from IndexedDB
@@ -77,15 +77,15 @@ export const processQuestions = async (
       ...(updatedQuestion.question?.files || []),
       ...(updatedQuestion.explanation?.files || []),
       ...(updatedQuestion.content?.files || []),
-      ...(updatedQuestion.options.flatMap(option => option.value.files || [])),
+      ...updatedQuestion.options.flatMap((option) => option.value.files || []),
     ];
 
-    allFiles.forEach(file => {
+    allFiles.forEach((file) => {
       const downloadURL = fileKeyToDownloadURL.get(file.key);
       if (downloadURL) {
         file.url = downloadURL;
       }
-    })
+    });
 
     return updatedQuestion;
   });

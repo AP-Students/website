@@ -51,7 +51,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
           {
             value: {
               value: "",
-              files: []
+              files: [],
             },
             id: "1",
           },

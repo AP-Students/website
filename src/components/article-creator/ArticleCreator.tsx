@@ -10,7 +10,13 @@ import { getUser, getUserAccess } from "@/components/hooks/users";
 import { Save } from "lucide-react";
 import { type QuestionFormat } from "@/types/questions";
 import Renderer from "./Renderer";
-import { processImage, processQuestions, processTable, revertTableObjectToArray, type ImageData} from "./FetchArticleFunctions";
+import {
+  processImage,
+  processQuestions,
+  processTable,
+  revertTableObjectToArray,
+  type ImageData,
+} from "./FetchArticleFunctions";
 import { Blocker } from "@/app/admin/subject/navigation-block";
 import { Button } from "@/components/ui/button";
 import { usePathname } from "next/navigation";
