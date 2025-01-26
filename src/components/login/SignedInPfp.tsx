@@ -51,10 +51,10 @@ const SignedInPfp = () => {
         </div>
 
         {isDropdownOpen && (
-          <div className="absolute right-0 mt-2 max-w-48 whitespace-nowrap rounded-lg border border-gray-200 bg-white shadow-lg">
+          <div className="absolute right-0 mt-2 max-w-48 overflow-hidden whitespace-nowrap rounded-lg border border-gray-300 bg-white shadow">
             {(user.access === "admin" || user.access === "member") && (
               <Link
-                className="block w-full px-4 py-2 text-left hover:bg-gray-100"
+                className="block w-full px-3 py-2 text-left transition-colors hover:bg-gray-100"
                 href="/admin"
               >
                 Admin Dashboard
@@ -63,14 +63,14 @@ const SignedInPfp = () => {
 
             <Link
               href="/account"
-              className="block w-full px-4 py-2 text-left hover:bg-gray-100"
+              className="block w-full px-3 py-2 text-left transition-colors hover:bg-gray-100"
             >
               Account Settings
             </Link>
 
             <button
-              onClick={() => signOutUser()}
-              className="block w-full px-4 py-2 text-left hover:bg-gray-100"
+              onClick={signOutUser}
+              className="block w-full px-3 py-2 text-left transition-colors hover:bg-gray-100"
             >
               Sign Out
             </button>
