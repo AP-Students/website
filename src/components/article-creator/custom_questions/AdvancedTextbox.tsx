@@ -326,8 +326,7 @@ export default function AdvancedTextbox({
       <div className="mt-2">
         {uploadedFiles.length > 0 &&
           uploadedFiles.map((file) => (
-            <div key={file.key} className="space-y-2">
-              <div>{file.name}</div>
+            <div key={file.key} className="flex items-center space-x-2 mb-2">
               <button
                 type="button"
                 className="flex items-center text-red-500 hover:underline"
@@ -336,6 +335,7 @@ export default function AdvancedTextbox({
               >
                 Delete file <Trash className="ml-1 size-5" />
               </button>
+              <div>{file.name}</div>
             </div>
           ))}
         <button
