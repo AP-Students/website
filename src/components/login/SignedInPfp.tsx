@@ -6,8 +6,10 @@ import { auth } from "@/lib/firebase";
 import Link from "next/link";
 import { UserProvider, useUser } from "../hooks/UserContext";
 import Image from "next/image";
+import { buttonVariants } from "../ui/button";
+import { cn } from "@/lib/utils";
 
-const SignedInPfp = () => {
+const SignedInPfp = ({ mobile }: { mobile?: boolean }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { user } = useUser();
 
@@ -19,7 +21,7 @@ const SignedInPfp = () => {
 
   return (
     <UserProvider>
-      <div className="relative">
+      <div className={cn("relative", mobile && "flex grow flex-col")}>
         {/* Profile Picture */}
         <div className="flex items-center space-x-4">
           <span>{user.displayName}</span>
@@ -50,7 +52,7 @@ const SignedInPfp = () => {
           </div>
         </div>
 
-        {isDropdownOpen && (
+        {isDropdownOpen && !mobile && (
           <div className="absolute right-0 mt-2 max-w-48 overflow-hidden whitespace-nowrap rounded-lg border border-gray-300 bg-white shadow">
             {(user.access === "admin" || user.access === "member") && (
               <Link
@@ -71,6 +73,33 @@ const SignedInPfp = () => {
             <button
               onClick={signOutUser}
               className="block w-full px-3 py-2 text-left transition-colors hover:bg-gray-100"
+            >
+              Sign Out
+            </button>
+          </div>
+        )}
+
+        {mobile && (
+          <div className="flex grow flex-col gap-4 py-4">
+            {(user.access === "admin" || user.access === "member") && (
+              <Link
+                className={buttonVariants({ variant: "default" })}
+                href="/admin"
+              >
+                Admin Dashboard
+              </Link>
+            )}
+
+            <Link
+              href="/account"
+              className={buttonVariants({ variant: "default" })}
+            >
+              Account Settings
+            </Link>
+
+            <button
+              onClick={signOutUser}
+              className={cn(buttonVariants({ variant: "outline" }), "mt-auto")}
             >
               Sign Out
             </button>
