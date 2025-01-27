@@ -131,7 +131,7 @@ export default function AdvancedTextbox({
         [origin]: {
           ...(questionInstance ? [origin] : QuestionsInput),
           value: newText,
-          files: questionInstance?.question.files, // Keep the files they exist
+          files: questionInstance?.[origin]?.files ?? [], // Keep the files they exist
         }, // Clone question
       };
       updatedQuestions[qIndex] = updatedQuestion;
