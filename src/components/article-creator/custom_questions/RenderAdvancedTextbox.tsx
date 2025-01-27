@@ -98,6 +98,11 @@ export const RenderContent: React.FC<Props> = ({ content }) => {
     // See if the file is stored in IndexedDB (cached) first, then check if we can pull from Firebase Storage
 
     const renderFile = (file: QuestionFile, url: string) => {
+
+      if (elements.map(e => e.key).includes(file.key)) {
+        return;
+      }
+
       if (file.key.startsWith("image/")) {
         setElements((prev) => [
           ...prev,
