@@ -229,6 +229,10 @@ export default function AdvancedTextbox({
     updatedQuestions[qIndex] = updatedQuestion;
 
     setQuestions(updatedQuestions);
+
+    // Reset input value so duplicate files can be reuploaded in the case of deletion
+    // Code logic will catch actual duplicates
+    e.target.value = "";
   };
 
   // Function to delete a file from Firebase Storage
