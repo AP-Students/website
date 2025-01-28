@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import katex from "katex";
 import type { QuestionFile, QuestionInput } from "@/types/questions";
 import "@/styles/katexStyling.css";
@@ -8,8 +8,12 @@ interface Props {
   content: QuestionInput;
 }
 
+interface FileWrapper {
+  file: File
+}
+
 // Utility to retrieve a file from IndexedDB based on unique ID
-export function getFileFromIndexedDB(name: string): Promise<File | null> {
+export function getFileFromIndexedDB(name: string): Promise<FileWrapper | null> {
   return new Promise((resolve) => {
     const dbRequest = indexedDB.open("mediaFilesDB", 2);
 
@@ -35,8 +39,8 @@ export function getFileFromIndexedDB(name: string): Promise<File | null> {
 
       fileRequest.onsuccess = () => {
         const fileBlob = fileRequest.result as
-          | File
-          | Promise<File | null>
+          | FileWrapper
+          | Promise<FileWrapper | null>
           | null;
         if (fileBlob) {
           resolve(fileBlob); // Return the file directly
@@ -72,9 +76,7 @@ const FileRenderer: React.FC<{ file: QuestionFile }> = ({ file }) => {
 
       try {
         const storedFile = await getFileFromIndexedDB(file.key);
-        // @ts-expect-error - file is an object incasing file, not the file itself
         if (storedFile?.file) {
-          // @ts-expect-error - file is an object incasing file, not the file itself
           const blob = storedFile.file;
           url = URL.createObjectURL(blob);
           setObjectUrl(url);
@@ -84,7 +86,7 @@ const FileRenderer: React.FC<{ file: QuestionFile }> = ({ file }) => {
       }
     };
 
-    fetchFile();
+    void fetchFile();
 
     return () => {
       if (url) URL.revokeObjectURL(url);

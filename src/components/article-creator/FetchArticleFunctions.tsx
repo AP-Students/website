@@ -44,8 +44,7 @@ export const processQuestions = async (
     Array.from(allFileKeys).map(async (fileKey) => {
       const fileObj = await getFileFromIndexedDB(fileKey);
 
-      // @ts-expect-error: fileObj is returned as an object with 1 attr "file"; You must access file to actually get the file contents but TS doesnt know that
-      const file = fileObj?.file as File;
+      const file = fileObj?.file;
 
       if (file) {
         fileKeyToFile.set(fileKey, file);
