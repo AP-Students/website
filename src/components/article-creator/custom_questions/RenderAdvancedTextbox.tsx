@@ -122,17 +122,14 @@ const FileRenderer: React.FC<{ file: QuestionFile }> = ({ file }) => {
   return null;
 };
 
-export function RenderContent({ content } : Props) {
+export function RenderContent({ content }: Props) {
   return (
     <div>
       {/* Render text content directly */}
       {content.value?.split("$@").map((line, lineIndex) => {
         if (line.endsWith("$")) {
           return (
-            <div
-              key={`latex-${lineIndex}`}
-              className="custom-katex my-2"
-            >
+            <div key={`latex-${lineIndex}`} className="custom-katex my-2">
               <div
                 dangerouslySetInnerHTML={{
                   __html: katex.renderToString(line.slice(0, -1), {
@@ -152,4 +149,4 @@ export function RenderContent({ content } : Props) {
       ))}
     </div>
   );
-};
+}
