@@ -58,21 +58,79 @@ export function getFileFromIndexedDB(name: string): Promise<File | null> {
   });
 }
 
-export const RenderContent: React.FC<Props> = ({ content }) => {
-  const [elements, setElements] = useState<JSX.Element[]>([]);
+const FileRenderer: React.FC<{ file: QuestionFile }> = ({ file }) => {
+  const [objectUrl, setObjectUrl] = useState<string | null>(null);
 
-  // Function to handle LaTeX and text rendering
-  const renderTextContent = useCallback(() => {
-    const tempElements: JSX.Element[] = [];
+  useEffect(() => {
+    let url: string | null = null;
 
-    if (content.value) {
-      content.value.split("$@").forEach((line, lineIndex) => {
-        // Convert to LaTeX syntax
+    const fetchFile = async () => {
+      if (file.url) {
+        setObjectUrl(file.url);
+        return;
+      }
+
+      try {
+        const storedFile = await getFileFromIndexedDB(file.key);
+        // @ts-expect-error - file is an object incasing file, not the file itself
+        if (storedFile?.file) {
+          // @ts-expect-error - file is an object incasing file, not the file itself
+          const blob = storedFile.file;
+          url = URL.createObjectURL(blob);
+          setObjectUrl(url);
+        }
+      } catch (error) {
+        console.error("Error loading file:", error);
+      }
+    };
+
+    fetchFile();
+
+    return () => {
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [file]);
+
+  if (!objectUrl) return null;
+
+  if (file.key.startsWith("image/")) {
+    return (
+      <div className="my-2">
+        <Image
+          src={objectUrl}
+          alt="Uploaded image"
+          width={16}
+          height={9}
+          layout="responsive"
+          className="h-auto max-w-full"
+        />
+      </div>
+    );
+  }
+
+  if (file.key.startsWith("audio/")) {
+    return (
+      <div className="my-2">
+        <audio controls>
+          <source src={objectUrl} type="audio/mpeg" />
+          Your browser does not support the audio element.
+        </audio>
+      </div>
+    );
+  }
+
+  return null;
+};
+
+export function RenderContent({ content } : Props) {
+  return (
+    <div>
+      {/* Render text content directly */}
+      {content.value?.split("$@").map((line, lineIndex) => {
         if (line.endsWith("$")) {
-          tempElements.push(
+          return (
             <div
               key={`latex-${lineIndex}`}
-              style={{ color: "black !important" }}
               className="custom-katex my-2"
             >
               <div
@@ -82,88 +140,16 @@ export const RenderContent: React.FC<Props> = ({ content }) => {
                   }),
                 }}
               />
-            </div>,
+            </div>
           );
-        } else {
-          // Render regular text
-          tempElements.push(<div key={`text-${lineIndex}`}>{line}</div>);
         }
-      });
-    }
-    setElements((prev) => [...prev, ...tempElements]); // Append text content to state
-  }, [content.value]);
+        return <div key={`text-${lineIndex}`}>{line}</div>;
+      })}
 
-  // Function to handle file content rendering
-  const renderFileContent = useCallback(() => {
-    // See if the file is stored in IndexedDB (cached) first, then check if we can pull from Firebase Storage
-
-    const renderFile = (file: QuestionFile, url: string) => {
-
-      if (elements.map(e => e.key).includes(file.key)) {
-        return;
-      }
-
-      if (file.key.startsWith("image/")) {
-        setElements((prev) => [
-          ...prev,
-          <div key={file.key} className="my-2">
-            <Image
-              src={url}
-              alt="Uploaded image"
-              width={16}
-              height={9}
-              layout="responsive"
-              className="h-auto max-w-full"
-            />
-          </div>,
-        ]);
-      } else if (file.key.startsWith("audio/")) {
-        setElements((prev) => [
-          ...prev,
-          <div key={file.key} className="my-2">
-            <audio controls>
-              <source src={url} type="audio/mpeg" />
-              Your browser does not support the audio element.
-            </audio>
-          </div>,
-        ]);
-      }
-    };
-
-    for (const questionFile of content.files) {
-      if (!questionFile.url) {
-        getFileFromIndexedDB(questionFile.key)
-          .then((file) => {
-            // @ts-expect-error - file is an object incasing file, not the file itself
-            if (file?.file) {
-              const fileURL = URL.createObjectURL(
-                // @ts-expect-error - file is an object incasing file, not the file itself
-                file.file as Blob | MediaSource,
-              );
-
-              renderFile(questionFile, fileURL);
-
-              // Revoke the object URL after the component unmounts
-              return () => {
-                URL.revokeObjectURL(fileURL);
-              };
-            }
-          })
-          .catch((error) => {
-            console.error("Error retrieving file from IndexedDB:", error);
-          });
-      } else {
-        renderFile(questionFile, questionFile.url);
-      }
-    }
-  }, [content.files]);
-
-  // useEffect to trigger rendering of text and file content
-  useEffect(() => {
-    setElements([]); // Reset elements before rendering new content
-    renderTextContent();
-    renderFileContent();
-  }, [renderTextContent, renderFileContent]);
-
-  return <div>{elements}</div>; // Render the content
+      {/* Render files through individual components */}
+      {content.files?.map((file) => (
+        <FileRenderer key={file.key} file={file} />
+      ))}
+    </div>
+  );
 };
