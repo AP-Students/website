@@ -1,21 +1,24 @@
-import { Bookmark, ChevronUp, MapPin } from 'lucide-react'
+import { Bookmark, ChevronUp, MapPin } from "lucide-react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover'
-import clsx from 'clsx'
-import type { QuestionFormat } from '@/types/questions'
-import { useState } from 'react'
+} from "@/components/ui/popover";
+import clsx from "clsx";
+import type { QuestionFormat } from "@/types/questions";
+import { useRouter, usePathname } from "next/navigation";
 
 interface FooterProps {
-  goToQuestion: (index: number) => void
-  currentQuestionIndex: number
-  setCurrentQuestionIndex: (index: number) => void
-  questions: QuestionFormat[]
-  selectedAnswers: Record<number, string[]>
-  setShowReviewPage: (showReviewPage: boolean) => void
-  setSubmittedAnswers: (value: boolean) => void
+  goToQuestion: (index: number) => void;
+  currentQuestionIndex: number;
+  setCurrentQuestionIndex: (index: number) => void;
+  questions: QuestionFormat[];
+  selectedAnswers: Record<number, string[]>;
+  setShowReviewPage: (showReviewPage: boolean) => void;
+  setSubmitted: (value: boolean) => void;
+  showReviewPage: boolean;
+  submitted: boolean;
+  adminMode: boolean;
 }
 
 export default function Footer({
@@ -25,44 +28,49 @@ export default function Footer({
   questions,
   selectedAnswers,
   setShowReviewPage,
-  setSubmittedAnswers,
+  showReviewPage,
+  setSubmitted,
+  submitted,
+  adminMode,
 }: FooterProps) {
-  const [next, setNext] = useState("Next");
+  const router = useRouter();
+  const pathname = usePathname();
 
   const handleNext = () => {
-    if(next === "Submit"){
-      setCurrentQuestionIndex(0);
-      setSubmittedAnswers(true);
-      setNext("Next");
-    }
-
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-      if(currentQuestionIndex === questions.length - 2){
-        setNext("Review");
+    if (showReviewPage) {
+      if (submitted) {
+        if (adminMode) {
+          setSubmitted(false);
+        } else if (
+          confirm(
+            "Exit the test? All progress will be lost. FiveHive does not currently save your progress (but we're working on it!).",
+          )
+        ) {
+          router.push(pathname.split("/").slice(0, 3).join("/"));
+        }
+      } else {
+        setCurrentQuestionIndex(0);
+        setShowReviewPage(false);
+        setSubmitted(true);
       }
-    }else if(currentQuestionIndex === questions.length - 1){
+    } else if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    } else {
       // Review page will === currentQuestionIndex as a convienence; handlePrevious will kick it back to the last question given this logic
-      setShowReviewPage(true); 
-      setNext("Submit")
+      setShowReviewPage(true);
     }
   };
 
   const handlePrevious = () => {
-    if (currentQuestionIndex === questions.length) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
-      setNext("Next");
-      setShowReviewPage(false);
-    }
-    else if(currentQuestionIndex > 0){
-      setNext("Next");
+    if (currentQuestionIndex > 0 && !showReviewPage) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
     }
+    setShowReviewPage(false);
   };
 
   return (
-    <footer className="fixed bottom-0 left-0 flex w-full items-center justify-between border-t-2 border-gray-300 bg-white px-4 py-2.5 text-black z-20">
-      <p>{" "}</p>
+    <footer className="fixed bottom-0 left-0 z-20 flex w-full items-center justify-between border-t-2 border-gray-300 bg-white px-4 py-2.5 text-black">
+      <p> </p>
       <Popover>
         <PopoverTrigger className="flex items-center gap-1 rounded-md bg-black py-1 pl-3 pr-1 text-sm font-bold tabular-nums text-white">
           Question {currentQuestionIndex + 1} of {questions.length}
@@ -88,11 +96,16 @@ export default function Footer({
                 className={clsx(
                   "relative flex size-8 items-center justify-center border-2",
                   {
-                    "border-transparent bg-[#2a47bb] text-white": selectedAnswers[i] && selectedAnswers[i].length > 0,
-                    "border-dotted border-gray-400 text-[#2a47bb]": !selectedAnswers[i]?.length,
-                  }
+                    "border-transparent bg-[#2a47bb] text-white":
+                      selectedAnswers[i] && selectedAnswers[i].length > 0,
+                    "border-dotted border-gray-400 text-[#2a47bb]":
+                      !selectedAnswers[i]?.length,
+                  },
                 )}
-                onClick={() => goToQuestion(i)}
+                onClick={() => {
+                  goToQuestion(i);
+                  setShowReviewPage(false);
+                }}
               >
                 {i + 1}
                 {question.bookmarked && (
@@ -117,9 +130,15 @@ export default function Footer({
           className="ml-3 rounded-full bg-[#294ad1] px-6 py-2 font-bold text-white hover:bg-[#2a47bb]"
           onClick={handleNext}
         >
-          {next}
+          {currentQuestionIndex === questions.length - 1
+            ? showReviewPage
+              ? submitted
+                ? "Exit"
+                : "Submit"
+              : "Review"
+            : "Next"}
         </button>
       </div>
     </footer>
-  )
+  );
 }

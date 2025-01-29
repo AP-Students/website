@@ -1,9 +1,13 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import type { QuestionFormat } from "@/types/questions";
 import { type OutputData } from "@editorjs/editorjs";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getFileFromIndexedDB } from "./custom_questions/RenderAdvancedTextbox";
 
-interface ImageData {
+export interface ImageData {
   caption: string;
   stretched: boolean;
   url: string; // Base64 string or a URL
@@ -11,7 +15,7 @@ interface ImageData {
   withBorder: boolean;
 }
 
-interface TableData {
+export interface TableData {
   content: string[][]; // 2D array representing table rows and columns
   rows: number;
   cols: number;
@@ -23,35 +27,26 @@ export const processQuestions = async (
   questions: QuestionFormat[],
 ): Promise<QuestionFormat[]> => {
   // Collect all unique fileKeys from questions
-
   const allFileKeys = new Set<string>();
 
   questions.forEach((question) => {
-    if (question.question?.fileKey) {
-      allFileKeys.add(question.question.fileKey);
-    }
-    if (question.explanation?.fileKey) {
-      allFileKeys.add(question.explanation.fileKey);
-    }
-    if (question.content?.fileKey) {
-      allFileKeys.add(question.content.fileKey);
-    }
-    question.options.forEach((option) => {
-      if (option.value.fileKey) {
-        allFileKeys.add(option.value.fileKey);
-      }
-    });
+    const allFiles = [
+      ...(question.question?.files || []),
+      ...(question.explanation?.files || []),
+      ...(question.content?.files || []),
+      ...question.options.flatMap((option) => option.value.files || []),
+    ];
+
+    allFiles.forEach((file) => allFileKeys.add(file.key));
   });
 
   // Read all files from IndexedDB
   const fileKeyToFile = new Map<string, File>();
-
   await Promise.all(
     Array.from(allFileKeys).map(async (fileKey) => {
       const fileObj = await getFileFromIndexedDB(fileKey);
 
-      // @ts-expect-error: fileObj is returned as an object with 1 attr "file"; You must access file to actually get the file contents but TS doesnt know that
-      const file = fileObj?.file as File;
+      const file = fileObj?.file;
 
       if (file) {
         fileKeyToFile.set(fileKey, file);
@@ -64,7 +59,6 @@ export const processQuestions = async (
   // Upload all files and get download URLs
   const storage = getStorage();
   const fileKeyToDownloadURL = new Map<string, string>();
-
   // Todo: Check whether the file already exists in the file base (Will save significant costs)
   await Promise.all(
     Array.from(fileKeyToFile.entries()).map(async ([fileKey, file]) => {
@@ -79,60 +73,18 @@ export const processQuestions = async (
   const updatedQuestions = questions.map((question) => {
     const updatedQuestion: QuestionFormat = { ...question };
 
-    // Update question body fileURL
-    if (updatedQuestion.question?.fileKey) {
-      const downloadURL = fileKeyToDownloadURL.get(
-        updatedQuestion.question.fileKey,
-      );
-      if (downloadURL) {
-        updatedQuestion.question = {
-          ...updatedQuestion.question,
-          fileURL: downloadURL,
-        };
-      }
-    }
+    const allFiles = [
+      ...(updatedQuestion.question?.files || []),
+      ...(updatedQuestion.explanation?.files || []),
+      ...(updatedQuestion.content?.files || []),
+      ...updatedQuestion.options.flatMap((option) => option.value.files || []),
+    ];
 
-    // Update explanation fileURL
-    if (updatedQuestion.explanation?.fileKey) {
-      const downloadURL = fileKeyToDownloadURL.get(
-        updatedQuestion.explanation.fileKey,
-      );
+    allFiles.forEach((file) => {
+      const downloadURL = fileKeyToDownloadURL.get(file.key);
       if (downloadURL) {
-        updatedQuestion.explanation = {
-          ...updatedQuestion.explanation,
-          fileURL: downloadURL,
-        };
+        file.url = downloadURL;
       }
-    }
-
-    // Update content fileURL
-    if (updatedQuestion.content?.fileKey) {
-      const downloadURL = fileKeyToDownloadURL.get(
-        updatedQuestion.content.fileKey,
-      );
-      if (downloadURL) {
-        updatedQuestion.content = {
-          ...updatedQuestion.content,
-          fileURL: downloadURL,
-        };
-      }
-    }
-
-    // Update options fileURLs
-    updatedQuestion.options = updatedQuestion.options.map((option) => {
-      if (option.value.fileKey) {
-        const downloadURL = fileKeyToDownloadURL.get(option.value.fileKey);
-        if (downloadURL) {
-          return {
-            ...option,
-            value: {
-              ...option.value,
-              fileURL: downloadURL,
-            },
-          };
-        }
-      }
-      return option;
     });
 
     return updatedQuestion;

@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { useUserManagement } from "./useUserManagement";
 import apClassesData from "@/components/apClasses.json";
 import { useUser } from "../../components/hooks/UserContext";
-import { type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import Link from "next/link";
 import { formatSlug } from "@/lib/utils";
 
@@ -43,7 +42,7 @@ const Page = () => {
 
           {user.access === "admin" && <AdminPanel user={user} />}
 
-          <SelectCourse router={router} />
+          <SelectCourse />
         </div>
       </div>
 
@@ -52,7 +51,7 @@ const Page = () => {
   );
 };
 
-function SelectCourse({ router }: { router: AppRouterInstance }) {
+function SelectCourse() {
   const [searchTermAPClasses, setSearchTermAPClasses] = useState<string>("");
 
   // Filter AP classes based on search term

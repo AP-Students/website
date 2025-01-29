@@ -24,7 +24,6 @@ const Page = () => {
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-
         const docRef = doc(
           db,
           "subjects",
@@ -32,7 +31,7 @@ const Page = () => {
           "units",
           unitId!,
           "tests",
-          testId
+          testId,
         );
 
         const docSnap = await getDoc(docRef);
@@ -68,16 +67,8 @@ const Page = () => {
   }
 
   return (
-    <div className="relative min-h-screen">
-      <div className="flex flex-col items-center justify-center p-8">
-        <div className="w-full p-4">
-          <TestRenderer
-            time={time}
-            inputQuestions={questions}
-            adminMode={false}
-          />
-        </div>
-      </div>
+    <div className="px-8 py-12">
+      <TestRenderer time={time} inputQuestions={questions} adminMode={false} />
     </div>
   );
 };
