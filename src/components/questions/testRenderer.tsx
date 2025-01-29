@@ -19,36 +19,38 @@ interface Props {
 
 const initialQuestions: QuestionFormat[] = [
   {
-    question: { value: "What is the capital of France?" },
+    question: { value: "What is the capital of France?", files: [] },
     type: "mcq",
     options: [
-      { id: "1", value: { value: "Paris" } },
-      { id: "2", value: { value: "London" } },
-      { id: "3", value: { value: "Rome" } },
-      { id: "4", value: { value: "Berlin" } },
+      { id: "1", value: { value: "Paris", files: [] } },
+      { id: "2", value: { value: "London", files: [] } },
+      { id: "3", value: { value: "Rome", files: [] } },
+      { id: "4", value: { value: "Berlin", files: [] } },
     ],
     answers: ["Paris"],
-    explanation: { value: "Paris is the capital city of France." },
+    explanation: { value: "Paris is the capital city of France.", files: [] },
     content: {
       value:
         "Paris is the capital city of France. (EXAMPLE article or document)",
+      files: [],
     },
     bookmarked: false,
   },
   {
-    question: { value: "What is the capital of Japan?" },
+    question: { value: "What is the capital of Japan?", files: [] },
     type: "mcq",
     options: [
-      { id: "1", value: { value: "Tokyo" } },
-      { id: "2", value: { value: "Kyoto" } },
-      { id: "3", value: { value: "Osaka" } },
-      { id: "4", value: { value: "Hiroshima" } },
+      { id: "1", value: { value: "Tokyo", files: [] } },
+      { id: "2", value: { value: "Kyoto", files: [] } },
+      { id: "3", value: { value: "Osaka", files: [] } },
+      { id: "4", value: { value: "Hiroshima", files: [] } },
     ],
     answers: ["Tokyo"],
-    explanation: { value: "Tokyo is the capital city of Japan." },
+    explanation: { value: "Tokyo is the capital city of Japan.", files: [] },
     content: {
       value:
         "Tokyo is the capital city of Japan. (EXAMPLE article or document)",
+      files: [],
     },
     bookmarked: false,
   },
