@@ -68,9 +68,7 @@ export default function UserManagementPage() {
     setSuccessMessage(null);
 
     const displayName = event.currentTarget.displayName.value.trim();
-    if (!user) return;
-    if (!displayName) return;
-    if (displayName === user.displayName) return;
+    if (!user || !displayName || displayName === user.displayName) return;
 
     try {
       await updateDisplayName(user.uid, displayName);
