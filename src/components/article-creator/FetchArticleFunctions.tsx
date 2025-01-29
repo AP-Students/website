@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import type { QuestionFormat } from "@/types/questions";
 import { type OutputData } from "@editorjs/editorjs";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -23,7 +27,6 @@ export const processQuestions = async (
   questions: QuestionFormat[],
 ): Promise<QuestionFormat[]> => {
   // Collect all unique fileKeys from questions
-
   const allFileKeys = new Set<string>();
 
   questions.forEach((question) => {
@@ -39,7 +42,6 @@ export const processQuestions = async (
 
   // Read all files from IndexedDB
   const fileKeyToFile = new Map<string, File>();
-
   await Promise.all(
     Array.from(allFileKeys).map(async (fileKey) => {
       const fileObj = await getFileFromIndexedDB(fileKey);
@@ -57,7 +59,6 @@ export const processQuestions = async (
   // Upload all files and get download URLs
   const storage = getStorage();
   const fileKeyToDownloadURL = new Map<string, string>();
-
   // Todo: Check whether the file already exists in the file base (Will save significant costs)
   await Promise.all(
     Array.from(fileKeyToFile.entries()).map(async ([fileKey, file]) => {

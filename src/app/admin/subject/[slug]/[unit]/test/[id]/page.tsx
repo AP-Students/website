@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import type { UnitTest } from "@/types/firestore";
 import { usePathname } from "next/navigation";
 import type { QuestionFormat } from "@/types/questions";
+import { processQuestions } from "@/components/article-creator/FetchArticleFunctions";
 
 const Page = () => {
   const pathname = usePathname();
@@ -69,6 +70,7 @@ const Page = () => {
   }, [subject, unitId, instanceId, setQuestions, user, testId]);
 
   const handleSave = async () => {
+    // Find a way to save to storage
     try {
       const testRef = doc(
         db,
@@ -81,9 +83,10 @@ const Page = () => {
       );
 
       const sanitizedQuestions = removeUndefined(questions) as QuestionFormat[];
+      const processedQuestions = await processQuestions(sanitizedQuestions);
 
       const testData = {
-        questions: sanitizedQuestions,
+        questions: processedQuestions,
         time: time * 60, // Convert minutes to seconds
         instanceId: instanceId ?? "",
       };
