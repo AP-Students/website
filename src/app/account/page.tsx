@@ -15,6 +15,7 @@ import {
 import ReauthenticateModal from "@/components/auth/ReauthenticateModal";
 import Image from "next/image";
 import { useUser } from "@/components/hooks/UserContext";
+import { ArrowLeft } from "lucide-react";
 
 interface ManagementForm extends HTMLFormElement {
   displayName: {
@@ -96,7 +97,6 @@ export default function UserManagementPage() {
       return;
     }
 
-    // Store the new password temporarily
     setTempPassword(newPassword);
     // Open reauthentication modal before proceeding
     setReauthAction("password");
@@ -147,7 +147,7 @@ export default function UserManagementPage() {
   const handleConfirmDeleteAccount = async () => {
     try {
       await deleteAccount();
-      // Redirect to "/login"
+      clearUserCache();
       router.push("/login");
     } catch (error: unknown) {
       setErrors((prev) => ({ ...prev, general: error as string }));
@@ -191,25 +191,20 @@ export default function UserManagementPage() {
   const accountType = user.createdWith === "google" ? "google" : "email";
 
   return (
-    <div
-      className={`flex min-h-screen items-center justify-center bg-primary-foreground`}
-    >
-      <div className="w-full max-w-3xl rounded-lg border bg-white p-8 shadow-sm">
+    <div className="flex min-h-screen items-center justify-center py-6 sm:bg-primary-foreground">
+      <div className="w-full max-w-xl rounded-lg bg-white p-8 sm:border sm:shadow-sm">
         <button
           onClick={() => {
             router.back();
           }}
-          className="mb-6 text-blue-500 hover:underline"
+          className="mb-6 flex gap-1 text-blue-500"
         >
-          ← Back
+          <ArrowLeft /> Back
         </button>
-        <h1 className="mb-6 text-3xl font-bold text-gray-800">
+        <h1 className="mb-2 text-3xl font-bold text-gray-800">
           FiveHive Account
         </h1>
-        <p className="mb-8 text-gray-600">
-          Manage your account details below. Click &quot;Save Changes&quot; to
-          update.
-        </p>
+        <p className="mb-6 text-gray-600">Manage your account details below.</p>
 
         {errors.general && (
           <div className="mb-4 rounded-md bg-red-100 p-4 text-red-700">
@@ -236,7 +231,7 @@ export default function UserManagementPage() {
               type="text"
               name="displayName"
               defaultValue={user.displayName}
-              className="rounded-md border border-gray-300 px-4 py-2 text-gray-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-300"
+              className="rounded-md border border-gray-300 px-3 py-2"
               required
             />
             {errors.displayName && (
@@ -260,7 +255,7 @@ export default function UserManagementPage() {
                 type="password"
                 name="password"
                 placeholder="Enter new password"
-                className="rounded-md border border-gray-300 px-4 py-2 text-gray-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-300"
+                className="rounded-md border border-gray-300 px-3 py-2"
                 required
               />
               {errors.password && (
@@ -293,7 +288,7 @@ export default function UserManagementPage() {
               type="url"
               name="photoURL"
               defaultValue={user.photoURL}
-              className="rounded-md border border-gray-300 px-4 py-2 text-gray-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-300"
+              className="rounded-md border border-gray-300 px-3 py-2"
               required
             />
             {errors.photoURL && (

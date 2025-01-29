@@ -68,12 +68,10 @@ export default function Login() {
   };
 
   return (
-    <div
-      className={`flex min-h-screen items-center justify-center bg-primary-foreground`}
-    >
+    <div className="flex min-h-screen items-center justify-center py-6 sm:bg-primary-foreground">
       <form
         onSubmit={handleLogin}
-        className="w-full max-w-md rounded-lg border bg-white p-8 shadow-sm"
+        className="w-full max-w-md rounded-lg bg-white p-8 sm:border sm:shadow-sm"
       >
         <h1 className="mb-8 text-4xl">Log in to FiveHive</h1>
 
