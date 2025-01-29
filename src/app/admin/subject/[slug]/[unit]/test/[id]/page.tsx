@@ -70,7 +70,6 @@ const Page = () => {
   }, [subject, unitId, instanceId, setQuestions, user, testId]);
 
   const handleSave = async () => {
-    // Find a way to save to storage
     try {
       const testRef = doc(
         db,
