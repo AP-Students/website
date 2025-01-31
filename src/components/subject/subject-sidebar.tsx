@@ -65,7 +65,9 @@ const SubjectSidebar = (props: Props) => {
               value={unit.title}
               key={unitIndex}
             >
-              <AccordionTrigger>{unit.title}</AccordionTrigger>
+              <AccordionTrigger className="text-balance pb-2 text-left">
+                {unit.title}
+              </AccordionTrigger>
 
               <AccordionContent className="flex flex-col gap-x-2 pb-0">
                 <div className="grow">
