@@ -55,7 +55,7 @@ const SubjectSidebar = (props: Props) => {
 
       <div>
         <Accordion
-          className={cn(isCollapsed && "animate-hide")}
+          className={cn(isCollapsed && "hidden")}
           type="multiple"
           defaultValue={props.subject.units.map((unit) => unit.title)}
         >
