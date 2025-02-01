@@ -55,7 +55,7 @@ const SignedInPfp = ({ mobile }: { mobile?: boolean }) => {
         <div className="absolute right-0 mt-2 max-w-48 overflow-hidden whitespace-nowrap rounded-lg border border-gray-300 bg-white shadow">
           {(user.access === "admin" || user.access === "member") && (
             <Link
-              className="block w-full px-3 py-2 text-left transition-colors hover:bg-gray-100"
+              className="block w-full px-3 py-2 text-left transition-colors duration-100 hover:bg-gray-100"
               href="/admin"
             >
               Admin Dashboard
@@ -64,14 +64,14 @@ const SignedInPfp = ({ mobile }: { mobile?: boolean }) => {
 
           <Link
             href="/account"
-            className="block w-full px-3 py-2 text-left transition-colors hover:bg-gray-100"
+            className="block w-full px-3 py-2 text-left transition-colors duration-100 hover:bg-gray-100"
           >
             Account Settings
           </Link>
 
           <button
             onClick={signOutUser}
-            className="block w-full px-3 py-2 text-left transition-colors hover:bg-gray-100"
+            className="block w-full px-3 py-2 text-left transition-colors duration-100 hover:bg-gray-100"
           >
             Sign Out
           </button>
