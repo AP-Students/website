@@ -362,6 +362,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
                       <input
                         defaultValue={unit.title}
                         ref={unitTitleInputRef}
+                        onClick={(e) => e.stopPropagation()}
                         onBlur={(e) => editUnitTitle(unitIndex, e.target.value)}
                         className="border border-blue-500"
                       />
