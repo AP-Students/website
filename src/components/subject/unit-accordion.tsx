@@ -18,13 +18,13 @@ type Props = {
 const UnitAccordion = ({ unit, pathname, unitIndex }: Props) => {
   return (
     <AccordionItem
-      className="mb-9 border-none"
+      className="mb-3 border-none"
       value={unit.title}
       key={unitIndex}
     >
       <AccordionTrigger
         id={unit.title}
-        className="pb-1.5 text-left text-3xl font-semibold hover:no-underline sm:text-4xl"
+        className="text-balance pb-1.5 text-left text-3xl font-semibold hover:no-underline sm:text-4xl"
       >
         {unit.title}
       </AccordionTrigger>
