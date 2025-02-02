@@ -116,11 +116,21 @@ function AdminPanel({ user }: { user: User }) {
       <div className="mb-4 rounded-lg border p-4 shadow-sm">
         <input
           type="text"
-          className="mb-3 w-full rounded-md border p-2"
+          className="mb-2 w-full rounded-md border p-2"
           placeholder="Search for a user..."
           value={searchTermUsers}
           onChange={(e) => setSearchTermUsers(e.target.value)}
         />
+        <div className="mb-2 flex gap-1 tabular-nums">
+          <p>{filteredUsers.length} result(s):</p>
+          <p>
+            {filteredUsers.filter((u) => u.access === "admin").length} admin
+            <br />
+            {filteredUsers.filter((u) => u.access === "member").length} member
+            <br />
+            {filteredUsers.filter((u) => u.access === "user").length} user
+          </p>
+        </div>
         <ul className="class-list grid max-h-60 gap-2 overflow-y-auto">
           {!error &&
             filteredUsers.map(
