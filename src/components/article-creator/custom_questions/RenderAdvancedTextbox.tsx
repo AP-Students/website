@@ -9,11 +9,13 @@ interface Props {
 }
 
 interface FileWrapper {
-  file: File
+  file: File;
 }
 
 // Utility to retrieve a file from IndexedDB based on unique ID
-export function getFileFromIndexedDB(name: string): Promise<FileWrapper | null> {
+export function getFileFromIndexedDB(
+  name: string,
+): Promise<FileWrapper | null> {
   return new Promise((resolve) => {
     const dbRequest = indexedDB.open("mediaFilesDB", 2);
 
@@ -126,7 +128,7 @@ const FileRenderer: React.FC<{ file: QuestionFile }> = ({ file }) => {
 
 export function RenderContent({ content }: Props) {
   return (
-    <div>
+    <div className="whitespace-pre-wrap">
       {/* Render text content directly */}
       {content.value?.split("$@").map((line, lineIndex) => {
         if (line.endsWith("$")) {
