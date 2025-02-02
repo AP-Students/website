@@ -2,14 +2,14 @@
 import Navbar from "@/components/global/navbar";
 import Footer from "@/components/global/footer";
 import type { User } from "@/types/user";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUserManagement } from "./useUserManagement";
 import apClassesData from "@/components/apClasses.json";
 import { useUser } from "../../components/hooks/UserContext";
 import Link from "next/link";
 import { formatSlug } from "@/lib/utils";
-import { PencilRuler, ShieldCheck } from "lucide-react";
+import { PencilRuler, ShieldCheck, X } from "lucide-react";
 
 const apClasses = apClassesData.apClasses;
 
@@ -92,17 +92,16 @@ function AdminPanel({ user }: { user: User }) {
   // Users here is refering to the FiveHive users propagated in the changeUserRole (only seen by admins)
   const { users, error, handleRoleChange } = useUserManagement(user);
   const [searchTermUsers, setSearchTermUsers] = useState<string>("");
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  const openModal = (user: User) => {
-    setSelectedUser(user);
-    setIsModalOpen(true);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  const openDialog = () => {
+    if (dialogRef.current) dialogRef.current.showModal();
   };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedUser(null);
+  const closeDialog = () => {
+    if (dialogRef.current) dialogRef.current.close();
   };
 
   const filteredUsers = users.filter((user) =>
@@ -135,7 +134,8 @@ function AdminPanel({ user }: { user: User }) {
                       alert("Admins cannot demote other admins");
                       return;
                     } else {
-                      openModal(u);
+                      setSelectedUser(u);
+                      openDialog();
                     }
                   }}
                 >
@@ -156,20 +156,26 @@ function AdminPanel({ user }: { user: User }) {
         </ul>
       </div>
 
-      {/* Modal for Role Change */}
-      {isModalOpen && selectedUser && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="rounded-lg bg-white p-6 shadow-lg">
-            <h3 className="mb-4 text-xl font-semibold">
-              Change role for {selectedUser.displayName}
+      <dialog
+        id="dialog"
+        ref={dialogRef}
+        className="rounded-lg border border-gray-400 p-4 pt-8 shadow-lg"
+      >
+        <button className="absolute right-1 top-1" onClick={closeDialog}>
+          <X />
+        </button>
+        {selectedUser && (
+          <>
+            <h3 className="mb-4">
+              Change {selectedUser.displayName}'s role ({selectedUser.access})
             </h3>
             <div className="flex justify-between space-x-4">
               <button
-                className="rounded-lg bg-blue-500 p-2 text-white"
+                className="rounded-md bg-red-600 px-4 py-2 text-white disabled:bg-gray-400"
                 onClick={async () => {
                   try {
                     await handleRoleChange(selectedUser, "member");
-                    closeModal(); // Runs only after handleRoleChange succeeds
+                    closeDialog();
                   } catch (error) {
                     alert(
                       error instanceof Error
@@ -178,15 +184,16 @@ function AdminPanel({ user }: { user: User }) {
                     );
                   }
                 }}
+                disabled={selectedUser.access === "member"}
               >
                 Set to Member
               </button>
               <button
-                className="rounded-lg bg-red-500 p-2 text-white"
+                className="rounded-md bg-gray-600 px-4 py-2 text-white disabled:bg-gray-400"
                 onClick={async () => {
                   try {
                     await handleRoleChange(selectedUser, "user");
-                    closeModal(); // Runs only after handleRoleChange succeeds
+                    closeDialog();
                   } catch (error) {
                     alert(
                       error instanceof Error
@@ -195,19 +202,14 @@ function AdminPanel({ user }: { user: User }) {
                     );
                   }
                 }}
+                disabled={selectedUser.access === "user"}
               >
                 Set to User
               </button>
             </div>
-            <button
-              className="mt-4 min-w-full text-center text-gray-500 underline"
-              onClick={closeModal}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </dialog>
     </>
   );
 }
