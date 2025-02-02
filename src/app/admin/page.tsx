@@ -2,7 +2,7 @@
 import Navbar from "@/components/global/navbar";
 import Footer from "@/components/global/footer";
 import type { User } from "@/types/user";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUserManagement } from "./useUserManagement";
 import apClassesData from "@/components/apClasses.json";
@@ -90,9 +90,18 @@ function SelectCourse() {
 
 function AdminPanel({ user }: { user: User }) {
   // Users here is refering to the FiveHive users propagated in the changeUserRole (only seen by admins)
-  const { users, error, handleRoleChange } = useUserManagement(user);
+  const {
+    users: initialUsers,
+    error,
+    handleRoleChange,
+  } = useUserManagement(user);
+  const [users, setUsers] = useState<User[]>(initialUsers);
   const [searchTermUsers, setSearchTermUsers] = useState<string>("");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    setUsers(initialUsers);
+  }, [initialUsers]);
 
   const dialogRef = useRef<HTMLDialogElement>(null);
 
@@ -104,8 +113,11 @@ function AdminPanel({ user }: { user: User }) {
     if (dialogRef.current) dialogRef.current.close();
   };
 
-  const filteredUsers = users.filter((user) =>
-    user.displayName.toLowerCase().includes(searchTermUsers.toLowerCase()),
+  const filteredUsers = users.filter(
+    (user) =>
+      user.displayName.toLowerCase().includes(searchTermUsers.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTermUsers.toLowerCase()) ||
+      user.access.toLowerCase().includes(searchTermUsers.toLowerCase()),
   );
 
   return (
@@ -117,7 +129,7 @@ function AdminPanel({ user }: { user: User }) {
         <input
           type="text"
           className="mb-2 w-full rounded-md border p-2"
-          placeholder="Search for a user..."
+          placeholder="Find users by name, email, or role..."
           value={searchTermUsers}
           onChange={(e) => setSearchTermUsers(e.target.value)}
         />
@@ -185,6 +197,13 @@ function AdminPanel({ user }: { user: User }) {
                 onClick={async () => {
                   try {
                     await handleRoleChange(selectedUser, "member");
+                    setUsers((prev) =>
+                      prev.map((user) =>
+                        user.uid === selectedUser.uid
+                          ? { ...user, access: "member" }
+                          : user,
+                      ),
+                    );
                     closeDialog();
                   } catch (error) {
                     alert(
@@ -203,6 +222,13 @@ function AdminPanel({ user }: { user: User }) {
                 onClick={async () => {
                   try {
                     await handleRoleChange(selectedUser, "user");
+                    setUsers((prev) =>
+                      prev.map((user) =>
+                        user.uid === selectedUser.uid
+                          ? { ...user, access: "user" }
+                          : user,
+                      ),
+                    );
                     closeDialog();
                   } catch (error) {
                     alert(
