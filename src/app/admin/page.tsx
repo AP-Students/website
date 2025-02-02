@@ -185,7 +185,7 @@ function AdminPanel({ user }: { user: User }) {
                 className="rounded-lg bg-red-500 p-2 text-white"
                 onClick={async () => {
                   try {
-                    await handleRoleChange(selectedUser, "member");
+                    await handleRoleChange(selectedUser, "user");
                     closeModal(); // Runs only after handleRoleChange succeeds
                   } catch (error) {
                     alert(
