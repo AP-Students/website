@@ -9,6 +9,7 @@ import apClassesData from "@/components/apClasses.json";
 import { useUser } from "../../components/hooks/UserContext";
 import Link from "next/link";
 import { formatSlug } from "@/lib/utils";
+import { PencilRuler, ShieldCheck } from "lucide-react";
 
 const apClasses = apClassesData.apClasses;
 
@@ -19,8 +20,7 @@ const Page = () => {
   if (!user) {
     return (
       <div className="flex h-screen items-center justify-center text-3xl">
-        {" "}
-        Authenticating user...{" "}
+        Authenticating user...
       </div>
     );
   }
@@ -54,7 +54,6 @@ const Page = () => {
 function SelectCourse() {
   const [searchTermAPClasses, setSearchTermAPClasses] = useState<string>("");
 
-  // Filter AP classes based on search term
   const filteredClasses = apClasses.filter((apClass) =>
     apClass.toLowerCase().includes(searchTermAPClasses.toLowerCase()),
   );
@@ -106,6 +105,10 @@ function AdminPanel({ user }: { user: User }) {
     setSelectedUser(null);
   };
 
+  const filteredUsers = users.filter((user) =>
+    user.displayName.toLowerCase().includes(searchTermUsers.toLowerCase()),
+  );
+
   return (
     <>
       <p className="w-full text-pretty text-lg opacity-70 sm:text-lg lg:text-xl">
@@ -119,14 +122,14 @@ function AdminPanel({ user }: { user: User }) {
           value={searchTermUsers}
           onChange={(e) => setSearchTermUsers(e.target.value)}
         />
-        <ul className="class-list max-h-60 overflow-y-auto">
+        <ul className="class-list grid max-h-60 gap-2 overflow-y-auto">
           {!error &&
-            users.map(
+            filteredUsers.map(
               // If error, it will show error message. Otherwise, it will show users
               (u) => (
                 <li
                   key={u.uid}
-                  className="grid cursor-pointer grid-cols-1 gap-4 rounded-md border p-4 text-center shadow-md hover:bg-gray-200 md:grid-cols-2 lg:grid-cols-3"
+                  className="grid cursor-pointer grid-cols-1 gap-x-4 rounded-md border p-3 text-center hover:bg-gray-200 md:grid-cols-3"
                   onClick={() => {
                     if (u.access === "admin") {
                       alert("Admins cannot demote other admins");
@@ -136,13 +139,17 @@ function AdminPanel({ user }: { user: User }) {
                     }
                   }}
                 >
-                  <div className="hidden font-bold lg:block">
-                    {u.displayName}
-                  </div>
-                  <div className="font-normal md:font-bold lg:font-normal">
-                    {u.email}
-                  </div>
-                  <div className="font-bold">{u.access}</div>
+                  <p className="font-bold">{u.displayName}</p>
+                  <p>{u.email}</p>
+                  <p className="font-bold">
+                    {u.access}
+                    {u.access === "admin" && (
+                      <ShieldCheck className="ml-1 inline" />
+                    )}
+                    {u.access === "member" && (
+                      <PencilRuler className="ml-1 inline" />
+                    )}
+                  </p>
                 </li>
               ),
             )}

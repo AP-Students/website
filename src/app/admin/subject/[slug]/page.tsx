@@ -97,12 +97,14 @@ const Page = ({ params }: { params: { slug: string } }) => {
             const unitsLength = (docSnap.data() as Subject).units.length;
             setNewChapterTitles(Array(unitsLength).fill(""));
           } else {
-            emptyData.title =
-              apClasses.find(
-                (apClass) =>
-                  formatSlug(apClass.replace(/AP /g, "")) === params.slug,
-              ) ?? "";
-            setSubject(emptyData);
+            setSubject({
+              ...structuredClone(emptyData),
+              title:
+                apClasses.find(
+                  (apClass) =>
+                    formatSlug(apClass.replace(/AP /g, "")) === params.slug,
+                ) ?? "",
+            });
             // Initialize newChapterTitles with empty strings for each unit in emptyData
             const unitsLength = emptyData.units.length;
             setNewChapterTitles(Array(unitsLength).fill(""));
@@ -360,6 +362,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
                       <input
                         defaultValue={unit.title}
                         ref={unitTitleInputRef}
+                        onClick={(e) => e.stopPropagation()}
                         onBlur={(e) => editUnitTitle(unitIndex, e.target.value)}
                         className="border border-blue-500"
                       />

@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { Button } from "../ui/button";
+import { buttonVariants } from "../ui/button";
 import { cn } from "@/lib/utils";
 import {
   Sheet,
@@ -52,7 +52,7 @@ const Navbar = ({
             variant === "primary" && "grow basis-0",
           )}
         >
-          <Link href={"/"}>
+          <Link href="/">
             <Image src="/logo.png" alt="Logo" width={100} height={100} />
           </Link>
         </div>
@@ -74,17 +74,19 @@ const Navbar = ({
           )}
         >
           {user ? (
-            <>
-              <SignedInPfp />
-            </>
+            <SignedInPfp />
           ) : (
             <>
-              <NavbarLink href={"/signup"}>Sign up</NavbarLink>
+              <NavbarLink href="/signup">Sign up</NavbarLink>
 
-              <Link href={"/login"}>
-                <Button className="text-md px-5 py-3 font-semibold text-white">
-                  Log in
-                </Button>
+              <Link
+                href="/login"
+                className={cn(
+                  buttonVariants({ variant: "default" }),
+                  "text-md px-5 font-semibold",
+                )}
+              >
+                Log in
               </Link>
             </>
           )}
@@ -93,15 +95,13 @@ const Navbar = ({
 
       <div
         className={cn(
-          "flex w-full items-center justify-between px-8 py-7 md:hidden",
+          "flex w-full items-center justify-between px-8 pt-7 md:hidden",
           className,
         )}
       >
-        <div className="flex items-center justify-center">
-          <Link href={"/"}>
-            <Image src="/logo.png" alt="Logo" width={75} height={75} />
-          </Link>
-        </div>
+        <Link href="/">
+          <Image src="/logo.png" alt="Logo" width={75} height={75} />
+        </Link>
 
         <MobileNavbar />
       </div>
@@ -118,10 +118,9 @@ const MobileNavbar = () => {
         <SheetTrigger>
           <MenuIcon className="opacity-70" />
         </SheetTrigger>
-        <SheetContent className="bg-primary-foreground">
+        <SheetContent className="flex flex-col bg-primary-foreground">
           <SheetHeader>
             <SheetTitle className="flex w-full">
-              {" "}
               <SheetTrigger asChild>
                 <Link className="inline-block" href={"/"}>
                   <Image
@@ -134,7 +133,7 @@ const MobileNavbar = () => {
               </SheetTrigger>
             </SheetTitle>
           </SheetHeader>
-          <div className="mt-4 flex flex-col gap-2">
+          <div className="mt-4 flex grow flex-col gap-2">
             {links.map((link) => (
               <div key={link.name}>
                 <SheetTrigger asChild>
@@ -146,18 +145,21 @@ const MobileNavbar = () => {
             ))}
 
             {user ? (
-              <SignedInPfp />
+              <SignedInPfp mobile />
             ) : (
               <>
-                <div>
-                  <NavbarLink href={"/signup"} isMobile={true}>
-                    Sign up
-                  </NavbarLink>
-                </div>
-
-                <Button className="text-md px-5 py-3 font-semibold text-white">
-                  <Link href={"/login"}>Log in</Link>
-                </Button>
+                <Link
+                  href="/signup"
+                  className={buttonVariants({ variant: "outline" })}
+                >
+                  Sign up
+                </Link>
+                <Link
+                  href="/login"
+                  className={buttonVariants({ variant: "default" })}
+                >
+                  Log in
+                </Link>
               </>
             )}
           </div>
