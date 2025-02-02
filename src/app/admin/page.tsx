@@ -177,7 +177,7 @@ function AdminPanel({ user }: { user: User }) {
         {selectedUser && (
           <>
             <h3 className="mb-4">
-              Change {selectedUser.displayName}'s role ({selectedUser.access})
+              Update role of {selectedUser.displayName} ({selectedUser.access})
             </h3>
             <div className="flex justify-between space-x-4">
               <button
