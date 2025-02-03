@@ -101,8 +101,8 @@ function AdminPanel({ user }: { user: User }) {
   };
 
   const closeModal = () => {
-    setIsModalOpen(false);
     setSelectedUser(null);
+    setIsModalOpen(false);
   };
 
   const filteredUsers = users.filter((user) =>
@@ -199,8 +199,9 @@ function AdminPanel({ user }: { user: User }) {
                 Set to User
               </button>
             </div>
+            <div className="mt-2"></div>
             <button
-              className="mt-4 min-w-full text-center text-gray-500 underline"
+              className="p-2 min-w-full text-center text-gray-500 underline"
               onClick={closeModal}
             >
               Cancel
