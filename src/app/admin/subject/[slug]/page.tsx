@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Save, PlusCircle } from "lucide-react";
 import { useUser } from "@/components/hooks/UserContext";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, writeBatch } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, writeBatch } from "firebase/firestore";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Blocker } from "@/app/admin/subject/navigation-block";
@@ -161,54 +161,94 @@ export default function Page({ params }: { params: { slug: string } }) {
 
   /****************************************************
    *                   SAVE ACTION
+   * This function will force delete anything in the db that isnt in the local to keep db clean
+   * If you dont want this, use the commented out handleSave.
    ****************************************************/
 
+  // Replaces save
   const handleSave = async () => {
     // Rebuild the Subject object from current state
     const subjectToSave: Subject = {
       title: subjectTitle,
       units: units,
     };
-
+  
     try {
       const batch = writeBatch(db);
-
-      // Save the main subject doc
+  
+      // 1. Save the main subject doc
       batch.set(doc(db, "subjects", params.slug), subjectToSave);
-
-      // Save each unit, chapter, test as subcollections
-      subjectToSave.units.forEach((unit) => {
+  
+      // 2. For each Unit, update or create the unit doc, then manage sub-collections
+      for (const unit of subjectToSave.units) {
+        // Set (upsert) the Unit itself
         batch.set(doc(db, "subjects", params.slug, "units", unit.id), unit);
-
-        // chapters
-        unit.chapters.forEach((chapter) => {
-          const chapterDocRef = doc(
-            db,
-            "subjects",
-            params.slug,
-            "units",
-            unit.id,
-            "chapters",
-            chapter.id
-          );
+  
+        // ----- Chapters -----
+        const chapterCollectionRef = collection(
+          db,
+          "subjects",
+          params.slug,
+          "units",
+          unit.id,
+          "chapters"
+        );
+  
+        // a) Fetch all existing chapters in Firestore
+        const existingChaptersSnap = await getDocs(chapterCollectionRef);
+  
+        // b) Build a set of local chapter IDs so we know what should exist
+        const localChapterIds = new Set(unit.chapters.map((c) => c.id));
+  
+        // c) For each chapter in Firestore, if it's NOT in our local data, delete it
+        existingChaptersSnap.forEach((chapterDoc) => {
+          if (!localChapterIds.has(chapterDoc.id)) {
+            batch.delete(chapterDoc.ref);
+          }
+        });
+  
+        // d) Now, upsert all chapters from our local data
+        for (const chapter of unit.chapters) {
+          const chapterDocRef = doc(chapterCollectionRef, chapter.id);
           batch.set(chapterDocRef, chapter, { merge: true });
-        });
-
-        // tests
-        unit.tests?.forEach((test) => {
-          const testDocRef = doc(
+        }
+  
+        // ----- Tests -----
+        if (unit.tests) {
+          const testsCollectionRef = collection(
             db,
             "subjects",
             params.slug,
             "units",
             unit.id,
-            "tests",
-            test.id
+            "tests"
           );
-          batch.set(testDocRef, test, { merge: true });
-        });
-      });
-
+  
+          // a) Fetch all existing tests in Firestore
+          const existingTestsSnap = await getDocs(testsCollectionRef);
+  
+          // b) Build a set of local test IDs
+          const localTestIds = new Set(unit.tests.map((t) => t.id));
+  
+          // c) Delete any Firestore test that is no longer in our local data
+          existingTestsSnap.forEach((testDoc) => {
+            if (!localTestIds.has(testDoc.id)) {
+              batch.delete(testDoc.ref);
+            }
+          });
+  
+          // d) Upsert all tests from our local data
+          for (const test of unit.tests) {
+            const testDocRef = doc(testsCollectionRef, test.id);
+            batch.set(testDocRef, test, { merge: true });
+          }
+        }
+  
+        // If you still have single-test logic (unit.test / unit.testId),
+        // you'd have to decide how to handle that (like the multi-test approach).
+      }
+  
+      // 3. Commit the batch
       await batch.commit();
       alert("Subject content saved successfully.");
       setUnsavedChanges(false);
@@ -217,6 +257,62 @@ export default function Page({ params }: { params: { slug: string } }) {
       alert("Error saving subject. Check console for details.");
     }
   };
+
+// Adds save
+  // const handleSave = async () => {
+  //   // Rebuild the Subject object from current state
+  //   const subjectToSave: Subject = {
+  //     title: subjectTitle,
+  //     units: units,
+  //   };
+
+  //   try {
+  //     const batch = writeBatch(db);
+
+  //     // Save the main subject doc
+  //     batch.set(doc(db, "subjects", params.slug), subjectToSave);
+
+  //     // Save each unit, chapter, test as subcollections
+  //     subjectToSave.units.forEach((unit) => {
+  //       batch.set(doc(db, "subjects", params.slug, "units", unit.id), unit);
+
+  //       // chapters
+  //       unit.chapters.forEach((chapter) => {
+  //         const chapterDocRef = doc(
+  //           db,
+  //           "subjects",
+  //           params.slug,
+  //           "units",
+  //           unit.id,
+  //           "chapters",
+  //           chapter.id
+  //         );
+  //         batch.set(chapterDocRef, chapter, { merge: true });
+  //       });
+
+  //       // tests
+  //       unit.tests?.forEach((test) => {
+  //         const testDocRef = doc(
+  //           db,
+  //           "subjects",
+  //           params.slug,
+  //           "units",
+  //           unit.id,
+  //           "tests",
+  //           test.id
+  //         );
+  //         batch.set(testDocRef, test, { merge: true });
+  //       });
+  //     });
+
+  //     await batch.commit();
+  //     alert("Subject content saved successfully.");
+  //     setUnsavedChanges(false);
+  //   } catch (error) {
+  //     console.error("Error saving:", error);
+  //     alert("Error saving subject. Check console for details.");
+  //   }
+  // };
 
   if (!user) {
     return (
@@ -259,6 +355,7 @@ export default function Page({ params }: { params: { slug: string } }) {
                 onDelete={handleDeleteUnit}
                 onMoveUp={handleMoveUnitUp}
                 onMoveDown={handleMoveUnitDown}
+                subjectSlug={params.slug}
               />
             ))}
           </div>

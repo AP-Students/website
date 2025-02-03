@@ -32,8 +32,7 @@ interface UnitComponentProps {
   onDelete: (unitId: string) => void;
   onMoveUp: (index: number) => void;
   onMoveDown: (index: number) => void;
-  // If you need the subject slug for linking, pass it here:
-  subjectSlug?: string;
+  subjectSlug: string;
 }
 
 /**
@@ -47,7 +46,7 @@ function UnitComponent({
   onDelete,
   onMoveUp,
   onMoveDown,
-  subjectSlug = "your-subject-slug",
+  subjectSlug,
 }: UnitComponentProps) {
   const [expanded, setExpanded] = useState<boolean>(false);
 
@@ -114,7 +113,9 @@ function UnitComponent({
   };
 
   const handleChapterDelete = (chapterId: string) => {
-    if (!confirm("Delete this chapter?")) return;
+    if (!confirm(
+      "If you delete this chapter and save changes, you will lose all chapter data. Are you sure you want to delete this chapter?",
+    )) return;
     const updatedChapters = chapters.filter((c) => c.id !== chapterId);
     setChapters(updatedChapters);
 
@@ -129,7 +130,7 @@ function UnitComponent({
 
   const handleChapterUpdate = (chapterId: string, newTitle: string) => {
     const updatedChapters = chapters.map((ch) =>
-      ch.id === chapterId ? { ...ch, title: newTitle } : ch
+      ch.id === chapterId ? { ...ch, title: newTitle } : ch,
     );
     setChapters(updatedChapters);
 
@@ -166,7 +167,7 @@ function UnitComponent({
 
   const handleTestUpdate = (testId: string, newName: string) => {
     const updatedTests = tests.map((t) =>
-      t.id === testId ? { ...t, name: newName } : t
+      t.id === testId ? { ...t, name: newName } : t,
     );
     setTests(updatedTests);
 
@@ -180,7 +181,12 @@ function UnitComponent({
   };
 
   const handleTestDelete = (testId: string) => {
-    if (!confirm("Delete this test?")) return;
+    if (
+      !confirm(
+        "If you delete this test and save changes, you will lose all test data. Are you sure you want to delete this test?",
+      )
+    )
+      return;
     const updatedTests = tests.filter((t) => t.id !== testId);
     setTests(updatedTests);
 
