@@ -44,7 +44,7 @@ function UnitTests({
 
   return (
     <div className="mt-8">
-      <h3 className="text-xl font-semibold">Unit Tests</h3>
+      <h3 className="text-xl font-semibold mb-3">Unit Tests</h3>
 
       {tests.map((test, testIdx) => (
         <div
@@ -53,7 +53,7 @@ function UnitTests({
         >
           {/* Example Link to test editor (adjust as needed) */}
           <Link
-            className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-2 py-1 text-sm font-medium hover:bg-slate-100"
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-full text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50  border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
             href={`/admin/subject/${subjectSlug}/${unitId}/test/${test.id}`}
           >
             Edit Test
@@ -84,13 +84,6 @@ function UnitTests({
           onChange={(e) => setNewTestName(e.target.value)}
           placeholder="New test name"
           className="w-1/2"
-        />
-        <Input
-          type="number"
-          value={newTestTime}
-          onChange={(e) => setNewTestTime(e.target.value)}
-          placeholder="0"
-          className="w-20"
         />
         <Button
           onClick={handleAddTest}

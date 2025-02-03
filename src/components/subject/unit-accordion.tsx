@@ -47,7 +47,25 @@ const UnitAccordion = ({ unit, pathname, unitIndex }: Props) => {
             </div>
           </Link>
         ))}
-        {unit.test && (
+        {/* Handle multiple tests (unit.tests) first */}
+        {unit.tests ? (
+          unit.tests.map((test, testIndex) => (
+            <Link
+              className="group flex items-center gap-x-3 font-semibold last:mb-0"
+              href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`}
+              key={test.id}
+            >
+              <BookOpenCheck className="size-8" />
+              <div className="group-hover:underline">
+                {test.name
+                  ? test.name
+                  // unit.tests cuz typescript doesn't recognize I checked for unit.tests already
+                  : `Unit ${unitIndex + 1} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
+              </div>
+            </Link>
+          ))
+        ) : // Fallback: single test flow
+        unit.test && unit.testId ? (
           <Link
             className="group mb-3 flex items-center gap-x-3 font-semibold last:mb-0"
             href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${unit.testId}`}
@@ -59,7 +77,7 @@ const UnitAccordion = ({ unit, pathname, unitIndex }: Props) => {
                 : `Unit ${unitIndex + 1} Test`}
             </div>
           </Link>
-        )}
+        ) : null}
       </AccordionContent>
     </AccordionItem>
   );
