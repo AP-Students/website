@@ -11,7 +11,6 @@ import {
   PlusCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import type { Unit, Chapter, UnitTest } from "@/types/firestore";
 import short from "short-uuid";
 import UnitTests from "./unitTests";
@@ -258,7 +257,7 @@ function UnitComponent({
 
           {/* ADD CHAPTER */}
           <div className="mt-4 flex gap-2">
-            <Input
+            <input
               value={newChapterTitle}
               onChange={(e) => setNewChapterTitle(e.target.value)}
               placeholder="New chapter title"

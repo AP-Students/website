@@ -1,11 +1,10 @@
 "use client";
 
 import React, { memo, useState } from "react";
-import Link from "next/link";
 import { Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Chapter } from "@/types/firestore";
-import { Input } from "@/components/ui/input";
+import { Link } from "../../link";
 
 interface ChapterComponentProps {
   chapter: Chapter;
@@ -58,8 +57,8 @@ function ChapterComponent({
       {editing ? (
         <>
           <p className="text-nowrap px-2">Chapter {index + 1}:</p>
-          <Input
-            className="-ml-5 w-full border border-blue-500"
+          <input
+            className="-ml-5 w-full"
             autoFocus
             value={localTitle}
             onChange={(e) => setLocalTitle(e.target.value)}
