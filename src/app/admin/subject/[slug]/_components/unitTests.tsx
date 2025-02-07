@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, memo } from "react";
-import Link from "next/link";
+import { Link } from "../../link";
 import type { UnitTest } from "@/types/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Trash, PlusCircle } from "lucide-react";
 
 interface UnitTestsProps {
   unitId: string;
-  subjectSlug: string;         // If you want to build a dynamic link based on the subject slug
+  subjectSlug: string; // If you want to build a dynamic link based on the subject slug
   tests: UnitTest[];
   onTestUpdate: (testId: string, newName: string) => void;
   onTestDelete: (testId: string) => void;
@@ -44,7 +44,7 @@ function UnitTests({
 
   return (
     <div className="mt-8">
-      <h3 className="text-xl font-semibold mb-3">Unit Tests</h3>
+      <h3 className="mb-3 text-xl font-semibold">Unit Tests</h3>
 
       {tests.map((test, testIdx) => (
         <div
@@ -53,7 +53,7 @@ function UnitTests({
         >
           {/* Example Link to test editor (adjust as needed) */}
           <Link
-            className="inline-flex items-center justify-center whitespace-nowrap rounded-full text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50  border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
+            className="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-full border border-input bg-background px-4 py-2 text-sm font-medium ring-offset-background transition-colors  hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
             href={`/admin/subject/${subjectSlug}/${unitId}/test/${test.id}`}
           >
             Edit Test
@@ -96,4 +96,4 @@ function UnitTests({
   );
 }
 
-  export default memo(UnitTests);
+export default memo(UnitTests);
