@@ -4,7 +4,7 @@ import { signOut } from "firebase/auth";
 import React, { useState } from "react";
 import { auth } from "@/lib/firebase";
 import Link from "next/link";
-import { UserProvider, useUser } from "../hooks/UserContext";
+import { useUser } from "../hooks/UserContext";
 import Image from "next/image";
 import { buttonVariants } from "../ui/button";
 import { cn } from "@/lib/utils";

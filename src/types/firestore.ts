@@ -10,12 +10,15 @@ export type Unit = {
   id: string;
   title: string;
   chapters: Chapter[];
-  test: boolean;
+  tests?: UnitTest[];
+  // Use UnitTest.id as testId
+  test?: boolean;
   testId?: string;
 };
 
 export type UnitTest = {
   id: string;
+  name?: string;
   questions: QuestionFormat[];
   time: number;
 };
