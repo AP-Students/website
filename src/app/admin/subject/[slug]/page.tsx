@@ -1,11 +1,17 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
+import { Link } from "@/app/admin/subject/link";
 import { ArrowLeft, Save, PlusCircle } from "lucide-react";
 import { useUser } from "@/components/hooks/UserContext";
 import { db } from "@/lib/firebase";
-import { collection, doc, getDoc, getDocs, writeBatch } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  writeBatch,
+} from "firebase/firestore";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Blocker } from "@/app/admin/subject/navigation-block";
@@ -14,7 +20,6 @@ import { formatSlug } from "@/lib/utils";
 import short from "short-uuid";
 import type { Subject, Unit } from "@/types/firestore";
 import UnitComponent from "./_components/unit";
-
 
 const translator = short(short.constants.flickrBase58);
 
@@ -60,7 +65,7 @@ const emptyData: Subject = {
 export default function Page({ params }: { params: { slug: string } }) {
   const { user, error, setError, setLoading } = useUser();
   const [subjectTitle, setSubjectTitle] = useState<string>("");
-  const [units, setUnits] = useState<Unit[]>([]); 
+  const [units, setUnits] = useState<Unit[]>([]);
 
   const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
 
@@ -84,7 +89,7 @@ export default function Page({ params }: { params: { slug: string } }) {
             const foundTitle =
               apClasses.find(
                 (apClass) =>
-                  formatSlug(apClass.replace(/AP /g, "")) === params.slug
+                  formatSlug(apClass.replace(/AP /g, "")) === params.slug,
               ) ?? "";
             const newSubject = structuredClone(emptyData);
             newSubject.title = foundTitle;
@@ -153,9 +158,7 @@ export default function Page({ params }: { params: { slug: string } }) {
 
   // Called by each <UnitComponent> whenever that unit updates
   const handleUnitChange = (unitId: string, updatedUnit: Unit) => {
-    setUnits((prev) =>
-      prev.map((u) => (u.id === unitId ? updatedUnit : u))
-    );
+    setUnits((prev) => prev.map((u) => (u.id === unitId ? updatedUnit : u)));
     setUnsavedChanges(true);
   };
 
@@ -172,18 +175,18 @@ export default function Page({ params }: { params: { slug: string } }) {
       title: subjectTitle,
       units: units,
     };
-  
+
     try {
       const batch = writeBatch(db);
-  
+
       // 1. Save the main subject doc
       batch.set(doc(db, "subjects", params.slug), subjectToSave);
-  
+
       // 2. For each Unit, update or create the unit doc, then manage sub-collections
       for (const unit of subjectToSave.units) {
         // Set (upsert) the Unit itself
         batch.set(doc(db, "subjects", params.slug, "units", unit.id), unit);
-  
+
         // ----- Chapters -----
         const chapterCollectionRef = collection(
           db,
@@ -191,28 +194,28 @@ export default function Page({ params }: { params: { slug: string } }) {
           params.slug,
           "units",
           unit.id,
-          "chapters"
+          "chapters",
         );
-  
+
         // a) Fetch all existing chapters in Firestore
         const existingChaptersSnap = await getDocs(chapterCollectionRef);
-  
+
         // b) Build a set of local chapter IDs so we know what should exist
         const localChapterIds = new Set(unit.chapters.map((c) => c.id));
-  
+
         // c) For each chapter in Firestore, if it's NOT in our local data, delete it
         existingChaptersSnap.forEach((chapterDoc) => {
           if (!localChapterIds.has(chapterDoc.id)) {
             batch.delete(chapterDoc.ref);
           }
         });
-  
+
         // d) Now, upsert all chapters from our local data
         for (const chapter of unit.chapters) {
           const chapterDocRef = doc(chapterCollectionRef, chapter.id);
           batch.set(chapterDocRef, chapter, { merge: true });
         }
-  
+
         // ----- Tests -----
         if (unit.tests) {
           const testsCollectionRef = collection(
@@ -221,33 +224,33 @@ export default function Page({ params }: { params: { slug: string } }) {
             params.slug,
             "units",
             unit.id,
-            "tests"
+            "tests",
           );
-  
+
           // a) Fetch all existing tests in Firestore
           const existingTestsSnap = await getDocs(testsCollectionRef);
-  
+
           // b) Build a set of local test IDs
           const localTestIds = new Set(unit.tests.map((t) => t.id));
-  
+
           // c) Delete any Firestore test that is no longer in our local data
           existingTestsSnap.forEach((testDoc) => {
             if (!localTestIds.has(testDoc.id)) {
               batch.delete(testDoc.ref);
             }
           });
-  
+
           // d) Upsert all tests from our local data
           for (const test of unit.tests) {
             const testDocRef = doc(testsCollectionRef, test.id);
             batch.set(testDocRef, test, { merge: true });
           }
         }
-  
+
         // If you still have single-test logic (unit.test / unit.testId),
         // you'd have to decide how to handle that (like the multi-test approach).
       }
-  
+
       // 3. Commit the batch
       await batch.commit();
       alert("Subject content saved successfully.");
@@ -258,7 +261,7 @@ export default function Page({ params }: { params: { slug: string } }) {
     }
   };
 
-// Adds save
+  // Adds save
   // const handleSave = async () => {
   //   // Rebuild the Subject object from current state
   //   const subjectToSave: Subject = {
@@ -330,11 +333,17 @@ export default function Page({ params }: { params: { slug: string } }) {
       <div className="relative min-h-screen">
         <main className="container max-w-3xl flex-grow px-4 pb-8 pt-10 md:px-10 lg:px-14 2xl:px-20">
           <div className="flex justify-between">
-            <Link className={buttonVariants({ variant: "outline" })} href="/admin">
+            <Link
+              className={buttonVariants({ variant: "outline" })}
+              href="/admin"
+            >
               <ArrowLeft className="mr-2" />
               Return to Admin Dashboard
             </Link>
-            <Button className="bg-blue-500 hover:bg-blue-600" onClick={handleSave}>
+            <Button
+              className="bg-blue-500 hover:bg-blue-600"
+              onClick={handleSave}
+            >
               <Save className="mr-2" /> Save Changes
             </Button>
           </div>

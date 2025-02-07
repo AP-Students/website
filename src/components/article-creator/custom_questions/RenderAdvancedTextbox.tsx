@@ -9,11 +9,13 @@ interface Props {
 }
 
 interface FileWrapper {
-  file: File
+  file: File;
 }
 
 // Utility to retrieve a file from IndexedDB based on unique ID
-export function getFileFromIndexedDB(name: string): Promise<FileWrapper | null> {
+export function getFileFromIndexedDB(
+  name: string,
+): Promise<FileWrapper | null> {
   return new Promise((resolve) => {
     const dbRequest = indexedDB.open("mediaFilesDB", 2);
 
@@ -126,23 +128,22 @@ const FileRenderer: React.FC<{ file: QuestionFile }> = ({ file }) => {
 
 export function RenderContent({ content }: Props) {
   return (
-    <div>
+    <div className="custom-katex my-2 whitespace-pre-wrap">
       {/* Render text content directly */}
-      {content.value?.split("$@").map((line, lineIndex) => {
+      {content.value?.split(/(\$@[^$]+\$)/g).map((line, lineIndex) => {
         if (line.endsWith("$")) {
           return (
-            <div key={`latex-${lineIndex}`} className="custom-katex my-2">
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: katex.renderToString(line.slice(0, -1), {
-                    throwOnError: false,
-                  }),
-                }}
-              />
-            </div>
+            <span
+              key={`latex-${lineIndex}`}
+              dangerouslySetInnerHTML={{
+                __html: katex.renderToString(line.slice(2, -1), {
+                  throwOnError: false,
+                }),
+              }}
+            ></span>
           );
         }
-        return <div key={`text-${lineIndex}`}>{line}</div>;
+        return <span key={`text-${lineIndex}`}>{line}</span>;
       })}
 
       {/* Render files through individual components */}

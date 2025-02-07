@@ -16,6 +16,7 @@ import ReauthenticateModal from "@/components/auth/ReauthenticateModal";
 import Image from "next/image";
 import { useUser } from "@/components/hooks/UserContext";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 
 interface ManagementForm extends HTMLFormElement {
   displayName: {
@@ -34,8 +35,7 @@ export default function UserManagementPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string>("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [reauthModalOpen, setReauthModalOpen] = useState<boolean>(false);
   const [reauthAction, setReauthAction] = useState<
@@ -51,10 +51,7 @@ export default function UserManagementPage() {
         setUser(fetchedUser);
         setPhotoPreview(fetchedUser?.photoURL ?? "");
       } catch (error) {
-        setErrors((prev) => ({
-          ...prev,
-          general: "Failed to load user data. Please try again.",
-        }));
+        console.error(error);
       } finally {
         setLoading(false);
       }
@@ -64,8 +61,7 @@ export default function UserManagementPage() {
 
   const handleUpdateDisplayName = async (event: FormEvent<ManagementForm>) => {
     event.preventDefault();
-    setErrors({});
-    setSuccessMessage(null);
+    setErrorMessage("");
 
     const displayName = event.currentTarget.displayName.value.trim();
     if (!user || !displayName || displayName === user.displayName) return;
@@ -78,20 +74,23 @@ export default function UserManagementPage() {
 
       clearUserCache();
       await updateUser();
-      setSuccessMessage("Display name updated successfully.");
+      toast.success("Display name updated successfully.");
     } catch (error: unknown) {
-      setErrors((prev) => ({ ...prev, displayName: error as string }));
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage("An unknown error occurred.");
+      }
     }
   };
 
   const handleUpdatePassword = async (event: FormEvent<ManagementForm>) => {
     event.preventDefault();
-    setErrors({});
-    setSuccessMessage(null);
+    setErrorMessage("");
 
     const newPassword = event.currentTarget.password.value.trim();
     if (!newPassword) {
-      setErrors((prev) => ({ ...prev, password: "Password cannot be empty." }));
+      setErrorMessage("Password cannot be empty.");
       return;
     }
 
@@ -104,17 +103,20 @@ export default function UserManagementPage() {
   const handleConfirmUpdatePassword = async () => {
     try {
       await updatePassword(tempPassword);
-      setSuccessMessage("Password updated successfully.");
+      toast.success("Password updated successfully.");
       setTempPassword("");
     } catch (error: unknown) {
-      setErrors((prev) => ({ ...prev, password: error as string }));
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage("An unknown error occurred.");
+      }
     }
   };
 
   const handleUpdatePhotoURL = async (event: FormEvent<ManagementForm>) => {
     event.preventDefault();
-    setErrors({});
-    setSuccessMessage(null);
+    setErrorMessage("");
 
     const photoURL = event.currentTarget.photoURL.value.trim();
     if (!user) return;
@@ -127,15 +129,18 @@ export default function UserManagementPage() {
 
       clearUserCache();
       await updateUser();
-      setSuccessMessage("Photo URL updated successfully.");
+      toast.success("Photo URL updated successfully.");
     } catch (error: unknown) {
-      setErrors((prev) => ({ ...prev, photoURL: error as string }));
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage("An unknown error occurred.");
+      }
     }
   };
 
   const handleDeleteAccount = async () => {
-    setErrors({});
-    setSuccessMessage(null);
+    setErrorMessage("");
 
     // Open reauthentication modal before proceeding
     setReauthAction("delete");
@@ -148,7 +153,11 @@ export default function UserManagementPage() {
       clearUserCache();
       router.push("/login");
     } catch (error: unknown) {
-      setErrors((prev) => ({ ...prev, general: error as string }));
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage("An unknown error occurred.");
+      }
     }
   };
 
@@ -204,15 +213,9 @@ export default function UserManagementPage() {
         </h1>
         <p className="mb-6 text-gray-600">Manage your account details below.</p>
 
-        {errors.general && (
+        {errorMessage && (
           <div className="mb-4 rounded-md bg-red-100 p-4 text-red-700">
-            {errors.general}
-          </div>
-        )}
-
-        {successMessage && (
-          <div className="mb-4 rounded-md bg-green-100 p-4 text-green-700">
-            {successMessage}
+            {errorMessage}
           </div>
         )}
 
@@ -232,9 +235,6 @@ export default function UserManagementPage() {
               className="rounded-md border border-gray-300 px-3 py-2"
               required
             />
-            {errors.displayName && (
-              <span className="text-sm text-red-600">{errors.displayName}</span>
-            )}
             <Button className="self-end text-sm font-semibold" type="submit">
               Save
             </Button>
@@ -256,9 +256,6 @@ export default function UserManagementPage() {
                 className="rounded-md border border-gray-300 px-3 py-2"
                 required
               />
-              {errors.password && (
-                <span className="text-sm text-red-600">{errors.password}</span>
-              )}
               <Button className="self-end text-sm font-semibold" type="submit">
                 Save
               </Button>
@@ -289,9 +286,6 @@ export default function UserManagementPage() {
               className="rounded-md border border-gray-300 px-3 py-2"
               required
             />
-            {errors.photoURL && (
-              <span className="text-sm text-red-600">{errors.photoURL}</span>
-            )}
             <Button className="self-end text-sm font-semibold" type="submit">
               Save
             </Button>
