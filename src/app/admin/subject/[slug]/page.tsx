@@ -1,28 +1,20 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
-import {
-  ChevronDown,
-  ChevronUp,
-  Edit,
-  Trash,
-  PlusCircle,
-  ArrowLeft,
-  Save,
-  MoveUp,
-  MoveDown,
-} from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { ArrowLeft, Save, PlusCircle } from "lucide-react";
 import { useUser } from "@/components/hooks/UserContext";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, writeBatch } from "firebase/firestore";
-import { Link } from "@/app/admin/subject/link";
-import apClassesData from "@/components/apClasses.json";
-import type { Subject } from "@/types/firestore";
-import usePathname from "@/components/client/pathname";
+import { collection, doc, getDoc, getDocs, writeBatch } from "firebase/firestore";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Blocker } from "@/app/admin/subject/navigation-block";
+import apClassesData from "@/components/apClasses.json";
 import { formatSlug } from "@/lib/utils";
 import short from "short-uuid";
+import type { Subject, Unit } from "@/types/firestore";
+import UnitComponent from "./_components/unit";
+
 
 const translator = short(short.constants.flickrBase58);
 
@@ -34,7 +26,7 @@ function generateShortId() {
 
 const apClasses = apClassesData.apClasses;
 
-// Empty subject template
+// Default empty subject structure
 const emptyData: Subject = {
   title: "",
   units: [
@@ -47,102 +39,77 @@ const emptyData: Subject = {
           title: "Enter chapter title... (double click)",
         },
       ],
-      test: false,
+      tests: [],
     },
     {
       id: generateShortId(),
       title: "Subject Test",
       chapters: [],
-      test: true,
-      testId: generateShortId(),
+      tests: [
+        {
+          id: generateShortId(),
+          name: "Subject Test",
+          questions: [],
+          time: 0,
+        },
+      ],
     },
   ],
 };
 
-const Page = ({ params }: { params: { slug: string } }) => {
-  const pathname = usePathname();
+export default function Page({ params }: { params: { slug: string } }) {
   const { user, error, setError, setLoading } = useUser();
-  const [subject, setSubject] = useState<Subject>();
-  const [expandedUnits, setExpandedUnits] = useState<number[]>([]);
-
-  const [editingUnit, setEditingUnit] = useState<{
-    unitIndex: number | null;
-  }>({ unitIndex: null });
-
-  const [editingChapter, setEditingChapter] = useState<{
-    unitIndex: number | null;
-    chapterIndex: number | null;
-  }>({ unitIndex: null, chapterIndex: null });
-
-  const [newUnitTitle, setNewUnitTitle] = useState("");
-
-  // Initialize newChapterTitles as an empty array
-  const [newChapterTitles, setNewChapterTitles] = useState<string[]>([]);
-
-  const unitTitleInputRef = useRef<HTMLInputElement | null>(null);
-  const chapterInputRef = useRef<HTMLInputElement | null>(null);
+  const [subjectTitle, setSubjectTitle] = useState<string>("");
+  const [units, setUnits] = useState<Unit[]>([]); 
 
   const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
 
+  // For adding a new unit
+  const [newUnitTitle, setNewUnitTitle] = useState<string>("");
+
   useEffect(() => {
-    // Fetch subject data
     (async () => {
       try {
-        if (user && (user?.access === "admin" || user?.access === "member")) {
+        if (user && (user.access === "admin" || user.access === "member")) {
           const docRef = doc(db, "subjects", params.slug);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
-            setSubject(docSnap.data() as Subject);
-            // Initialize newChapterTitles with empty strings for each unit
-            const unitsLength = (docSnap.data() as Subject).units.length;
-            setNewChapterTitles(Array(unitsLength).fill(""));
+            // We have an existing subject
+            const fetched = docSnap.data() as Subject;
+            setSubjectTitle(fetched.title);
+            setUnits(fetched.units || []);
           } else {
-            setSubject({
-              ...structuredClone(emptyData),
-              title:
-                apClasses.find(
-                  (apClass) =>
-                    formatSlug(apClass.replace(/AP /g, "")) === params.slug,
-                ) ?? "",
-            });
-            // Initialize newChapterTitles with empty strings for each unit in emptyData
-            const unitsLength = emptyData.units.length;
-            setNewChapterTitles(Array(unitsLength).fill(""));
+            // Subject not found -> create new with default template
+            // Also try to fill in subject title from `apClasses` if found
+            const foundTitle =
+              apClasses.find(
+                (apClass) =>
+                  formatSlug(apClass.replace(/AP /g, "")) === params.slug
+              ) ?? "";
+            const newSubject = structuredClone(emptyData);
+            newSubject.title = foundTitle;
+            setSubjectTitle(newSubject.title);
+            setUnits(newSubject.units);
           }
         }
-      } catch (error) {
+      } catch (err) {
+        console.error(err);
         setError("Failed to fetch subject data.");
       } finally {
         setLoading(false);
       }
-    })().catch((error) => {
-      console.error("Error fetching subject:", error);
+    })().catch((err) => {
+      console.error("Error fetching subject:", err);
     });
   }, [user, params.slug, setError, setLoading]);
 
-  const moveUnitDown = (unitIndex: number) => {
-    if (!subject || unitIndex === subject.units.length - 1) return;
-    const updatedUnits = [...subject.units];
-    const temp = updatedUnits[unitIndex]!;
-    updatedUnits[unitIndex] = updatedUnits[unitIndex + 1]!;
-    updatedUnits[unitIndex + 1] = temp;
-    setSubject({ ...subject, units: updatedUnits });
-    setUnsavedChanges(true);
-  };
+  /****************************************************
+   *                   UNIT ACTIONS
+   ****************************************************/
 
-  const moveUnitUp = (unitIndex: number) => {
-    if (!subject || unitIndex === 0) return;
-    const updatedUnits = [...subject.units];
-    const temp = updatedUnits[unitIndex]!;
-    updatedUnits[unitIndex] = updatedUnits[unitIndex - 1]!;
-    updatedUnits[unitIndex - 1] = temp;
-    setSubject({ ...subject, units: updatedUnits });
-    setUnsavedChanges(true);
-  };
-
-  const addUnit = () => {
-    if (!newUnitTitle.trim() || !subject) return;
-    const newUnit = {
+  const handleAddUnit = () => {
+    if (!newUnitTitle.trim()) return;
+    const newUnit: Unit = {
       id: generateShortId(),
       title: newUnitTitle,
       chapters: [
@@ -151,348 +118,258 @@ const Page = ({ params }: { params: { slug: string } }) => {
           title: "Enter a chapter title...",
         },
       ],
-      test: false,
+      tests: [],
     };
-    setSubject({ ...subject, units: [...subject.units, newUnit] });
+    setUnits((prev) => [...prev, newUnit]);
     setNewUnitTitle("");
-    // Add a new entry for the new unit in newChapterTitles
-    setNewChapterTitles((prev) => [...prev, ""]);
     setUnsavedChanges(true);
   };
 
-  const deleteUnit = (unitIndex: number) => {
-    if (!subject) return;
-    const updatedUnits = [...subject.units];
-    updatedUnits.splice(unitIndex, 1);
-    setSubject({ ...subject, units: updatedUnits });
-    // Remove the corresponding chapter title entry
-    setNewChapterTitles((prev) =>
-      prev.filter((_, index) => index !== unitIndex),
+  const handleDeleteUnit = (unitId: string) => {
+    if (!confirm("Delete this unit?")) return;
+    setUnits((prev) => prev.filter((u) => u.id !== unitId));
+    setUnsavedChanges(true);
+  };
+
+  const handleMoveUnitUp = (index: number) => {
+    if (index === 0) return;
+    const updatedUnits = [...units];
+    const temp = updatedUnits[index];
+    updatedUnits[index] = updatedUnits[index - 1]!;
+    updatedUnits[index - 1] = temp!;
+    setUnits(updatedUnits);
+    setUnsavedChanges(true);
+  };
+
+  const handleMoveUnitDown = (index: number) => {
+    if (index === units.length - 1) return;
+    const updatedUnits = [...units];
+    const temp = updatedUnits[index];
+    updatedUnits[index] = updatedUnits[index + 1]!;
+    updatedUnits[index + 1] = temp!;
+    setUnits(updatedUnits);
+    setUnsavedChanges(true);
+  };
+
+  // Called by each <UnitComponent> whenever that unit updates
+  const handleUnitChange = (unitId: string, updatedUnit: Unit) => {
+    setUnits((prev) =>
+      prev.map((u) => (u.id === unitId ? updatedUnit : u))
     );
     setUnsavedChanges(true);
   };
 
-  const addChapter = (unitIndex: number) => {
-    if (!newChapterTitles[unitIndex]?.trim() || !subject) return;
-    const updatedUnits = [...subject.units];
-    updatedUnits[unitIndex]!.chapters.push({
-      id: generateShortId(),
-      title: newChapterTitles[unitIndex],
-    });
-    setSubject({ ...subject, units: updatedUnits });
-    // Reset the newChapterTitle for this unit
-    setNewChapterTitles((prev) =>
-      prev.map((title, index) => (index === unitIndex ? "" : title)),
-    );
-    setUnsavedChanges(true);
-  };
+  /****************************************************
+   *                   SAVE ACTION
+   * This function will force delete anything in the db that isnt in the local to keep db clean
+   * If you dont want this, use the commented out handleSave.
+   ****************************************************/
 
-  const editUnitTitle = (unitIndex: number, newTitle: string) => {
-    if (!subject) return;
-    if (newTitle.trim().length === 0) {
-      alert("Title cannot be empty.");
-      return;
-    } else {
-      const updatedUnits = [...subject.units];
-      updatedUnits[unitIndex]!.title = newTitle;
-      setSubject({ ...subject, units: updatedUnits });
-      setEditingUnit({ unitIndex: null });
-      setUnsavedChanges(true);
-    }
-  };
-
-  const editChapterTitle = (
-    unitIndex: number,
-    chapterIndex: number,
-    newTitle: string,
-  ) => {
-    if (!subject) return;
-    if (newTitle.trim().length === 0) {
-      alert("Title cannot be empty.");
-      return;
-    } else {
-      const updatedUnits = [...subject.units];
-      updatedUnits[unitIndex]!.chapters[chapterIndex]!.title = newTitle;
-      setSubject({ ...subject, units: updatedUnits });
-      setEditingChapter({ unitIndex: null, chapterIndex: null });
-      setUnsavedChanges(true);
-    }
-  };
-
-  const deleteChapter = (unitIndex: number, chapterIndex: number) => {
-    if (!subject) return;
-    const updatedUnits = [...subject.units];
-    updatedUnits[unitIndex]!.chapters.splice(chapterIndex, 1);
-    setSubject({ ...subject, units: updatedUnits });
-    setUnsavedChanges(true);
-  };
-
+  // Replaces save
   const handleSave = async () => {
+    // Rebuild the Subject object from current state
+    const subjectToSave: Subject = {
+      title: subjectTitle,
+      units: units,
+    };
+  
     try {
       const batch = writeBatch(db);
-      batch.set(doc(db, "subjects", params.slug), subject);
-      subject?.units.forEach((unit) => {
-        // Typescript complains that unit.id and chapter.id are of any type, but eslint complains of unnessecary type assertions.
-        // if typeof guard doesn't seem to work
-        /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
-        batch.set(
-          doc(db, "subjects", params.slug, "units", unit.id as string),
-          unit,
+  
+      // 1. Save the main subject doc
+      batch.set(doc(db, "subjects", params.slug), subjectToSave);
+  
+      // 2. For each Unit, update or create the unit doc, then manage sub-collections
+      for (const unit of subjectToSave.units) {
+        // Set (upsert) the Unit itself
+        batch.set(doc(db, "subjects", params.slug, "units", unit.id), unit);
+  
+        // ----- Chapters -----
+        const chapterCollectionRef = collection(
+          db,
+          "subjects",
+          params.slug,
+          "units",
+          unit.id,
+          "chapters"
         );
-        unit.chapters.forEach((chapter) => {
-          const chapterDocRef = doc(
+  
+        // a) Fetch all existing chapters in Firestore
+        const existingChaptersSnap = await getDocs(chapterCollectionRef);
+  
+        // b) Build a set of local chapter IDs so we know what should exist
+        const localChapterIds = new Set(unit.chapters.map((c) => c.id));
+  
+        // c) For each chapter in Firestore, if it's NOT in our local data, delete it
+        existingChaptersSnap.forEach((chapterDoc) => {
+          if (!localChapterIds.has(chapterDoc.id)) {
+            batch.delete(chapterDoc.ref);
+          }
+        });
+  
+        // d) Now, upsert all chapters from our local data
+        for (const chapter of unit.chapters) {
+          const chapterDocRef = doc(chapterCollectionRef, chapter.id);
+          batch.set(chapterDocRef, chapter, { merge: true });
+        }
+  
+        // ----- Tests -----
+        if (unit.tests) {
+          const testsCollectionRef = collection(
             db,
             "subjects",
             params.slug,
             "units",
-            unit.id as string,
-            "chapters",
-            chapter.id as string,
+            unit.id,
+            "tests"
           );
-          /* eslint-enable @typescript-eslint/no-unnecessary-type-assertion */
-
-          batch.set(
-            chapterDocRef,
-            {
-              title: chapter,
-            },
-            {
-              merge: true,
-            },
-          );
-        });
-      });
-      // TODO: update Firestore security rules
-      // It already have the correct permissions
+  
+          // a) Fetch all existing tests in Firestore
+          const existingTestsSnap = await getDocs(testsCollectionRef);
+  
+          // b) Build a set of local test IDs
+          const localTestIds = new Set(unit.tests.map((t) => t.id));
+  
+          // c) Delete any Firestore test that is no longer in our local data
+          existingTestsSnap.forEach((testDoc) => {
+            if (!localTestIds.has(testDoc.id)) {
+              batch.delete(testDoc.ref);
+            }
+          });
+  
+          // d) Upsert all tests from our local data
+          for (const test of unit.tests) {
+            const testDocRef = doc(testsCollectionRef, test.id);
+            batch.set(testDocRef, test, { merge: true });
+          }
+        }
+  
+        // If you still have single-test logic (unit.test / unit.testId),
+        // you'd have to decide how to handle that (like the multi-test approach).
+      }
+  
+      // 3. Commit the batch
       await batch.commit();
       alert("Subject content saved successfully.");
       setUnsavedChanges(false);
     } catch (error) {
       console.error("Error saving:", error);
+      alert("Error saving subject. Check console for details.");
     }
   };
 
-  const optInForUnitTest = (unitIndex: number): void => {
-    const updatedSubject = { ...subject! };
-    if (updatedSubject.units[unitIndex]) {
-      updatedSubject.units[unitIndex].test = true;
-      if (!updatedSubject.units[unitIndex].testId) {
-        updatedSubject.units[unitIndex].testId = generateShortId();
-      }
-    }
-    setSubject(updatedSubject);
-    setUnsavedChanges(true);
-  };
+// Adds save
+  // const handleSave = async () => {
+  //   // Rebuild the Subject object from current state
+  //   const subjectToSave: Subject = {
+  //     title: subjectTitle,
+  //     units: units,
+  //   };
 
-  const optOutOfUnitTest = (unitIndex: number): void => {
-    const updatedSubject = { ...subject! };
-    if (updatedSubject.units[unitIndex]?.test) {
-      updatedSubject.units[unitIndex].test = false;
-    }
-    setSubject(updatedSubject);
-    setUnsavedChanges(true);
-  };
+  //   try {
+  //     const batch = writeBatch(db);
 
-  if (!subject) {
+  //     // Save the main subject doc
+  //     batch.set(doc(db, "subjects", params.slug), subjectToSave);
+
+  //     // Save each unit, chapter, test as subcollections
+  //     subjectToSave.units.forEach((unit) => {
+  //       batch.set(doc(db, "subjects", params.slug, "units", unit.id), unit);
+
+  //       // chapters
+  //       unit.chapters.forEach((chapter) => {
+  //         const chapterDocRef = doc(
+  //           db,
+  //           "subjects",
+  //           params.slug,
+  //           "units",
+  //           unit.id,
+  //           "chapters",
+  //           chapter.id
+  //         );
+  //         batch.set(chapterDocRef, chapter, { merge: true });
+  //       });
+
+  //       // tests
+  //       unit.tests?.forEach((test) => {
+  //         const testDocRef = doc(
+  //           db,
+  //           "subjects",
+  //           params.slug,
+  //           "units",
+  //           unit.id,
+  //           "tests",
+  //           test.id
+  //         );
+  //         batch.set(testDocRef, test, { merge: true });
+  //       });
+  //     });
+
+  //     await batch.commit();
+  //     alert("Subject content saved successfully.");
+  //     setUnsavedChanges(false);
+  //   } catch (error) {
+  //     console.error("Error saving:", error);
+  //     alert("Error saving subject. Check console for details.");
+  //   }
+  // };
+
+  if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center text-3xl">
-        {error}
+        {error ?? "Loading..."}
       </div>
     );
   }
-  // Lines 347 and 362 have same issue as other eslint error above (line 209)
-  /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
+
   return (
     <>
+      {/* If unsaved changes exist, use the <Blocker /> to warn on navigation */}
       {unsavedChanges && <Blocker />}
 
       <div className="relative min-h-screen">
         <main className="container max-w-3xl flex-grow px-4 pb-8 pt-10 md:px-10 lg:px-14 2xl:px-20">
           <div className="flex justify-between">
-            <Link
-              className={buttonVariants({ variant: "outline" })}
-              href="/admin"
-            >
+            <Link className={buttonVariants({ variant: "outline" })} href="/admin">
               <ArrowLeft className="mr-2" />
               Return to Admin Dashboard
             </Link>
-            <Button
-              className="bg-blue-500 hover:bg-blue-600"
-              onClick={handleSave}
-            >
+            <Button className="bg-blue-500 hover:bg-blue-600" onClick={handleSave}>
               <Save className="mr-2" /> Save Changes
             </Button>
           </div>
-          <h1 className="mt-8 text-4xl font-bold">{subject?.title}</h1>
+
+          {/* Subject Title */}
+          <h1 className="mt-8 text-4xl font-bold">
+            {subjectTitle || "Untitled Subject"}
+          </h1>
+
+          {/* Render each Unit */}
           <div className="my-4 space-y-4">
-            {subject?.units.map((unit, unitIndex) => (
-              <div key={unitIndex} className="rounded-lg border shadow-sm">
-                <div className="flex items-center pl-4">
-                  <MoveUp
-                    className="size-7 cursor-pointer rounded-md transition-transform hover:scale-125"
-                    onClick={() => moveUnitUp(unitIndex)}
-                  />
-                  <MoveDown
-                    className="size-7 cursor-pointer rounded-md transition-transform hover:scale-125"
-                    onClick={() => moveUnitDown(unitIndex)}
-                  />
-                  <Edit
-                    onClick={() => setEditingUnit({ unitIndex })}
-                    className="ml-4 size-7 cursor-pointer hover:text-blue-400"
-                  />
-                  <Trash
-                    onClick={() => {
-                      if (confirm("Delete this unit?")) {
-                        deleteUnit(unitIndex);
-                      }
-                    }}
-                    className="mx-2 size-7 cursor-pointer hover:text-red-500"
-                  />
-                  <button
-                    className="flex w-full items-center justify-between p-4 text-lg font-semibold"
-                    onClick={() =>
-                      setExpandedUnits((prev) =>
-                        prev.includes(unitIndex)
-                          ? prev.filter((i) => i !== unitIndex)
-                          : [...prev, unitIndex],
-                      )
-                    }
-                  >
-                    {editingUnit.unitIndex === unitIndex ? (
-                      <input
-                        defaultValue={unit.title}
-                        ref={unitTitleInputRef}
-                        onClick={(e) => e.stopPropagation()}
-                        onBlur={(e) => editUnitTitle(unitIndex, e.target.value)}
-                        className="border border-blue-500"
-                      />
-                    ) : (
-                      <span>{unit.title}</span>
-                    )}
-                    {expandedUnits.includes(unitIndex) ? (
-                      <ChevronUp />
-                    ) : (
-                      <ChevronDown />
-                    )}
-                  </button>
-                </div>
-                {expandedUnits.includes(unitIndex) && (
-                  <div className="border-t p-4">
-                    {unit.chapters.map((chapter, chapterIndex) => (
-                      <div
-                        key={chapterIndex}
-                        className="mb-3 flex items-center justify-between gap-4"
-                      >
-                        <a
-                          className={buttonVariants({ variant: "outline" })}
-                          href={encodeURI(
-                            `/admin/subject/${params.slug}/${unit.id}/chapter/${chapter.id}?subject=${encodeURIComponent(subject.title)}&unit=${encodeURIComponent(unit.title)}&chapter=${encodeURIComponent(chapter.title as string)}`,
-                          )}
-                        >
-                          Edit Content
-                        </a>
-
-                        {editingChapter.unitIndex === unitIndex &&
-                        editingChapter.chapterIndex === chapterIndex ? (
-                          <>
-                            <p className="text-nowrap px-2">
-                              Chapter {chapterIndex + 1}:
-                            </p>
-                            <input
-                              autoFocus
-                              className="-ml-5 w-full"
-                              defaultValue={chapter.title as string}
-                              ref={chapterInputRef}
-                              onBlur={(e) =>
-                                editChapterTitle(
-                                  unitIndex,
-                                  chapterIndex,
-                                  e.target.value,
-                                )
-                              }
-                            />
-                          </>
-                        ) : (
-                          <p
-                            onDoubleClick={() =>
-                              setEditingChapter({ unitIndex, chapterIndex })
-                            }
-                            className="w-full cursor-pointer rounded-sm px-2 py-1 hover:bg-accent"
-                          >
-                            Chapter {chapterIndex + 1}: {chapter.title}
-                          </p>
-                        )}
-
-                        <Button
-                          className="ml-auto"
-                          variant={"destructive"}
-                          onClick={() => deleteChapter(unitIndex, chapterIndex)}
-                        >
-                          <Trash />
-                        </Button>
-                      </div>
-                    ))}
-                    <div className="mt-4 flex gap-2">
-                      <Input
-                        value={newChapterTitles[unitIndex] ?? ""}
-                        onChange={(e) =>
-                          setNewChapterTitles((prev) =>
-                            prev.map((title, index) =>
-                              index === unitIndex ? e.target.value : title,
-                            ),
-                          )
-                        }
-                        placeholder="New chapter title"
-                        className="w-1/2"
-                      />
-                      <Button
-                        onClick={() => addChapter(unitIndex)}
-                        className="cursor-pointer bg-green-500 hover:bg-green-600"
-                      >
-                        <PlusCircle className="mr-2" /> Add Chapter
-                      </Button>
-                    </div>
-
-                    {unit.test ? (
-                      <div className="flex items-center">
-                        <Link
-                          href={`${pathname}/${unit.id}/test/${unit.testId}`}
-                        >
-                          <p className="mt-4 text-green-500 hover:underline">
-                            Edit Unit Test
-                          </p>
-                        </Link>
-
-                        <Button
-                          className="ml-4 mt-4"
-                          variant={"destructive"}
-                          onClick={() => optOutOfUnitTest(unitIndex)}
-                        >
-                          Remove Unit Test
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button
-                        className="mt-4"
-                        onClick={() => optInForUnitTest(unitIndex)}
-                      >
-                        Add Unit Test
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </div>
+            {units.map((unit, index) => (
+              <UnitComponent
+                key={unit.id}
+                unit={unit}
+                index={index}
+                onChange={handleUnitChange}
+                onDelete={handleDeleteUnit}
+                onMoveUp={handleMoveUnitUp}
+                onMoveDown={handleMoveUnitDown}
+                subjectSlug={params.slug}
+              />
             ))}
           </div>
+
+          {/* Add new Unit */}
           <div className="mb-4 flex items-center">
-            <input
-              className="mr-2 rounded border p-2"
+            <Input
+              className="mr-2 rounded"
               value={newUnitTitle}
               onChange={(e) => setNewUnitTitle(e.target.value)}
               placeholder="New unit title"
             />
             <Button
-              onClick={addUnit}
+              onClick={handleAddUnit}
               className="cursor-pointer bg-green-500 hover:bg-green-600"
             >
               <PlusCircle className="mr-2" /> Add Unit
@@ -502,6 +379,4 @@ const Page = ({ params }: { params: { slug: string } }) => {
       </div>
     </>
   );
-};
-
-export default Page;
+}
