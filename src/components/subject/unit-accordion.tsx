@@ -51,31 +51,27 @@ const UnitAccordion = ({ unit, pathname, unitIndex }: Props) => {
         {unit.tests ? (
           unit.tests.map((test, testIndex) => (
             <Link
-              className="group flex items-center gap-x-3 font-semibold last:mb-0"
+              className="flex items-center gap-x-3 font-semibold last:mb-0 hover:underline"
               href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`}
               key={test.id}
             >
               <BookOpenCheck className="size-8" />
-              <div className="group-hover:underline">
-                {test.name
-                  ? test.name
-                  // unit.tests cuz typescript doesn't recognize I checked for unit.tests already
-                  : `Unit ${unitIndex + 1} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
-              </div>
+              {test.name
+                ? test.name
+                : // unit.tests cuz typescript doesn't recognize I checked for unit.tests already
+                  `Unit ${unitIndex + 1} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
             </Link>
           ))
         ) : // Fallback: single test flow
         unit.test && unit.testId ? (
           <Link
-            className="group mb-3 flex items-center gap-x-3 font-semibold last:mb-0"
+            className="mb-3 flex items-center gap-x-3 font-semibold last:mb-0 hover:underline"
             href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${unit.testId}`}
           >
             <BookOpenCheck className="size-8" />
-            <div className="group-hover:underline">
-              {unit.title === "Subject Test"
-                ? unit.title
-                : `Unit ${unitIndex + 1} Test`}
-            </div>
+            {unit.title === "Subject Test"
+              ? unit.title
+              : `Unit ${unitIndex + 1} Test`}
           </Link>
         ) : null}
       </AccordionContent>
