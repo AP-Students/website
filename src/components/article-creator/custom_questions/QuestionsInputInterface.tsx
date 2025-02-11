@@ -164,29 +164,21 @@ const QuestionsInputInterface: React.FC<Props> = ({
       {questions.map((questionInstance, qIndex) => (
         <div
           key={qIndex}
-          className="overflow-hidden rounded border border-black px-3 py-2 shadow"
+          className="overflow-hidden rounded border border-black p-2 shadow"
         >
-          <button
-            onClick={() => toggleCollapse(qIndex)}
-            className="flex w-full items-center justify-between gap-4 text-ellipsis hover:underline"
-          >
-            <div className="flex">
-              <MoveUp
-                className="cursor-pointer transition-transform hover:scale-110"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  moveQuestionUp(qIndex);
-                }}
-              />
-              <MoveDown
-                className="cursor-pointer transition-transform hover:scale-110"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  moveQuestionDown(qIndex);
-                }}
-              />
-            </div>
-            <div className="flex grow justify-between">
+          <div className="flex">
+            <MoveUp
+              className="shrink-0 cursor-pointer transition-transform hover:scale-110"
+              onClick={() => moveQuestionUp(qIndex)}
+            />
+            <MoveDown
+              className="shrink-0 cursor-pointer transition-transform hover:scale-110"
+              onClick={() => moveQuestionDown(qIndex)}
+            />
+            <button
+              onClick={() => toggleCollapse(qIndex)}
+              className="ml-2 flex grow justify-between gap-3 overflow-hidden hover:underline"
+            >
               <span className="shrink-0 font-bold">Question {qIndex + 1}</span>
               <span className="overflow-hidden text-ellipsis text-nowrap opacity-75">
                 {questionInstance.question.value}
@@ -194,8 +186,8 @@ const QuestionsInputInterface: React.FC<Props> = ({
               <span className="shrink-0">
                 {collapsed[qIndex] ? <ChevronDown /> : <ChevronUp />}
               </span>
-            </div>
-          </button>
+            </button>
+          </div>
           {!collapsed[qIndex] && (
             <div>
               {testRenderer && (
