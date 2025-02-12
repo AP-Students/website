@@ -15,6 +15,7 @@ import type { Unit, Chapter, UnitTest } from "@/types/firestore";
 import short from "short-uuid";
 import UnitTests from "./unitTests";
 import ChapterContent from "./chapterContent";
+import { Input } from "@/components/ui/input";
 
 const translator = short(short.constants.flickrBase58);
 
@@ -112,9 +113,12 @@ function UnitComponent({
   };
 
   const handleChapterDelete = (chapterId: string) => {
-    if (!confirm(
-      "If you delete this chapter and save changes, you will lose all chapter data. Are you sure you want to delete this chapter?",
-    )) return;
+    if (
+      !confirm(
+        "If you delete this chapter and save changes, you will lose all chapter data. Are you sure you want to delete this chapter?",
+      )
+    )
+      return;
     const updatedChapters = chapters.filter((c) => c.id !== chapterId);
     setChapters(updatedChapters);
 
@@ -203,11 +207,11 @@ function UnitComponent({
       {/* UNIT HEADER */}
       <div className="flex items-center pl-4">
         <MoveUp
-          className="cursor-pointer rounded-md transition-transform hover:scale-125"
+          className="cursor-pointer transition-transform hover:scale-125"
           onClick={() => onMoveUp(index)}
         />
         <MoveDown
-          className="ml-2 cursor-pointer rounded-md transition-transform hover:scale-125"
+          className="ml-2 cursor-pointer transition-transform hover:scale-125"
           onClick={() => onMoveDown(index)}
         />
         <Edit
@@ -257,7 +261,7 @@ function UnitComponent({
 
           {/* ADD CHAPTER */}
           <div className="mt-4 flex gap-2">
-            <input
+            <Input
               value={newChapterTitle}
               onChange={(e) => setNewChapterTitle(e.target.value)}
               placeholder="New chapter title"

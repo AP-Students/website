@@ -55,8 +55,11 @@ const Page = ({ params }: { params: { slug: string } }) => {
   }
   if (error ?? !subject) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-3xl">
-        {error}
+      <div className="flex min-h-screen flex-col items-center justify-center text-3xl">
+        <p>{error}</p>
+        <a href="/" className="text-blue-500 hover:underline">
+          Return to homepage.
+        </a>
       </div>
     );
   }

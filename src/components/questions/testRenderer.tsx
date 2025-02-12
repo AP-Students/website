@@ -11,6 +11,7 @@ import Highlighter, { type Highlight } from "./digital-testing/Highlighter";
 import ReviewPage, { isQuestionCorrect } from "./digital-testing/ReviewPage";
 import clsx from "clsx";
 import { cn } from "@/lib/utils";
+import "katex/dist/katex.min.css";
 
 interface Props {
   inputQuestions: QuestionFormat[];

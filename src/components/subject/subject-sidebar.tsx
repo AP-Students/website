@@ -85,9 +85,25 @@ const SubjectSidebar = (props: Props) => {
                       </span>
                     </Link>
                   ))}
-                  {unit.test && (
+                  {/* Handle multiple tests (unit.tests) first */}
+                  {unit.tests ? (
+                    unit.tests.map((test, testIndex) => (
+                      <Link
+                        className="mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0 hover:underline"
+                        href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`}
+                        key={test.id}
+                      >
+                        <BookOpenCheck className="size-6" />
+                        {test.name
+                          ? test.name
+                          : // unit.tests cuz typescript doesn't recognize I checked for unit.tests already
+                            `Unit ${unitIndex + 1} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
+                      </Link>
+                    ))
+                  ) : // Fallback: single test flow
+                  unit.test && unit.testId ? (
                     <Link
-                      className="group relative mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0 hover:underline"
+                      className="mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0 hover:underline"
                       href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${unit.testId}`}
                     >
                       <BookOpenCheck className="size-6" />
@@ -95,7 +111,7 @@ const SubjectSidebar = (props: Props) => {
                         ? unit.title
                         : `Unit ${unitIndex + 1} Test`}
                     </Link>
-                  )}
+                  ) : null}
                 </div>
               </AccordionContent>
             </AccordionItem>
