@@ -8,6 +8,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { QuestionsOutput } from "./custom_questions/QuestionInstance";
 import type { QuestionFormat } from "@/types/questions";
 import "@/styles/katexStyling.css";
+import sanitizeHtml from "sanitize-html";
 
 const customParsers = {
   alert: (data: { align: string; message: string; type: string }) => {
@@ -107,7 +108,7 @@ const Renderer = (props: { content: OutputData }) => {
         // Process data.blocks only once
         data.forEach((block) => {
           if (block.type === "questionsAddCard") {
-            // block.data is a <string, any> and since its part of editorjs, im not changing the type. 
+            // block.data is a <string, any> and since its part of editorjs, im not changing the type.
             // As long as editorjs doesnt depricate in a way that affects this, then this should be fine
             /* eslint-disable-next-line */
             const instanceId = block.data.instanceId as string;
@@ -204,12 +205,66 @@ const Renderer = (props: { content: OutputData }) => {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const markup = parser.parse(props.content);
 
+  // XSS Prevention
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+  const sanitizedMarkup = sanitizeHtml(markup, {
+    allowedTags: [
+      "p",
+      "div",
+      "span",
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "h5",
+      "h6",
+      "ul",
+      "ol",
+      "li",
+      "a",
+      "img",
+      "code",
+      "pre",
+      "blockquote",
+      "table",
+      "thead",
+      "tbody",
+      "tr",
+      "th",
+      "td",
+      "hr",
+      "br",
+      "cite",
+      "figure",
+      "figcaption",
+      "iframe",
+      "math",
+    ],
+    allowedAttributes: {
+      "*": ["class", "id", "style"],
+      a: ["href", "target", "rel"],
+      img: ["src", "alt", "class"],
+      iframe: [
+        "src",
+        "height",
+        "width",
+        "frameborder",
+        "allowtransparency",
+        "scrolling",
+      ],
+    },
+    allowedClasses: {
+      "*": [/^.*$/], // Might want to restrict this later (if there are any xss attacks via css)
+    },
+  });
+
   return (
     <article
       ref={containerRef}
       className="prose before:prose-code:content-none after:prose-code:content-none"
       dangerouslySetInnerHTML={{
-        __html: markup,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        __html: sanitizedMarkup,
       }}
     ></article>
   );
