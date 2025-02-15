@@ -1,10 +1,6 @@
 "use client";
 
 import React, { useState, memo } from "react";
-<<<<<<< HEAD
-=======
-import { Link } from "../../link";
->>>>>>> 1cb89ce97c22a9c51a34471ddd66f31d23fca231
 import type { UnitTest } from "@/types/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
