@@ -113,9 +113,12 @@ function UnitComponent({
   };
 
   const handleChapterDelete = (chapterId: string) => {
-    if (!confirm(
-      "If you delete this chapter and save changes, you will lose all chapter data. Are you sure you want to delete this chapter?",
-    )) return;
+    if (
+      !confirm(
+        "This takes permanent effect once changes are saved. Delete chapter?",
+      )
+    )
+      return;
     const updatedChapters = chapters.filter((c) => c.id !== chapterId);
     setChapters(updatedChapters);
 
@@ -183,7 +186,7 @@ function UnitComponent({
   const handleTestDelete = (testId: string) => {
     if (
       !confirm(
-        "If you delete this test and save changes, you will lose all test data. Are you sure you want to delete this test?",
+        "This takes permanent effect once changes are saved. Delete test?",
       )
     )
       return;
@@ -233,7 +236,7 @@ function UnitComponent({
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
-            <span>{localUnitTitle}</span>
+            <span className="text-balance text-left">{localUnitTitle}</span>
           )}
           {expanded ? <ChevronUp /> : <ChevronDown />}
         </button>
