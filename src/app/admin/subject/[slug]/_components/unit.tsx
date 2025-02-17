@@ -207,11 +207,11 @@ function UnitComponent({
       {/* UNIT HEADER */}
       <div className="flex items-center pl-4">
         <MoveUp
-          className="cursor-pointer rounded-md transition-transform hover:scale-125"
+          className="cursor-pointer transition-transform hover:scale-125"
           onClick={() => onMoveUp(index)}
         />
         <MoveDown
-          className="ml-2 cursor-pointer rounded-md transition-transform hover:scale-125"
+          className="ml-2 cursor-pointer transition-transform hover:scale-125"
           onClick={() => onMoveDown(index)}
         />
         <Edit

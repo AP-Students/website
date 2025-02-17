@@ -2,7 +2,14 @@
 
 import React, { useEffect, useState } from "react";
 import type { QuestionFormat } from "@/types/questions";
-import { Trash, CirclePlus, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Trash,
+  CirclePlus,
+  ChevronDown,
+  ChevronUp,
+  MoveUp,
+  MoveDown,
+} from "lucide-react";
 import AdvancedTextbox from "./AdvancedTextbox";
 import { Input } from "@/components/ui/input";
 
@@ -90,6 +97,24 @@ const QuestionsInputInterface: React.FC<Props> = ({
     setQuestions(newQuestions);
   };
 
+  const moveQuestionUp = (index: number) => {
+    if (index === 0) return;
+    const newQuestions = [...questions];
+    const temp = newQuestions[index];
+    newQuestions[index] = newQuestions[index - 1]!;
+    newQuestions[index - 1] = temp!;
+    setQuestions(newQuestions);
+  };
+
+  const moveQuestionDown = (index: number) => {
+    if (index === questions.length - 1) return;
+    const newQuestions = [...questions];
+    const temp = newQuestions[index];
+    newQuestions[index] = newQuestions[index + 1]!;
+    newQuestions[index + 1] = temp!;
+    setQuestions(newQuestions);
+  };
+
   const addOption = (qIndex: number) => {
     const newQuestions = [...questions];
     const newOptions = [
@@ -139,20 +164,30 @@ const QuestionsInputInterface: React.FC<Props> = ({
       {questions.map((questionInstance, qIndex) => (
         <div
           key={qIndex}
-          className="overflow-hidden rounded border border-black px-3 py-2 shadow"
+          className="overflow-hidden rounded border border-black p-2 shadow"
         >
-          <button
-            onClick={() => toggleCollapse(qIndex)}
-            className="flex w-full items-center justify-between gap-4 text-ellipsis hover:underline"
-          >
-            <span className="shrink-0 font-bold">Question {qIndex + 1}</span>
-            <span className="overflow-hidden text-ellipsis text-nowrap opacity-75">
-              {questionInstance.question.value}
-            </span>
-            <span className="shrink-0">
-              {collapsed[qIndex] ? <ChevronDown /> : <ChevronUp />}
-            </span>
-          </button>
+          <div className="flex">
+            <MoveUp
+              className="shrink-0 cursor-pointer transition-transform hover:scale-110"
+              onClick={() => moveQuestionUp(qIndex)}
+            />
+            <MoveDown
+              className="shrink-0 cursor-pointer transition-transform hover:scale-110"
+              onClick={() => moveQuestionDown(qIndex)}
+            />
+            <button
+              onClick={() => toggleCollapse(qIndex)}
+              className="ml-2 flex grow justify-between gap-3 overflow-hidden hover:underline"
+            >
+              <span className="shrink-0 font-bold">Question {qIndex + 1}</span>
+              <span className="overflow-hidden text-ellipsis text-nowrap opacity-75">
+                {questionInstance.question.value}
+              </span>
+              <span className="shrink-0">
+                {collapsed[qIndex] ? <ChevronDown /> : <ChevronUp />}
+              </span>
+            </button>
+          </div>
           {!collapsed[qIndex] && (
             <div>
               {testRenderer && (
