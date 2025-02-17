@@ -34,16 +34,12 @@ const Page = () => {
     <div>
       <Navbar />
 
-      <div className="mx-auto mt-12 flex max-w-3xl flex-col px-8 pb-8 ">
-        <div className="mb-6 flex flex-col gap-1">
-          <h1 className="text-balance text-left text-5xl font-extrabold lg:text-6xl">
-            Admin Dashboard
-          </h1>
+      <div className="mx-auto flex max-w-3xl flex-col p-8">
+        <h1 className="text-5xl font-extrabold lg:text-6xl">Admin Dashboard</h1>
 
-          {user.access === "admin" && <AdminPanel user={user} />}
+        {user.access === "admin" && <AdminPanel user={user} />}
 
-          <SelectCourse />
-        </div>
+        <SelectCourse />
       </div>
 
       <Footer />
@@ -71,11 +67,11 @@ function SelectCourse() {
           value={searchTermAPClasses}
           onChange={(e) => setSearchTermAPClasses(e.target.value)}
         />
-        <ul className="class-list max-h-60 overflow-y-auto">
+        <ul className="class-list max-h-60 divide-y overflow-y-auto rounded-md border border-sky-300">
           {filteredClasses.map((apClass: string) => (
             <li key={apClass}>
               <Link
-                className="block rounded-md p-2 hover:bg-gray-200"
+                className="block p-2 hover:bg-sky-100"
                 href={`/admin/subject/${formatSlug(apClass.replace(/AP /g, ""))}`}
               >
                 {apClass}
@@ -136,21 +132,19 @@ function AdminPanel({ user }: { user: User }) {
         <div className="mb-2 flex gap-1 tabular-nums">
           <p>{filteredUsers.length} result(s):</p>
           <p>
-            {filteredUsers.filter((u) => u.access === "admin").length} admin
-            <br />
-            {filteredUsers.filter((u) => u.access === "member").length} member
-            <br />
+            {filteredUsers.filter((u) => u.access === "admin").length} admin,{" "}
+            {filteredUsers.filter((u) => u.access === "member").length} member,{" "}
             {filteredUsers.filter((u) => u.access === "user").length} user
           </p>
         </div>
-        <ul className="class-list grid max-h-60 gap-2 overflow-y-auto">
+        <ul className="class-list grid max-h-60 divide-y overflow-y-auto rounded-md border border-lime-300">
           {!error &&
             filteredUsers.map(
               // If error, it will show error message. Otherwise, it will show users
               (u) => (
                 <li
                   key={u.uid}
-                  className="grid cursor-pointer grid-cols-1 gap-x-4 rounded-md border p-3 text-center hover:bg-gray-200 md:grid-cols-3"
+                  className="grid cursor-pointer grid-cols-1 gap-x-4 p-2 text-center hover:bg-lime-100 md:grid-cols-3"
                   onClick={() => {
                     if (u.access === "admin") {
                       alert("Admins cannot demote other admins");
@@ -161,7 +155,7 @@ function AdminPanel({ user }: { user: User }) {
                     }
                   }}
                 >
-                  <p className="font-bold">{u.displayName}</p>
+                  <p className="text-left font-bold">{u.displayName}</p>
                   <p>{u.email}</p>
                   <p className="font-bold">
                     {u.access}
