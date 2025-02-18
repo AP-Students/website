@@ -140,17 +140,28 @@ const QuestionsInputInterface: React.FC<Props> = ({
     setQuestions(newQuestions);
   };
 
+  // Filters out different keyboard numbers
+  const normalizeAnswer = (answer: string): string => {
+    // Normalize the string and remove any special characters or different encodings
+    return answer
+      .normalize("NFKD") // Normalize to decomposed form
+      .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
+      .replace(/[^\d,]/g, ""); // Keep only digits and commas
+  };
+
   const validateCorrectAnswer = (
     value: string,
     type: "mcq" | "multi-answer",
   ) => {
+    const normalizedValue = normalizeAnswer(value);
     let errorMessage = "";
+    
     if (type === "mcq") {
-      if (!/^\d$/.test(value)) {
+      if (!/^\d$/.test(normalizedValue)) {
         errorMessage = "Only a single number is allowed for MCQ. (eg 1)";
       }
     } else {
-      if (!/^\d(,\d){0,7}$/.test(value) || value.length > 8) {
+      if (!/^\d(,\d){0,7}$/.test(normalizedValue) || normalizedValue.length > 8) {
         errorMessage =
           "Only numbers separated by commas are allowed, max correct questions is 4. (eg 1,2,4)";
       }

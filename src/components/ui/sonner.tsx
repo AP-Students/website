@@ -1,3 +1,6 @@
+// Suppressing errors from sonner library.
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 "use client"
 
 import { useTheme } from "next-themes"
