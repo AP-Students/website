@@ -7,12 +7,14 @@ interface HeaderProps {
   timeRemaining: number; // seconds
   setSubmitted: (value: boolean) => void;
   submitted: boolean;
+  directions?: string;
 }
 
 const Header: React.FC<HeaderProps> = ({
   timeRemaining,
   setSubmitted,
   submitted,
+  directions,
 }) => {
   const pathname = usePathname();
   const [showTimer, setShowTimer] = useState(true);
@@ -121,12 +123,9 @@ const Header: React.FC<HeaderProps> = ({
           className="absolute left-0 right-0 top-12 z-[9000] border-2 border-gray-300 bg-white p-5 shadow-lg"
         >
           <p>
-            Read each passage and question carefully, and then choose the best
-            answer to the question based on the passage(s).
-          </p>
-          <p>
-            All questions in this section are multiple-choice with four answer
-            choices. Each question has a single best answer.
+            {directions
+              ? directions
+              : "Read each passage and question carefully, and then choose the best answer to the question based on the passage(s).All questions in this section are multiple-choice with four answer choices. Each question has a single best answer."}
           </p>
           <button
             onClick={() => setShowDirections(false)}
