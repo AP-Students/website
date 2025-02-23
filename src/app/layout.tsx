@@ -1,6 +1,7 @@
 import "@/styles/globals.css";
 import { Outfit } from "next/font/google";
 import RootLayoutClient from "./RootLayoutClient";
+import { Toaster } from "@/components/ui/sonner";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -64,6 +65,7 @@ export default function RootLayout({
           }}
         />
         <RootLayoutClient>{children}</RootLayoutClient>
+        <Toaster richColors />
       </body>
     </html>
   );
