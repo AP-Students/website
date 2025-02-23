@@ -8,6 +8,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { QuestionsOutput } from "./custom_questions/QuestionInstance";
 import type { QuestionFormat } from "@/types/questions";
 import "@/styles/katexStyling.css";
+import "@/styles/inlineCode.css";
 
 const customParsers = {
   alert: (data: { align: string; message: string; type: string }) => {
@@ -45,9 +46,6 @@ const customParsers = {
   },
 
   paragraph: (data: { text: string }) => {
-    if (data.text.includes("</code>")) {
-      return `<code class="inline-code">${data.text}</code>`;
-    }
     return `<p class="paragraph">${data.text}</p>`;
   },
 
@@ -107,7 +105,7 @@ const Renderer = (props: { content: OutputData }) => {
         // Process data.blocks only once
         data.forEach((block) => {
           if (block.type === "questionsAddCard") {
-            // block.data is a <string, any> and since its part of editorjs, im not changing the type. 
+            // block.data is a <string, any> and since its part of editorjs, im not changing the type.
             // As long as editorjs doesnt depricate in a way that affects this, then this should be fine
             /* eslint-disable-next-line */
             const instanceId = block.data.instanceId as string;
