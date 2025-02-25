@@ -25,6 +25,7 @@ const Page = () => {
 
   const [time, setTime] = useState<number>(30);
   const { questions, setQuestions } = syncedQuestions(instanceId);
+  const [directions, setDirections] = useState("");
 
   useEffect(() => {
     // Fetch questions
@@ -58,6 +59,12 @@ const Page = () => {
         setTime((time && time / 60) ?? 20);
         const questions = data.questions;
 
+        setDirections(
+          data.directions
+            ? data.directions
+            : "Read each passage and question carefully, and then choose the best answer to the question based on the passage(s).  All questions in this section are multiple-choice with four answer choices. Each question has a single best answer.",
+        );
+
         if (questions) {
           setQuestions(questions);
         } else {
@@ -89,6 +96,7 @@ const Page = () => {
         questions: processedQuestions,
         time: time * 60, // Convert minutes to seconds
         instanceId: instanceId ?? "",
+        directions
       };
 
       await setDoc(testRef, testData, { merge: true });
@@ -124,6 +132,16 @@ const Page = () => {
           >
             Save Changes
           </Button>
+        </div>
+
+        <div className="pl-4 pr-4 pb-2">
+          <p>Custom Directions:</p>
+          <textarea
+            value={directions}
+            onChange={(e) => setDirections(e.target.value)}
+            className="border px-2 py-1 text-lg"
+          />
+          
         </div>
 
         <div className="flex max-h-[calc(100vh-254px)] flex-row gap-4 p-4">
