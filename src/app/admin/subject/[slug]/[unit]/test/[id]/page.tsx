@@ -96,7 +96,7 @@ const Page = () => {
         questions: processedQuestions,
         time: time * 60, // Convert minutes to seconds
         instanceId: instanceId ?? "",
-        directions
+        directions,
       };
 
       await setDoc(testRef, testData, { merge: true });
@@ -134,14 +134,13 @@ const Page = () => {
           </Button>
         </div>
 
-        <div className="pl-4 pr-4 pb-2">
+        <div className="pb-2 pl-4 pr-4">
           <p>Custom Directions:</p>
           <textarea
             value={directions}
             onChange={(e) => setDirections(e.target.value)}
             className="border px-2 py-1 text-lg"
           />
-          
         </div>
 
         <div className="flex max-h-[calc(100vh-254px)] flex-row gap-4 p-4">

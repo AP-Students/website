@@ -20,7 +20,7 @@ const Page = () => {
 
   const [time, setTime] = useState<number>(0);
   const [questions, setQuestions] = useState<QuestionFormat[] | null>(null);
-  const [directions, setDirections] = useState("")
+  const [directions, setDirections] = useState("");
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -41,7 +41,7 @@ const Page = () => {
 
           const time = data.time;
           setTime((time && time / 60) ?? 20);
-          setDirections(data.directions)
+          setDirections(data.directions);
 
           const questionsData = data.questions;
           if (questionsData) {
@@ -70,7 +70,12 @@ const Page = () => {
 
   return (
     <div className="px-8 py-12">
-      <TestRenderer time={time} inputQuestions={questions} adminMode={false} directions={directions}/>
+      <TestRenderer
+        time={time}
+        inputQuestions={questions}
+        adminMode={false}
+        directions={directions}
+      />
     </div>
   );
 };
