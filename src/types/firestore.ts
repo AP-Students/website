@@ -21,6 +21,7 @@ export type UnitTest = {
   name?: string;
   questions: QuestionFormat[];
   time: number;
+  directions: string;
 };
 
 export type Chapter = {
