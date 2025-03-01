@@ -16,7 +16,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Blocker } from "@/app/admin/subject/navigation-block";
 import apClassesData from "@/components/apClasses.json";
-import { formatSlug } from "@/lib/utils";
+import { cn, formatSlug } from "@/lib/utils";
 import short from "short-uuid";
 import type { Subject, Unit } from "@/types/firestore";
 import UnitComponent from "./_components/unit";
@@ -331,7 +331,12 @@ export default function Page({ params }: { params: { slug: string } }) {
       {unsavedChanges && <Blocker />}
 
       <div className="relative min-h-screen">
-        <main className="container max-w-3xl flex-grow px-4 pb-8 pt-10 md:px-10 lg:px-14 2xl:px-20">
+        <main
+          className={cn(
+            "container max-w-3xl flex-grow px-4 pb-8 pt-10 md:px-10 lg:px-14 2xl:px-20",
+            unsavedChanges && "ring-8 ring-red-500",
+          )}
+        >
           <div className="flex justify-between">
             <Link
               className={buttonVariants({ variant: "outline" })}
@@ -341,7 +346,10 @@ export default function Page({ params }: { params: { slug: string } }) {
               Return to Admin Dashboard
             </Link>
             <Button
-              className="bg-blue-500 hover:bg-blue-600"
+              className={cn(
+                "bg-blue-500 hover:bg-blue-600",
+                unsavedChanges && "animate-pulse",
+              )}
               onClick={handleSave}
             >
               <Save className="mr-2" /> Save Changes
