@@ -53,7 +53,7 @@ function UnitTests({
         >
           {/* Example Link to test editor (adjust as needed) */}
           <Link
-            className="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-full border border-input bg-background px-4 py-2 text-sm font-medium ring-offset-background transition-colors  hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+            className="whitespace-nowrap rounded-full border border-input bg-background px-4 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
             href={`/admin/subject/${subjectSlug}/${unitId}/test/${test.id}`}
           >
             Edit Test
