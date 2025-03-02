@@ -73,16 +73,29 @@ const SubjectSidebar = (props: Props) => {
                 <div className="grow">
                   {unit.chapters.map((chapter, chapterIndex) => (
                     <Link
-                      className="group relative mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0"
+                      className={cn(
+                        "group relative mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0",
+                        !chapter.isPublic && "pointer-events-none opacity-70",
+                      )}
+                      aria-disabled={!chapter.isPublic}
+                      tabIndex={!chapter.isPublic ? -1 : undefined}
                       key={chapterIndex}
                       href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${unitIndex + 1}-${unit.id}/chapter/${chapter.id}/${formatSlug(chapter.title)}`}
                     >
                       <div className="flex size-6 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-[.75rem] text-white">
                         {unitIndex + 1}.{chapterIndex + 1}
                       </div>
-                      <span className="group-hover:underline">
+                      <span className="text-balance group-hover:underline">
                         {chapter.title}
                       </span>
+                      <p
+                        className={cn(
+                          "ml-auto text-nowrap rounded-full border border-gray-400 px-2 text-xs",
+                          chapter.isPublic && "hidden",
+                        )}
+                      >
+                        WIP
+                      </p>
                     </Link>
                   ))}
                   {/* Handle multiple tests (unit.tests) first */}

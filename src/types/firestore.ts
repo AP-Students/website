@@ -27,4 +27,5 @@ export type Chapter = {
   id: string;
   title: string;
   content?: Block;
+  isPublic?: boolean;
 };

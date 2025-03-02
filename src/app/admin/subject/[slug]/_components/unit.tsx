@@ -146,6 +146,21 @@ function UnitComponent({
     updateParent(updatedUnit);
   };
 
+  const setChapterVisibility = (chapterId: string, isPublic: boolean) => {
+    const updatedChapters = chapters.map((ch) =>
+      ch.id === chapterId ? { ...ch, isPublic } : ch,
+    );
+    setChapters(updatedChapters);
+
+    const updatedUnit: Unit = {
+      ...unit,
+      title: localUnitTitle,
+      chapters: updatedChapters,
+      tests,
+    };
+    updateParent(updatedUnit);
+  };
+
   /**********************************************
    *      TEST ACTIONS
    **********************************************/
@@ -256,6 +271,7 @@ function UnitComponent({
               index={idx}
               onDeleteChapter={handleChapterDelete}
               onUpdateChapter={handleChapterUpdate}
+              setChapterVisibility={setChapterVisibility}
             />
           ))}
 

@@ -4,7 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { formatSlug } from "@/lib/utils";
+import { cn, formatSlug } from "@/lib/utils";
 import { type Unit } from "@/types/firestore";
 import { BookOpenCheck } from "lucide-react";
 import Link from "next/link";
@@ -34,7 +34,12 @@ const UnitAccordion = ({ unit, pathname, unitIndex }: Props) => {
       <AccordionContent className="flex flex-col gap-3">
         {unit.chapters.map((chapter, chapterIndex) => (
           <Link
-            className="group flex items-center gap-x-3 font-semibold last:mb-0"
+            className={cn(
+              "group flex items-center gap-x-3 font-semibold last:mb-0",
+              !chapter.isPublic && "pointer-events-none opacity-70",
+            )}
+            aria-disabled={!chapter.isPublic}
+            tabIndex={!chapter.isPublic ? -1 : undefined}
             href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/chapter/${chapter.id}/${formatSlug(chapter.title)}`}
             key={chapterIndex}
           >
@@ -42,9 +47,18 @@ const UnitAccordion = ({ unit, pathname, unitIndex }: Props) => {
               {unitIndex + 1}.{chapterIndex + 1}
             </div>
 
-            <div className="text-base font-medium group-hover:underline sm:text-lg">
+            <div className="text-balance text-base font-medium group-hover:underline sm:text-lg">
               {chapter.title}
             </div>
+
+            <p
+              className={cn(
+                "ml-auto text-nowrap rounded-full border border-gray-400 px-2",
+                chapter.isPublic && "hidden",
+              )}
+            >
+              Work In Progress
+            </p>
           </Link>
         ))}
         {/* Handle multiple tests (unit.tests) first */}
