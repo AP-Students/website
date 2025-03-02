@@ -33,33 +33,47 @@ const UnitAccordion = ({ unit, pathname, unitIndex }: Props) => {
 
       <AccordionContent className="flex flex-col gap-3">
         {unit.chapters.map((chapter, chapterIndex) => (
-          <Link
-            className={cn(
-              "group flex items-center gap-x-3 font-semibold last:mb-0",
-              !chapter.isPublic && "pointer-events-none opacity-70",
+          <>
+            {chapter.isPublic ? (
+              <Link
+                className="group flex items-center gap-x-3 font-semibold last:mb-0"
+                href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/chapter/${chapter.id}/${formatSlug(chapter.title)}`}
+                key={chapterIndex}
+              >
+                <div className="flex size-8 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-base text-white">
+                  {unitIndex + 1}.{chapterIndex + 1}
+                </div>
+
+                <div className="text-balance text-base font-medium group-hover:underline sm:text-lg">
+                  {chapter.title}
+                </div>
+              </Link>
+            ) : (
+              <div
+                className="group flex items-center gap-x-3 font-semibold last:mb-0"
+                key={chapterIndex}
+              >
+                <div className="flex size-8 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-base text-white opacity-70">
+                  {unitIndex + 1}.{chapterIndex + 1}
+                </div>
+
+                <div className="text-balance text-base font-medium opacity-70 group-hover:underline sm:text-lg">
+                  {chapter.title}
+                </div>
+                <a
+                  href="/apply"
+                  className="ml-auto w-36 shrink-0 text-nowrap rounded-full border border-gray-400 px-2 text-center text-gray-600 transition-colors group-hover:border-primary group-hover:text-black"
+                >
+                  <span className="inline group-hover:hidden">
+                    Work In Progress
+                  </span>
+                  <span className="hidden group-hover:inline">
+                    Join FiveHive
+                  </span>
+                </a>
+              </div>
             )}
-            aria-disabled={!chapter.isPublic}
-            tabIndex={!chapter.isPublic ? -1 : undefined}
-            href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/chapter/${chapter.id}/${formatSlug(chapter.title)}`}
-            key={chapterIndex}
-          >
-            <div className="flex size-8 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-base font-bold text-white">
-              {unitIndex + 1}.{chapterIndex + 1}
-            </div>
-
-            <div className="text-balance text-base font-medium group-hover:underline sm:text-lg">
-              {chapter.title}
-            </div>
-
-            <p
-              className={cn(
-                "ml-auto text-nowrap rounded-full border border-gray-400 px-2",
-                chapter.isPublic && "hidden",
-              )}
-            >
-              Work In Progress
-            </p>
-          </Link>
+          </>
         ))}
         {/* Handle multiple tests (unit.tests) first */}
         {unit.tests ? (
