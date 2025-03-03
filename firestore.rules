@@ -45,5 +45,4 @@ service cloud.firestore {
       allow read, write: if isAuthenticated() && request.auth.uid == userId;
     }
   }
-  
 }
