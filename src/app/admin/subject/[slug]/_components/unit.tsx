@@ -146,6 +146,21 @@ function UnitComponent({
     updateParent(updatedUnit);
   };
 
+  const setChapterVisibility = (chapterId: string, isPublic: boolean) => {
+    const updatedChapters = chapters.map((ch) =>
+      ch.id === chapterId ? { ...ch, isPublic } : ch,
+    );
+    setChapters(updatedChapters);
+
+    const updatedUnit: Unit = {
+      ...unit,
+      title: localUnitTitle,
+      chapters: updatedChapters,
+      tests,
+    };
+    updateParent(updatedUnit);
+  };
+
   /**********************************************
    *      TEST ACTIONS
    **********************************************/
@@ -193,6 +208,21 @@ function UnitComponent({
     )
       return;
     const updatedTests = tests.filter((t) => t.id !== testId);
+    setTests(updatedTests);
+
+    const updatedUnit: Unit = {
+      ...unit,
+      title: localUnitTitle,
+      chapters,
+      tests: updatedTests,
+    };
+    updateParent(updatedUnit);
+  };
+
+  const setTestVisibility = (testId: string, isPublic: boolean) => {
+    const updatedTests = tests.map((t) =>
+      t.id === testId ? { ...t, isPublic } : t,
+    );
     setTests(updatedTests);
 
     const updatedUnit: Unit = {
@@ -258,6 +288,7 @@ function UnitComponent({
               index={idx}
               onDeleteChapter={handleChapterDelete}
               onUpdateChapter={handleChapterUpdate}
+              setChapterVisibility={setChapterVisibility}
             />
           ))}
 
@@ -285,6 +316,7 @@ function UnitComponent({
             onTestAdd={handleTestAdd}
             onTestUpdate={handleTestUpdate}
             onTestDelete={handleTestDelete}
+            setTestVisibility={setTestVisibility}
           />
         </div>
       )}

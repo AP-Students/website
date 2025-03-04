@@ -22,10 +22,12 @@ export type UnitTest = {
   questions: QuestionFormat[];
   time: number;
   directions: string;
+  isPublic?: boolean;
 };
 
 export type Chapter = {
   id: string;
   title: string;
   content?: Block;
+  isPublic?: boolean;
 };
