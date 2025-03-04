@@ -56,6 +56,8 @@ const emptyData: Subject = {
           name: "Subject Test",
           questions: [],
           time: 0,
+          directions:
+            "Read each passage and question carefully, and then choose the best answer to the question based on the passage(s).  All questions in this section are multiple-choice with four answer choices. Each question has a single best answer.",
         },
       ],
     },

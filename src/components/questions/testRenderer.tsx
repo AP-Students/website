@@ -17,6 +17,7 @@ interface Props {
   inputQuestions: QuestionFormat[];
   time: number;
   adminMode?: boolean;
+  directions?: string;
 }
 
 const initialQuestions: QuestionFormat[] = [
@@ -62,6 +63,7 @@ export default function DigitalTestingPage({
   time,
   inputQuestions,
   adminMode = false,
+  directions,
 }: Props) {
   const [questions, setQuestions] = useState<QuestionFormat[]>(
     inputQuestions || initialQuestions,
@@ -123,6 +125,7 @@ export default function DigitalTestingPage({
           setSubmitted={setSubmitted}
           submitted={submitted}
           timeRemaining={time * 60}
+          directions={directions}
         />
       )}
       {showReviewPage ? (
