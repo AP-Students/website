@@ -217,6 +217,21 @@ function UnitComponent({
     updateParent(updatedUnit);
   };
 
+  const setTestVisibility = (testId: string, isPublic: boolean) => {
+    const updatedTests = tests.map((t) =>
+      t.id === testId ? { ...t, isPublic } : t,
+    );
+    setTests(updatedTests);
+
+    const updatedUnit: Unit = {
+      ...unit,
+      title: localUnitTitle,
+      chapters,
+      tests: updatedTests,
+    };
+    updateParent(updatedUnit);
+  };
+
   return (
     <div className="rounded-lg border shadow-sm">
       {/* UNIT HEADER */}
@@ -299,6 +314,7 @@ function UnitComponent({
             onTestAdd={handleTestAdd}
             onTestUpdate={handleTestUpdate}
             onTestDelete={handleTestDelete}
+            setTestVisibility={setTestVisibility}
           />
         </div>
       )}

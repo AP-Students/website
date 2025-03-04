@@ -14,6 +14,7 @@ interface UnitTestsProps {
   onTestUpdate: (testId: string, newName: string) => void;
   onTestDelete: (testId: string) => void;
   onTestAdd: (name: string, time: number) => void;
+  setTestVisibility: (testId: string, isPublic: boolean) => void;
 }
 
 function UnitTests({
@@ -23,6 +24,7 @@ function UnitTests({
   onTestUpdate,
   onTestDelete,
   onTestAdd,
+  setTestVisibility,
 }: UnitTestsProps) {
   // Local state for adding a new test
   const [newTestName, setNewTestName] = useState<string>("");
@@ -51,7 +53,15 @@ function UnitTests({
           key={test.id}
           className="mb-3 flex items-center justify-between gap-4"
         >
-          {/* Example Link to test editor (adjust as needed) */}
+          <div className="flex gap-2">
+            <label htmlFor={`visibility-${test.id}`}>Public</label>
+            <input
+              type="checkbox"
+              id={`visibility-${test.id}`}
+              checked={test.isPublic}
+              onChange={(e) => setTestVisibility(test.id, e.target.checked)}
+            />
+          </div>
           <Link
             className="whitespace-nowrap rounded-full border border-input bg-background px-4 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
             href={`/admin/subject/${subjectSlug}/${unitId}/test/${test.id}`}

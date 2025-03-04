@@ -44,7 +44,7 @@ service cloud.firestore {
         }
 
         match /tests/{test} {
-          allow read: if true;
+          allow read: if resource.data.isPublic == true || isMemberOrAdmin();
           allow write: if isMemberOrAdmin();
         }
       }

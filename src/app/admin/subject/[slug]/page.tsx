@@ -243,7 +243,11 @@ export default function Page({ params }: { params: { slug: string } }) {
           // d) Upsert all tests from our local data
           for (const test of unit.tests) {
             const testDocRef = doc(testsCollectionRef, test.id);
-            batch.set(testDocRef, { name: test.name }, { merge: true });
+            batch.set(
+              testDocRef,
+              { name: test.name, isPublic: test.isPublic ?? false },
+              { merge: true },
+            );
           }
         }
 
