@@ -13,9 +13,10 @@ type Props = {
   unit: Unit;
   pathname: string;
   unitIndex: number;
+  preview: boolean;
 };
 
-const UnitAccordion = ({ unit, pathname, unitIndex }: Props) => {
+const UnitAccordion = ({ unit, pathname, unitIndex, preview }: Props) => {
   return (
     <AccordionItem
       className="mb-3 border-none"
@@ -60,13 +61,19 @@ const UnitAccordion = ({ unit, pathname, unitIndex }: Props) => {
                 {chapter.title}
               </div>
               <a
-                href="/apply"
+                href={
+                  preview
+                    ? `${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/chapter/${chapter.id}/${formatSlug(chapter.title)}`
+                    : "/apply"
+                }
                 className="ml-auto w-36 shrink-0 text-nowrap rounded-full border border-gray-400 px-2 text-center text-gray-600 transition-colors group-hover:border-primary group-hover:text-black"
               >
                 <span className="inline group-hover:hidden">
                   Work In Progress
                 </span>
-                <span className="hidden group-hover:inline">Join FiveHive</span>
+                <span className="hidden group-hover:inline">
+                  {preview ? "Preview" : "Join FiveHive"}
+                </span>
               </a>
             </div>
           ),
@@ -99,14 +106,18 @@ const UnitAccordion = ({ unit, pathname, unitIndex }: Props) => {
                       `Unit ${unitIndex + 1} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
                 </span>
                 <a
-                  href="/apply"
+                  href={
+                    preview
+                      ? `${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`
+                      : "/apply"
+                  }
                   className="ml-auto w-36 shrink-0 text-nowrap rounded-full border border-gray-400 px-2 text-center text-gray-600 transition-colors group-hover:border-primary group-hover:text-black"
                 >
                   <span className="inline group-hover:hidden">
                     Work In Progress
                   </span>
                   <span className="hidden group-hover:inline">
-                    Join FiveHive
+                    {preview ? "Preview" : "Join FiveHive"}
                   </span>
                 </a>
               </div>
