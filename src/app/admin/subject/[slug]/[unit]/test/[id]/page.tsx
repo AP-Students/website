@@ -13,6 +13,9 @@ import type { UnitTest } from "@/types/firestore";
 import { usePathname } from "next/navigation";
 import type { QuestionFormat } from "@/types/questions";
 import { processQuestions } from "@/components/article-creator/FetchArticleFunctions";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 const Page = () => {
   const pathname = usePathname();
@@ -23,7 +26,8 @@ const Page = () => {
   const unitId = instanceId.split("_")[1]!;
   const testId = instanceId.split("_")[3]!;
 
-  const [time, setTime] = useState<number>(30);
+  const [minutes, setMinutes] = useState<number>(22);
+  const [seconds, setSeconds] = useState<number>(40);
   const { questions, setQuestions } = syncedQuestions(instanceId);
   const [directions, setDirections] = useState("");
 
@@ -56,13 +60,14 @@ const Page = () => {
         const data = docSnap.data() as UnitTest;
 
         const time = data.time;
-        setTime((time && time / 60) ?? 20);
+        setMinutes((time && Math.floor(time / 60)) ?? 20);
+        setSeconds((time && time % 60) ?? 40);
         const questions = data.questions;
 
         setDirections(
           data.directions
             ? data.directions
-            : "Read each passage and question carefully, and then choose the best answer to the question based on the passage(s).  All questions in this section are multiple-choice with four answer choices. Each question has a single best answer.",
+            : "Read each passage and question carefully, and then choose the best answer to the question based on the passage(s). All questions in this section are multiple-choice with four answer choices. Each question has a single best answer.",
         );
 
         if (questions) {
@@ -94,7 +99,7 @@ const Page = () => {
 
       const testData = {
         questions: processedQuestions,
-        time: time * 60, // Convert minutes to seconds
+        time: minutes * 60 + seconds,
         instanceId: instanceId ?? "",
         directions,
       };
@@ -117,15 +122,31 @@ const Page = () => {
       <div className="relative min-h-screen">
         <Navbar />
 
-        <div className="flex items-center gap-2 p-4">
-          <p>Time Limit: {time} minutes</p>
-          <input
-            type="number"
-            value={time}
-            onChange={(e) => setTime(parseInt(e.target.value) || 0)}
-            className="border px-2 py-1 text-lg"
-            min="0"
-          />
+        <div className="flex items-center gap-2 p-4 pb-0">
+          <div className="grid gap-1.5">
+            <Label htmlFor="minutes">Minutes</Label>
+            <Input
+              type="number"
+              id="minutes"
+              placeholder="22"
+              min={0}
+              value={minutes}
+              className="w-24"
+              onChange={(e) => setMinutes(parseInt(e.target.value) || 0)}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="seconds">Seconds</Label>
+            <Input
+              type="number"
+              id="seconds"
+              placeholder="40"
+              min={0}
+              value={seconds}
+              className="w-24"
+              onChange={(e) => setSeconds(parseInt(e.target.value) || 0)}
+            />
+          </div>
           <Button
             className="ml-auto bg-blue-600 hover:bg-blue-700"
             onClick={handleSave}
@@ -135,11 +156,13 @@ const Page = () => {
         </div>
 
         <div className="pb-2 pl-4 pr-4">
-          <p>Custom Directions:</p>
-          <textarea
+          <p>
+            Timer Duration: {minutes} min {seconds} s
+          </p>
+          <p className="pt-2">Test Directions:</p>
+          <Textarea
             value={directions}
             onChange={(e) => setDirections(e.target.value)}
-            className="border px-2 py-1 text-lg"
           />
         </div>
 
@@ -153,7 +176,7 @@ const Page = () => {
           </div>
           <div className="flex-1 overflow-y-scroll rounded border p-4">
             <TestRenderer
-              time={time}
+              time={minutes * 60 + seconds}
               inputQuestions={questions}
               adminMode={true}
             />
