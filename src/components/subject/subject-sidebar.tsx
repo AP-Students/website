@@ -14,6 +14,7 @@ import usePathname from "../client/pathname";
 
 type Props = {
   subject: Subject;
+  preview: boolean;
 };
 
 const SubjectSidebar = (props: Props) => {
@@ -75,10 +76,14 @@ const SubjectSidebar = (props: Props) => {
                     <Link
                       className={cn(
                         "group relative mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0",
-                        !chapter.isPublic && "pointer-events-none opacity-70",
+                        !props.preview &&
+                          !chapter.isPublic &&
+                          "pointer-events-none opacity-70",
                       )}
-                      aria-disabled={!chapter.isPublic}
-                      tabIndex={!chapter.isPublic ? -1 : undefined}
+                      aria-disabled={!props.preview && !chapter.isPublic}
+                      tabIndex={
+                        !props.preview && !chapter.isPublic ? -1 : undefined
+                      }
                       key={chapterIndex}
                       href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${unitIndex + 1}-${unit.id}/chapter/${chapter.id}/${formatSlug(chapter.title)}`}
                     >
@@ -104,11 +109,15 @@ const SubjectSidebar = (props: Props) => {
                       <Link
                         className={cn(
                           "mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0 hover:underline",
-                          !test.isPublic && "pointer-events-none opacity-70",
+                          !props.preview &&
+                            !test.isPublic &&
+                            "pointer-events-none opacity-70",
                         )}
-                        aria-disabled={!test.isPublic}
-                        tabIndex={!test.isPublic ? -1 : undefined}
-                        href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`}
+                        aria-disabled={!props.preview && !test.isPublic}
+                        tabIndex={
+                          !props.preview && !test.isPublic ? -1 : undefined
+                        }
+                        href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`}
                         key={test.id}
                       >
                         {test.isPublic ? (

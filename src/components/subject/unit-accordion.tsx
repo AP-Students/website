@@ -60,7 +60,7 @@ const UnitAccordion = ({ unit, pathname, unitIndex, preview }: Props) => {
               <div className="text-balance text-base font-medium opacity-70 group-hover:underline sm:text-lg">
                 {chapter.title}
               </div>
-              <a
+              <Link
                 href={
                   preview
                     ? `${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/chapter/${chapter.id}/${formatSlug(chapter.title)}`
@@ -74,7 +74,7 @@ const UnitAccordion = ({ unit, pathname, unitIndex, preview }: Props) => {
                 <span className="hidden group-hover:inline">
                   {preview ? "Preview" : "Join FiveHive"}
                 </span>
-              </a>
+              </Link>
             </div>
           ),
         )}

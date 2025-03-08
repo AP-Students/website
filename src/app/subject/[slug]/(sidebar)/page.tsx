@@ -5,7 +5,6 @@ import Navbar from "@/components/global/navbar";
 import { db } from "@/lib/firebase";
 import { type Subject } from "@/types/firestore";
 import SubjectBreadcrumb from "@/components/subject/subject-breadcrumb";
-import SubjectSidebar from "@/components/subject/subject-sidebar";
 import TableOfContents from "@/components/subject/table-of-contents";
 import UnitAccordion from "@/components/subject/unit-accordion";
 import { useEffect, useState } from "react";
@@ -48,7 +47,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-3xl">
+      <div className="flex min-h-screen grow items-center justify-center text-2xl">
         Loading...
       </div>
     );
@@ -65,44 +64,38 @@ const Page = ({ params }: { params: { slug: string } }) => {
   }
 
   return (
-    <div className="relative flex min-h-screen">
-      <SubjectSidebar subject={subject} />
+    <div className="relative flex grow flex-col">
+      <Navbar className="w-full px-10 xl:px-20" variant="secondary" />
 
-      <div className="relative flex grow flex-col">
-        <Navbar className="w-full px-10 xl:px-20" variant="secondary" />
+      <div className="relative mt-8 flex justify-between gap-x-16 px-10 lg:mt-16 xl:px-20">
+        <div className="grow">
+          <SubjectBreadcrumb locations={[subject.title]} />
 
-        <div className="relative mt-8 flex justify-between gap-x-16 px-10 lg:mt-16 xl:px-20">
-          <div className="grow">
-            <SubjectBreadcrumb locations={[subject.title]} />
+          <h1 className="mb-9 mt-1 text-balance text-left text-5xl font-extrabold sm:text-6xl">
+            {subject.title}
+          </h1>
 
-            <h1 className="mb-9 mt-1 text-balance text-left text-5xl font-extrabold sm:text-6xl">
-              {subject.title}
-            </h1>
-
-            <Accordion
-              className="w-full"
-              type="multiple"
-              defaultValue={subject.units.map((unit) => unit.title)}
-            >
-              {subject.units.map((unit, unitIndex) => (
-                <UnitAccordion
-                  unit={unit}
-                  unitIndex={unitIndex}
-                  key={unitIndex}
-                  pathname={pathname}
-                  preview={
-                    user?.access === "member" || user?.access === "admin"
-                  }
-                />
-              ))}
-            </Accordion>
-          </div>
-
-          <TableOfContents title="UNITS" subject={subject} />
+          <Accordion
+            className="w-full"
+            type="multiple"
+            defaultValue={subject.units.map((unit) => unit.title)}
+          >
+            {subject.units.map((unit, unitIndex) => (
+              <UnitAccordion
+                unit={unit}
+                unitIndex={unitIndex}
+                key={unitIndex}
+                pathname={pathname}
+                preview={user?.access === "member" || user?.access === "admin"}
+              />
+            ))}
+          </Accordion>
         </div>
 
-        <Footer className="mx-0 mt-auto w-full max-w-none px-10 xl:px-20" />
+        <TableOfContents title="UNITS" subject={subject} />
       </div>
+
+      <Footer className="mx-0 mt-auto w-full max-w-none px-10 xl:px-20" />
     </div>
   );
 };
