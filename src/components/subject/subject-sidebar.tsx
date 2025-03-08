@@ -103,8 +103,7 @@ const SubjectSidebar = (props: Props) => {
                       </p>
                     </Link>
                   ))}
-                  {/* Handle multiple tests (unit.tests) first */}
-                  {unit.tests ? (
+                  {unit.tests &&
                     unit.tests.map((test, testIndex) => (
                       <Link
                         className={cn(
@@ -140,19 +139,7 @@ const SubjectSidebar = (props: Props) => {
                           WIP
                         </p>
                       </Link>
-                    ))
-                  ) : // Fallback: single test flow
-                  unit.test && unit.testId ? (
-                    <Link
-                      className="mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0 hover:underline"
-                      href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${unit.testId}`}
-                    >
-                      <BookOpenCheck className="size-6" />
-                      {unit.title === "Subject Test"
-                        ? unit.title
-                        : `Unit ${unitIndex + 1} Test`}
-                    </Link>
-                  ) : null}
+                    ))}
                 </div>
               </AccordionContent>
             </AccordionItem>
