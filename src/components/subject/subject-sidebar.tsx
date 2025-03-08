@@ -103,43 +103,42 @@ const SubjectSidebar = (props: Props) => {
                       </p>
                     </Link>
                   ))}
-                  {unit.tests &&
-                    unit.tests.map((test, testIndex) => (
-                      <Link
+                  {unit.tests?.map((test, testIndex) => (
+                    <Link
+                      className={cn(
+                        "mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0 hover:underline",
+                        !props.preview &&
+                          !test.isPublic &&
+                          "pointer-events-none opacity-70",
+                      )}
+                      aria-disabled={!props.preview && !test.isPublic}
+                      tabIndex={
+                        !props.preview && !test.isPublic ? -1 : undefined
+                      }
+                      href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`}
+                      key={test.id}
+                    >
+                      {test.isPublic ? (
+                        <BookOpenCheck className="size-6" />
+                      ) : (
+                        <BookDashed className="size-6 opacity-70" />
+                      )}
+                      <span className="text-balance">
+                        {test.name
+                          ? test.name
+                          : // unit.tests cuz typescript doesn't recognize I checked for unit.tests already
+                            `Unit ${unitIndex + 1} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
+                      </span>
+                      <p
                         className={cn(
-                          "mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0 hover:underline",
-                          !props.preview &&
-                            !test.isPublic &&
-                            "pointer-events-none opacity-70",
+                          "ml-auto text-nowrap rounded-full border border-gray-400 px-2 text-xs",
+                          test.isPublic && "hidden",
                         )}
-                        aria-disabled={!props.preview && !test.isPublic}
-                        tabIndex={
-                          !props.preview && !test.isPublic ? -1 : undefined
-                        }
-                        href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`}
-                        key={test.id}
                       >
-                        {test.isPublic ? (
-                          <BookOpenCheck className="size-6" />
-                        ) : (
-                          <BookDashed className="size-6 opacity-70" />
-                        )}
-                        <span className="text-balance">
-                          {test.name
-                            ? test.name
-                            : // unit.tests cuz typescript doesn't recognize I checked for unit.tests already
-                              `Unit ${unitIndex + 1} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
-                        </span>
-                        <p
-                          className={cn(
-                            "ml-auto text-nowrap rounded-full border border-gray-400 px-2 text-xs",
-                            test.isPublic && "hidden",
-                          )}
-                        >
-                          WIP
-                        </p>
-                      </Link>
-                    ))}
+                        WIP
+                      </p>
+                    </Link>
+                  ))}
                 </div>
               </AccordionContent>
             </AccordionItem>

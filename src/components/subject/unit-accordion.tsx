@@ -78,50 +78,49 @@ const UnitAccordion = ({ unit, pathname, unitIndex, preview }: Props) => {
             </div>
           ),
         )}
-        {unit.tests &&
-          unit.tests.map((test, testIndex) =>
-            test.isPublic ? (
-              <Link
-                className="flex items-center gap-x-3 font-semibold last:mb-0 hover:underline"
-                href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`}
-                key={test.id}
-              >
-                <BookOpenCheck className="size-8" />
+        {unit.tests?.map((test, testIndex) =>
+          test.isPublic ? (
+            <Link
+              className="flex items-center gap-x-3 font-semibold last:mb-0 hover:underline"
+              href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`}
+              key={test.id}
+            >
+              <BookOpenCheck className="size-8" />
+              {test.name
+                ? test.name
+                : // unit.tests cuz typescript doesn't recognize I checked for unit.tests already
+                  `Unit ${unitIndex + 1} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
+            </Link>
+          ) : (
+            <div
+              className="group flex items-center gap-x-3 font-semibold last:mb-0"
+              key={test.id}
+            >
+              <BookDashed className="size-8 opacity-70" />
+              <span className="opacity-70 group-hover:underline">
                 {test.name
                   ? test.name
                   : // unit.tests cuz typescript doesn't recognize I checked for unit.tests already
                     `Unit ${unitIndex + 1} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
-              </Link>
-            ) : (
-              <div
-                className="group flex items-center gap-x-3 font-semibold last:mb-0"
-                key={test.id}
+              </span>
+              <a
+                href={
+                  preview
+                    ? `${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`
+                    : "/apply"
+                }
+                className="ml-auto w-36 shrink-0 text-nowrap rounded-full border border-gray-400 px-2 text-center text-gray-600 transition-colors group-hover:border-primary group-hover:text-black"
               >
-                <BookDashed className="size-8 opacity-70" />
-                <span className="opacity-70 group-hover:underline">
-                  {test.name
-                    ? test.name
-                    : // unit.tests cuz typescript doesn't recognize I checked for unit.tests already
-                      `Unit ${unitIndex + 1} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
+                <span className="inline group-hover:hidden">
+                  Work In Progress
                 </span>
-                <a
-                  href={
-                    preview
-                      ? `${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`
-                      : "/apply"
-                  }
-                  className="ml-auto w-36 shrink-0 text-nowrap rounded-full border border-gray-400 px-2 text-center text-gray-600 transition-colors group-hover:border-primary group-hover:text-black"
-                >
-                  <span className="inline group-hover:hidden">
-                    Work In Progress
-                  </span>
-                  <span className="hidden group-hover:inline">
-                    {preview ? "Preview" : "Join FiveHive"}
-                  </span>
-                </a>
-              </div>
-            ),
-          )}
+                <span className="hidden group-hover:inline">
+                  {preview ? "Preview" : "Join FiveHive"}
+                </span>
+              </a>
+            </div>
+          ),
+        )}
       </AccordionContent>
     </AccordionItem>
   );
