@@ -283,7 +283,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
                 />
               </div>
 
-              <div>
+              <div className="flex items-center gap-2">
                 <label>Question type:</label>
                 <select
                   value={questionInstance.type}
@@ -293,20 +293,24 @@ const QuestionsInputInterface: React.FC<Props> = ({
                       type: e.target.value as "mcq" | "multi-answer",
                     })
                   }
-                  className="w-full border p-2"
+                  className="rounded-md border border-gray-300 bg-gray-50 p-2"
                 >
                   <option value="mcq">MCQ</option>
                   <option value="multi-answer">Multi-Answer</option>
                 </select>
-              </div>
 
-              <button
-                type="button"
-                className="mt-4 rounded border border-red-500 bg-red-500 px-3 py-1 text-white transition-colors hover:bg-white hover:text-red-500"
-                onClick={() => removeQuestion(qIndex)}
-              >
-                Delete question
-              </button>
+                <button
+                  type="button"
+                  className="ml-auto rounded border border-red-500 bg-red-500 px-2 py-1 text-white transition-colors hover:bg-white hover:text-red-500"
+                  onClick={() => {
+                    if (confirm("Delete this question?")) {
+                      removeQuestion(qIndex);
+                    }
+                  }}
+                >
+                  Delete question
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -314,7 +318,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
 
       <button
         type="button"
-        className="rounded border border-green-500 bg-green-500 px-3 py-1 text-white transition-colors hover:bg-white hover:text-green-500"
+        className="rounded border border-green-500 bg-green-500 px-2 py-1 text-white transition-colors hover:bg-white hover:text-green-500"
         onClick={addQuestion}
       >
         Add question
