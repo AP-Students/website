@@ -60,10 +60,53 @@ const UnitAccordion = ({ unit, pathname, unitIndex, preview }: Props) => {
               <div className="text-balance text-base font-medium opacity-70 group-hover:underline sm:text-lg">
                 {chapter.title}
               </div>
-              <a
+              <Link
                 href={
                   preview
                     ? `${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/chapter/${chapter.id}/${formatSlug(chapter.title)}`
+                    : "/apply"
+                }
+                className="ml-auto w-36 shrink-0 text-nowrap rounded-full border border-gray-400 px-2 text-center text-gray-600 transition-colors group-hover:border-primary group-hover:text-black"
+              >
+                <span className="inline group-hover:hidden">
+                  Work In Progress
+                </span>
+                <span className="hidden group-hover:inline">
+                  {preview ? "Preview" : "Join FiveHive"}
+                </span>
+              </Link>
+            </div>
+          ),
+        )}
+        {unit.tests?.map((test, testIndex) =>
+          test.isPublic ? (
+            <Link
+              className="flex items-center gap-x-3 font-semibold last:mb-0 hover:underline"
+              href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`}
+              key={test.id}
+            >
+              <BookOpenCheck className="size-8" />
+              {test.name
+                ? test.name
+                : // unit.tests cuz typescript doesn't recognize I checked for unit.tests already
+                  `Unit ${unitIndex + 1} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
+            </Link>
+          ) : (
+            <div
+              className="group flex items-center gap-x-3 font-semibold last:mb-0"
+              key={test.id}
+            >
+              <BookDashed className="size-8 opacity-70" />
+              <span className="opacity-70 group-hover:underline">
+                {test.name
+                  ? test.name
+                  : // unit.tests cuz typescript doesn't recognize I checked for unit.tests already
+                    `Unit ${unitIndex + 1} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
+              </span>
+              <a
+                href={
+                  preview
+                    ? `${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`
                     : "/apply"
                 }
                 className="ml-auto w-36 shrink-0 text-nowrap rounded-full border border-gray-400 px-2 text-center text-gray-600 transition-colors group-hover:border-primary group-hover:text-black"
@@ -78,63 +121,6 @@ const UnitAccordion = ({ unit, pathname, unitIndex, preview }: Props) => {
             </div>
           ),
         )}
-        {/* Handle multiple tests (unit.tests) first */}
-        {unit.tests ? (
-          unit.tests.map((test, testIndex) =>
-            test.isPublic ? (
-              <Link
-                className="flex items-center gap-x-3 font-semibold last:mb-0 hover:underline"
-                href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`}
-                key={test.id}
-              >
-                <BookOpenCheck className="size-8" />
-                {test.name
-                  ? test.name
-                  : // unit.tests cuz typescript doesn't recognize I checked for unit.tests already
-                    `Unit ${unitIndex + 1} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
-              </Link>
-            ) : (
-              <div
-                className="group flex items-center gap-x-3 font-semibold last:mb-0"
-                key={test.id}
-              >
-                <BookDashed className="size-8 opacity-70" />
-                <span className="opacity-70 group-hover:underline">
-                  {test.name
-                    ? test.name
-                    : // unit.tests cuz typescript doesn't recognize I checked for unit.tests already
-                      `Unit ${unitIndex + 1} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
-                </span>
-                <a
-                  href={
-                    preview
-                      ? `${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`
-                      : "/apply"
-                  }
-                  className="ml-auto w-36 shrink-0 text-nowrap rounded-full border border-gray-400 px-2 text-center text-gray-600 transition-colors group-hover:border-primary group-hover:text-black"
-                >
-                  <span className="inline group-hover:hidden">
-                    Work In Progress
-                  </span>
-                  <span className="hidden group-hover:inline">
-                    {preview ? "Preview" : "Join FiveHive"}
-                  </span>
-                </a>
-              </div>
-            ),
-          )
-        ) : // Fallback: single test flow
-        unit.test && unit.testId ? (
-          <Link
-            className="mb-3 flex items-center gap-x-3 font-semibold last:mb-0 hover:underline"
-            href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${unit.testId}`}
-          >
-            <BookOpenCheck className="size-8" />
-            {unit.title === "Subject Test"
-              ? unit.title
-              : `Unit ${unitIndex + 1} Test`}
-          </Link>
-        ) : null}
       </AccordionContent>
     </AccordionItem>
   );

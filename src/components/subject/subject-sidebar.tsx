@@ -14,6 +14,7 @@ import usePathname from "../client/pathname";
 
 type Props = {
   subject: Subject;
+  preview: boolean;
 };
 
 const SubjectSidebar = (props: Props) => {
@@ -75,10 +76,14 @@ const SubjectSidebar = (props: Props) => {
                     <Link
                       className={cn(
                         "group relative mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0",
-                        !chapter.isPublic && "pointer-events-none opacity-70",
+                        !props.preview &&
+                          !chapter.isPublic &&
+                          "pointer-events-none opacity-70",
                       )}
-                      aria-disabled={!chapter.isPublic}
-                      tabIndex={!chapter.isPublic ? -1 : undefined}
+                      aria-disabled={!props.preview && !chapter.isPublic}
+                      tabIndex={
+                        !props.preview && !chapter.isPublic ? -1 : undefined
+                      }
                       key={chapterIndex}
                       href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${unitIndex + 1}-${unit.id}/chapter/${chapter.id}/${formatSlug(chapter.title)}`}
                     >
@@ -98,52 +103,42 @@ const SubjectSidebar = (props: Props) => {
                       </p>
                     </Link>
                   ))}
-                  {/* Handle multiple tests (unit.tests) first */}
-                  {unit.tests ? (
-                    unit.tests.map((test, testIndex) => (
-                      <Link
-                        className={cn(
-                          "mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0 hover:underline",
-                          !test.isPublic && "pointer-events-none opacity-70",
-                        )}
-                        aria-disabled={!test.isPublic}
-                        tabIndex={!test.isPublic ? -1 : undefined}
-                        href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`}
-                        key={test.id}
-                      >
-                        {test.isPublic ? (
-                          <BookOpenCheck className="size-6" />
-                        ) : (
-                          <BookDashed className="size-6 opacity-70" />
-                        )}
-                        <span className="text-balance">
-                          {test.name
-                            ? test.name
-                            : // unit.tests cuz typescript doesn't recognize I checked for unit.tests already
-                              `Unit ${unitIndex + 1} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
-                        </span>
-                        <p
-                          className={cn(
-                            "ml-auto text-nowrap rounded-full border border-gray-400 px-2 text-xs",
-                            test.isPublic && "hidden",
-                          )}
-                        >
-                          WIP
-                        </p>
-                      </Link>
-                    ))
-                  ) : // Fallback: single test flow
-                  unit.test && unit.testId ? (
+                  {unit.tests?.map((test, testIndex) => (
                     <Link
-                      className="mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0 hover:underline"
-                      href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${unit.testId}`}
+                      className={cn(
+                        "mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0 hover:underline",
+                        !props.preview &&
+                          !test.isPublic &&
+                          "pointer-events-none opacity-70",
+                      )}
+                      aria-disabled={!props.preview && !test.isPublic}
+                      tabIndex={
+                        !props.preview && !test.isPublic ? -1 : undefined
+                      }
+                      href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`}
+                      key={test.id}
                     >
-                      <BookOpenCheck className="size-6" />
-                      {unit.title === "Subject Test"
-                        ? unit.title
-                        : `Unit ${unitIndex + 1} Test`}
+                      {test.isPublic ? (
+                        <BookOpenCheck className="size-6" />
+                      ) : (
+                        <BookDashed className="size-6 opacity-70" />
+                      )}
+                      <span className="text-balance">
+                        {test.name
+                          ? test.name
+                          : // unit.tests cuz typescript doesn't recognize I checked for unit.tests already
+                            `Unit ${unitIndex + 1} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
+                      </span>
+                      <p
+                        className={cn(
+                          "ml-auto text-nowrap rounded-full border border-gray-400 px-2 text-xs",
+                          test.isPublic && "hidden",
+                        )}
+                      >
+                        WIP
+                      </p>
                     </Link>
-                  ) : null}
+                  ))}
                 </div>
               </AccordionContent>
             </AccordionItem>
