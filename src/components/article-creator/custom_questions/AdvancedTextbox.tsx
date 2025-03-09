@@ -22,6 +22,7 @@ interface Props {
   qIndex: number;
   placeholder?: string;
   oIndex?: number | undefined;
+  setUnsavedChanges: (unchangedChanges: boolean) => void;
 }
 
 // Utility to store a file in IndexedDB with a unique key for each instance
@@ -79,6 +80,7 @@ export default function AdvancedTextbox({
   placeholder,
   oIndex,
   setQuestions,
+  setUnsavedChanges,
 }: Props) {
   const questionInstance = questions[qIndex];
   const [currentText, setCurrentText] = useState<string>("");
@@ -122,6 +124,7 @@ export default function AdvancedTextbox({
   };
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setUnsavedChanges(true);
     const newText = e.target.value;
     setCurrentText(newText);
     // Clone the current question to avoid direct mutation
@@ -335,7 +338,7 @@ export default function AdvancedTextbox({
       <div className="mt-2">
         {uploadedFiles.length > 0 &&
           uploadedFiles.map((file) => (
-            <div key={file.key} className="flex items-center space-x-2 mb-2">
+            <div key={file.key} className="mb-2 flex items-center space-x-2">
               <button
                 type="button"
                 className="flex items-center text-red-500 hover:underline"

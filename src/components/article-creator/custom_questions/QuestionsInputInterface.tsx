@@ -17,12 +17,14 @@ interface Props {
   questions: QuestionFormat[];
   setQuestions: (questions: QuestionFormat[]) => void;
   testRenderer?: boolean;
+  setUnsavedChanges: (unsavedChanges: boolean) => void;
 }
 
 const QuestionsInputInterface: React.FC<Props> = ({
   questions,
   setQuestions,
   testRenderer = false,
+  setUnsavedChanges,
 }) => {
   const [error, setError] = useState<string>("");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -82,6 +84,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
 
     // Ensure new question starts as expanded and collapse all other questions
     setCollapsed((prev) => [...prev].fill(true).concat(false));
+    setUnsavedChanges(true);
   };
 
   const removeQuestion = (index: number) => {
@@ -90,12 +93,14 @@ const QuestionsInputInterface: React.FC<Props> = ({
     setError("");
     setCollapsed((prev) => prev.filter((_, i) => i !== index));
     setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1));
+    setUnsavedChanges(true);
   };
 
   const updateQuestion = (index: number, updatedQuestion: QuestionFormat) => {
     const newQuestions = [...questions];
     newQuestions[index] = updatedQuestion;
     setQuestions(newQuestions);
+    setUnsavedChanges(true);
   };
 
   const moveQuestionUp = (index: number) => {
@@ -105,6 +110,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
     newQuestions[index] = newQuestions[index - 1]!;
     newQuestions[index - 1] = temp!;
     setQuestions(newQuestions);
+    setUnsavedChanges(true);
   };
 
   const moveQuestionDown = (index: number) => {
@@ -114,6 +120,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
     newQuestions[index] = newQuestions[index + 1]!;
     newQuestions[index + 1] = temp!;
     setQuestions(newQuestions);
+    setUnsavedChanges(true);
   };
 
   const addOption = (qIndex: number) => {
@@ -130,6 +137,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
     ];
     newQuestions[qIndex]!.options = newOptions;
     setQuestions(newQuestions);
+    setUnsavedChanges(true);
   };
 
   const deleteOption = (qIndex: number, oIndex: number) => {
@@ -139,6 +147,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
     );
     newQuestions[qIndex]!.options = newOptions;
     setQuestions(newQuestions);
+    setUnsavedChanges(true);
   };
 
   const validateCorrectAnswer = (
@@ -197,6 +206,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
                   <AdvancedTextbox
                     questions={questions}
                     setQuestions={setQuestions}
+                    setUnsavedChanges={setUnsavedChanges}
                     origin={"content"}
                     qIndex={qIndex}
                   />
@@ -208,6 +218,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
                 <AdvancedTextbox
                   questions={questions}
                   setQuestions={setQuestions}
+                  setUnsavedChanges={setUnsavedChanges}
                   origin={"question"}
                   qIndex={qIndex}
                 />
@@ -230,6 +241,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
                     <AdvancedTextbox
                       questions={questions}
                       setQuestions={setQuestions}
+                      setUnsavedChanges={setUnsavedChanges}
                       origin={"option"}
                       qIndex={qIndex}
                       oIndex={oIndex}
@@ -295,6 +307,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
                 <AdvancedTextbox
                   questions={questions}
                   setQuestions={setQuestions}
+                  setUnsavedChanges={setUnsavedChanges}
                   origin={"explanation"}
                   qIndex={qIndex}
                   placeholder="Explain the answer here..."
