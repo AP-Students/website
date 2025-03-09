@@ -277,7 +277,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
                   <Input
                     id="topic"
                     type="text"
-                    value={questionInstance.topic}
+                    value={questionInstance.topic ?? ""}
                     placeholder="1.1"
                     onChange={(e) => {
                       updateQuestion(qIndex, {
