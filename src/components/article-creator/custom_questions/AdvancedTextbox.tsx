@@ -22,7 +22,7 @@ interface Props {
   qIndex: number;
   placeholder?: string;
   oIndex?: number | undefined;
-  setUnsavedChanges: (unchangedChanges: boolean) => void;
+  setUnsavedChanges?: (unchangedChanges: boolean) => void;
 }
 
 // Utility to store a file in IndexedDB with a unique key for each instance
@@ -124,7 +124,7 @@ export default function AdvancedTextbox({
   };
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setUnsavedChanges(true);
+    setUnsavedChanges?.(true);
     const newText = e.target.value;
     setCurrentText(newText);
     // Clone the current question to avoid direct mutation
