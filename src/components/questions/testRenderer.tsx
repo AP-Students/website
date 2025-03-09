@@ -38,6 +38,7 @@ const initialQuestions: QuestionFormat[] = [
       files: [],
     },
     bookmarked: false,
+    topic: "1.1",
   },
   {
     question: { value: "What is the capital of Japan?", files: [] },
@@ -56,6 +57,7 @@ const initialQuestions: QuestionFormat[] = [
       files: [],
     },
     bookmarked: false,
+    topic: "1.2",
   },
 ];
 
@@ -191,6 +193,12 @@ export default function DigitalTestingPage({
                 <Check className="stroke-green-500 stroke-[3px]" />
               ) : (
                 <X className="stroke-red-500 stroke-[3px]" />
+              )}
+
+              {submitted && questions[currentQuestionIndex]!.topic && (
+                <span className="ml-auto pr-2">
+                  Topic: {questions[currentQuestionIndex]!.topic}
+                </span>
               )}
 
               {!submitted && (
