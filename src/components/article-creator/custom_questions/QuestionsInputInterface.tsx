@@ -17,12 +17,14 @@ interface Props {
   questions: QuestionFormat[];
   setQuestions: (questions: QuestionFormat[]) => void;
   testRenderer?: boolean;
+  setUnsavedChanges?: (unsavedChanges: boolean) => void;
 }
 
 const QuestionsInputInterface: React.FC<Props> = ({
   questions,
   setQuestions,
   testRenderer = false,
+  setUnsavedChanges,
 }) => {
   const [error, setError] = useState<string>("");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -76,11 +78,13 @@ const QuestionsInputInterface: React.FC<Props> = ({
           files: [],
         },
         bookmarked: false,
+        topic: "",
       },
     ]);
 
     // Ensure new question starts as expanded and collapse all other questions
     setCollapsed((prev) => [...prev].fill(true).concat(false));
+    setUnsavedChanges?.(true);
   };
 
   const removeQuestion = (index: number) => {
@@ -89,12 +93,14 @@ const QuestionsInputInterface: React.FC<Props> = ({
     setError("");
     setCollapsed((prev) => prev.filter((_, i) => i !== index));
     setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1));
+    setUnsavedChanges?.(true);
   };
 
   const updateQuestion = (index: number, updatedQuestion: QuestionFormat) => {
     const newQuestions = [...questions];
     newQuestions[index] = updatedQuestion;
     setQuestions(newQuestions);
+    setUnsavedChanges?.(true);
   };
 
   const moveQuestionUp = (index: number) => {
@@ -104,6 +110,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
     newQuestions[index] = newQuestions[index - 1]!;
     newQuestions[index - 1] = temp!;
     setQuestions(newQuestions);
+    setUnsavedChanges?.(true);
   };
 
   const moveQuestionDown = (index: number) => {
@@ -113,6 +120,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
     newQuestions[index] = newQuestions[index + 1]!;
     newQuestions[index + 1] = temp!;
     setQuestions(newQuestions);
+    setUnsavedChanges?.(true);
   };
 
   const addOption = (qIndex: number) => {
@@ -129,6 +137,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
     ];
     newQuestions[qIndex]!.options = newOptions;
     setQuestions(newQuestions);
+    setUnsavedChanges?.(true);
   };
 
   const deleteOption = (qIndex: number, oIndex: number) => {
@@ -138,6 +147,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
     );
     newQuestions[qIndex]!.options = newOptions;
     setQuestions(newQuestions);
+    setUnsavedChanges?.(true);
   };
 
   const validateCorrectAnswer = (
@@ -147,12 +157,12 @@ const QuestionsInputInterface: React.FC<Props> = ({
     let errorMessage = "";
     if (type === "mcq") {
       if (!/^\d$/.test(value)) {
-        errorMessage = "Only a single number is allowed for MCQ. (eg 1)";
+        errorMessage = "Only a single number is allowed for MCQ. (e.g. 1)";
       }
     } else {
       if (!/^\d(,\d){0,7}$/.test(value) || value.length > 8) {
         errorMessage =
-          "Only numbers separated by commas are allowed, max correct questions is 4. (eg 1,2,4)";
+          "Only numbers separated by commas are allowed, max correct questions is 4. (e.g. 1,2,4)";
       }
     }
     setError(errorMessage);
@@ -196,6 +206,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
                   <AdvancedTextbox
                     questions={questions}
                     setQuestions={setQuestions}
+                    setUnsavedChanges={setUnsavedChanges}
                     origin={"content"}
                     qIndex={qIndex}
                   />
@@ -207,6 +218,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
                 <AdvancedTextbox
                   questions={questions}
                   setQuestions={setQuestions}
+                  setUnsavedChanges={setUnsavedChanges}
                   origin={"question"}
                   qIndex={qIndex}
                 />
@@ -229,6 +241,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
                     <AdvancedTextbox
                       questions={questions}
                       setQuestions={setQuestions}
+                      setUnsavedChanges={setUnsavedChanges}
                       origin={"option"}
                       qIndex={qIndex}
                       oIndex={oIndex}
@@ -245,31 +258,48 @@ const QuestionsInputInterface: React.FC<Props> = ({
                 </button>
               </div>
 
-              <div className="my-4">
-                <label htmlFor="correctAnswer">Correct answer(s)</label>
-                <Input
-                  id="correctAnswer"
-                  type="text"
-                  value={questionInstance.answers.join(",")}
-                  placeholder={
-                    questionInstance.type === "mcq"
-                      ? "Example: 1"
-                      : "Example: 1,3"
-                  }
-                  onChange={(e) => {
-                    const inputValue = e.target.value;
-                    const correctAnswers = inputValue
-                      .split(",")
-                      .map((answer) => answer.trim());
-                    updateQuestion(qIndex, {
-                      ...questionInstance,
-                      answers: correctAnswers,
-                    });
-                    validateCorrectAnswer(inputValue, questionInstance.type);
-                  }}
-                  className="w-fit grow"
-                />
-                {error && <div className="text-red-500">{error}</div>}
+              <div className="my-4 flex justify-between gap-2">
+                <div className="max-w-48">
+                  <label htmlFor="correctAnswer">Correct answer(s)</label>
+                  <Input
+                    id="correctAnswer"
+                    type="text"
+                    value={questionInstance.answers.join(",")}
+                    placeholder={
+                      questionInstance.type === "mcq"
+                        ? "Example: 1"
+                        : "Example: 1,3"
+                    }
+                    onChange={(e) => {
+                      const inputValue = e.target.value;
+                      const correctAnswers = inputValue
+                        .split(",")
+                        .map((answer) => answer.trim());
+                      updateQuestion(qIndex, {
+                        ...questionInstance,
+                        answers: correctAnswers,
+                      });
+                      validateCorrectAnswer(inputValue, questionInstance.type);
+                    }}
+                  />
+                  {error && <div className="text-red-500">{error}</div>}
+                </div>
+                <div>
+                  <label htmlFor="topic">Topic</label>
+                  <Input
+                    id="topic"
+                    type="text"
+                    value={questionInstance.topic ?? ""}
+                    placeholder="1.1"
+                    onChange={(e) => {
+                      updateQuestion(qIndex, {
+                        ...questionInstance,
+                        topic: e.target.value,
+                      });
+                    }}
+                    className="w-fit grow"
+                  />
+                </div>
               </div>
 
               <div className="my-4">
@@ -277,13 +307,14 @@ const QuestionsInputInterface: React.FC<Props> = ({
                 <AdvancedTextbox
                   questions={questions}
                   setQuestions={setQuestions}
+                  setUnsavedChanges={setUnsavedChanges}
                   origin={"explanation"}
                   qIndex={qIndex}
                   placeholder="Explain the answer here..."
                 />
               </div>
 
-              <div>
+              <div className="flex items-center gap-2">
                 <label>Question type:</label>
                 <select
                   value={questionInstance.type}
@@ -293,20 +324,24 @@ const QuestionsInputInterface: React.FC<Props> = ({
                       type: e.target.value as "mcq" | "multi-answer",
                     })
                   }
-                  className="w-full border p-2"
+                  className="rounded-md border border-gray-300 bg-gray-50 p-2"
                 >
                   <option value="mcq">MCQ</option>
                   <option value="multi-answer">Multi-Answer</option>
                 </select>
-              </div>
 
-              <button
-                type="button"
-                className="mt-4 rounded border border-red-500 bg-red-500 px-3 py-1 text-white transition-colors hover:bg-white hover:text-red-500"
-                onClick={() => removeQuestion(qIndex)}
-              >
-                Delete question
-              </button>
+                <button
+                  type="button"
+                  className="ml-auto rounded border border-red-500 bg-red-500 px-2 py-1 text-white transition-colors hover:bg-white hover:text-red-500"
+                  onClick={() => {
+                    if (confirm("Delete this question?")) {
+                      removeQuestion(qIndex);
+                    }
+                  }}
+                >
+                  Delete question
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -314,7 +349,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
 
       <button
         type="button"
-        className="rounded border border-green-500 bg-green-500 px-3 py-1 text-white transition-colors hover:bg-white hover:text-green-500"
+        className="rounded border border-green-500 bg-green-500 px-2 py-1 text-white transition-colors hover:bg-white hover:text-green-500"
         onClick={addQuestion}
       >
         Add question

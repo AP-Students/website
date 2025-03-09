@@ -3,11 +3,10 @@
 import TestRenderer from "@/components/questions/testRenderer";
 import QuestionsInputInterface from "@/components/article-creator/custom_questions/QuestionsInputInterface";
 import { syncedQuestions } from "@/components/article-creator/custom_questions/QuestionInstance";
-import Navbar from "@/components/global/navbar";
 import { useUser } from "@/components/hooks/UserContext";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import type { UnitTest } from "@/types/firestore";
 import { usePathname } from "next/navigation";
@@ -16,6 +15,10 @@ import { processQuestions } from "@/components/article-creator/FetchArticleFunct
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Link } from "@/app/admin/subject/link";
+import { ArrowLeft, UserRoundCog } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Blocker } from "@/app/admin/subject/navigation-block";
 
 const Page = () => {
   const pathname = usePathname();
@@ -30,6 +33,8 @@ const Page = () => {
   const [seconds, setSeconds] = useState<number>(40);
   const { questions, setQuestions } = syncedQuestions(instanceId);
   const [directions, setDirections] = useState("");
+
+  const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
 
   useEffect(() => {
     // Fetch questions
@@ -120,10 +125,25 @@ const Page = () => {
   ) {
     return (
       <div className="relative min-h-screen">
-        <Navbar />
-
-        <div className="flex items-center gap-2 p-4 pb-0">
-          <div className="grid gap-1.5">
+        {unsavedChanges && <Blocker />}
+        <div className="grid gap-2 pl-4 pt-6">
+          <Link
+            className={cn(buttonVariants({ variant: "outline" }), "w-min")}
+            href={`/admin`}
+          >
+            <UserRoundCog className="mr-2" />
+            Return to Admin Dashboard
+          </Link>
+          <Link
+            className={cn(buttonVariants({ variant: "outline" }), "w-min")}
+            href={`/admin/subject/${subject}`}
+          >
+            <ArrowLeft className="mr-2" />
+            Return to Subject
+          </Link>
+        </div>
+        <div className="flex gap-2 p-4 pb-0">
+          <div className="grid place-content-start gap-1.5">
             <Label htmlFor="minutes">Minutes</Label>
             <Input
               type="number"
@@ -132,10 +152,13 @@ const Page = () => {
               min={0}
               value={minutes}
               className="w-24"
-              onChange={(e) => setMinutes(parseInt(e.target.value) || 0)}
+              onChange={(e) => {
+                setMinutes(parseInt(e.target.value) || 0);
+                setUnsavedChanges(true);
+              }}
             />
           </div>
-          <div className="grid gap-1.5">
+          <div className="grid place-content-start gap-1.5">
             <Label htmlFor="seconds">Seconds</Label>
             <Input
               type="number"
@@ -144,26 +167,29 @@ const Page = () => {
               min={0}
               value={seconds}
               className="w-24"
-              onChange={(e) => setSeconds(parseInt(e.target.value) || 0)}
+              onChange={(e) => {
+                setSeconds(parseInt(e.target.value) || 0);
+                setUnsavedChanges(true);
+              }}
+            />
+          </div>
+          <div className="grid grow gap-1.5">
+            <Label htmlFor="directions">Directions</Label>
+            <Textarea
+              id="directions"
+              value={directions}
+              onChange={(e) => setDirections(e.target.value)}
             />
           </div>
           <Button
-            className="ml-auto bg-blue-600 hover:bg-blue-700"
+            className={cn(
+              "mt-5 bg-blue-600 hover:bg-blue-700",
+              unsavedChanges && "animate-pulse",
+            )}
             onClick={handleSave}
           >
             Save Changes
           </Button>
-        </div>
-
-        <div className="pb-2 pl-4 pr-4">
-          <p>
-            Timer Duration: {minutes} min {seconds} s
-          </p>
-          <p className="pt-2">Test Directions:</p>
-          <Textarea
-            value={directions}
-            onChange={(e) => setDirections(e.target.value)}
-          />
         </div>
 
         <div className="flex max-h-[calc(100vh-254px)] flex-row gap-4 p-4">
@@ -172,6 +198,7 @@ const Page = () => {
               questions={questions}
               setQuestions={setQuestions}
               testRenderer={true}
+              setUnsavedChanges={setUnsavedChanges}
             />
           </div>
           <div className="flex-1 overflow-y-scroll rounded border p-4">
