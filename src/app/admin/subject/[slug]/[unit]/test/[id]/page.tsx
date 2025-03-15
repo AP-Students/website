@@ -111,6 +111,7 @@ const Page = () => {
 
       await setDoc(testRef, testData, { merge: true });
       alert("Test saved successfully.");
+      setUnsavedChanges(false);
     } catch (error) {
       console.error("Error saving questions:", error);
       alert("Failed to save questions.");
@@ -128,14 +129,24 @@ const Page = () => {
         {unsavedChanges && <Blocker />}
         <div className="grid gap-2 pl-4 pt-6">
           <Link
-            className={cn(buttonVariants({ variant: "outline" }), "w-min")}
+            className={cn(
+              buttonVariants({
+                variant: unsavedChanges ? "destructive" : "outline",
+              }),
+              "w-min",
+            )}
             href={`/admin`}
           >
             <UserRoundCog className="mr-2" />
             Return to Admin Dashboard
           </Link>
           <Link
-            className={cn(buttonVariants({ variant: "outline" }), "w-min")}
+            className={cn(
+              buttonVariants({
+                variant: unsavedChanges ? "destructive" : "outline",
+              }),
+              "w-min",
+            )}
             href={`/admin/subject/${subject}`}
           >
             <ArrowLeft className="mr-2" />
@@ -178,7 +189,10 @@ const Page = () => {
             <Textarea
               id="directions"
               value={directions}
-              onChange={(e) => setDirections(e.target.value)}
+              onChange={(e) => {
+                setDirections(e.target.value);
+                setUnsavedChanges(true);
+              }}
             />
           </div>
           <Button
@@ -192,7 +206,7 @@ const Page = () => {
           </Button>
         </div>
 
-        <div className="flex max-h-[calc(100vh-254px)] flex-row gap-4 p-4">
+        <div className="flex max-h-[calc(100vh-274px)] flex-row gap-4 p-4">
           <div className="flex-1 overflow-y-auto rounded border p-4">
             <QuestionsInputInterface
               questions={questions}
