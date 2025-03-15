@@ -20,13 +20,17 @@ const links = [
     href: "/library",
   },
   {
-    name: "guides",
-    href: "/guides",
+    name: "Contribute",
+    href: "/apply",
   },
-  {
-    name: "practice",
-    href: "/practice",
-  },
+  // {
+  //   name: "guides",
+  //   href: "/guides",
+  // },
+  // {
+  //   name: "practice",
+  //   href: "/practice",
+  // },
 ];
 
 const Navbar = ({
