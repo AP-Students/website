@@ -19,14 +19,14 @@ const links = [
     name: "library",
     href: "/library",
   },
-  {
-    name: "guides",
-    href: "/guides",
-  },
-  {
-    name: "practice",
-    href: "/practice",
-  },
+  // {
+  //   name: "guides",
+  //   href: "/guides",
+  // },
+  // {
+  //   name: "practice",
+  //   href: "/practice",
+  // },
 ];
 
 const Navbar = ({
