@@ -106,7 +106,7 @@ const SubjectSidebar = (props: Props) => {
                   {unit.tests?.map((test, testIndex) => (
                     <Link
                       className={cn(
-                        "mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0 hover:underline",
+                        "group mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0",
                         !props.preview &&
                           !test.isPublic &&
                           "pointer-events-none opacity-70",
@@ -123,7 +123,7 @@ const SubjectSidebar = (props: Props) => {
                       ) : (
                         <BookDashed className="size-6 opacity-70" />
                       )}
-                      <span className="text-balance">
+                      <span className="text-balance group-hover:underline">
                         {test.name
                           ? test.name
                           : // unit.tests cuz typescript doesn't recognize I checked for unit.tests already
