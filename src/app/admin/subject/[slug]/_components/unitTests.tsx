@@ -53,7 +53,7 @@ function UnitTests({
           key={test.id}
           className="mb-3 flex items-center justify-between gap-4"
         >
-          <div className="flex gap-2">
+          <div className="grid">
             <label htmlFor={`visibility-${test.id}`}>Public</label>
             <input
               type="checkbox"
