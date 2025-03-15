@@ -19,6 +19,10 @@ const links = [
     name: "library",
     href: "/library",
   },
+  {
+    name: "Contribute",
+    href: "/apply",
+  },
   // {
   //   name: "guides",
   //   href: "/guides",

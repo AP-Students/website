@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 export default async function Home() {
   return (
     <>
-      <Navbar className="bg-primary-foreground" />
+      <Navbar />
 
       <main className="flex min-h-[calc(100vh-120px)] flex-col overflow-x-hidden">
         <div className="mx-auto flex max-w-6xl flex-col px-6 pb-8 lg:px-8 ">
