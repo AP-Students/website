@@ -145,32 +145,46 @@ const rootMap = new Map<Element, Root>();
 
 const Renderer = (props: { content: OutputData }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const dataFetched = useRef<boolean>(false);
   const instanceIdsLoaded = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const blocks = props.content.blocks;
-        blocks.forEach((block) => {
+        const data = props.content.blocks;
+
+        // Process data.blocks only once
+        data.forEach((block) => {
           if (block.type === "questionsAddCard") {
-            const instanceId = (block.data).instanceId;
+            // block.data is a <string, any> and since its part of editorjs, im not changing the type.
+            // As long as editorjs doesnt depricate in a way that affects this, then this should be fine
+            /* eslint-disable-next-line */
+            const instanceId = block.data.instanceId as string;
             const storageKey = `questions_${instanceId}`;
 
             // Check if this instanceId has already been processed
             if (!instanceIdsLoaded.current.has(instanceId)) {
               /* eslint-disable */
-              const questionsFromDb: QuestionFormat[] = (
-                block.data
-              ).questions.map((questionInstance: QuestionFormat) => ({
-                ...questionInstance,
-                questionInstance: questionInstance.question || { value: "" },
-                options: questionInstance.options.map((option) => ({
-                  ...option,
-                  value: option.value || { value: "" },
-                })),
-                answers: questionInstance.answers || [],
-                explanation: questionInstance.explanation || { value: "" },
-              }));
+              const questionsFromDb: QuestionFormat[] =
+                block.data.questions.map(
+                  /* eslint-enable */
+                  (questionInstance: QuestionFormat) => ({
+                    ...questionInstance,
+                    questionInstance: questionInstance.question || {
+                      value: "",
+                    },
+                    options: questionInstance.options.map((option) => ({
+                      ...option,
+                      value: option.value || { value: "" },
+                    })),
+                    answers: questionInstance.answers || [],
+                    explanation: questionInstance.explanation || {
+                      value: "",
+                    },
+                  }),
+                );
+
+              // Update local storage (Will be used line XXX)
               localStorage.setItem(storageKey, JSON.stringify(questionsFromDb));
 
               // Trigger a manual event to notify listeners that localStorage was updated
@@ -182,8 +196,11 @@ const Renderer = (props: { content: OutputData }) => {
             }
           }
         });
+
+        // Set dataFetched to true after processing all blocks
+        dataFetched.current = true;
       } catch (error) {
-        console.error("Error fetching questions:", error);
+        console.error("Error fetching questions from Firestore:", error);
       }
 
       // Proceed to render the components
@@ -191,7 +208,7 @@ const Renderer = (props: { content: OutputData }) => {
         props.content.blocks.forEach((block) => {
           /* eslint-disable */ // InstanceOf doesnt seem to work so Im just using this as a substitute
           if (block.type === "questionsAddCard") {
-            const instanceId = (block.data).instanceId;
+            const instanceId = block.data.instanceId;
             const placeholder = containerRef.current!.querySelector(
               `.questions-block-${instanceId}`,
             );
@@ -204,6 +221,8 @@ const Renderer = (props: { content: OutputData }) => {
                 root = createRoot(placeholder);
                 rootMap.set(placeholder, root);
               }
+
+              // Render the component
               root.render(
                 <QuestionsOutput instanceId={instanceId.toString()} />,
               );
