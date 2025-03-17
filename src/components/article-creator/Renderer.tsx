@@ -152,7 +152,7 @@ const Renderer = (props: { content: OutputData }) => {
         const blocks = props.content.blocks;
         blocks.forEach((block) => {
           if (block.type === "questionsAddCard") {
-            const instanceId = (block.data as any).instanceId as string;
+            const instanceId = (block.data).instanceId as string;
             const storageKey = `questions_${instanceId}`;
 
             // Check if this instanceId has already been processed
