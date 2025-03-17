@@ -9,6 +9,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { QuestionsOutput } from "./custom_questions/QuestionInstance";
 import type { QuestionFormat } from "@/types/questions";
 import "@/styles/katexStyling.css";
+import { Config } from "editorjs-parser";
 
 // derived from advancedtextbox
 function parseLatex(text: string): string {
@@ -30,7 +31,7 @@ function parseLatex(text: string): string {
     .join("");
 }
 
-const customParsers: Record<string, (data: BlockData, _config: any) => string> =
+const customParsers: Record<string, (data: BlockData, _config: Config) => string> =
   {
     alert: (data, _config) => {
       const { align, message, type } = data as {
@@ -152,14 +153,14 @@ const Renderer = (props: { content: OutputData }) => {
         const blocks = props.content.blocks;
         blocks.forEach((block) => {
           if (block.type === "questionsAddCard") {
-            const instanceId = (block.data).instanceId as string;
+            const instanceId = (block.data).instanceId;
             const storageKey = `questions_${instanceId}`;
 
             // Check if this instanceId has already been processed
             if (!instanceIdsLoaded.current.has(instanceId)) {
               /* eslint-disable */
               const questionsFromDb: QuestionFormat[] = (
-                block.data as any
+                block.data
               ).questions.map((questionInstance: QuestionFormat) => ({
                 ...questionInstance,
                 questionInstance: questionInstance.question || { value: "" },
@@ -190,7 +191,7 @@ const Renderer = (props: { content: OutputData }) => {
         props.content.blocks.forEach((block) => {
           /* eslint-disable */ // InstanceOf doesnt seem to work so Im just using this as a substitute
           if (block.type === "questionsAddCard") {
-            const instanceId = (block.data as any).instanceId;
+            const instanceId = (block.data).instanceId;
             const placeholder = containerRef.current!.querySelector(
               `.questions-block-${instanceId}`,
             );
