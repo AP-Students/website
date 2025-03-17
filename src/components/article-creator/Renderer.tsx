@@ -1,4 +1,5 @@
 import type { OutputData } from "@editorjs/editorjs";
+import { BlockData } from "editorjs-parser";
 import edjsParser from "editorjs-parser";
 import katex from "katex";
 import hljs from "highlight.js";
@@ -8,132 +9,167 @@ import { createRoot, type Root } from "react-dom/client";
 import { QuestionsOutput } from "./custom_questions/QuestionInstance";
 import type { QuestionFormat } from "@/types/questions";
 import "@/styles/katexStyling.css";
-import "@/styles/inlineCode.css";
 
-const customParsers = {
-  alert: (data: { align: string; message: string; type: string }) => {
-    return `<div class="cdx-alert cdx-alert-align-${data.align} cdx-alert-${data.type}"><div class="cdx-alert__message" contenteditable="true" data-placeholder="Type here..." data-empty="false">${data.message}</div></div>`;
-  },
+// derived from advancedtextbox
+function parseLatex(text: string): string {
+  const regex = /(\$@[^$]+\$)/g;
+  return text
+    .split(regex)
+    .map((part) => {
+      if (/^\$@[^$]+\$$/.test(part)) {
+        const latexContent = part.slice(2, -1);
+        try {
+          return katex.renderToString(latexContent, { throwOnError: false });
+        } catch (err) {
+          console.error("Error rendering LaTeX:", err);
+          return part;
+        }
+      }
+      return part;
+    })
+    .join("");
+}
 
-  code: (data: { code: string }) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-    const code = hljs.highlightAuto(data.code).value;
-    return `<pre class="code"><code>${code}</code></pre>`;
-  },
+const customParsers: Record<string, (data: BlockData, _config: any) => string> =
+  {
+    alert: (data, _config) => {
+      const { align, message, type } = data as {
+        align: string;
+        message: string;
+        type: string;
+      };
+      return `<div class="cdx-alert cdx-alert-align-${align} cdx-alert-${type}">
+      <div class="cdx-alert__message" contenteditable="true" data-placeholder="Type here..." data-empty="false">
+        ${message}
+      </div>
+    </div>`;
+    },
 
-  delimiter: () => {
-    return "<hr />";
-  },
+    code: (data, _config) => {
+      const { code } = data as { code: string };
+      const highlighted = hljs.highlightAuto(code).value;
+      return `<pre class="code"><code>${highlighted}</code></pre>`;
+    },
 
-  embed: (data: {
-    caption: string;
-    regex: string;
-    embed: string;
-    source: string;
-    height: number;
-    width: number;
-  }) => {
-    return `<div class="cdx-block embed-tool"><preloader class="embed-tool__preloader"><div class="embed-tool__url">${data.source}</div></preloader><iframe class="rounded-lg w-full" height="${data.height}" width="${data.width}" style="margin: 0 auto;" frameborder="0" scrolling="no" allowtransparency="true" src="${data.embed}" class="embed-tool__content"></iframe><figcaption class="fig-cap">${data.caption}</figcaption></div>`;
-  },
+    delimiter: (_data, _config) => {
+      return "<hr />";
+    },
 
-  math: (data: { text: string }) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-    return katex.renderToString(data.text, {
-      output: "html",
-      throwOnError: true,
-      displayMode: true,
-    });
-  },
+    embed: (data, _config) => {
+      const { caption, regex, embed, source, height, width } = data as {
+        caption: string;
+        regex: string;
+        embed: string;
+        source: string;
+        height: number;
+        width: number;
+      };
+      return `<div class="cdx-block embed-tool">
+      <preloader class="embed-tool__preloader">
+        <div class="embed-tool__url">${source}</div>
+      </preloader>
+      <iframe class="rounded-lg w-full" height="${height}" width="${width}" style="margin: 0 auto;" frameborder="0" scrolling="no" allowtransparency="true" src="${embed}" class="embed-tool__content"></iframe>
+      <figcaption class="fig-cap">${caption}</figcaption>
+    </div>`;
+    },
 
-  paragraph: (data: { text: string }) => {
-    return `<p class="paragraph">${data.text}</p>`;
-  },
+    math: (data, _config) => {
+      const { text } = data as { text: string };
+      return katex.renderToString(text, {
+        output: "html",
+        throwOnError: true,
+        displayMode: true,
+      });
+    },
 
-  quote: (data: { alignment: string; caption: string; text: string }) => {
-    return `<blockquote><p class="mb-3">${data.text}</p><cite>${data.caption}</cite></blockquote>`;
-  },
+    paragraph: (data, _config) => {
+      const { text } = data as { text: string };
+      if (text.includes("</code>")) {
+        return `<code class="inline-code">${text}</code>`;
+      }
+      const parsedText = parseLatex(text);
+      return `<p class="paragraph">${parsedText}</p>`;
+    },
 
-  table: (data: { withHeadings: boolean; content: string[][] }) => {
-    // Check if the content array has at least one row
-    if (data.content.length === 0) {
-      return "<table></table>"; // Return an empty table if no content
-    }
+    quote: (data, _config) => {
+      const { alignment, caption, text } = data as {
+        alignment: string;
+        caption: string;
+        text: string;
+      };
+      return `<blockquote>
+      <p class="mb-3">${text}</p>
+      <cite>${caption}</cite>
+    </blockquote>`;
+    },
 
-    // Process rows
-    const rows = data.content.map((row, index) => {
-      // For the first row and if withHeadings is true, use <th> tags
-      if (data.withHeadings && index === 0) {
+    table: (data, _config) => {
+      const { withHeadings, content } = data as {
+        withHeadings: boolean;
+        content: string[][];
+      };
+      if (content.length === 0) {
+        return "<table></table>";
+      }
+      const rows = content.map((row, index) => {
+        if (withHeadings && index === 0) {
+          return `<tr class="divide-x-[1px]">${row.reduce(
+            (acc, cell) => acc + `<th>${cell}</th>`,
+            "",
+          )}</tr>`;
+        }
+
+        // For other rows, use <td> tags
         return `<tr class="divide-x-[1px]">${row.reduce(
-          (acc, cell) => acc + `<th>${cell}</th>`,
+          (acc, cell) => acc + `<td>${cell}</td>`,
           "",
         )}</tr>`;
-      }
+      });
+      const thead = withHeadings ? `<thead>${rows.shift()}</thead>` : "";
+      const tbody = `<tbody>${rows.join("")}</tbody>`;
 
-      // For other rows, use <td> tags
-      return `<tr class="divide-x-[1px]">${row.reduce(
-        (acc, cell) => acc + `<td>${cell}</td>`,
-        "",
-      )}</tr>`;
-    });
+      return `<table>${thead}${tbody}</table>`;
+    },
 
-    // Construct the table with optional thead and tbody
-    const thead = data.withHeadings ? `<thead>${rows.shift()}</thead>` : "";
-    const tbody = `<tbody>${rows.join("")}</tbody>`;
-
-    return `<table>${thead}${tbody}</table>`;
-  },
-
-  questionsAddCard: (data: { instanceId: string; content: QuestionFormat }) => {
-    const instanceUUID = data.instanceId;
-    // const content = JSON.stringify(data.content);
-    return `<div class="questions-block-${instanceUUID}"></div>`;
-  },
-};
+    questionsAddCard: (data, _config) => {
+      const { instanceId } = data as {
+        instanceId: string;
+        content: QuestionFormat;
+      };
+      return `<div class="questions-block-${instanceId}"></div>`;
+    },
+  };
 
 const rootMap = new Map<Element, Root>();
 
 const Renderer = (props: { content: OutputData }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const dataFetched = useRef<boolean>(false);
   const instanceIdsLoaded = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = props.content.blocks;
-
-        // Process data.blocks only once
-        data.forEach((block) => {
+        const blocks = props.content.blocks;
+        blocks.forEach((block) => {
           if (block.type === "questionsAddCard") {
-            // block.data is a <string, any> and since its part of editorjs, im not changing the type.
-            // As long as editorjs doesnt depricate in a way that affects this, then this should be fine
-            /* eslint-disable-next-line */
-            const instanceId = block.data.instanceId as string;
+            const instanceId = (block.data as any).instanceId as string;
             const storageKey = `questions_${instanceId}`;
 
             // Check if this instanceId has already been processed
             if (!instanceIdsLoaded.current.has(instanceId)) {
               /* eslint-disable */
-              const questionsFromDb: QuestionFormat[] =
-                block.data.questions.map(
-                  /* eslint-enable */
-                  (questionInstance: QuestionFormat) => ({
-                    ...questionInstance,
-                    questionInstance: questionInstance.question || {
-                      value: "",
-                    },
-                    options: questionInstance.options.map((option) => ({
-                      ...option,
-                      value: option.value || { value: "" },
-                    })),
-                    answers: questionInstance.answers || [],
-                    explanation: questionInstance.explanation || {
-                      value: "",
-                    },
-                  }),
-                );
-
-              // Update local storage (Will be used line XXX)
+              const questionsFromDb: QuestionFormat[] = (
+                block.data as any
+              ).questions.map((questionInstance: QuestionFormat) => ({
+                ...questionInstance,
+                questionInstance: questionInstance.question || { value: "" },
+                options: questionInstance.options.map((option) => ({
+                  ...option,
+                  value: option.value || { value: "" },
+                })),
+                answers: questionInstance.answers || [],
+                explanation: questionInstance.explanation || { value: "" },
+              }));
               localStorage.setItem(storageKey, JSON.stringify(questionsFromDb));
 
               // Trigger a manual event to notify listeners that localStorage was updated
@@ -145,11 +181,8 @@ const Renderer = (props: { content: OutputData }) => {
             }
           }
         });
-
-        // Set dataFetched to true after processing all blocks
-        dataFetched.current = true;
       } catch (error) {
-        console.error("Error fetching questions from Firestore:", error);
+        console.error("Error fetching questions:", error);
       }
 
       // Proceed to render the components
@@ -157,7 +190,7 @@ const Renderer = (props: { content: OutputData }) => {
         props.content.blocks.forEach((block) => {
           /* eslint-disable */ // InstanceOf doesnt seem to work so Im just using this as a substitute
           if (block.type === "questionsAddCard") {
-            const instanceId = block.data.instanceId;
+            const instanceId = (block.data as any).instanceId;
             const placeholder = containerRef.current!.querySelector(
               `.questions-block-${instanceId}`,
             );
@@ -170,8 +203,6 @@ const Renderer = (props: { content: OutputData }) => {
                 root = createRoot(placeholder);
                 rootMap.set(placeholder, root);
               }
-
-              // Render the component
               root.render(
                 <QuestionsOutput instanceId={instanceId.toString()} />,
               );
@@ -187,6 +218,7 @@ const Renderer = (props: { content: OutputData }) => {
       console.error("Error fetching data:", error);
     });
   }, [props.content]);
+
   if (!props.content) return null;
 
   const parser = new edjsParser(
@@ -196,7 +228,6 @@ const Renderer = (props: { content: OutputData }) => {
         imgClass: "img rounded-lg",
       },
     },
-    // @ts-expect-error customParsers is correct but TS doesn't know that
     customParsers,
   );
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
@@ -206,9 +237,7 @@ const Renderer = (props: { content: OutputData }) => {
     <article
       ref={containerRef}
       className="prose before:prose-code:content-none after:prose-code:content-none"
-      dangerouslySetInnerHTML={{
-        __html: markup,
-      }}
+      dangerouslySetInnerHTML={{ __html: markup }}
     ></article>
   );
 };
