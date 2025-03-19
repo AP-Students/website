@@ -1,4 +1,5 @@
 import type { OutputData } from "@editorjs/editorjs";
+import { BlockData } from "editorjs-parser";
 import edjsParser from "editorjs-parser";
 import katex from "katex";
 import hljs from "highlight.js";
@@ -8,61 +9,110 @@ import { createRoot, type Root } from "react-dom/client";
 import { QuestionsOutput } from "./custom_questions/QuestionInstance";
 import type { QuestionFormat } from "@/types/questions";
 import "@/styles/katexStyling.css";
-import "@/styles/inlineCode.css";
+import { Config } from "editorjs-parser";
 
-const customParsers = {
-  alert: (data: { align: string; message: string; type: string }) => {
-    return `<div class="cdx-alert cdx-alert-align-${data.align} cdx-alert-${data.type}"><div class="cdx-alert__message" contenteditable="true" data-placeholder="Type here..." data-empty="false">${data.message}</div></div>`;
+// derived from advancedtextbox
+function parseLatex(text: string): string {
+  const regex = /(\$@[^$]+\$)/g;
+  return text
+    .split(regex)
+    .map((part) => {
+      if (/^\$@[^$]+\$$/.test(part)) {
+        const latexContent = part.slice(2, -1);
+        try {
+          return katex.renderToString(latexContent, { throwOnError: false });
+        } catch (err) {
+          console.error("Error rendering LaTeX:", err);
+          return part;
+        }
+      }
+      return part;
+    })
+    .join("");
+}
+
+const customParsers: Record<
+  string,
+  (data: BlockData, _config: Config) => string
+> = {
+  alert: (data, _config) => {
+    const { align, message, type } = data as {
+      align: string;
+      message: string;
+      type: string;
+    };
+    return `<div class="cdx-alert cdx-alert-align-${align} cdx-alert-${type}">
+      <div class="cdx-alert__message" contenteditable="true" data-placeholder="Type here..." data-empty="false">
+        ${message}
+      </div>
+    </div>`;
   },
 
-  code: (data: { code: string }) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-    const code = hljs.highlightAuto(data.code).value;
-    return `<pre class="code"><code>${code}</code></pre>`;
+  code: (data, _config) => {
+    const { code } = data as { code: string };
+    const highlighted = hljs.highlightAuto(code).value;
+    return `<pre class="code"><code>${highlighted}</code></pre>`;
   },
 
-  delimiter: () => {
+  delimiter: (_data, _config) => {
     return "<hr />";
   },
 
-  embed: (data: {
-    caption: string;
-    regex: string;
-    embed: string;
-    source: string;
-    height: number;
-    width: number;
-  }) => {
-    return `<div class="cdx-block embed-tool"><preloader class="embed-tool__preloader"><div class="embed-tool__url">${data.source}</div></preloader><iframe class="rounded-lg w-full" height="${data.height}" width="${data.width}" style="margin: 0 auto;" frameborder="0" scrolling="no" allowtransparency="true" src="${data.embed}" class="embed-tool__content"></iframe><figcaption class="fig-cap">${data.caption}</figcaption></div>`;
+  embed: (data, _config) => {
+    const { caption, regex, embed, source, height, width } = data as {
+      caption: string;
+      regex: string;
+      embed: string;
+      source: string;
+      height: number;
+      width: number;
+    };
+    return `<div class="cdx-block embed-tool">
+      <preloader class="embed-tool__preloader">
+        <div class="embed-tool__url">${source}</div>
+      </preloader>
+      <iframe class="rounded-lg w-full" height="${height}" width="${width}" style="margin: 0 auto;" frameborder="0" scrolling="no" allowtransparency="true" src="${embed}" class="embed-tool__content"></iframe>
+      <figcaption class="fig-cap">${caption}</figcaption>
+    </div>`;
   },
 
-  math: (data: { text: string }) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-    return katex.renderToString(data.text, {
+  math: (data, _config) => {
+    const { text } = data as { text: string };
+    return katex.renderToString(text, {
       output: "html",
       throwOnError: true,
       displayMode: true,
     });
   },
 
-  paragraph: (data: { text: string }) => {
-    return `<p class="paragraph">${data.text}</p>`;
+  paragraph: (data, _config) => {
+    const { text } = data as { text: string };
+    const parsedText = parseLatex(text);
+    return `<p class="paragraph">${parsedText}</p>`;
   },
 
-  quote: (data: { alignment: string; caption: string; text: string }) => {
-    return `<blockquote><p class="mb-3">${data.text}</p><cite>${data.caption}</cite></blockquote>`;
+  quote: (data, _config) => {
+    const { alignment, caption, text } = data as {
+      alignment: string;
+      caption: string;
+      text: string;
+    };
+    return `<blockquote>
+      <p class="mb-3">${text}</p>
+      <cite>${caption}</cite>
+    </blockquote>`;
   },
 
-  table: (data: { withHeadings: boolean; content: string[][] }) => {
-    // Check if the content array has at least one row
-    if (data.content.length === 0) {
-      return "<table></table>"; // Return an empty table if no content
+  table: (data, _config) => {
+    const { withHeadings, content } = data as {
+      withHeadings: boolean;
+      content: string[][];
+    };
+    if (content.length === 0) {
+      return "<table></table>";
     }
-
-    // Process rows
-    const rows = data.content.map((row, index) => {
-      // For the first row and if withHeadings is true, use <th> tags
-      if (data.withHeadings && index === 0) {
+    const rows = content.map((row, index) => {
+      if (withHeadings && index === 0) {
         return `<tr class="divide-x-[1px]">${row.reduce(
           (acc, cell) => acc + `<th>${cell}</th>`,
           "",
@@ -75,18 +125,18 @@ const customParsers = {
         "",
       )}</tr>`;
     });
-
-    // Construct the table with optional thead and tbody
-    const thead = data.withHeadings ? `<thead>${rows.shift()}</thead>` : "";
+    const thead = withHeadings ? `<thead>${rows.shift()}</thead>` : "";
     const tbody = `<tbody>${rows.join("")}</tbody>`;
 
     return `<table>${thead}${tbody}</table>`;
   },
 
-  questionsAddCard: (data: { instanceId: string; content: QuestionFormat }) => {
-    const instanceUUID = data.instanceId;
-    // const content = JSON.stringify(data.content);
-    return `<div class="questions-block-${instanceUUID}"></div>`;
+  questionsAddCard: (data, _config) => {
+    const { instanceId } = data as {
+      instanceId: string;
+      content: QuestionFormat;
+    };
+    return `<div class="questions-block-${instanceId}"></div>`;
   },
 };
 
@@ -187,6 +237,7 @@ const Renderer = (props: { content: OutputData }) => {
       console.error("Error fetching data:", error);
     });
   }, [props.content]);
+
   if (!props.content) return null;
 
   const parser = new edjsParser(
@@ -196,7 +247,6 @@ const Renderer = (props: { content: OutputData }) => {
         imgClass: "img rounded-lg",
       },
     },
-    // @ts-expect-error customParsers is correct but TS doesn't know that
     customParsers,
   );
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
@@ -206,9 +256,7 @@ const Renderer = (props: { content: OutputData }) => {
     <article
       ref={containerRef}
       className="prose before:prose-code:content-none after:prose-code:content-none"
-      dangerouslySetInnerHTML={{
-        __html: markup,
-      }}
+      dangerouslySetInnerHTML={{ __html: markup }}
     ></article>
   );
 };
