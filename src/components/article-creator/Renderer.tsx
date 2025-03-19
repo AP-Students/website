@@ -31,112 +31,114 @@ function parseLatex(text: string): string {
     .join("");
 }
 
-const customParsers: Record<string, (data: BlockData, _config: Config) => string> =
-  {
-    alert: (data, _config) => {
-      const { align, message, type } = data as {
-        align: string;
-        message: string;
-        type: string;
-      };
-      return `<div class="cdx-alert cdx-alert-align-${align} cdx-alert-${type}">
+const customParsers: Record<
+  string,
+  (data: BlockData, _config: Config) => string
+> = {
+  alert: (data, _config) => {
+    const { align, message, type } = data as {
+      align: string;
+      message: string;
+      type: string;
+    };
+    return `<div class="cdx-alert cdx-alert-align-${align} cdx-alert-${type}">
       <div class="cdx-alert__message" contenteditable="true" data-placeholder="Type here..." data-empty="false">
         ${message}
       </div>
     </div>`;
-    },
+  },
 
-    code: (data, _config) => {
-      const { code } = data as { code: string };
-      const highlighted = hljs.highlightAuto(code).value;
-      return `<pre class="code"><code>${highlighted}</code></pre>`;
-    },
+  code: (data, _config) => {
+    const { code } = data as { code: string };
+    const highlighted = hljs.highlightAuto(code).value;
+    return `<pre class="code"><code>${highlighted}</code></pre>`;
+  },
 
-    delimiter: (_data, _config) => {
-      return "<hr />";
-    },
+  delimiter: (_data, _config) => {
+    return "<hr />";
+  },
 
-    embed: (data, _config) => {
-      const { caption, regex, embed, source, height, width } = data as {
-        caption: string;
-        regex: string;
-        embed: string;
-        source: string;
-        height: number;
-        width: number;
-      };
-      return `<div class="cdx-block embed-tool">
+  embed: (data, _config) => {
+    const { caption, regex, embed, source, height, width } = data as {
+      caption: string;
+      regex: string;
+      embed: string;
+      source: string;
+      height: number;
+      width: number;
+    };
+    return `<div class="cdx-block embed-tool">
       <preloader class="embed-tool__preloader">
         <div class="embed-tool__url">${source}</div>
       </preloader>
       <iframe class="rounded-lg w-full" height="${height}" width="${width}" style="margin: 0 auto;" frameborder="0" scrolling="no" allowtransparency="true" src="${embed}" class="embed-tool__content"></iframe>
       <figcaption class="fig-cap">${caption}</figcaption>
     </div>`;
-    },
+  },
 
-    math: (data, _config) => {
-      const { text } = data as { text: string };
-      return katex.renderToString(text, {
-        output: "html",
-        throwOnError: true,
-        displayMode: true,
-      });
-    },
+  math: (data, _config) => {
+    const { text } = data as { text: string };
+    return katex.renderToString(text, {
+      output: "html",
+      throwOnError: true,
+      displayMode: true,
+    });
+  },
 
-    paragraph: (data, _config) => {
-      const { text } = data as { text: string };
-      const parsedText = parseLatex(text);
-      return `<p class="paragraph">${parsedText}</p>`;
-    },
+  paragraph: (data, _config) => {
+    const { text } = data as { text: string };
+    const parsedText = parseLatex(text);
+    return `<p class="paragraph">${parsedText}</p>`;
+  },
 
-    quote: (data, _config) => {
-      const { alignment, caption, text } = data as {
-        alignment: string;
-        caption: string;
-        text: string;
-      };
-      return `<blockquote>
+  quote: (data, _config) => {
+    const { alignment, caption, text } = data as {
+      alignment: string;
+      caption: string;
+      text: string;
+    };
+    return `<blockquote>
       <p class="mb-3">${text}</p>
       <cite>${caption}</cite>
     </blockquote>`;
-    },
+  },
 
-    table: (data, _config) => {
-      const { withHeadings, content } = data as {
-        withHeadings: boolean;
-        content: string[][];
-      };
-      if (content.length === 0) {
-        return "<table></table>";
-      }
-      const rows = content.map((row, index) => {
-        if (withHeadings && index === 0) {
-          return `<tr class="divide-x-[1px]">${row.reduce(
-            (acc, cell) => acc + `<th>${cell}</th>`,
-            "",
-          )}</tr>`;
-        }
-
-        // For other rows, use <td> tags
+  table: (data, _config) => {
+    const { withHeadings, content } = data as {
+      withHeadings: boolean;
+      content: string[][];
+    };
+    if (content.length === 0) {
+      return "<table></table>";
+    }
+    const rows = content.map((row, index) => {
+      if (withHeadings && index === 0) {
         return `<tr class="divide-x-[1px]">${row.reduce(
-          (acc, cell) => acc + `<td>${cell}</td>`,
+          (acc, cell) => acc + `<th>${cell}</th>`,
           "",
         )}</tr>`;
-      });
-      const thead = withHeadings ? `<thead>${rows.shift()}</thead>` : "";
-      const tbody = `<tbody>${rows.join("")}</tbody>`;
+      }
 
-      return `<table>${thead}${tbody}</table>`;
-    },
+      // For other rows, use <td> tags
+      return `<tr class="divide-x-[1px]">${row.reduce(
+        (acc, cell) => acc + `<td>${cell}</td>`,
+        "",
+      )}</tr>`;
+    });
+    const thead = withHeadings ? `<thead>${rows.shift()}</thead>` : "";
+    const tbody = `<tbody>${rows.join("")}</tbody>`;
 
-    questionsAddCard: (data, _config) => {
-      const { instanceId } = data as {
-        instanceId: string;
-        content: QuestionFormat;
-      };
-      return `<div class="questions-block-${instanceId}"></div>`;
-    },
-  };
+    return `<table>${thead}${tbody}</table>`;
+  },
+
+  questionsAddCard: (data, _config) => {
+    const { instanceId } = data as {
+      instanceId: string;
+      content: QuestionFormat;
+    };
+    return `<div class="questions-block-${instanceId}"></div>`;
+  },
+};
 
 const rootMap = new Map<Element, Root>();
 
