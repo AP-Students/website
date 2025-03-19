@@ -85,9 +85,6 @@ const customParsers: Record<string, (data: BlockData, _config: Config) => string
 
     paragraph: (data, _config) => {
       const { text } = data as { text: string };
-      if (text.includes("</code>")) {
-        return `<code class="inline-code">${text}</code>`;
-      }
       const parsedText = parseLatex(text);
       return `<p class="paragraph">${parsedText}</p>`;
     },
