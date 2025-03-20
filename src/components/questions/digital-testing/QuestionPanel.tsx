@@ -25,7 +25,7 @@ function LetterCircle({
   return (
     <span
       className={clsx(
-        "flex size-7 h-8 w-8 items-center justify-center rounded-full border-2 border-black text-center",
+        "flex size-7 h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-black text-center",
         {
           "bg-[#3075c1] text-white": checked,
           aspectRatio: "1 / 1",
