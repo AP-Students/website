@@ -25,7 +25,7 @@ const UnitAccordion = ({ unit, pathname, unitIndex, preview }: Props) => {
     >
       <AccordionTrigger
         id={unit.title}
-        className="text-balance pb-1.5 text-left text-3xl font-semibold hover:no-underline sm:text-4xl"
+        className="text-balance pb-1.5 text-left text-2xl font-semibold hover:no-underline sm:text-4xl"
       >
         {unit.title}
       </AccordionTrigger>
@@ -36,7 +36,7 @@ const UnitAccordion = ({ unit, pathname, unitIndex, preview }: Props) => {
         {unit.chapters.map((chapter, chapterIndex) =>
           chapter.isPublic ? (
             <Link
-              className="group flex items-center gap-x-3 font-semibold last:mb-0"
+              className="group flex items-center gap-x-2 font-semibold last:mb-0"
               href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/chapter/${chapter.id}/${formatSlug(chapter.title)}`}
               key={chapterIndex}
             >
@@ -50,7 +50,7 @@ const UnitAccordion = ({ unit, pathname, unitIndex, preview }: Props) => {
             </Link>
           ) : (
             <div
-              className="group flex items-center gap-x-3 font-semibold last:mb-0"
+              className="group flex items-center gap-x-2 font-semibold last:mb-0"
               key={chapterIndex}
             >
               <div className="flex size-8 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-base text-white opacity-70">
@@ -66,11 +66,12 @@ const UnitAccordion = ({ unit, pathname, unitIndex, preview }: Props) => {
                     ? `${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/chapter/${chapter.id}/${formatSlug(chapter.title)}`
                     : "/apply"
                 }
-                className="ml-auto w-36 shrink-0 text-nowrap rounded-full border border-gray-400 px-2 text-center text-gray-600 transition-colors group-hover:border-primary group-hover:text-black"
+                className="ml-auto w-20 shrink-0 text-nowrap rounded-full border border-gray-400 px-2 py-0.5 text-center text-gray-600 transition-colors group-hover:border-primary group-hover:text-black sm:w-36 sm:py-0"
               >
-                <span className="inline group-hover:hidden">
+                <span className="hidden group-hover:hidden sm:inline">
                   Work In Progress
                 </span>
+                <span className="group-hover:hidden sm:hidden">WIP</span>
                 <span className="hidden group-hover:inline">
                   {preview ? "Preview" : "Join FiveHive"}
                 </span>
@@ -81,7 +82,7 @@ const UnitAccordion = ({ unit, pathname, unitIndex, preview }: Props) => {
         {unit.tests?.map((test, testIndex) =>
           test.isPublic ? (
             <Link
-              className="flex items-center gap-x-3 font-semibold last:mb-0 hover:underline"
+              className="flex items-center gap-x-2 font-semibold last:mb-0 hover:underline"
               href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`}
               key={test.id}
             >
@@ -93,7 +94,7 @@ const UnitAccordion = ({ unit, pathname, unitIndex, preview }: Props) => {
             </Link>
           ) : (
             <div
-              className="group flex items-center gap-x-3 font-semibold last:mb-0"
+              className="group flex items-center gap-x-2 font-semibold last:mb-0"
               key={test.id}
             >
               <BookDashed className="size-8 opacity-70" />
@@ -109,11 +110,12 @@ const UnitAccordion = ({ unit, pathname, unitIndex, preview }: Props) => {
                     ? `${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`
                     : "/apply"
                 }
-                className="ml-auto w-36 shrink-0 text-nowrap rounded-full border border-gray-400 px-2 text-center text-gray-600 transition-colors group-hover:border-primary group-hover:text-black"
+                className="ml-auto w-20 shrink-0 text-nowrap rounded-full border border-gray-400 px-2 py-0.5 text-center text-gray-600 transition-colors group-hover:border-primary group-hover:text-black sm:w-36 sm:py-0"
               >
-                <span className="inline group-hover:hidden">
+                <span className="hidden group-hover:hidden sm:inline">
                   Work In Progress
                 </span>
+                <span className="group-hover:hidden sm:hidden">WIP</span>
                 <span className="hidden group-hover:inline">
                   {preview ? "Preview" : "Join FiveHive"}
                 </span>
