@@ -9,6 +9,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { QuestionsOutput } from "./custom_questions/QuestionInstance";
 import type { QuestionFormat } from "@/types/questions";
 import "@/styles/katexStyling.css";
+import sanitizeHtml from "sanitize-html";
 import { Config } from "editorjs-parser";
 
 // derived from advancedtextbox
@@ -252,11 +253,67 @@ const Renderer = (props: { content: OutputData }) => {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const markup = parser.parse(props.content);
 
+  // XSS Prevention
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+  const sanitizedMarkup = sanitizeHtml(markup, {
+    allowedTags: [
+      "p",
+      "div",
+      "span",
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "h5",
+      "h6",
+      "ul",
+      "ol",
+      "li",
+      "a",
+      "img",
+      "code",
+      "pre",
+      "blockquote",
+      "table",
+      "thead",
+      "tbody",
+      "tr",
+      "th",
+      "td",
+      "hr",
+      "br",
+      "cite",
+      "figure",
+      "figcaption",
+      "iframe",
+      "math",
+    ],
+    allowedAttributes: {
+      "*": ["class", "id", "style"],
+      a: ["href", "target", "rel"],
+      img: ["src", "alt", "class"],
+      iframe: [
+        "src",
+        "height",
+        "width",
+        "frameborder",
+        "allowtransparency",
+        "scrolling",
+      ],
+    },
+    allowedClasses: {
+      "*": [/^.*$/], // Might want to restrict this later (if there are any xss attacks via css)
+    },
+  });
+
   return (
     <article
       ref={containerRef}
       className="prose before:prose-code:content-none after:prose-code:content-none"
-      dangerouslySetInnerHTML={{ __html: markup }}
+      dangerouslySetInnerHTML={{
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        __html: sanitizedMarkup,
+      }}
     ></article>
   );
 };
