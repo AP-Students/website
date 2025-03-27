@@ -20,13 +20,17 @@ const links = [
     href: "/library",
   },
   {
-    name: "guides",
-    href: "/guides",
+    name: "Contribute",
+    href: "/apply",
   },
-  {
-    name: "practice",
-    href: "/practice",
-  },
+  // {
+  //   name: "guides",
+  //   href: "/guides",
+  // },
+  // {
+  //   name: "practice",
+  //   href: "/practice",
+  // },
 ];
 
 const Navbar = ({
@@ -42,7 +46,7 @@ const Navbar = ({
     <>
       <div
         className={cn(
-          "hidden w-full items-center justify-between pt-5 md:flex",
+          "hidden w-full items-center justify-between gap-4 pt-5 md:flex",
           className,
         )}
       >
@@ -52,8 +56,9 @@ const Navbar = ({
             variant === "primary" && "grow basis-0",
           )}
         >
-          <Link href="/">
+          <Link href="/" className="flex items-center gap-2">
             <Image src="/logo.png" alt="Logo" width={100} height={100} />
+            <h1 className="text-4xl font-bold">FiveHive</h1>
           </Link>
         </div>
 
@@ -99,8 +104,9 @@ const Navbar = ({
           className,
         )}
       >
-        <Link href="/">
+        <Link className="flex items-center gap-2" href="/">
           <Image src="/logo.png" alt="Logo" width={75} height={75} />
+          <h1 className="text-3xl font-bold">FiveHive</h1>
         </Link>
 
         <MobileNavbar />
@@ -122,13 +128,9 @@ const MobileNavbar = () => {
           <SheetHeader>
             <SheetTitle className="flex w-full">
               <SheetTrigger asChild>
-                <Link className="inline-block" href={"/"}>
-                  <Image
-                    src="/logo.png"
-                    alt="Logo"
-                    width={75 * 1.35}
-                    height={80 * 1.35}
-                  />
+                <Link className="flex items-center gap-2" href={"/"}>
+                  <Image src="/logo.png" alt="Logo" width={75} height={75} />
+                  <h1 className="text-3xl font-bold">FiveHive</h1>
                 </Link>
               </SheetTrigger>
             </SheetTitle>

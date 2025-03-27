@@ -115,7 +115,7 @@ function UnitComponent({
   const handleChapterDelete = (chapterId: string) => {
     if (
       !confirm(
-        "If you delete this chapter and save changes, you will lose all chapter data. Are you sure you want to delete this chapter?",
+        "This takes permanent effect once changes are saved. Delete chapter?",
       )
     )
       return;
@@ -146,6 +146,21 @@ function UnitComponent({
     updateParent(updatedUnit);
   };
 
+  const setChapterVisibility = (chapterId: string, isPublic: boolean) => {
+    const updatedChapters = chapters.map((ch) =>
+      ch.id === chapterId ? { ...ch, isPublic } : ch,
+    );
+    setChapters(updatedChapters);
+
+    const updatedUnit: Unit = {
+      ...unit,
+      title: localUnitTitle,
+      chapters: updatedChapters,
+      tests,
+    };
+    updateParent(updatedUnit);
+  };
+
   /**********************************************
    *      TEST ACTIONS
    **********************************************/
@@ -155,6 +170,8 @@ function UnitComponent({
       name,
       questions: [],
       time,
+      directions:
+        "Read each passage and question carefully, and then choose the best answer to the question based on the passage(s).  All questions in this section are multiple-choice with four answer choices. Each question has a single best answer.",
     };
     const updatedTests = [...tests, newT];
     setTests(updatedTests);
@@ -186,11 +203,26 @@ function UnitComponent({
   const handleTestDelete = (testId: string) => {
     if (
       !confirm(
-        "If you delete this test and save changes, you will lose all test data. Are you sure you want to delete this test?",
+        "This takes permanent effect once changes are saved. Delete test?",
       )
     )
       return;
     const updatedTests = tests.filter((t) => t.id !== testId);
+    setTests(updatedTests);
+
+    const updatedUnit: Unit = {
+      ...unit,
+      title: localUnitTitle,
+      chapters,
+      tests: updatedTests,
+    };
+    updateParent(updatedUnit);
+  };
+
+  const setTestVisibility = (testId: string, isPublic: boolean) => {
+    const updatedTests = tests.map((t) =>
+      t.id === testId ? { ...t, isPublic } : t,
+    );
     setTests(updatedTests);
 
     const updatedUnit: Unit = {
@@ -236,7 +268,7 @@ function UnitComponent({
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
-            <span>{localUnitTitle}</span>
+            <span className="text-balance text-left">{localUnitTitle}</span>
           )}
           {expanded ? <ChevronUp /> : <ChevronDown />}
         </button>
@@ -256,6 +288,7 @@ function UnitComponent({
               index={idx}
               onDeleteChapter={handleChapterDelete}
               onUpdateChapter={handleChapterUpdate}
+              setChapterVisibility={setChapterVisibility}
             />
           ))}
 
@@ -283,6 +316,7 @@ function UnitComponent({
             onTestAdd={handleTestAdd}
             onTestUpdate={handleTestUpdate}
             onTestDelete={handleTestDelete}
+            setTestVisibility={setTestVisibility}
           />
         </div>
       )}

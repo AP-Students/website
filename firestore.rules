@@ -30,9 +30,24 @@ service cloud.firestore {
     }
 		
     // Subjects and pages can be accessed by members and admins
-    match /subjects/{document=**} {
+    match /subjects/{subject} {
     	allow read: if true;
       allow write: if isMemberOrAdmin();
+
+      match /units/{unit} {
+        allow read: if true;
+        allow write: if isMemberOrAdmin();
+
+        match /chapters/{chapter} {
+          allow read: if resource.data.isPublic == true || isMemberOrAdmin();
+          allow write: if isMemberOrAdmin();
+        }
+
+        match /tests/{test} {
+          allow read: if resource.data.isPublic == true || isMemberOrAdmin();
+          allow write: if isMemberOrAdmin();
+        }
+      }
     }
     
     match /pages/{document=**} {

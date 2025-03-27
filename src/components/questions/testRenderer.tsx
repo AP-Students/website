@@ -17,6 +17,7 @@ interface Props {
   inputQuestions: QuestionFormat[];
   time: number;
   adminMode?: boolean;
+  directions?: string;
 }
 
 const initialQuestions: QuestionFormat[] = [
@@ -37,6 +38,7 @@ const initialQuestions: QuestionFormat[] = [
       files: [],
     },
     bookmarked: false,
+    topic: "1.1",
   },
   {
     question: { value: "What is the capital of Japan?", files: [] },
@@ -55,6 +57,7 @@ const initialQuestions: QuestionFormat[] = [
       files: [],
     },
     bookmarked: false,
+    topic: "1.2",
   },
 ];
 
@@ -62,6 +65,7 @@ export default function DigitalTestingPage({
   time,
   inputQuestions,
   adminMode = false,
+  directions,
 }: Props) {
   const [questions, setQuestions] = useState<QuestionFormat[]>(
     inputQuestions || initialQuestions,
@@ -123,6 +127,7 @@ export default function DigitalTestingPage({
           setSubmitted={setSubmitted}
           submitted={submitted}
           timeRemaining={time * 60}
+          directions={directions}
         />
       )}
       {showReviewPage ? (
@@ -188,6 +193,12 @@ export default function DigitalTestingPage({
                 <Check className="stroke-green-500 stroke-[3px]" />
               ) : (
                 <X className="stroke-red-500 stroke-[3px]" />
+              )}
+
+              {submitted && questions[currentQuestionIndex]!.topic && (
+                <span className="ml-auto pr-2">
+                  Topic: {questions[currentQuestionIndex]!.topic}
+                </span>
               )}
 
               {!submitted && (

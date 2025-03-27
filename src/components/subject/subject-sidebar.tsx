@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BookOpenCheck, ChevronsLeft } from "lucide-react";
+import { BookDashed, BookOpenCheck, ChevronsLeft } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -14,6 +14,7 @@ import usePathname from "../client/pathname";
 
 type Props = {
   subject: Subject;
+  preview: boolean;
 };
 
 const SubjectSidebar = (props: Props) => {
@@ -73,45 +74,71 @@ const SubjectSidebar = (props: Props) => {
                 <div className="grow">
                   {unit.chapters.map((chapter, chapterIndex) => (
                     <Link
-                      className="group relative mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0"
+                      className={cn(
+                        "group relative mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0",
+                        !props.preview &&
+                          !chapter.isPublic &&
+                          "pointer-events-none opacity-70",
+                      )}
+                      aria-disabled={!props.preview && !chapter.isPublic}
+                      tabIndex={
+                        !props.preview && !chapter.isPublic ? -1 : undefined
+                      }
                       key={chapterIndex}
                       href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${unitIndex + 1}-${unit.id}/chapter/${chapter.id}/${formatSlug(chapter.title)}`}
                     >
                       <div className="flex size-6 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-[.75rem] text-white">
                         {unitIndex + 1}.{chapterIndex + 1}
                       </div>
-                      <span className="group-hover:underline">
+                      <span className="text-balance group-hover:underline">
                         {chapter.title}
                       </span>
+                      <p
+                        className={cn(
+                          "ml-auto text-nowrap rounded-full border border-gray-400 px-2 text-xs",
+                          chapter.isPublic && "hidden",
+                        )}
+                      >
+                        WIP
+                      </p>
                     </Link>
                   ))}
-                  {/* Handle multiple tests (unit.tests) first */}
-                  {unit.tests ? (
-                    unit.tests.map((test, testIndex) => (
-                      <Link
-                        className="mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0 hover:underline"
-                        href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`}
-                        key={test.id}
-                      >
+                  {unit.tests?.map((test, testIndex) => (
+                    <Link
+                      className={cn(
+                        "group mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0",
+                        !props.preview &&
+                          !test.isPublic &&
+                          "pointer-events-none opacity-70",
+                      )}
+                      aria-disabled={!props.preview && !test.isPublic}
+                      tabIndex={
+                        !props.preview && !test.isPublic ? -1 : undefined
+                      }
+                      href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`}
+                      key={test.id}
+                    >
+                      {test.isPublic ? (
                         <BookOpenCheck className="size-6" />
+                      ) : (
+                        <BookDashed className="size-6 opacity-70" />
+                      )}
+                      <span className="text-balance group-hover:underline">
                         {test.name
                           ? test.name
                           : // unit.tests cuz typescript doesn't recognize I checked for unit.tests already
                             `Unit ${unitIndex + 1} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
-                      </Link>
-                    ))
-                  ) : // Fallback: single test flow
-                  unit.test && unit.testId ? (
-                    <Link
-                      className="mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0 hover:underline"
-                      href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${unit.testId}`}
-                    >
-                      <BookOpenCheck className="size-6" />
-                      {unit.title === "Subject Test"
-                        ? unit.title
-                        : `Unit ${unitIndex + 1} Test`}
+                      </span>
+                      <p
+                        className={cn(
+                          "ml-auto text-nowrap rounded-full border border-gray-400 px-2 text-xs",
+                          test.isPublic && "hidden",
+                        )}
+                      >
+                        WIP
+                      </p>
                     </Link>
-                  ) : null}
+                  ))}
                 </div>
               </AccordionContent>
             </AccordionItem>

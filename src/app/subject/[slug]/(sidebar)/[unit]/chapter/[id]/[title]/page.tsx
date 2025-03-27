@@ -2,12 +2,12 @@
 import Footer from "@/components/global/footer";
 import Navbar from "@/components/global/navbar";
 import SubjectBreadcrumb from "@/components/subject/subject-breadcrumb";
-import SubjectSidebar from "@/components/subject/subject-sidebar";
 import Renderer from "@/components/article-creator/Renderer";
 import { useFetchAndCache } from "./useFetchAndCache";
 import "katex/dist/katex.min.css";
 import { useUser } from "@/components/hooks/UserContext";
 import Image from "next/image";
+import Link from "next/link";
 
 const Page = ({
   params,
@@ -22,7 +22,7 @@ const Page = ({
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-3xl">
+      <div className="flex min-h-screen grow items-center justify-center text-2xl">
         Loading...
       </div>
     );
@@ -30,8 +30,19 @@ const Page = ({
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-3xl">
-        {error}
+      <div className="grid min-h-screen grow place-content-center text-xl">
+        <p>
+          {error}
+          <br />
+          Return to{" "}
+          <Link
+            href={`/subject/${params.slug}`}
+            className="text-blue-600 hover:underline"
+          >
+            subject homepage
+          </Link>
+          .
+        </p>
       </div>
     );
   }
@@ -49,32 +60,28 @@ const Page = ({
     }
 
     return (
-      <div className="relative flex min-h-screen">
-        <SubjectSidebar subject={subject} />
+      <div className="relative flex grow flex-col">
+        <Navbar className="w-full px-10 xl:px-20" variant="secondary" />
 
-        <div className="relative flex grow flex-col">
-          <Navbar className="w-full px-10 xl:px-20" variant="secondary" />
+        <div className="relative mt-[5.5rem] flex min-h-screen justify-between gap-x-16 px-10 xl:px-20">
+          <div className="grow md:ml-12">
+            <SubjectBreadcrumb
+              locations={[subject.title, unitTitle, chapter.title]}
+            />
 
-          <div className="relative mt-[5.5rem] flex min-h-screen justify-between gap-x-16 px-10 xl:px-20">
-            <div className="grow md:ml-12">
-              <SubjectBreadcrumb
-                locations={[subject.title, unitTitle, chapter.title]}
-              />
+            <h1 className="my-2 text-balance text-left text-5xl font-extrabold sm:text-6xl">
+              {unitIndex + 1}.{chapterIndex + 1} - {chapter.title}
+            </h1>
+            <AuthorCredits
+              displayName={content?.creator?.displayName}
+              photoURL={content?.creator?.photoURL ?? ""}
+            />
 
-              <h1 className="my-2 text-balance text-left text-5xl font-extrabold sm:text-6xl">
-                {unitIndex + 1}.{chapterIndex + 1} - {chapter.title}
-              </h1>
-              <AuthorCredits
-                displayName={content?.creator?.displayName}
-                photoURL={content?.creator?.photoURL ?? ""}
-              />
-
-              <Renderer content={content.data} />
-            </div>
+            <Renderer content={content.data} />
           </div>
-
-          <Footer className="mx-0 w-full max-w-none px-10 xl:px-20" />
         </div>
+
+        <Footer className="mx-0 w-full max-w-none px-10 xl:px-20" />
       </div>
     );
   } else {

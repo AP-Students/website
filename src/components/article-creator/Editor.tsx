@@ -7,7 +7,6 @@ import {
 import useEditor from "hooks/useEditor";
 
 import Header from "@editorjs/header";
-// @ts-expect-error The import is correct
 import Paragraph from "@editorjs/paragraph";
 import Quote from "@editorjs/quote";
 import List from "@editorjs/list";
@@ -43,7 +42,7 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
 
   image: {
     class: SimpleImage as unknown as ToolConstructable,
-    inlineToolbar: true,
+    inlineToolbar: false,
   },
 
   list: {
