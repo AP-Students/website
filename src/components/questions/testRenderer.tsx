@@ -18,6 +18,7 @@ interface Props {
   time: number;
   adminMode?: boolean;
   directions?: string;
+  testName: string;
 }
 
 const initialQuestions: QuestionFormat[] = [
@@ -66,6 +67,7 @@ export default function DigitalTestingPage({
   inputQuestions,
   adminMode = false,
   directions,
+  testName,
 }: Props) {
   const [questions, setQuestions] = useState<QuestionFormat[]>(
     inputQuestions || initialQuestions,
@@ -82,8 +84,6 @@ export default function DigitalTestingPage({
   const [showEliminationTools, setShowEliminationTools] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [showReviewPage, setShowReviewPage] = useState(false);
-  // Maybe later (Good for new features)
-  // const [showTools, setShowTools] = useState(false);
 
   useEffect(() => {
     setQuestions(inputQuestions);
@@ -271,6 +271,7 @@ export default function DigitalTestingPage({
         setSubmitted={setSubmitted}
         submitted={submitted}
         adminMode={adminMode}
+        testName={testName}
       />
     </div>
   );

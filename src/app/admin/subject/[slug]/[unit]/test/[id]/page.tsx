@@ -33,6 +33,7 @@ const Page = () => {
   const [seconds, setSeconds] = useState<number>(40);
   const { questions, setQuestions } = syncedQuestions(instanceId);
   const [directions, setDirections] = useState("");
+  const [testName, setTestName] = useState<string>("");
 
   const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
 
@@ -75,6 +76,7 @@ const Page = () => {
             : "Read each passage and question carefully, and then choose the best answer to the question based on the passage(s). All questions in this section are multiple-choice with four answer choices. Each question has a single best answer.",
         );
 
+        setTestName(data.name ?? "");
         if (questions) {
           setQuestions(questions);
         } else {
@@ -220,6 +222,7 @@ const Page = () => {
               time={minutes * 60 + seconds}
               inputQuestions={questions}
               adminMode={true}
+              testName={testName}
             />
           </div>
         </div>
