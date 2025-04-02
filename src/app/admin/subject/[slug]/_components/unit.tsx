@@ -303,6 +303,7 @@ function UnitComponent({
             <Button
               onClick={handleAddChapter}
               className="cursor-pointer bg-green-500 hover:bg-green-600"
+              disabled={!newChapterTitle.trim()}
             >
               <PlusCircle className="mr-2" /> Add Chapter
             </Button>

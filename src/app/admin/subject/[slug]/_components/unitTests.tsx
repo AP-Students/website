@@ -98,6 +98,7 @@ function UnitTests({
         <Button
           onClick={handleAddTest}
           className="cursor-pointer bg-green-500 hover:bg-green-600"
+          disabled={!newTestName.trim()}
         >
           <PlusCircle className="mr-2" /> Add Test
         </Button>
