@@ -13,7 +13,7 @@ const Page = () => {
             Library
           </h1>
           <p className="w-full text-pretty text-lg opacity-70 lg:text-xl">
-            Comprehensive guides and resources for every AP class.
+            Comprehensive study guides and practice exams for every AP class.
           </p>
         </div>
         <APLibrary />
