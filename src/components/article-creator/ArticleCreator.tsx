@@ -20,6 +20,8 @@ import {
 import { Blocker } from "@/app/admin/subject/navigation-block";
 import { Button } from "@/components/ui/button";
 import { usePathname } from "next/navigation";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
 
 function ArticleCreator({ className }: { className?: string }) {
   // Needs 2 seperate data states, otherwise there will be constant rendering in the editor => impossible to edit
@@ -131,7 +133,7 @@ function ArticleCreator({ className }: { className?: string }) {
     const newArticle = {
       id: uuidv4(),
       createdAt: new Date(),
-      creator: user,
+      author,
       title: pathParts.join("/"),
       data,
     };
@@ -196,11 +198,23 @@ function ArticleCreator({ className }: { className?: string }) {
 
   const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
 
+  const [author, setAuthor] = useState<string>("");
+
   return (
     <>
       {unsavedChanges && <Blocker />}
 
-      <div className="flex justify-end">
+      <div className="flex justify-between gap-2">
+        <div className="grid w-full max-w-sm items-center gap-1.5">
+          <Label htmlFor="author">Author</Label>
+          <Input
+            type="text"
+            id="author"
+            placeholder="Lance"
+            value={author}
+            onChange={(e) => setAuthor(e.target.value)}
+          />
+        </div>
         <Button
           className="bg-blue-500 hover:bg-blue-600"
           onClick={() => handleSave()}
