@@ -23,10 +23,10 @@ const links = [
     name: "Contribute",
     href: "/apply",
   },
-  // {
-  //   name: "guides",
-  //   href: "/guides",
-  // },
+  {
+    name: "guides",
+    href: "/guides",
+  },
   // {
   //   name: "practice",
   //   href: "/practice",

@@ -72,10 +72,7 @@ const Page = ({
             <h1 className="my-2 text-balance text-left text-5xl font-extrabold sm:text-6xl">
               {unitIndex + 1}.{chapterIndex + 1} - {chapter.title}
             </h1>
-            <AuthorCredits
-              displayName={content?.creator?.displayName}
-              photoURL={content?.creator?.photoURL ?? ""}
-            />
+            <p className="mb-6 md:mb-10">{content.author}</p>
 
             <Renderer content={content.data} />
           </div>

@@ -1,5 +1,5 @@
 import type { OutputData } from "@editorjs/editorjs";
-import { BlockData } from "editorjs-parser";
+import type { BlockData, Config } from "editorjs-parser";
 import edjsParser from "editorjs-parser";
 import katex from "katex";
 import hljs from "highlight.js";
@@ -9,7 +9,6 @@ import { createRoot, type Root } from "react-dom/client";
 import { QuestionsOutput } from "./custom_questions/QuestionInstance";
 import type { QuestionFormat } from "@/types/questions";
 import "@/styles/katexStyling.css";
-import { Config } from "editorjs-parser";
 
 // derived from advancedtextbox
 function parseLatex(text: string): string {
