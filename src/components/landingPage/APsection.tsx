@@ -1,7 +1,7 @@
 import Link from "next/link";
 import React from "react";
 import { cn, formatSlug } from "@/lib/utils";
-import { ExternalLink } from "lucide-react";
+import { CircleDashed, ExternalLink, HeartHandshake } from "lucide-react";
 
 interface SectionProps {
   title: string;
@@ -53,21 +53,22 @@ const APsection: React.FC<SectionProps> = ({
                     "group opacity-50 hover:text-amber-500 hover:opacity-100",
                 )}
               >
-                {external && <ExternalLink />}
                 {external ? (
                   course.includes("|") ? (
-                    course.split(" | ")[0]
+                    <>
+                      <ExternalLink />
+                      {course.split(" | ")[0]}
+                    </>
                   ) : (
                     <>
-                      <div className="flex items-center gap-1 text-base group-hover:hidden">
+                      <CircleDashed className="group-hover:hidden" />
+                      <HeartHandshake className="hidden group-hover:block" />
+                      <p className="text-base group-hover:hidden">
                         {course.split(" | ")[0]}
-                        <span className="text-nowrap rounded-full border border-gray-400 px-2 text-sm shadow">
-                          WIP
-                        </span>
-                      </div>
-                      <span className="hidden text-base group-hover:block">
+                      </p>
+                      <p className="hidden text-base group-hover:block">
                         Apply to join FiveHive
-                      </span>
+                      </p>
                     </>
                   )
                 ) : (
