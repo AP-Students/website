@@ -1,7 +1,7 @@
 import Link from "next/link";
 import React from "react";
 import { cn, formatSlug } from "@/lib/utils";
-import { CircleDashed, ExternalLink, HeartHandshake } from "lucide-react";
+import { BookDashed, ExternalLink, HeartHandshake } from "lucide-react";
 
 interface SectionProps {
   title: string;
@@ -45,6 +45,10 @@ const APsection: React.FC<SectionProps> = ({
                     ? `${course.includes("|") ? course.split(" | ")[1] : "/apply"}`
                     : `/subject/${formatSlug(course.replace(/AP /g, ""))}`
                 }
+                target={external && course.includes("|") ? "_blank" : "_self"}
+                rel={
+                  external && course.includes("|") ? "noreferrer" : undefined
+                }
                 className={cn(
                   "hover:underline",
                   external && "flex items-center gap-1",
@@ -61,7 +65,7 @@ const APsection: React.FC<SectionProps> = ({
                     </>
                   ) : (
                     <>
-                      <CircleDashed className="group-hover:hidden" />
+                      <BookDashed className="group-hover:hidden" />
                       <HeartHandshake className="hidden group-hover:block" />
                       <p className="text-base group-hover:hidden">
                         {course.split(" | ")[0]}
