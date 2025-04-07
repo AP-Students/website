@@ -20,12 +20,12 @@ const links = [
     href: "/library",
   },
   {
-    name: "Contribute",
-    href: "/apply",
-  },
-  {
     name: "guides",
     href: "/guides",
+  },
+  {
+    name: "Contribute",
+    href: "/apply",
   },
   // {
   //   name: "practice",
