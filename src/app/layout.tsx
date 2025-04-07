@@ -1,11 +1,11 @@
 import "@/styles/globals.css";
-import { Outfit } from "next/font/google";
+import { Figtree } from "next/font/google";
 import RootLayoutClient from "./RootLayoutClient";
 import { Toaster } from "@/components/ui/sonner";
 
-const outfit = Outfit({
+const figtree = Figtree({
   subsets: ["latin"],
-  variable: "--font-outfit",
+  variable: "--font-figtree",
 });
 
 export const metadata = {
@@ -21,7 +21,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${outfit.variable} font-sans`}>
+      <body className={`${figtree.variable} font-sans`}>
         <script
           dangerouslySetInnerHTML={{
             __html: `
