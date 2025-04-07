@@ -60,17 +60,17 @@ const APsection: React.FC<SectionProps> = ({
                 {external ? (
                   course.includes("|") ? (
                     <>
-                      <ExternalLink />
+                      <ExternalLink className="shrink-0" />
                       {course.split(" | ")[0]}
                     </>
                   ) : (
                     <>
-                      <BookDashed className="group-hover:hidden" />
-                      <HeartHandshake className="hidden group-hover:block" />
-                      <p className="text-base group-hover:hidden">
+                      <BookDashed className="shrink-0 group-hover:hidden" />
+                      <HeartHandshake className="hidden shrink-0 group-hover:block" />
+                      <p className="group-hover:hidden">
                         {course.split(" | ")[0]}
                       </p>
-                      <p className="hidden text-base group-hover:block">
+                      <p className="hidden group-hover:block">
                         Apply to join FiveHive
                       </p>
                     </>
