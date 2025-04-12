@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo, useState } from "react";
-import { Trash } from "lucide-react";
+import { ArrowUp, ArrowDown, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Chapter } from "@/types/firestore";
 import { Link } from "../../link";
@@ -15,6 +15,8 @@ interface ChapterComponentProps {
   onDeleteChapter: (chapterId: string) => void;
   onUpdateChapter: (chapterId: string, newTitle: string) => void;
   setChapterVisibility: (chapterId: string, isPublic: boolean) => void;
+  moveChapterUp: (chapterId: string) => void;
+  moveChapterDown: (chapterId: string) => void;
 }
 
 /**
@@ -28,6 +30,8 @@ function ChapterComponent({
   onDeleteChapter,
   onUpdateChapter,
   setChapterVisibility,
+  moveChapterUp,
+  moveChapterDown,
 }: ChapterComponentProps) {
   const [editing, setEditing] = useState<boolean>(false);
   const [localTitle, setLocalTitle] = useState<string>(chapter.title);
@@ -46,7 +50,17 @@ function ChapterComponent({
   };
 
   return (
-    <div className="mb-3 flex items-center justify-between gap-4">
+    <div className="mb-3 flex items-center justify-between gap-2">
+      <div>
+        <ArrowUp
+          className="hover:bg-gray-200"
+          onClick={() => moveChapterUp(chapter.id)}
+        />
+        <ArrowDown
+          className="hover:bg-gray-200"
+          onClick={() => moveChapterDown(chapter.id)}
+        />
+      </div>
       <div className="grid">
         <label htmlFor={`visibility-${chapter.id}`}>Public</label>
         <input

@@ -161,6 +161,42 @@ function UnitComponent({
     updateParent(updatedUnit);
   };
 
+  const moveChapterUp = (chapterId: string) => {
+    const chapterIndex = chapters.findIndex((ch) => ch.id === chapterId);
+    if (chapterIndex <= 0) return;
+
+    const updatedChapters = [...chapters];
+    const temp = updatedChapters[chapterIndex];
+    updatedChapters[chapterIndex] = updatedChapters[chapterIndex - 1]!;
+    updatedChapters[chapterIndex - 1] = temp!;
+
+    setChapters(updatedChapters);
+
+    const updatedUnit: Unit = {
+      ...unit,
+      chapters: updatedChapters,
+    };
+    updateParent(updatedUnit);
+  };
+
+  const moveChapterDown = (chapterId: string) => {
+    const chapterIndex = chapters.findIndex((ch) => ch.id === chapterId);
+    if (chapterIndex >= chapters.length - 1) return;
+
+    const updatedChapters = [...chapters];
+    const temp = updatedChapters[chapterIndex];
+    updatedChapters[chapterIndex] = updatedChapters[chapterIndex + 1]!;
+    updatedChapters[chapterIndex + 1] = temp!;
+
+    setChapters(updatedChapters);
+
+    const updatedUnit: Unit = {
+      ...unit,
+      chapters: updatedChapters,
+    };
+    updateParent(updatedUnit);
+  };
+
   /**********************************************
    *      TEST ACTIONS
    **********************************************/
@@ -234,6 +270,42 @@ function UnitComponent({
     updateParent(updatedUnit);
   };
 
+  const moveTestUp = (testId: string) => {
+    const testIndex = tests.findIndex((t) => t.id === testId);
+    if (testIndex <= 0) return;
+
+    const updatedTests = [...tests];
+    const temp = updatedTests[testIndex];
+    updatedTests[testIndex] = updatedTests[testIndex - 1]!;
+    updatedTests[testIndex - 1] = temp!;
+
+    setTests(updatedTests);
+
+    const updatedUnit: Unit = {
+      ...unit,
+      tests: updatedTests,
+    };
+    updateParent(updatedUnit);
+  };
+
+  const moveTestDown = (testId: string) => {
+    const testIndex = tests.findIndex((t) => t.id === testId);
+    if (testIndex >= tests.length - 1) return;
+
+    const updatedTests = [...tests];
+    const temp = updatedTests[testIndex];
+    updatedTests[testIndex] = updatedTests[testIndex + 1]!;
+    updatedTests[testIndex + 1] = temp!;
+
+    setTests(updatedTests);
+
+    const updatedUnit: Unit = {
+      ...unit,
+      tests: updatedTests,
+    };
+    updateParent(updatedUnit);
+  };
+
   return (
     <div className="rounded-lg border shadow-sm">
       {/* UNIT HEADER */}
@@ -289,6 +361,8 @@ function UnitComponent({
               onDeleteChapter={handleChapterDelete}
               onUpdateChapter={handleChapterUpdate}
               setChapterVisibility={setChapterVisibility}
+              moveChapterUp={moveChapterUp}
+              moveChapterDown={moveChapterDown}
             />
           ))}
 
@@ -317,6 +391,8 @@ function UnitComponent({
             onTestUpdate={handleTestUpdate}
             onTestDelete={handleTestDelete}
             setTestVisibility={setTestVisibility}
+            moveTestUp={moveTestUp}
+            moveTestDown={moveTestDown}
           />
         </div>
       )}

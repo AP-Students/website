@@ -5,7 +5,7 @@ import { Link } from "../../link";
 import type { UnitTest } from "@/types/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash, PlusCircle } from "lucide-react";
+import { Trash, PlusCircle, ArrowUp, ArrowDown } from "lucide-react";
 
 interface UnitTestsProps {
   unitId: string;
@@ -15,6 +15,8 @@ interface UnitTestsProps {
   onTestDelete: (testId: string) => void;
   onTestAdd: (name: string, time: number) => void;
   setTestVisibility: (testId: string, isPublic: boolean) => void;
+  moveTestUp: (testId: string) => void;
+  moveTestDown: (testId: string) => void;
 }
 
 function UnitTests({
@@ -25,6 +27,8 @@ function UnitTests({
   onTestDelete,
   onTestAdd,
   setTestVisibility,
+  moveTestUp,
+  moveTestDown,
 }: UnitTestsProps) {
   // Local state for adding a new test
   const [newTestName, setNewTestName] = useState<string>("");
@@ -53,6 +57,16 @@ function UnitTests({
           key={test.id}
           className="mb-3 flex items-center justify-between gap-4"
         >
+          <div>
+            <ArrowUp
+              className="hover:bg-gray-200"
+              onClick={() => moveTestUp(test.id)}
+            />
+            <ArrowDown
+              className="hover:bg-gray-200"
+              onClick={() => moveTestDown(test.id)}
+            />
+          </div>
           <div className="grid">
             <label htmlFor={`visibility-${test.id}`}>Public</label>
             <input

@@ -122,7 +122,7 @@ const FAQLibrary = () => {
       {sectionData.map((section) => (
         <APsection
           key={section.title}
-          title={section.title + " FAQ Docs"}
+          title={section.title + " Guides"}
           numofCol={section.numofCol}
           borderColor={section.borderColor}
           courses={section.courses}
