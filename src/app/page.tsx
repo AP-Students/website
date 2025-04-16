@@ -43,7 +43,7 @@ export default async function Home() {
 
 function Hero() {
   return (
-    <div className="grid h-96 place-content-center gap-4 bg-primary-foreground p-4 text-center sm:p-8">
+    <div className="grid h-96 place-content-center gap-4 border-b border-primary/50 bg-primary-foreground p-4 text-center shadow sm:p-8">
       <Link
         href={"/"}
         className="group mx-auto flex w-fit rounded-full border border-primary px-4 py-1 text-primary shadow-md shadow-primary/30 transition-all hover:translate-y-1 hover:shadow-none"
@@ -93,9 +93,13 @@ function Hero() {
 function LibraryHeader() {
   return (
     <div className="flex flex-col justify-center">
-      <h2 className="relative mx-auto mb-2 mt-24 inline-block text-center text-5xl font-bold leading-[1.2]">
-        <span>Everything you need.</span>{" "}
-        <span className="inline-block sm:block md:inline-block">For free.</span>
+      <h2 className="relative mx-auto mb-2 mt-20 inline-block text-center text-5xl font-bold leading-[1.2]">
+        <span>
+          <i>Everything</i> you need.
+        </span>{" "}
+        <span className="inline-block sm:block md:inline-block">
+          For <u>free</u>.
+        </span>
         <Image
           src="/star.svg"
           alt="Star"
@@ -118,95 +122,95 @@ function LibraryHeader() {
   );
 }
 
-function SellingPoint(){
+function SellingPoint() {
   return (
     <div className="flex flex-wrap items-center justify-evenly gap-x-10 gap-y-36 px-16 py-32">
-            <div>
-              <h1 className="mb-4 text-3xl font-bold text-gray-900">
-                Built by the AP Community.
-              </h1>
-              <p className="mb-4 text-gray-700">
-                Completely ran by student volunteers.
-              </p>
-              <ul className="mb-8 space-y-2">
-                <li className="flex items-center">
-                  <svg
-                    className="mr-2 h-6 w-6 text-red-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M5 13l4 4L19 7"
-                    ></path>
-                  </svg>
-                  No corporations or &quot;non-profits&quot;
-                </li>
-                <li className="flex items-center">
-                  <svg
-                    className="mr-2 h-6 w-6 text-red-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M5 13l4 4L19 7"
-                    ></path>
-                  </svg>
-                  Driven by student needs and feedback
-                </li>
-                <li className="flex items-center">
-                  <svg
-                    className="mr-2 h-6 w-6 text-red-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M5 13l4 4L19 7"
-                    ></path>
-                  </svg>
-                  100% free forever
-                </li>
-              </ul>
-              <Link
-                href="https://discord.com/invite/apstudents"
-                target="_blank"
-                className="w-fit rounded-full border border-[#5865F2] px-6 py-3 font-medium text-[#5865F2] transition-colors hover:bg-[#5865F2] hover:text-white"
-              >
-                Join the AP Discord
-              </Link>
-            </div>
-            <div className="relative">
-              <iframe
-                className="relative z-10 rounded-lg shadow-lg"
-                src="https://discord.com/widget?id=181970867549503489&theme=dark"
-                width="250"
-                height="350"
-                sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
-              ></iframe>
+      <div>
+        <h1 className="mb-4 text-3xl font-bold text-gray-900">
+          Built by the AP Community.
+        </h1>
+        <p className="mb-4 text-gray-700">
+          Completely ran by student volunteers.
+        </p>
+        <ul className="mb-8 space-y-2">
+          <li className="flex items-center">
+            <svg
+              className="mr-2 h-6 w-6 text-red-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M5 13l4 4L19 7"
+              ></path>
+            </svg>
+            No corporations or &quot;non-profits&quot;
+          </li>
+          <li className="flex items-center">
+            <svg
+              className="mr-2 h-6 w-6 text-red-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M5 13l4 4L19 7"
+              ></path>
+            </svg>
+            Driven by student needs and feedback
+          </li>
+          <li className="flex items-center">
+            <svg
+              className="mr-2 h-6 w-6 text-red-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M5 13l4 4L19 7"
+              ></path>
+            </svg>
+            100% free forever
+          </li>
+        </ul>
+        <Link
+          href="https://discord.com/invite/apstudents"
+          target="_blank"
+          className="w-fit rounded-full border border-[#5865F2] px-6 py-3 font-medium text-[#5865F2] transition-colors hover:bg-[#5865F2] hover:text-white"
+        >
+          Join the AP Discord
+        </Link>
+      </div>
+      <div className="relative">
+        <iframe
+          className="relative z-10 rounded-lg shadow-lg"
+          src="https://discord.com/widget?id=181970867549503489&theme=dark"
+          width="250"
+          height="350"
+          sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
+        ></iframe>
 
-              <Image
-                className="absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2 scale-[2.5] transform"
-                alt="Squiggle"
-                src={"/squiggle.svg"}
-                width={678}
-                height={617}
-              />
-            </div>
-          </div>
+        <Image
+          className="absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2 scale-[2.5] transform"
+          alt="Squiggle"
+          src={"/squiggle.svg"}
+          width={678}
+          height={617}
+        />
+      </div>
+    </div>
   );
 }
 
