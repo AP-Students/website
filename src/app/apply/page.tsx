@@ -34,7 +34,7 @@ export default async function Home() {
 
 function CallToAction() {
   return (
-    <div className="relative mt-8 grid place-content-center gap-5 overflow-clip rounded-lg bg-primary-foreground px-4 py-8 text-center sm:p-12">
+    <div className="relative mt-8 grid place-content-center gap-5 overflow-clip rounded-lg border border-primary/50 bg-primary-foreground px-4 py-8 text-center shadow sm:p-12">
       <Image
         className="absolute -right-36 top-6 block scale-75 sm:-right-24 sm:-top-8 sm:scale-100"
         src="/diamond.svg"
@@ -50,7 +50,7 @@ function CallToAction() {
         href="https://docs.google.com/document/d/1nV0nmzRKbgmVucE93ujft6tY-rQ-xPxLEahjuSpFz3s/edit?usp=sharing"
         className={cn(
           buttonVariants({ variant: "default" }),
-          "z-10 mx-auto w-min",
+          "z-10 mx-auto w-min text-lg",
         )}
       >
         Apply to FiveHive
