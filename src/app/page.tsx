@@ -216,7 +216,7 @@ function SellingPoint() {
 
 function CallToAction() {
   return (
-    <div className="relative mt-[6.75rem] grid place-content-center gap-5 overflow-clip rounded-lg bg-primary-foreground px-4 py-8 text-center font-bold sm:p-12">
+    <div className="relative mt-[6.75rem] grid place-content-center gap-5 overflow-clip rounded-lg border border-primary/50 bg-primary-foreground px-4 py-8 text-center font-bold shadow sm:p-12">
       <Image
         className="absolute -right-36 top-6 block scale-75 sm:-right-24 sm:-top-8 sm:scale-100"
         src="/diamond.svg"
