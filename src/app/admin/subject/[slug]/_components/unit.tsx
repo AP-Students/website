@@ -6,9 +6,9 @@ import {
   ChevronUp,
   Edit,
   Trash,
-  MoveUp,
-  MoveDown,
-  PlusCircle,
+  Plus,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Unit, Chapter, UnitTest } from "@/types/firestore";
@@ -16,6 +16,7 @@ import short from "short-uuid";
 import UnitTests from "./unitTests";
 import ChapterContent from "./chapterContent";
 import { Input } from "@/components/ui/input";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 
 const translator = short(short.constants.flickrBase58);
 
@@ -59,6 +60,7 @@ function UnitComponent({
 
   // Local copies
   const [chapters, setChapters] = useState<Chapter[]>(unit.chapters);
+  const [chaptersAutoAnimateParent, enableAnimations] = useAutoAnimate();
   const [tests, setTests] = useState<UnitTest[]>(unit.tests ?? []);
 
   /**********************************************
@@ -310,14 +312,12 @@ function UnitComponent({
     <div className="rounded-lg border shadow-sm">
       {/* UNIT HEADER */}
       <div className="flex items-center pl-4">
-        <MoveUp
-          className="cursor-pointer transition-transform hover:scale-125"
-          onClick={() => onMoveUp(index)}
-        />
-        <MoveDown
-          className="ml-2 cursor-pointer transition-transform hover:scale-125"
-          onClick={() => onMoveDown(index)}
-        />
+        <button title="Move unit up" onClick={() => onMoveUp(index)}>
+          <ArrowUp className="hover:bg-gray-200" />
+        </button>
+        <button title="Move unit down" onClick={() => onMoveDown(index)}>
+          <ArrowDown className="hover:bg-gray-200" />
+        </button>
         <Edit
           onClick={() => setEditingTitle(true)}
           className="ml-4 cursor-pointer hover:text-blue-400"
@@ -350,21 +350,24 @@ function UnitComponent({
       {expanded && (
         <div className="border-t p-4">
           {/* CHAPTERS */}
-          {chapters.map((chapter, idx) => (
-            <ChapterContent
-              key={chapter.id}
-              chapter={chapter}
-              subjectSlug={subjectSlug}
-              subjectSlugLink={""}
-              unitId={unit.id}
-              index={idx}
-              onDeleteChapter={handleChapterDelete}
-              onUpdateChapter={handleChapterUpdate}
-              setChapterVisibility={setChapterVisibility}
-              moveChapterUp={moveChapterUp}
-              moveChapterDown={moveChapterDown}
-            />
-          ))}
+          <h3 className="mb-1 text-xl font-semibold">Chapters</h3>
+          <div ref={chaptersAutoAnimateParent}>
+            {chapters.map((chapter, idx) => (
+              <ChapterContent
+                key={chapter.id}
+                chapter={chapter}
+                subjectSlug={subjectSlug}
+                subjectSlugLink={""}
+                unitId={unit.id}
+                index={idx}
+                onDeleteChapter={handleChapterDelete}
+                onUpdateChapter={handleChapterUpdate}
+                setChapterVisibility={setChapterVisibility}
+                moveChapterUp={moveChapterUp}
+                moveChapterDown={moveChapterDown}
+              />
+            ))}
+          </div>
 
           {/* ADD CHAPTER */}
           <div className="mt-4 flex gap-2">
@@ -376,13 +379,14 @@ function UnitComponent({
             />
             <Button
               onClick={handleAddChapter}
-              className="cursor-pointer bg-green-500 hover:bg-green-600"
+              className="bg-green-500 hover:bg-green-600"
             >
-              <PlusCircle className="mr-2" /> Add Chapter
+              <Plus className="-ml-1 mr-2" /> Add Chapter
             </Button>
           </div>
 
           {/* EXTRACTED TESTS SECTION */}
+          <h3 className="mb-1 mt-4 text-xl font-semibold">Tests</h3>
           <UnitTests
             unitId={unit.id}
             subjectSlug={subjectSlug}

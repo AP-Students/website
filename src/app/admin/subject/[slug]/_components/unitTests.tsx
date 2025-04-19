@@ -5,7 +5,8 @@ import { Link } from "../../link";
 import type { UnitTest } from "@/types/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash, PlusCircle, ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowUp, ArrowDown, Plus, Trash2 } from "lucide-react";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 
 interface UnitTestsProps {
   unitId: string;
@@ -34,6 +35,8 @@ function UnitTests({
   const [newTestName, setNewTestName] = useState<string>("");
   const [newTestTime, setNewTestTime] = useState<string>("0");
 
+  const [testsAutoAnimateParent, enableAnimations] = useAutoAnimate();
+
   const handleAddTest = () => {
     if (!newTestName.trim()) return;
     onTestAdd(newTestName.trim(), Number(newTestTime) || 0);
@@ -49,23 +52,22 @@ function UnitTests({
   };
 
   return (
-    <div className="mt-8">
-      <h3 className="mb-3 text-xl font-semibold">Unit Tests</h3>
-
+    <div ref={testsAutoAnimateParent}>
       {tests.map((test, testIdx) => (
         <div
           key={test.id}
-          className="mb-3 flex items-center justify-between gap-4"
+          className="mb-3 flex items-center justify-between gap-2 rounded-sm ring-gray-300 ring-offset-2 transition-[box-shadow] hover:ring-2"
         >
-          <div>
-            <ArrowUp
-              className="hover:bg-gray-200"
-              onClick={() => moveTestUp(test.id)}
-            />
-            <ArrowDown
-              className="hover:bg-gray-200"
+          <div className="grid">
+            <button onClick={() => moveTestUp(test.id)} title="Move test up">
+              <ArrowUp className="rounded-tl-sm hover:bg-gray-200" />
+            </button>
+            <button
               onClick={() => moveTestDown(test.id)}
-            />
+              title="Move test down"
+            >
+              <ArrowDown className="rounded-bl-sm hover:bg-gray-200" />
+            </button>
           </div>
           <div className="grid">
             <label htmlFor={`visibility-${test.id}`}>Public</label>
@@ -80,23 +82,22 @@ function UnitTests({
             className="whitespace-nowrap rounded-full border border-input bg-background px-4 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
             href={`/admin/subject/${subjectSlug}/${unitId}/test/${test.id}`}
           >
-            Edit Test
+            Edit Test {testIdx + 1}
           </Link>
 
           <p
             onDoubleClick={() => handleRenameTest(test.id, test.name!)}
-            className="w-full cursor-pointer rounded-sm px-2 py-1 hover:bg-accent"
+            className="w-full cursor-pointer rounded-sm p-1.5 leading-none hover:bg-accent"
           >
-            Test {testIdx + 1}: {test.name}
-            {test.time ? ` - ${test.time} mins` : ""}
+            {test.name}
           </p>
 
           <Button
-            className="ml-auto"
+            className="ml-auto mr-1 aspect-square rounded-md p-0"
             variant="destructive"
             onClick={() => onTestDelete(test.id)}
           >
-            <Trash />
+            <Trash2 />
           </Button>
         </div>
       ))}
@@ -111,9 +112,9 @@ function UnitTests({
         />
         <Button
           onClick={handleAddTest}
-          className="cursor-pointer bg-green-500 hover:bg-green-600"
+          className="bg-green-500 hover:bg-green-600"
         >
-          <PlusCircle className="mr-2" /> Add Test
+          <Plus className="-ml-1 mr-2" /> Add Test
         </Button>
       </div>
     </div>

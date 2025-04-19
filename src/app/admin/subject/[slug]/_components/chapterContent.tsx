@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo, useState } from "react";
-import { ArrowUp, ArrowDown, Trash } from "lucide-react";
+import { ArrowUp, ArrowDown, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Chapter } from "@/types/firestore";
 import { Link } from "../../link";
@@ -50,16 +50,20 @@ function ChapterComponent({
   };
 
   return (
-    <div className="mb-3 flex items-center justify-between gap-2">
-      <div>
-        <ArrowUp
-          className="hover:bg-gray-200"
+    <div className="mb-3 flex items-center justify-between gap-2 rounded-sm ring-gray-300 ring-offset-2 transition-[box-shadow] hover:ring-2">
+      <div className="grid">
+        <button
           onClick={() => moveChapterUp(chapter.id)}
-        />
-        <ArrowDown
-          className="hover:bg-gray-200"
+          title="Move chapter up"
+        >
+          <ArrowUp className="rounded-tl-sm hover:bg-gray-200" />
+        </button>
+        <button
           onClick={() => moveChapterDown(chapter.id)}
-        />
+          title="Move chapter down"
+        >
+          <ArrowDown className="rounded-bl-sm hover:bg-gray-200" />
+        </button>
       </div>
       <div className="grid">
         <label htmlFor={`visibility-${chapter.id}`}>Public</label>
@@ -75,36 +79,33 @@ function ChapterComponent({
         className="whitespace-nowrap rounded-full border border-input bg-background px-4 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
         href={`/admin/subject/${subjectSlug}/${unitId}/chapter/${chapter.id}`}
       >
-        Edit Content
+        Edit Chapter {index + 1}
       </Link>
 
       {/* Chapter title: double click to edit */}
       {editing ? (
-        <>
-          <p className="text-nowrap px-2">Chapter {index + 1}:</p>
-          <input
-            className="-ml-5 w-full"
-            autoFocus
-            value={localTitle}
-            onChange={(e) => setLocalTitle(e.target.value)}
-            onBlur={handleBlur}
-          />
-        </>
+        <input
+          className="w-full p-1.5"
+          autoFocus
+          value={localTitle}
+          onChange={(e) => setLocalTitle(e.target.value)}
+          onBlur={handleBlur}
+        />
       ) : (
         <p
           onDoubleClick={() => setEditing(true)}
-          className="w-full cursor-pointer rounded-sm px-2 py-1 hover:bg-accent"
+          className="w-full cursor-pointer rounded-sm p-1.5 leading-none hover:bg-accent"
         >
-          Chapter {index + 1}: {localTitle}
+          {localTitle}
         </p>
       )}
 
       <Button
-        className="ml-auto"
-        variant={"destructive"}
+        className="ml-auto mr-1 aspect-square rounded-md p-0"
+        variant="destructive"
         onClick={() => onDeleteChapter(chapter.id)}
       >
-        <Trash />
+        <Trash2 />
       </Button>
     </div>
   );
