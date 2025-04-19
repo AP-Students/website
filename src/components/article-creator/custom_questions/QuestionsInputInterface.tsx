@@ -110,6 +110,23 @@ const QuestionsInputInterface: React.FC<Props> = ({
     newQuestions[index] = newQuestions[index - 1]!;
     newQuestions[index - 1] = temp!;
     setQuestions(newQuestions);
+    setCollapsed((prev) => {
+      const newCollapsed = [...prev];
+      let i = newCollapsed.indexOf(false);
+
+      if (i === index - 1 && -1 < i && i < newCollapsed.length - 1) {
+        [newCollapsed[i], newCollapsed[i + 1]] = [
+          newCollapsed[i + 1]!,
+          newCollapsed[i]!,
+        ];
+      } else if (i === index && 0 < i && i < newCollapsed.length) {
+        [newCollapsed[i], newCollapsed[i - 1]] = [
+          newCollapsed[i - 1]!,
+          newCollapsed[i]!,
+        ];
+      }
+      return newCollapsed;
+    });
     setUnsavedChanges?.(true);
   };
 
@@ -120,6 +137,23 @@ const QuestionsInputInterface: React.FC<Props> = ({
     newQuestions[index] = newQuestions[index + 1]!;
     newQuestions[index + 1] = temp!;
     setQuestions(newQuestions);
+    setCollapsed((prev) => {
+      const newCollapsed = [...prev];
+      let i = newCollapsed.indexOf(false);
+
+      if (i === index + 1 && 0 < i && i < newCollapsed.length) {
+        [newCollapsed[i], newCollapsed[i - 1]] = [
+          newCollapsed[i - 1]!,
+          newCollapsed[i]!,
+        ];
+      } else if (i === index && -1 < i && i < newCollapsed.length - 1) {
+        [newCollapsed[i], newCollapsed[i + 1]] = [
+          newCollapsed[i + 1]!,
+          newCollapsed[i]!,
+        ];
+      }
+      return newCollapsed;
+    });
     setUnsavedChanges?.(true);
   };
 
