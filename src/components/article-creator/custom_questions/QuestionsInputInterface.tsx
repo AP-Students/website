@@ -112,7 +112,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
     setQuestions(newQuestions);
     setCollapsed((prev) => {
       const newCollapsed = [...prev];
-      let i = newCollapsed.indexOf(false);
+      const i = newCollapsed.indexOf(false);
 
       if (i === index - 1 && -1 < i && i < newCollapsed.length - 1) {
         [newCollapsed[i], newCollapsed[i + 1]] = [
@@ -139,7 +139,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
     setQuestions(newQuestions);
     setCollapsed((prev) => {
       const newCollapsed = [...prev];
-      let i = newCollapsed.indexOf(false);
+      const i = newCollapsed.indexOf(false);
 
       if (i === index + 1 && 0 < i && i < newCollapsed.length) {
         [newCollapsed[i], newCollapsed[i - 1]] = [
