@@ -7,8 +7,8 @@ import {
   CirclePlus,
   ChevronDown,
   ChevronUp,
-  MoveUp,
-  MoveDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import AdvancedTextbox from "./AdvancedTextbox";
 import { Input } from "@/components/ui/input";
@@ -177,14 +177,18 @@ const QuestionsInputInterface: React.FC<Props> = ({
           className="overflow-hidden rounded border border-black p-2 shadow"
         >
           <div className="flex">
-            <MoveUp
-              className="shrink-0 cursor-pointer transition-transform hover:scale-110"
+            <button
               onClick={() => moveQuestionUp(qIndex)}
-            />
-            <MoveDown
-              className="shrink-0 cursor-pointer transition-transform hover:scale-110"
+              title="Move question up"
+            >
+              <ArrowUp className="shrink-0 hover:bg-gray-200" />
+            </button>
+            <button
               onClick={() => moveQuestionDown(qIndex)}
-            />
+              title="Move question down"
+            >
+              <ArrowDown className="shrink-0 hover:bg-gray-200" />
+            </button>
             <button
               onClick={() => toggleCollapse(qIndex)}
               className="ml-2 flex grow justify-between gap-3 overflow-hidden hover:underline"
