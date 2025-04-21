@@ -10,22 +10,27 @@ import { QuestionsOutput } from "./custom_questions/QuestionInstance";
 import type { QuestionFormat } from "@/types/questions";
 import "@/styles/katexStyling.css";
 
+function decodeEntities(str: string): string {
+  const txt = document.createElement("textarea");
+  txt.innerHTML = str;
+  return txt.value;
+}
+
 // derived from advancedtextbox
 function parseLatex(text: string): string {
-  const regex = /(\$@[^$]+\$)/g;
-  return text
-    .split(regex)
+  const decoded = decodeEntities(text);
+
+  return decoded
+    .split(/(\$@[^$]+\$)/g)
     .map((part) => {
       if (/^\$@[^$]+\$$/.test(part)) {
-        const latexContent = part.slice(2, -1);
-        try {
-          return katex.renderToString(latexContent, { throwOnError: false });
-        } catch (err) {
-          console.error("Error rendering LaTeX:", err);
-          return part;
-        }
+        const expr = part.slice(2, -1);   
+        return katex.renderToString(expr, {
+          throwOnError: false,
+          output: "html",
+        });
       }
-      return part;
+      return part;  
     })
     .join("");
 }
@@ -86,8 +91,8 @@ const customParsers: Record<
 
   paragraph: (data, _config) => {
     const { text } = data as { text: string };
-    const parsedText = parseLatex(text);
-    return `<p class="paragraph">${parsedText}</p>`;
+    const parsed = parseLatex(text);
+    return `<p class="paragraph">${parsed}</p>`;
   },
 
   quote: (data, _config) => {
