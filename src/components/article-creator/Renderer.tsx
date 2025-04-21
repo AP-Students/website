@@ -24,13 +24,13 @@ function parseLatex(text: string): string {
     .split(/(\$@[^$]+\$)/g)
     .map((part) => {
       if (/^\$@[^$]+\$$/.test(part)) {
-        const expr = part.slice(2, -1);   
+        const expr = part.slice(2, -1);
         return katex.renderToString(expr, {
           throwOnError: false,
           output: "html",
         });
       }
-      return part;  
+      return part;
     })
     .join("");
 }
