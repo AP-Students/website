@@ -91,8 +91,8 @@ const customParsers: Record<
 
   paragraph: (data, _config) => {
     const { text } = data as { text: string };
-    const parsed = parseLatex(text);
-    return `<p class="paragraph">${parsed}</p>`;
+    const parsedText = parseLatex(text);
+    return `<p class="paragraph">${parsedText}</p>`;
   },
 
   quote: (data, _config) => {
