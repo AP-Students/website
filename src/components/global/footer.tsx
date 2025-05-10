@@ -3,10 +3,10 @@ import Image from "next/image";
 import Link from "next/link";
 
 const links = [
-  {
-    title: "About",
-    url: "/",
-  },
+  // {
+  //   title: "About",
+  //   url: "/",
+  // },
   {
     title: "Privacy Policy",
     url: "/",
@@ -15,13 +15,15 @@ const links = [
     title: "Copyright",
     url: "/",
   },
+  {
+    title: "Feedback",
+    url: "https://forms.gle/1J1VWe9rEMp3kfC78",
+  },
 ];
 
 export default function Footer({ className }: { className?: string }) {
   return (
-    <footer
-      className={cn("mx-auto max-w-6xl p-8 text-white lg:px-8", className)}
-    >
+    <footer className={cn("mx-auto max-w-6xl p-6", className)}>
       <div className="flex flex-col justify-between gap-y-6 sm:flex-row sm:items-center">
         <Link href={"/"}>
           <Image src={"/logo.png"} alt="FiveHive logo" width={98} height={34} />
@@ -49,7 +51,7 @@ export default function Footer({ className }: { className?: string }) {
           </li>
         </ul>
       </div>
-      <hr className="mb-4 mt-[1.875rem] border-gray-300" />
+      <hr className="mb-4 mt-2" />
       <h6 className="text-xs text-[#2E0F0FB2]">
         &copy; 2024 FiveHive&trade;. All Rights Reserved.
       </h6>

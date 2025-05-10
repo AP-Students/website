@@ -263,7 +263,7 @@ export default function UserManagementPage() {
           )}
 
           {/* Photo URL */}
-          <form
+          {/* <form
             className="flex flex-col space-y-2"
             onSubmit={handleUpdatePhotoURL}
           >
@@ -289,7 +289,7 @@ export default function UserManagementPage() {
             <Button className="self-end text-sm font-semibold" type="submit">
               Save
             </Button>
-          </form>
+          </form> */}
 
           {/* Delete Account */}
           <div className="mt-8">

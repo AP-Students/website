@@ -1,12 +1,14 @@
 import Link from "next/link";
 import React from "react";
-import { formatSlug } from "@/lib/utils";
+import { cn, formatSlug } from "@/lib/utils";
+import { BookDashed, ExternalLink, HeartHandshake } from "lucide-react";
 
 interface SectionProps {
   title: string;
   numofCol: string;
   borderColor: string;
   courses: string[];
+  external?: boolean;
 }
 
 const APsection: React.FC<SectionProps> = ({
@@ -14,6 +16,7 @@ const APsection: React.FC<SectionProps> = ({
   courses,
   borderColor,
   numofCol,
+  external,
 }) => {
   return (
     <>
@@ -37,10 +40,44 @@ const APsection: React.FC<SectionProps> = ({
           {courses.map((course, index) => (
             <li key={index} className="break-inside-avoid-column">
               <Link
-                href={`/subject/${formatSlug(course.replace(/AP /g, ""))}`}
-                className="hover:underline"
+                href={
+                  external
+                    ? `${course.includes("|") ? course.split(" | ")[1] : "/apply"}`
+                    : `/subject/${formatSlug(course.replace(/AP /g, ""))}`
+                }
+                target={external && course.includes("|") ? "_blank" : "_self"}
+                rel={
+                  external && course.includes("|") ? "noreferrer" : undefined
+                }
+                className={cn(
+                  "hover:underline",
+                  external && "flex items-center gap-1",
+                  external &&
+                    !course.includes("|") &&
+                    "group opacity-50 hover:text-amber-500 hover:opacity-100",
+                )}
               >
-                {course}
+                {external ? (
+                  course.includes("|") ? (
+                    <>
+                      <ExternalLink className="shrink-0" />
+                      {course.split(" | ")[0]}
+                    </>
+                  ) : (
+                    <>
+                      <BookDashed className="shrink-0 group-hover:hidden" />
+                      <HeartHandshake className="hidden shrink-0 group-hover:block" />
+                      <p className="group-hover:hidden">
+                        {course.split(" | ")[0]}
+                      </p>
+                      <p className="hidden group-hover:block">
+                        Apply to join FiveHive
+                      </p>
+                    </>
+                  )
+                ) : (
+                  course
+                )}
               </Link>
             </li>
           ))}

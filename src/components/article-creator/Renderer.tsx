@@ -1,5 +1,5 @@
 import type { OutputData } from "@editorjs/editorjs";
-import { BlockData } from "editorjs-parser";
+import type { BlockData, Config } from "editorjs-parser";
 import edjsParser from "editorjs-parser";
 import katex from "katex";
 import hljs from "highlight.js";
@@ -9,22 +9,26 @@ import { createRoot, type Root } from "react-dom/client";
 import { QuestionsOutput } from "./custom_questions/QuestionInstance";
 import type { QuestionFormat } from "@/types/questions";
 import "@/styles/katexStyling.css";
-import { Config } from "editorjs-parser";
+
+function decodeEntities(str: string): string {
+  const txt = document.createElement("textarea");
+  txt.innerHTML = str;
+  return txt.value;
+}
 
 // derived from advancedtextbox
 function parseLatex(text: string): string {
-  const regex = /(\$@[^$]+\$)/g;
-  return text
-    .split(regex)
+  const decoded = decodeEntities(text);
+
+  return decoded
+    .split(/(\$@[^$]+\$)/g)
     .map((part) => {
       if (/^\$@[^$]+\$$/.test(part)) {
-        const latexContent = part.slice(2, -1);
-        try {
-          return katex.renderToString(latexContent, { throwOnError: false });
-        } catch (err) {
-          console.error("Error rendering LaTeX:", err);
-          return part;
-        }
+        const expr = part.slice(2, -1);
+        return katex.renderToString(expr, {
+          throwOnError: false,
+          output: "html",
+        });
       }
       return part;
     })

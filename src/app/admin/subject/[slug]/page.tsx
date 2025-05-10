@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Link } from "@/app/admin/subject/link";
-import { ArrowLeft, Save, PlusCircle } from "lucide-react";
+import { ArrowLeft, Save, Plus } from "lucide-react";
 import { useUser } from "@/components/hooks/UserContext";
 import { db } from "@/lib/firebase";
 import {
@@ -395,7 +395,7 @@ export default function Page({ params }: { params: { slug: string } }) {
               onClick={handleAddUnit}
               className="cursor-pointer bg-green-500 hover:bg-green-600"
             >
-              <PlusCircle className="mr-2" /> Add Unit
+              <Plus className="-ml-1 mr-2" /> Add Unit
             </Button>
           </div>
         </main>

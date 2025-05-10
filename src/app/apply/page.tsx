@@ -5,6 +5,7 @@ import Image from "next/image";
 import Footer from "@/components/global/footer";
 import FAQ from "@/components/landingPage/FAQ";
 import { cn } from "@/lib/utils";
+import { PencilRuler } from "lucide-react";
 
 export default async function Home() {
   return (
@@ -34,14 +35,8 @@ export default async function Home() {
 
 function CallToAction() {
   return (
-    <div className="relative mt-8 grid place-content-center gap-5 overflow-clip rounded-lg bg-primary-foreground px-4 py-8 text-center sm:p-12">
-      <Image
-        className="absolute -right-36 top-6 block scale-75 sm:-right-24 sm:-top-8 sm:scale-100"
-        src="/diamond.svg"
-        alt="Diamond"
-        width={475}
-        height={443}
-      />
+    <div className="relative mt-8 grid place-content-center gap-5 overflow-clip rounded-lg border border-primary/50 bg-primary-foreground px-4 py-8 text-center shadow sm:p-12">
+      <PencilRuler className="absolute -right-12 top-4 size-[250px] stroke-primary opacity-50" />
       <h2 className="z-10 text-4xl font-extrabold">Help us build FiveHive!</h2>
       <p className="z-10">
         A lot of content is still work in progress, and we could use your help!
@@ -50,7 +45,7 @@ function CallToAction() {
         href="https://docs.google.com/document/d/1nV0nmzRKbgmVucE93ujft6tY-rQ-xPxLEahjuSpFz3s/edit?usp=sharing"
         className={cn(
           buttonVariants({ variant: "default" }),
-          "z-10 mx-auto w-min",
+          "z-10 mx-auto w-min text-lg",
         )}
       >
         Apply to FiveHive

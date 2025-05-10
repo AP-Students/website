@@ -31,7 +31,7 @@ const SubjectSidebar = (props: Props) => {
         isCollapsed ? "w-16" : "w-72",
       )}
     >
-      <div className="flex items-center justify-between">
+      <div className="sticky top-[-11.5rem] z-10 flex items-center justify-between border-b border-b-primary/75 bg-primary-foreground">
         <h2
           className={cn(
             "whitespace-nowrap text-2xl font-extrabold",

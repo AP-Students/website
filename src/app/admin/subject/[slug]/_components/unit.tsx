@@ -6,9 +6,9 @@ import {
   ChevronUp,
   Edit,
   Trash,
-  MoveUp,
-  MoveDown,
-  PlusCircle,
+  Plus,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Unit, Chapter, UnitTest } from "@/types/firestore";
@@ -16,6 +16,7 @@ import short from "short-uuid";
 import UnitTests from "./unitTests";
 import ChapterContent from "./chapterContent";
 import { Input } from "@/components/ui/input";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 
 const translator = short(short.constants.flickrBase58);
 
@@ -59,6 +60,7 @@ function UnitComponent({
 
   // Local copies
   const [chapters, setChapters] = useState<Chapter[]>(unit.chapters);
+  const [chaptersAutoAnimateParent, enableAnimations] = useAutoAnimate();
   const [tests, setTests] = useState<UnitTest[]>(unit.tests ?? []);
 
   /**********************************************
@@ -161,6 +163,42 @@ function UnitComponent({
     updateParent(updatedUnit);
   };
 
+  const moveChapterUp = (chapterId: string) => {
+    const chapterIndex = chapters.findIndex((ch) => ch.id === chapterId);
+    if (chapterIndex <= 0) return;
+
+    const updatedChapters = [...chapters];
+    const temp = updatedChapters[chapterIndex];
+    updatedChapters[chapterIndex] = updatedChapters[chapterIndex - 1]!;
+    updatedChapters[chapterIndex - 1] = temp!;
+
+    setChapters(updatedChapters);
+
+    const updatedUnit: Unit = {
+      ...unit,
+      chapters: updatedChapters,
+    };
+    updateParent(updatedUnit);
+  };
+
+  const moveChapterDown = (chapterId: string) => {
+    const chapterIndex = chapters.findIndex((ch) => ch.id === chapterId);
+    if (chapterIndex >= chapters.length - 1) return;
+
+    const updatedChapters = [...chapters];
+    const temp = updatedChapters[chapterIndex];
+    updatedChapters[chapterIndex] = updatedChapters[chapterIndex + 1]!;
+    updatedChapters[chapterIndex + 1] = temp!;
+
+    setChapters(updatedChapters);
+
+    const updatedUnit: Unit = {
+      ...unit,
+      chapters: updatedChapters,
+    };
+    updateParent(updatedUnit);
+  };
+
   /**********************************************
    *      TEST ACTIONS
    **********************************************/
@@ -234,18 +272,52 @@ function UnitComponent({
     updateParent(updatedUnit);
   };
 
+  const moveTestUp = (testId: string) => {
+    const testIndex = tests.findIndex((t) => t.id === testId);
+    if (testIndex <= 0) return;
+
+    const updatedTests = [...tests];
+    const temp = updatedTests[testIndex];
+    updatedTests[testIndex] = updatedTests[testIndex - 1]!;
+    updatedTests[testIndex - 1] = temp!;
+
+    setTests(updatedTests);
+
+    const updatedUnit: Unit = {
+      ...unit,
+      tests: updatedTests,
+    };
+    updateParent(updatedUnit);
+  };
+
+  const moveTestDown = (testId: string) => {
+    const testIndex = tests.findIndex((t) => t.id === testId);
+    if (testIndex >= tests.length - 1) return;
+
+    const updatedTests = [...tests];
+    const temp = updatedTests[testIndex];
+    updatedTests[testIndex] = updatedTests[testIndex + 1]!;
+    updatedTests[testIndex + 1] = temp!;
+
+    setTests(updatedTests);
+
+    const updatedUnit: Unit = {
+      ...unit,
+      tests: updatedTests,
+    };
+    updateParent(updatedUnit);
+  };
+
   return (
     <div className="rounded-lg border shadow-sm">
       {/* UNIT HEADER */}
       <div className="flex items-center pl-4">
-        <MoveUp
-          className="cursor-pointer transition-transform hover:scale-125"
-          onClick={() => onMoveUp(index)}
-        />
-        <MoveDown
-          className="ml-2 cursor-pointer transition-transform hover:scale-125"
-          onClick={() => onMoveDown(index)}
-        />
+        <button title="Move unit up" onClick={() => onMoveUp(index)}>
+          <ArrowUp className="hover:bg-gray-200" />
+        </button>
+        <button title="Move unit down" onClick={() => onMoveDown(index)}>
+          <ArrowDown className="hover:bg-gray-200" />
+        </button>
         <Edit
           onClick={() => setEditingTitle(true)}
           className="ml-4 cursor-pointer hover:text-blue-400"
@@ -278,19 +350,24 @@ function UnitComponent({
       {expanded && (
         <div className="border-t p-4">
           {/* CHAPTERS */}
-          {chapters.map((chapter, idx) => (
-            <ChapterContent
-              key={chapter.id}
-              chapter={chapter}
-              subjectSlug={subjectSlug}
-              subjectSlugLink={""}
-              unitId={unit.id}
-              index={idx}
-              onDeleteChapter={handleChapterDelete}
-              onUpdateChapter={handleChapterUpdate}
-              setChapterVisibility={setChapterVisibility}
-            />
-          ))}
+          <h3 className="mb-1 text-xl font-semibold">Chapters</h3>
+          <div ref={chaptersAutoAnimateParent}>
+            {chapters.map((chapter, idx) => (
+              <ChapterContent
+                key={chapter.id}
+                chapter={chapter}
+                subjectSlug={subjectSlug}
+                subjectSlugLink={""}
+                unitId={unit.id}
+                index={idx}
+                onDeleteChapter={handleChapterDelete}
+                onUpdateChapter={handleChapterUpdate}
+                setChapterVisibility={setChapterVisibility}
+                moveChapterUp={moveChapterUp}
+                moveChapterDown={moveChapterDown}
+              />
+            ))}
+          </div>
 
           {/* ADD CHAPTER */}
           <div className="mt-4 flex gap-2">
@@ -302,14 +379,15 @@ function UnitComponent({
             />
             <Button
               onClick={handleAddChapter}
-              className="cursor-pointer bg-green-500 hover:bg-green-600"
+              className="bg-green-500 hover:bg-green-600"
               disabled={!newChapterTitle.trim()}
             >
-              <PlusCircle className="mr-2" /> Add Chapter
+              <Plus className="-ml-1 mr-2" /> Add Chapter
             </Button>
           </div>
 
           {/* EXTRACTED TESTS SECTION */}
+          <h3 className="mb-1 mt-4 text-xl font-semibold">Tests</h3>
           <UnitTests
             unitId={unit.id}
             subjectSlug={subjectSlug}
@@ -318,6 +396,8 @@ function UnitComponent({
             onTestUpdate={handleTestUpdate}
             onTestDelete={handleTestDelete}
             setTestVisibility={setTestVisibility}
+            moveTestUp={moveTestUp}
+            moveTestDown={moveTestDown}
           />
         </div>
       )}

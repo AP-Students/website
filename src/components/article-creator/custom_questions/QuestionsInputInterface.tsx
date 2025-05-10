@@ -7,8 +7,8 @@ import {
   CirclePlus,
   ChevronDown,
   ChevronUp,
-  MoveUp,
-  MoveDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import AdvancedTextbox from "./AdvancedTextbox";
 import { Input } from "@/components/ui/input";
@@ -110,6 +110,23 @@ const QuestionsInputInterface: React.FC<Props> = ({
     newQuestions[index] = newQuestions[index - 1]!;
     newQuestions[index - 1] = temp!;
     setQuestions(newQuestions);
+    setCollapsed((prev) => {
+      const newCollapsed = [...prev];
+      const i = newCollapsed.indexOf(false);
+
+      if (i === index - 1 && -1 < i && i < newCollapsed.length - 1) {
+        [newCollapsed[i], newCollapsed[i + 1]] = [
+          newCollapsed[i + 1]!,
+          newCollapsed[i]!,
+        ];
+      } else if (i === index && 0 < i && i < newCollapsed.length) {
+        [newCollapsed[i], newCollapsed[i - 1]] = [
+          newCollapsed[i - 1]!,
+          newCollapsed[i]!,
+        ];
+      }
+      return newCollapsed;
+    });
     setUnsavedChanges?.(true);
   };
 
@@ -120,6 +137,23 @@ const QuestionsInputInterface: React.FC<Props> = ({
     newQuestions[index] = newQuestions[index + 1]!;
     newQuestions[index + 1] = temp!;
     setQuestions(newQuestions);
+    setCollapsed((prev) => {
+      const newCollapsed = [...prev];
+      const i = newCollapsed.indexOf(false);
+
+      if (i === index + 1 && 0 < i && i < newCollapsed.length) {
+        [newCollapsed[i], newCollapsed[i - 1]] = [
+          newCollapsed[i - 1]!,
+          newCollapsed[i]!,
+        ];
+      } else if (i === index && -1 < i && i < newCollapsed.length - 1) {
+        [newCollapsed[i], newCollapsed[i + 1]] = [
+          newCollapsed[i + 1]!,
+          newCollapsed[i]!,
+        ];
+      }
+      return newCollapsed;
+    });
     setUnsavedChanges?.(true);
   };
 
@@ -177,14 +211,18 @@ const QuestionsInputInterface: React.FC<Props> = ({
           className="overflow-hidden rounded border border-black p-2 shadow"
         >
           <div className="flex">
-            <MoveUp
-              className="shrink-0 cursor-pointer transition-transform hover:scale-110"
+            <button
               onClick={() => moveQuestionUp(qIndex)}
-            />
-            <MoveDown
-              className="shrink-0 cursor-pointer transition-transform hover:scale-110"
+              title="Move question up"
+            >
+              <ArrowUp className="shrink-0 hover:bg-gray-200" />
+            </button>
+            <button
               onClick={() => moveQuestionDown(qIndex)}
-            />
+              title="Move question down"
+            >
+              <ArrowDown className="shrink-0 hover:bg-gray-200" />
+            </button>
             <button
               onClick={() => toggleCollapse(qIndex)}
               className="ml-2 flex grow justify-between gap-3 overflow-hidden hover:underline"
