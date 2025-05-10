@@ -21,6 +21,7 @@ const Page = () => {
   const [time, setTime] = useState<number>(0);
   const [questions, setQuestions] = useState<QuestionFormat[] | null>(null);
   const [directions, setDirections] = useState("");
+  const [testName, setTestName] = useState<string>("");
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -42,6 +43,7 @@ const Page = () => {
           const time = data.time;
           setTime((time && time / 60) ?? 20);
           setDirections(data.directions);
+          setTestName(data.name ?? "");
 
           const questionsData = data.questions;
           if (questionsData) {
@@ -75,6 +77,7 @@ const Page = () => {
         inputQuestions={questions}
         adminMode={false}
         directions={directions}
+        testName={testName}
       />
     </div>
   );
