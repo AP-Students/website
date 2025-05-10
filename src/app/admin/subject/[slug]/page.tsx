@@ -393,7 +393,8 @@ export default function Page({ params }: { params: { slug: string } }) {
             />
             <Button
               onClick={handleAddUnit}
-              className="cursor-pointer bg-green-500 hover:bg-green-600"
+              className="bg-green-500 hover:bg-green-600"
+              disabled={!newUnitTitle.trim()}
             >
               <Plus className="-ml-1 mr-2" /> Add Unit
             </Button>
