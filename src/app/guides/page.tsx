@@ -79,6 +79,7 @@ const sectionData = [
       "AP Microeconomics",
       "AP United States Government",
       "AP Psychology",
+      "AP African American Studies",
     ],
   },
   {
