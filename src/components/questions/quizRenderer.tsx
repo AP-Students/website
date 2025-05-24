@@ -62,20 +62,20 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
   };
 
   return (
-    <div className="max-w-6xl bg-primary-foreground p-4 md:p-6 lg:p-8">
-      <div className="inline-block rounded-2xl bg-primary px-2.5 py-0.5 text-lg font-medium text-zinc-50">
+    <div className="max-w-6xl rounded-lg border border-primary bg-primary-foreground p-4 md:p-6 lg:p-8">
+      <div className="inline-block rounded-2xl bg-primary px-2.5 py-0.5 text-lg font-medium tabular-nums text-zinc-50">
         {!showResults && `${currentQuestionIndex + 1}/${questions.length}`}
         {showResults &&
           `Score: ${score}/${questions.length} (${((score / questions.length) * 100).toFixed(2)}%)`}
       </div>
-      <div className="markdown text-xl font-bold md:text-2xl lg:text-3xl">
+      <div className="markdown text-xl text-foreground">
         <RenderContent content={questionInstance.question} />
       </div>
       <div className="mt-4 grid grid-cols-1 gap-4">
         {questionInstance.options.map((option) => (
           <button
             key={option.id}
-            className={`flex items-center justify-center rounded-lg border px-6 py-4 md:text-lg lg:text-xl
+            className={`rounded-md border px-2 text-left shadow transition-colors
             ${
               showResults
                 ? isAnswerCorrect(option.id)
@@ -84,10 +84,10 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
                     : "border-green-700 bg-green-100"
                   : answers[currentQuestionIndex]?.includes(option.id)
                     ? "border-red-700 bg-red-300"
-                    : "border-gray-300"
+                    : "border-gray-300 bg-white"
                 : answers[currentQuestionIndex]?.includes(option.id)
                   ? "border-blue-500 bg-blue-100"
-                  : "border-primary bg-zinc-50"
+                  : "border-gray-300 bg-white"
             }
             `}
             onClick={() => handleSelectOption(option.id)}
@@ -99,16 +99,16 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
       </div>
 
       {showResults && questionInstance.explanation && (
-        <div className="mt-4 rounded-md border bg-green-100 p-3">
+        <div className="mt-4 rounded-md border border-primary bg-white p-3">
           <strong>Explanation:</strong>
           <RenderContent content={questionInstance.explanation} />
         </div>
       )}
 
-      <div className="mt-4 flex justify-between">
+      <div className="relative mt-4 flex justify-between">
         {currentQuestionIndex > 0 && (
           <button
-            className="flex items-center rounded bg-gray-500 py-2 pl-3 pr-4 text-white hover:bg-gray-600"
+            className="flex items-center rounded-md border border-gray-800 bg-gray-500 py-2 pl-2 pr-4 text-white transition-colors hover:bg-gray-600"
             onClick={() => navigateQuestions(-1)}
           >
             <ChevronLeft size={24} />
@@ -117,19 +117,19 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
         )}
         {currentQuestionIndex < questions.length - 1 && (
           <button
-            className="ml-auto flex items-center rounded bg-gray-500 py-2 pl-3 pr-4 text-white hover:bg-gray-600"
+            className="ml-auto flex items-center rounded-md border border-gray-800 bg-gray-500 py-2 pl-4 pr-2 text-white transition-colors hover:bg-gray-600"
             onClick={() => navigateQuestions(1)}
           >
-            <ChevronRight size={24} />
             <span>Next</span>
+            <ChevronRight size={24} />
           </button>
         )}
         {!showResults && currentQuestionIndex === questions.length - 1 && (
           <button
-            className="ml-auto rounded bg-blue-500 px-6 py-2 text-white hover:bg-blue-600"
+            className="absolute left-1/2 -translate-x-1/2 rounded-md border border-blue-800 bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
             onClick={handleSubmitTest}
           >
-            Submit Test
+            Submit
           </button>
         )}
       </div>
