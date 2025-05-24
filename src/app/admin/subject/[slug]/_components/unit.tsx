@@ -34,6 +34,7 @@ interface UnitComponentProps {
   onMoveUp: (index: number) => void;
   onMoveDown: (index: number) => void;
   subjectSlug: string;
+  subjectTitle: string;
 }
 
 /**
@@ -48,6 +49,7 @@ function UnitComponent({
   onMoveUp,
   onMoveDown,
   subjectSlug,
+  subjectTitle,
 }: UnitComponentProps) {
   const [expanded, setExpanded] = useState<boolean>(false);
 
@@ -359,7 +361,9 @@ function UnitComponent({
                 subjectSlug={subjectSlug}
                 subjectSlugLink={""}
                 unitId={unit.id}
+                subjectTitle={subjectTitle}
                 index={idx}
+                unitIndex={index}
                 onDeleteChapter={handleChapterDelete}
                 onUpdateChapter={handleChapterUpdate}
                 setChapterVisibility={setChapterVisibility}

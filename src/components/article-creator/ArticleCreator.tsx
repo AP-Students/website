@@ -204,7 +204,7 @@ function ArticleCreator({ className }: { className?: string }) {
     <>
       {unsavedChanges && <Blocker />}
 
-      <div className="flex justify-between gap-2">
+      <div className="flex items-end justify-between gap-2">
         <div className="grid w-full max-w-sm items-center gap-1.5">
           <Label htmlFor="author">Author</Label>
           <Input

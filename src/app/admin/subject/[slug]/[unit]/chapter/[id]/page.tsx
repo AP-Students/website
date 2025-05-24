@@ -25,14 +25,7 @@ const Page = () => {
 
   return (
     <div className="flex grow flex-col px-10 pt-10 xl:px-20">
-      <div className="flex flex-col gap-2">
-        <Link
-          className={cn(buttonVariants({ variant: "outline" }), "w-min")}
-          href={`/admin`}
-        >
-          <UserRoundCog className="mr-2" />
-          Return to Admin Dashboard
-        </Link>
+      <div className="mb-4 flex items-center justify-between gap-2">
         <Link
           className={cn(buttonVariants({ variant: "outline" }), "w-min")}
           href={`/admin/subject/${pathParts[0]}`}
@@ -40,14 +33,20 @@ const Page = () => {
           <ArrowLeft className="mr-2" />
           Return to Subject
         </Link>
+        <h1 className="hidden text-center md:block">
+          <b>{decodeURIComponent(searchParams.get("subject") ?? "")}</b> Unit{" "}
+          {decodeURIComponent(searchParams.get("unitIndex") ?? "")}
+          <br />
+          {decodeURIComponent(searchParams.get("chapter") ?? "")}
+        </h1>
+        <Link
+          className={cn(buttonVariants({ variant: "outline" }), "w-min")}
+          href={`/admin`}
+        >
+          <UserRoundCog className="mr-2" />
+          Return to Admin Dashboard
+        </Link>
       </div>
-      <h1 className="py-8 text-2xl capitalize">
-        {decodeURIComponent(searchParams.get("subject") ?? "")}
-        <br />
-        {decodeURIComponent(searchParams.get("unit") ?? "")}
-        <br />
-        <b>{decodeURIComponent(searchParams.get("chapter") ?? "")}</b>
-      </h1>
       <ArticleCreator className="mt-4 grow" />
     </div>
   );
