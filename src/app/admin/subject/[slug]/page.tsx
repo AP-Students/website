@@ -374,6 +374,7 @@ export default function Page({ params }: { params: { slug: string } }) {
                 key={unit.id}
                 unit={unit}
                 index={index}
+                subjectTitle={subjectTitle}
                 onChange={handleUnitChange}
                 onDelete={handleDeleteUnit}
                 onMoveUp={handleMoveUnitUp}

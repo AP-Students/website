@@ -86,19 +86,21 @@ const CheckForUnderstanding: React.FC<Props> = ({ questionInstance }) => {
           Submit
         </button>
       ) : (
-        <div className="mt-4 flex flex-col items-center justify-center gap-4">
+        <>
           {questionInstance.explanation && (
-            <RenderContent content={questionInstance.explanation} />
+            <div className="mt-4 rounded-md border border-primary bg-white p-3">
+              <strong>Explanation:</strong>
+              <RenderContent content={questionInstance.explanation} />
+            </div>
           )}
-
           <button
-            className={`flex max-w-[50%] items-center justify-center rounded bg-gray-500 py-2 pl-3 pr-4 text-white hover:bg-gray-600`}
+            className={`mx-auto mt-4 flex items-center rounded-md border border-gray-800 bg-gray-500 py-2 pl-3 pr-4 text-white transition-colors hover:bg-gray-600`}
             onClick={handleRetry}
           >
             <RotateCw size={24} className="mr-2" />
             <span>Retry</span>
           </button>
-        </div>
+        </>
       )}
     </div>
   );

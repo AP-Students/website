@@ -12,6 +12,8 @@ interface ChapterComponentProps {
   unitId: string; // if you need the unit ID
   subjectSlug: string; // if you need the subject slug
   subjectSlugLink: string; // an example link if you want
+  subjectTitle: string;
+  unitIndex: number;
   onDeleteChapter: (chapterId: string) => void;
   onUpdateChapter: (chapterId: string, newTitle: string) => void;
   setChapterVisibility: (chapterId: string, isPublic: boolean) => void;
@@ -27,6 +29,8 @@ function ChapterComponent({
   index,
   unitId,
   subjectSlug,
+  subjectTitle,
+  unitIndex,
   onDeleteChapter,
   onUpdateChapter,
   setChapterVisibility,
@@ -77,7 +81,7 @@ function ChapterComponent({
 
       <Link
         className="whitespace-nowrap rounded-full border border-input bg-background px-4 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
-        href={`/admin/subject/${subjectSlug}/${unitId}/chapter/${chapter.id}`}
+        href={`/admin/subject/${subjectSlug}/${unitId}/chapter/${chapter.id}?subject=${subjectTitle}&unitIndex=${unitIndex + 1}&chapter=${chapter.title}`}
       >
         Edit Chapter {index + 1}
       </Link>

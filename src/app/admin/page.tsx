@@ -51,7 +51,7 @@ function SelectCourse() {
   const [searchTermAPClasses, setSearchTermAPClasses] = useState<string>("");
 
   const filteredClasses = apClasses.filter((apClass) =>
-    apClass.toLowerCase().includes(searchTermAPClasses.toLowerCase()),
+    apClass.toLowerCase().includes(searchTermAPClasses.toLowerCase().trim()),
   );
 
   return (
@@ -111,9 +111,11 @@ function AdminPanel({ user }: { user: User }) {
 
   const filteredUsers = users.filter(
     (user) =>
-      user.displayName.toLowerCase().includes(searchTermUsers.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTermUsers.toLowerCase()) ||
-      user.access.toLowerCase().includes(searchTermUsers.toLowerCase()),
+      user.displayName
+        .toLowerCase()
+        .includes(searchTermUsers.toLowerCase().trim()) ||
+      user.email.toLowerCase().includes(searchTermUsers.toLowerCase().trim()) ||
+      user.access.toLowerCase().includes(searchTermUsers.toLowerCase().trim()),
   );
 
   return (
