@@ -21,6 +21,7 @@ import MathTex from "editorjs-math";
 import Delimiter from "@editorjs/delimiter";
 import Alert from "editorjs-alert";
 import { QuestionsAddCard } from "./custom_questions/QuestionsAddCard";
+import { ClipboardCopy } from "lucide-react";
 
 export const EDITOR_TOOLS: EditorConfig["tools"] = {
   header: {
@@ -125,7 +126,7 @@ const Editor = ({
   setData: (data: OutputData) => void;
   content: OutputData;
 }) => {
-  const { editor } = useEditor({
+  const { editor, editorRef } = useEditor({
     holder: "editorjs",
     tools: EDITOR_TOOLS,
     data: content || {
@@ -171,6 +172,16 @@ const Editor = ({
     },
   });
 
+  const handleCopyEditorData = async () => {
+    if (!editorRef.current?.save) return;
+
+    editorRef.current?.save().then((savedData) => {
+      const jsonString = JSON.stringify(savedData, null, 2); // Prettify JSON
+      console.log("Editor data copied to clipboard:", jsonString);
+      navigator.clipboard.writeText(jsonString);
+    });
+  };
+
   useEffect(() => {
     return () => {
       // Check if the editor exists and is not already destroyed
@@ -191,6 +202,13 @@ const Editor = ({
 
   return (
     <div className="flex flex-col gap-y-4">
+      <button
+        className="flex items-center justify-center gap-1 border p-1 text-sm transition-colors hover:bg-gray-200"
+        onClick={handleCopyEditorData}
+      >
+        <ClipboardCopy />
+        Copy Editor Data
+      </button>
       <div className="opacity-50">Input:</div>
       <div className="prose w-full" id="editorjs"></div>
     </div>

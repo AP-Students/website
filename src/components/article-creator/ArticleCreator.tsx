@@ -192,7 +192,7 @@ function ArticleCreator({ className }: { className?: string }) {
       setUnsavedChanges(false);
     } catch (error) {
       console.error("Error saving article:", error);
-      alert("Error saving article.");
+      alert("ERROR SAVING ARTICLE!\n" + error);
     }
   };
 

@@ -45,6 +45,7 @@ const useEditor = (config: EditorConfig) => {
   return {
     isEditorReady,
     editor: editorInstance.current,
+    editorRef: editorInstance,
   };
 };
 
