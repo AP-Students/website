@@ -34,7 +34,7 @@ const SubjectSidebar = (props: Props) => {
       <div className="sticky top-[-11.5rem] z-10 flex items-center justify-between border-b border-b-primary/75 bg-primary-foreground">
         <h2
           className={cn(
-            "whitespace-nowrap text-2xl font-extrabold",
+            "text-2xl font-extrabold",
             isCollapsed && "animate-hide",
           )}
         >
@@ -121,7 +121,7 @@ const SubjectSidebar = (props: Props) => {
                       {test.isPublic ? (
                         <BookOpenCheck className="size-6" />
                       ) : (
-                        <BookDashed className="size-6 opacity-70" />
+                        <BookDashed className="size-6 shrink-0 opacity-70" />
                       )}
                       <span className="text-balance group-hover:underline">
                         {test.name

@@ -72,9 +72,9 @@ export default function Footer({
 
   return (
     <footer className="fixed bottom-0 left-0 z-20 flex w-full items-center justify-between border-t-2 border-gray-300 bg-white px-4 py-2.5 text-black">
-      <p>{testName}</p>
+      <p className="w-[calc(50%-90px)]">{testName}</p>
       <Popover>
-        <PopoverTrigger className="flex items-center gap-1 rounded-md bg-black py-1 pl-3 pr-1 text-sm font-bold tabular-nums text-white">
+        <PopoverTrigger className="absolute left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-md bg-black py-1 pl-3 pr-1 text-sm font-bold tabular-nums text-white">
           Question {currentQuestionIndex + 1} of {questions.length}
           <ChevronUp />
         </PopoverTrigger>
