@@ -23,6 +23,17 @@ import { usePathname } from "next/navigation";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 
+interface ArticleData {
+  id: string;
+  createdAt: {
+    seconds: number;
+    nanoseconds: number;
+  };
+  author: string;
+  title: string;
+  data: OutputData;
+}
+
 function ArticleCreator({ className }: { className?: string }) {
   // Needs 2 seperate data states, otherwise there will be constant rendering in the editor => impossible to edit
   const [initialData, setInitialData] = useState<OutputData>({
@@ -105,11 +116,13 @@ function ArticleCreator({ className }: { className?: string }) {
           chapter,
         );
         const docSnap = await getDoc(docRef);
-        const data = docSnap.data()?.data as OutputData;
+        const articleData = docSnap.data() as ArticleData;
+        const editorData = articleData.data as OutputData;
+        setAuthor(articleData.author);
 
-        revertTableObjectToArray(data);
-        setInitialData(data);
-        setData(data);
+        revertTableObjectToArray(editorData);
+        setInitialData(editorData);
+        setData(editorData);
       }
     })().catch((error) => {
       console.error("Error fetching data:", error);
