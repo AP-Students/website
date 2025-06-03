@@ -34,7 +34,7 @@ const SubjectSidebar = (props: Props) => {
       <div className="sticky top-[-11.5rem] z-10 flex items-center justify-between border-b border-b-primary/75 bg-primary-foreground">
         <h2
           className={cn(
-            "whitespace-nowrap text-2xl font-extrabold",
+            "text-2xl font-extrabold",
             isCollapsed && "animate-hide",
           )}
         >
