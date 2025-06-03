@@ -175,11 +175,15 @@ const Editor = ({
   const handleCopyEditorData = async () => {
     if (!editorRef.current?.save) return;
 
-    editorRef.current?.save().then((savedData) => {
+    try {
+      const savedData = await editorRef.current.save();
       const jsonString = JSON.stringify(savedData, null, 2); // Prettify JSON
       console.log("Editor data copied to clipboard:", jsonString);
-      navigator.clipboard.writeText(jsonString);
-    });
+      await navigator.clipboard.writeText(jsonString);
+    } catch (error) {
+      console.error("Error copying editor data:\n", error);
+      alert("Failed to copy editor data!\n" + String(error));
+    }
   };
 
   useEffect(() => {

@@ -1,7 +1,6 @@
 import { Accordion } from "@/components/ui/accordion";
 import Navbar from "@/components/global/navbar";
 import { buttonVariants } from "@/components/ui/button";
-import Image from "next/image";
 import Footer from "@/components/global/footer";
 import FAQ from "@/components/landingPage/FAQ";
 import { cn } from "@/lib/utils";

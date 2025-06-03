@@ -117,7 +117,7 @@ function ArticleCreator({ className }: { className?: string }) {
         );
         const docSnap = await getDoc(docRef);
         const articleData = docSnap.data() as ArticleData;
-        const editorData = articleData.data as OutputData;
+        const editorData = articleData.data;
         setAuthor(articleData.author);
 
         revertTableObjectToArray(editorData);
@@ -205,7 +205,7 @@ function ArticleCreator({ className }: { className?: string }) {
       setUnsavedChanges(false);
     } catch (error) {
       console.error("Error saving article:", error);
-      alert("ERROR SAVING ARTICLE!\n" + error);
+      alert("ERROR SAVING ARTICLE!\n" + String(error));
     }
   };
 
