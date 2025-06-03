@@ -97,7 +97,7 @@ const UnitAccordion = ({ unit, pathname, unitIndex, preview }: Props) => {
               className="group flex items-center gap-x-2 font-semibold last:mb-0"
               key={test.id}
             >
-              <BookDashed className="size-8 opacity-70" />
+              <BookDashed className="size-8 shrink-0 opacity-70" />
               <span className="opacity-70 group-hover:underline">
                 {test.name
                   ? test.name

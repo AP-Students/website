@@ -121,7 +121,7 @@ const SubjectSidebar = (props: Props) => {
                       {test.isPublic ? (
                         <BookOpenCheck className="size-6" />
                       ) : (
-                        <BookDashed className="size-6 opacity-70" />
+                        <BookDashed className="size-6 shrink-0 opacity-70" />
                       )}
                       <span className="text-balance group-hover:underline">
                         {test.name
