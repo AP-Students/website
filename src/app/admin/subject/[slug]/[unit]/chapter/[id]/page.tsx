@@ -2,7 +2,7 @@
 import ArticleCreator from "@/components/article-creator/ArticleCreator";
 import { useUser } from "@/components/hooks/UserContext";
 import { buttonVariants } from "@/components/ui/button";
-import { ArrowLeft, UserRoundCog } from "lucide-react";
+import { ArrowLeft, ExternalLink, UserRoundCog } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { Link } from "@/app/admin/subject/link";
@@ -34,10 +34,21 @@ const Page = () => {
           Return to Subject
         </Link>
         <h1 className="hidden text-center md:block">
-          <b>{decodeURIComponent(searchParams.get("subject") ?? "")}</b> Unit{" "}
-          {decodeURIComponent(searchParams.get("unitIndex") ?? "")}
-          <br />
-          {decodeURIComponent(searchParams.get("chapter") ?? "")}
+          <Link
+            href={`/subject/${pathParts[0]}`}
+            className="flex justify-center gap-1"
+          >
+            <b>{decodeURIComponent(searchParams.get("subject") ?? "")}</b> Unit{" "}
+            {decodeURIComponent(searchParams.get("unitIndex") ?? "")}
+            <ExternalLink />
+          </Link>
+          <Link
+            href={`/subject/${pathParts[0]}/unit-${decodeURIComponent(searchParams.get("unitIndex") ?? "")}-${pathParts[1]}/chapter/${pathParts[3]}/view`}
+            className="flex justify-center gap-1"
+          >
+            {decodeURIComponent(searchParams.get("chapter") ?? "")}
+            <ExternalLink />
+          </Link>
         </h1>
         <Link
           className={cn(buttonVariants({ variant: "outline" }), "w-min")}
