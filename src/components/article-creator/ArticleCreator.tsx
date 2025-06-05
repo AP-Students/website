@@ -118,7 +118,7 @@ function ArticleCreator({ className }: { className?: string }) {
         const docSnap = await getDoc(docRef);
         const articleData = docSnap.data() as ArticleData;
         const editorData = articleData.data;
-        setAuthor(articleData.author);
+        setAuthor(articleData.author ?? "");
 
         revertTableObjectToArray(editorData);
         setInitialData(editorData);
