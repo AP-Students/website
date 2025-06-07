@@ -20,7 +20,7 @@ const TableOfContents = ({ title, subject }: Props) => {
   return (
     <div
       className={cn(
-        "sticky top-8 z-10 hidden max-h-[100vh] shrink-0 flex-col overflow-y-auto transition-all lg:flex",
+        "sticky top-8 z-10 hidden h-min shrink-0 flex-col overflow-x-hidden transition-all lg:flex",
         collapsed ? "w-32" : "w-[16rem]",
       )}
     >
@@ -42,7 +42,12 @@ const TableOfContents = ({ title, subject }: Props) => {
         </Button>
       </div>
 
-      <div className={cn("flex flex-col gap-1", collapsed && "animate-hide")}>
+      <div
+        className={cn(
+          "flex flex-col gap-1",
+          collapsed && "pointer-events-none animate-hide",
+        )}
+      >
         {subject.units.map((unit, unitIndex) => (
           <div key={unitIndex}>
             <Link
