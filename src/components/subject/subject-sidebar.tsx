@@ -32,13 +32,10 @@ const SubjectSidebar = (props: Props) => {
       )}
     >
       <div className="sticky top-[-11.5rem] z-10 flex items-center justify-between border-b border-b-primary/75 bg-primary-foreground">
-        <h2
-          className={cn(
-            "text-2xl font-extrabold",
-            isCollapsed && "animate-hide",
-          )}
-        >
-          {props.subject.title}
+        <h2 className={cn("text-2xl font-extrabold", isCollapsed && "hidden")}>
+          <Link href={pathname.split("/").slice(0, 3).join("/")}>
+            {props.subject.title}
+          </Link>
         </h2>
         <Button
           onClick={() => setIsCollapsed(!isCollapsed)}
@@ -58,7 +55,7 @@ const SubjectSidebar = (props: Props) => {
         <Accordion
           className={cn(isCollapsed && "hidden")}
           type="multiple"
-          defaultValue={props.subject.units.map((unit) => unit.title)}
+          // defaultValue={props.subject.units.map((unit) => unit.title)}
         >
           {props.subject.units.map((unit, unitIndex) => (
             <AccordionItem
@@ -90,7 +87,7 @@ const SubjectSidebar = (props: Props) => {
                       <div className="flex size-6 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-[.75rem] text-white">
                         {unitIndex + 1}.{chapterIndex + 1}
                       </div>
-                      <span className="text-balance group-hover:underline">
+                      <span className="text-balance leading-tight group-hover:underline">
                         {chapter.title}
                       </span>
                       <p

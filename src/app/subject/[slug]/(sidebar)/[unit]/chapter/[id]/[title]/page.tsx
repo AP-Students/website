@@ -8,6 +8,10 @@ import "katex/dist/katex.min.css";
 import { useUser } from "@/components/hooks/UserContext";
 import Image from "next/image";
 import Link from "next/link";
+import type { Unit } from "@/types/firestore";
+import { buttonVariants } from "@/components/ui/button";
+import { cn, formatSlug } from "@/lib/utils";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 const Page = ({
   params,
@@ -75,6 +79,20 @@ const Page = ({
             <p className="mb-6 md:mb-10">{content.author}</p>
 
             <Renderer content={content.data} />
+            <div className="flex pt-6">
+              <PreviousArticle
+                subjectTitle={subject.title}
+                units={subject.units}
+                unitIndex={unitIndex}
+                chapterIndex={chapterIndex}
+              />
+              <NextArticle
+                subjectTitle={subject.title}
+                units={subject.units}
+                unitIndex={unitIndex}
+                chapterIndex={chapterIndex}
+              />
+            </div>
           </div>
         </div>
 
@@ -85,6 +103,87 @@ const Page = ({
     error;
   }
 };
+
+function PreviousArticle({
+  subjectTitle,
+  units,
+  unitIndex,
+  chapterIndex,
+}: {
+  subjectTitle: string;
+  units: Unit[];
+  unitIndex: number;
+  chapterIndex: number;
+}) {
+  let unit = units[unitIndex];
+  let newUnitIndex = unitIndex;
+  let newChapterIndex = chapterIndex;
+
+  if (chapterIndex <= 0) {
+    if (unitIndex <= 0) return null;
+    newUnitIndex -= 1;
+    unit = units[newUnitIndex];
+    if (!unit?.chapters) return null;
+    newChapterIndex = unit.chapters.length - 1;
+  } else {
+    newChapterIndex -= 1;
+  }
+
+  if (!unit) return null;
+
+  const subjectSlug = formatSlug(subjectTitle.replace(/AP /g, ""));
+
+  return (
+    <Link
+      href={`/subject/${subjectSlug}/unit-${newUnitIndex + 1}-${unit.id}/chapter/${unit.chapters[newChapterIndex]?.id}/${formatSlug(unit.chapters[newChapterIndex]?.title ?? "")}`}
+      className={cn(buttonVariants({ variant: "outline" }), "gap-2")}
+    >
+      <ArrowLeft />
+      Previous Chapter
+    </Link>
+  );
+}
+
+function NextArticle({
+  subjectTitle,
+  units,
+  unitIndex,
+  chapterIndex,
+}: {
+  subjectTitle: string;
+  units: Unit[];
+  unitIndex: number;
+  chapterIndex: number;
+}) {
+  let unit = units[unitIndex];
+  let newUnitIndex = unitIndex;
+  let newChapterIndex = chapterIndex;
+
+  if (!unit?.chapters) return null;
+
+  if (chapterIndex >= unit.chapters.length - 1) {
+    if (unitIndex >= units.length - 1) return null;
+    newUnitIndex += 1;
+    unit = units[newUnitIndex];
+    newChapterIndex = 0;
+  } else {
+    newChapterIndex += 1;
+  }
+
+  if (!unit) return null;
+
+  const subjectSlug = formatSlug(subjectTitle.replace(/AP /g, ""));
+
+  return (
+    <Link
+      href={`/subject/${subjectSlug}/unit-${newUnitIndex + 1}-${unit.id}/chapter/${unit.chapters[newChapterIndex]?.id}/${formatSlug(unit.chapters[newChapterIndex]?.title ?? "")}`}
+      className={cn(buttonVariants({ variant: "outline" }), "ml-auto gap-2")}
+    >
+      Next Chapter
+      <ArrowRight />
+    </Link>
+  );
+}
 
 function AuthorCredits({
   displayName,

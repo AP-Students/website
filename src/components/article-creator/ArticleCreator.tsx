@@ -23,6 +23,31 @@ import { usePathname } from "next/navigation";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 
+// Handles undefined properties in ordered lists' meta data
+// undefined start property occurs when nested item is created
+// undefined counterType property occurs when switching between ordered and unordered lists
+function cleanUndefined(obj: unknown) {
+  if (Array.isArray(obj)) {
+    obj.forEach(cleanUndefined);
+  } else if (obj && typeof obj === "object") {
+    if ("meta" in obj && obj.meta && typeof obj.meta === "object") {
+      const meta = obj.meta as {
+        start?: number;
+        counterType?: string;
+      };
+      if (meta.start === undefined) {
+        delete meta.start;
+      }
+      if (meta.counterType === undefined) {
+        delete meta.counterType;
+      }
+    }
+
+    // Recursively clean all nested properties
+    Object.values(obj).forEach(cleanUndefined);
+  }
+}
+
 interface ArticleData {
   id: string;
   createdAt: {
@@ -118,7 +143,7 @@ function ArticleCreator({ className }: { className?: string }) {
         const docSnap = await getDoc(docRef);
         const articleData = docSnap.data() as ArticleData;
         const editorData = articleData.data;
-        setAuthor(articleData.author);
+        setAuthor(articleData.author ?? "");
 
         revertTableObjectToArray(editorData);
         setInitialData(editorData);
@@ -190,6 +215,22 @@ function ArticleCreator({ className }: { className?: string }) {
             const updatedImage = await processImage(block.data as ImageData);
             block.data = updatedImage; // Replace the block data with the updated content
             return block;
+          }
+
+          if (block.type === "list") {
+            // console.dir("before", block.data.meta);
+            // cleanUndefined(block);
+            // console.dir("after", block.data.meta);
+
+            if (block.data.meta.start === undefined) {
+              delete block.data.meta.start;
+            }
+            if (block.data.meta.counterType === undefined) {
+              block.data.meta.counterType = "numeric";
+            }
+
+            return block;
+            // return JSON.parse(JSON.stringify(block)) as OutputBlockData;
           }
 
           return block; // If not a questions block, return original block

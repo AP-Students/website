@@ -9,6 +9,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { QuestionsOutput } from "./custom_questions/QuestionInstance";
 import type { QuestionFormat } from "@/types/questions";
 import "@/styles/katexStyling.css";
+import styles from "./Renderer.module.css";
 
 function decodeEntities(str: string): string {
   const txt = document.createElement("textarea");
@@ -133,6 +134,56 @@ const customParsers: Record<
     const tbody = `<tbody>${rows.join("")}</tbody>`;
 
     return `<table>${thead}${tbody}</table>`;
+  },
+
+  list: (data, _config) => {
+    const { style, items, meta } = data;
+
+    const renderItems = (items: typeof data.items, depth = 0): string => {
+      if (!items || items.length === 0) return "";
+
+      if (style === "checklist") {
+        return `<div class="checklist depth-${depth}">
+        ${items
+          .map((item) => {
+            const checked =
+              ("checked" in item.meta && item.meta?.checked) ?? false;
+            const nested = renderItems(item.items, depth + 1);
+            return `<div class="checklist-item">
+              <label>
+                <input type="checkbox" ${checked ? "checked" : ""} />
+                <span>${parseLatex(item.content)}</span>
+              </label>
+              ${nested}
+            </div>`;
+          })
+          .join("")}
+        </div>`;
+      }
+
+      const tag = style === "ordered" ? "ol" : "ul";
+
+      // const startAttr = meta?.start ? ` start="${meta.start}"` : "";
+
+      // const typeAttr = meta?.counterType
+      //   ? ` style="--list-counter-type: ${meta.counterType};"`
+      //   : "";
+
+      return `
+      <${tag} class="depth-${depth}" style="counter-reset: item ${meta?.start ? meta.start - 1 || 1 : ""}; ${meta?.counterType ? `--list-counter-type: ${meta.counterType};` : ""}">
+      ${items
+        .map(
+          (item) =>
+            `<li>
+              ${parseLatex(item.content)}
+              ${renderItems(item.items, depth + 1)}
+            </li>`,
+        )
+        .join("")}
+      </${tag}>`;
+    };
+
+    return `<div class="${styles.list}">${renderItems(items)}</div>`;
   },
 
   questionsAddCard: (data, _config) => {
