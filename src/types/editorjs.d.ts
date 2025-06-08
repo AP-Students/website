@@ -9,7 +9,6 @@ declare module "@editorjs/table";
 declare module "@editorjs/code";
 declare module "@editorjs/marker";
 declare module "@editorjs/list";
-declare module "@editorjs/nested-list";
 declare module "@editorjs/attaches";
 declare module "@editorjs/embed";
 declare module "@editorjs/inline-code";
@@ -36,7 +35,7 @@ declare module "editorjs-parser" {
 
   interface EmbedConfig {
     useProvidedLength?: boolean;
-  }  
+  }
 
   interface QuoteConfig {
     applyAlignment?: boolean;
@@ -50,12 +49,25 @@ declare module "editorjs-parser" {
     quote?: QuoteConfig;
   }
 
+  type Item = {
+    content: string;
+    meta: ItemMeta;
+    items?: Item[];
+  };
+
+  type ItemMeta = {
+    checked?: boolean;
+    start?: number;
+    counterType?: string;
+  };
+
   // Block Interfaces
   interface BlockData {
     text?: string;
     level?: number;
-    style?: "ordered" | "unordered";
-    items?: string[];
+    style?: "ordered" | "unordered" | "checklist";
+    meta?: ItemMeta;
+    items?: Item[];
     alignment?: string;
     caption?: string;
     file?: {

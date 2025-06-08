@@ -1,0 +1,26 @@
+.list ol,
+.list ul {
+  counter-reset: item;
+
+  list-style: none;
+  /* or set "display: block" on <li> to remove default ::marker */
+}
+
+/* https://github.com/css-modules/css-modules/issues/348#issuecomment-642501218 */
+.list :global .depth-0 {
+  padding-left: 0;
+}
+
+.list ul li::before {
+  content: "•";
+  padding-right: 6px;
+  font-weight: bold;
+}
+
+.list ol li::before {
+  content: counters(item, ".", var(--list-counter-type)) ".";
+  counter-increment: item;
+  white-space: nowrap;
+  font-weight: bold;
+  font-variant: tabular-nums;
+}
