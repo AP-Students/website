@@ -69,6 +69,7 @@ export default function Page({ params }: { params: { slug: string } }) {
   const [subjectTitle, setSubjectTitle] = useState<string>("");
   const [units, setUnits] = useState<Unit[]>([]);
 
+  const [subjectLoading, setSubjectLoading] = useState<boolean>(true);
   const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
 
   // For adding a new unit
@@ -98,6 +99,7 @@ export default function Page({ params }: { params: { slug: string } }) {
             setSubjectTitle(newSubject.title);
             setUnits(newSubject.units);
           }
+          setSubjectLoading(false);
         }
       } catch (err) {
         console.error(err);
@@ -351,15 +353,17 @@ export default function Page({ params }: { params: { slug: string } }) {
               <ArrowLeft className="mr-2" />
               Return to Admin Dashboard
             </Link>
-            <Button
-              className={cn(
-                "bg-blue-500 hover:bg-blue-600",
-                unsavedChanges && "animate-pulse",
-              )}
-              onClick={handleSave}
-            >
-              <Save className="mr-2" /> Save Changes
-            </Button>
+            {!subjectLoading && (
+              <Button
+                className={cn(
+                  "bg-blue-500 hover:bg-blue-600",
+                  unsavedChanges && "animate-pulse",
+                )}
+                onClick={handleSave}
+              >
+                <Save className="mr-2" /> Save Changes
+              </Button>
+            )}
           </div>
 
           {/* Subject Title */}
