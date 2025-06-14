@@ -127,6 +127,8 @@ function ArticleCreator({ className }: { className?: string }) {
   const unit = pathParts[1]!;
   const chapter = pathParts[3]!;
 
+  const [chapterLoading, setChapterLoading] = useState<boolean>(true);
+
   useEffect(() => {
     (async () => {
       const userAccess = await getUserAccess();
@@ -148,6 +150,7 @@ function ArticleCreator({ className }: { className?: string }) {
         revertTableObjectToArray(editorData);
         setInitialData(editorData);
         setData(editorData);
+        setChapterLoading(false);
       }
     })().catch((error) => {
       console.error("Error fetching data:", error);
@@ -269,12 +272,14 @@ function ArticleCreator({ className }: { className?: string }) {
             onChange={(e) => setAuthor(e.target.value)}
           />
         </div>
-        <Button
-          className="bg-blue-500 hover:bg-blue-600"
-          onClick={() => handleSave()}
-        >
-          <Save className="mr-2" /> Save Changes
-        </Button>
+        {!chapterLoading && (
+          <Button
+            className="bg-blue-500 hover:bg-blue-600"
+            onClick={() => handleSave()}
+          >
+            <Save className="mr-2" /> Save Changes
+          </Button>
+        )}
       </div>
 
       <div className={cn("grid grid-cols-1 pb-8 sm:grid-cols-2", className)}>

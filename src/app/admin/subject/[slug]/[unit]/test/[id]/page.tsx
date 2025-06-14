@@ -35,6 +35,7 @@ const Page = () => {
   const [directions, setDirections] = useState("");
   const [testName, setTestName] = useState<string>("");
 
+  const [testLoading, setTestLoading] = useState<boolean>(true);
   const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
 
   useEffect(() => {
@@ -82,6 +83,7 @@ const Page = () => {
         } else {
           setQuestions(syncedQuestions(instanceId).questions);
         }
+        setTestLoading(false);
       }
     })().catch((error) => {
       console.error("Error fetching questions:", error);
@@ -197,15 +199,17 @@ const Page = () => {
               }}
             />
           </div>
-          <Button
-            className={cn(
-              "mt-5 bg-blue-600 hover:bg-blue-700",
-              unsavedChanges && "animate-pulse",
-            )}
-            onClick={handleSave}
-          >
-            Save Changes
-          </Button>
+          {!testLoading && (
+            <Button
+              className={cn(
+                "mt-5 bg-blue-600 hover:bg-blue-700",
+                unsavedChanges && "animate-pulse",
+              )}
+              onClick={handleSave}
+            >
+              Save Changes
+            </Button>
+          )}
         </div>
 
         <div className="flex max-h-[calc(100vh-274px)] flex-row gap-4 p-4">
