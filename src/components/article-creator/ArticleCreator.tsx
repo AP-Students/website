@@ -272,7 +272,7 @@ function ArticleCreator({ className }: { className?: string }) {
             onChange={(e) => setAuthor(e.target.value)}
           />
         </div>
-        {!chapterLoading && (
+        {(!chapterLoading || unsavedChanges) && (
           <Button
             className="bg-blue-500 hover:bg-blue-600"
             onClick={() => handleSave()}

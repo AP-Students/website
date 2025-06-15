@@ -353,7 +353,7 @@ export default function Page({ params }: { params: { slug: string } }) {
               <ArrowLeft className="mr-2" />
               Return to Admin Dashboard
             </Link>
-            {!subjectLoading && (
+            {(!subjectLoading || unsavedChanges) && (
               <Button
                 className={cn(
                   "bg-blue-500 hover:bg-blue-600",

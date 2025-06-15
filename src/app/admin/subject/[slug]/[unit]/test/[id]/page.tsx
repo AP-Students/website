@@ -199,7 +199,7 @@ const Page = () => {
               }}
             />
           </div>
-          {!testLoading && (
+          {(!testLoading || unsavedChanges) && (
             <Button
               className={cn(
                 "mt-5 bg-blue-600 hover:bg-blue-700",
