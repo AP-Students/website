@@ -3,6 +3,7 @@ import katex from "katex";
 import type { QuestionFile, QuestionInput } from "@/types/questions";
 import "@/styles/katexStyling.css";
 import Image from "next/image";
+import { decodeEntities } from "../Renderer";
 
 interface Props {
   content: QuestionInput;
@@ -130,21 +131,23 @@ export function RenderContent({ content }: Props) {
   return (
     <div className="custom-katex my-2 whitespace-pre-wrap">
       {/* Render text content directly */}
-      {content.value?.split(/(\$@[^$]+\$)/g).map((line, lineIndex) => {
-        if (line.endsWith("$")) {
-          return (
-            <span
-              key={`latex-${lineIndex}`}
-              dangerouslySetInnerHTML={{
-                __html: katex.renderToString(line.slice(2, -1), {
-                  throwOnError: false,
-                }),
-              }}
-            ></span>
-          );
-        }
-        return <span key={`text-${lineIndex}`}>{line}</span>;
-      })}
+      {decodeEntities(content.value)
+        .split(/(\$@[^$]+\$)/g)
+        .map((line, lineIndex) => {
+          if (line.endsWith("$")) {
+            return (
+              <span
+                key={`latex-${lineIndex}`}
+                dangerouslySetInnerHTML={{
+                  __html: katex.renderToString(line.slice(2, -1), {
+                    throwOnError: false,
+                  }),
+                }}
+              ></span>
+            );
+          }
+          return <span key={`text-${lineIndex}`}>{line}</span>;
+        })}
 
       {/* Render files through individual components */}
       {content.files?.map((file) => (

@@ -11,7 +11,7 @@ import type { QuestionFormat } from "@/types/questions";
 import "@/styles/katexStyling.css";
 import styles from "./Renderer.module.css";
 
-function decodeEntities(str: string): string {
+export function decodeEntities(str: string): string {
   const txt = document.createElement("textarea");
   txt.innerHTML = str;
   return txt.value;
