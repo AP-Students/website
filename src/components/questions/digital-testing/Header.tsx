@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronUp, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import katex from "katex";
+import { decodeEntities } from "@/components/article-creator/Renderer";
 
 interface HeaderProps {
   timeRemaining: number; // seconds
@@ -123,9 +125,29 @@ const Header: React.FC<HeaderProps> = ({
           className="absolute left-0 right-0 top-12 z-[9000] border-2 border-gray-300 bg-white p-5 shadow-lg"
         >
           <p>
-            {directions
-              ? directions
-              : "Read each passage and question carefully, and then choose the best answer to the question based on the passage(s).All questions in this section are multiple-choice with four answer choices. Each question has a single best answer."}
+            {directions ? (
+              <div className="whitespace-pre-wrap">
+                {decodeEntities(directions)
+                  .split(/(\$@[^$]+\$)/g)
+                  .map((line, lineIndex) => {
+                    if (line.endsWith("$")) {
+                      return (
+                        <span
+                          key={`latex-${lineIndex}`}
+                          dangerouslySetInnerHTML={{
+                            __html: katex.renderToString(line.slice(2, -1), {
+                              throwOnError: false,
+                            }),
+                          }}
+                        ></span>
+                      );
+                    }
+                    return <span key={`text-${lineIndex}`}>{line}</span>;
+                  })}
+              </div>
+            ) : (
+              "Read each passage and question carefully, and then choose the best answer to the question based on the passage(s).All questions in this section are multiple-choice with four answer choices. Each question has a single best answer."
+            )}
           </p>
           <button
             onClick={() => setShowDirections(false)}
