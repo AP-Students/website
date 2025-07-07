@@ -45,10 +45,14 @@ function Hero() {
   return (
     <div className="grid h-96 place-content-center gap-4 border-b border-primary/50 bg-primary-foreground p-4 text-center shadow sm:p-8">
       <Link
-        href={"/"}
+        href={"/peer-grading"}
         className="group mx-auto flex w-fit rounded-full border border-primary px-4 py-1 text-primary shadow-md shadow-primary/30 transition-all hover:translate-y-1 hover:shadow-none"
       >
-        Trusted by <span className=" ml-1 font-bold"> 10,000+ AP Students</span>
+        Try{" "}
+        <span className=" ml-1 font-bold">
+          {" "}
+          FiveHive&apos;s Peer Grading Platform
+        </span>
         <ChevronRight className="scale-75 rounded stroke-[3px] transition-transform group-hover:translate-x-0.5" />
       </Link>
       <div className="flex flex-col gap-2">

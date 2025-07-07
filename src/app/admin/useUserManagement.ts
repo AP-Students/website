@@ -35,26 +35,14 @@ export const useUserManagement = (authUser: User | null) => {
 
   const handleRoleChange = async (
     selectedUser: User,
-    newRole: "member" | "user",
+    newRole: "member" | "grader" | "user" | "banned",
   ) => {
-    if (!authUser || authUser.access !== "admin") {
-      console.error("Unauthorized role change attempt.");
-      return;
-    }
-
-    if (newRole === "member" || newRole === "user") {
-      try {
-        await updateUserRole(authUser, selectedUser.uid, newRole);
-        alert(`Role updated to ${newRole} for ${selectedUser.displayName}`);
-        // fetchUsers().catch((error) => {
-        //   console.error("Error fetching users:", error);
-        // });
-      } catch (error) {
-        console.error("Error updating user role:", error);
-        alert("Failed to update user role.");
-      }
-    } else {
-      alert("Invalid role entered.");
+    try {
+      await updateUserRole(authUser, selectedUser.uid, newRole);
+      alert(`Role updated to ${newRole} for ${selectedUser.displayName}`);
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      alert("Failed to update user role.\n" + String(error));
     }
   };
 
