@@ -384,8 +384,8 @@ const FRQGraderPage = () => {
                   }
                 }}
               >
-                <SheetContent className="w-1/2 !max-w-none">
-                  <SheetHeader className="max-w-none">
+                <SheetContent className="w-1/2 !max-w-none overflow-y-scroll p-0">
+                  <SheetHeader className="max-w-none p-4 pb-0">
                     <SheetTitle>Grade User Submission</SheetTitle>
                     <SheetDescription>
                       {res.submittedAt?.toDate
@@ -395,10 +395,47 @@ const FRQGraderPage = () => {
                       UID: {res.userId}
                     </SheetDescription>
                   </SheetHeader>
-                  <p>
-                    <strong>Question:</strong> {res.question?.id ?? "Unknown"}
-                  </p>
-                  <div className="mt-2 flex items-center gap-2">
+
+                  <div className="sticky top-0 grid gap-2 border-b p-4 pb-2 backdrop-blur-sm">
+                    <p>
+                      <strong>Question:</strong> {res.question?.id ?? "Unknown"}
+                    </p>
+                    <label>
+                      <strong>Grade</strong>
+                      <Input
+                        type="text"
+                        defaultValue={res.grade ?? ""}
+                        onChange={(e) => {
+                          setNewGrade(e.target.value);
+                          setUnsavedChanges(true);
+                        }}
+                        className="border-primary"
+                      />
+                    </label>
+                    <label>
+                      <strong>Feedback</strong>
+                      <Textarea
+                        defaultValue={res.feedback ?? ""}
+                        onChange={(e) => {
+                          setNewFeedback(e.target.value);
+                          setUnsavedChanges(true);
+                        }}
+                        rows={5}
+                        className="border-primary"
+                      />
+                    </label>
+                    <Button
+                      variant={unsavedChanges ? "default" : "outline"}
+                      className="mr-auto"
+                      onClick={() =>
+                        submitGrade(res.ref, index, newGrade, newFeedback)
+                      }
+                    >
+                      Save
+                    </Button>
+                  </div>
+
+                  <div className="flex items-center gap-2 p-4">
                     <strong>User Response</strong>
                     {matcher.hasMatch(res.responseText) && (
                       <Button
@@ -428,7 +465,7 @@ const FRQGraderPage = () => {
                       </Button>
                     )}
                   </div>
-                  <p className="whitespace-pre-wrap">
+                  <p className="m-4 mt-0 whitespace-pre-wrap rounded-md border px-3 py-2">
                     {res.showProfanity
                       ? res.responseText
                       : censor.applyTo(
@@ -436,40 +473,6 @@ const FRQGraderPage = () => {
                           matcher.getAllMatches(res.responseText),
                         )}
                   </p>
-
-                  <label>
-                    <strong>Grade</strong>
-                    <Input
-                      type="text"
-                      defaultValue={res.grade ?? ""}
-                      onChange={(e) => {
-                        setNewGrade(e.target.value);
-                        setUnsavedChanges(true);
-                      }}
-                      className="mb-2"
-                    />
-                  </label>
-                  <label>
-                    <strong>Feedback</strong>
-                    <Textarea
-                      defaultValue={res.feedback ?? ""}
-                      onChange={(e) => {
-                        setNewFeedback(e.target.value);
-                        setUnsavedChanges(true);
-                      }}
-                      rows={5}
-                      className="mb-2"
-                    />
-                  </label>
-                  <Button
-                    variant={unsavedChanges ? "default" : "outline"}
-                    className="mr-auto"
-                    onClick={() =>
-                      submitGrade(res.ref, index, newGrade, newFeedback)
-                    }
-                  >
-                    Save
-                  </Button>
                 </SheetContent>
               </Sheet>
             </div>
