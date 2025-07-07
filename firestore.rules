@@ -19,9 +19,45 @@ service cloud.firestore {
       return isAuthenticated() && (accessLevel == "admin" || accessLevel == "member");
     }
 
+    function isGraderOrMemberOrAdmin() {
+      let accessLevel = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.access;
+      return isAuthenticated() && (accessLevel == "admin" || accessLevel == "member" || accessLevel == "grader");
+    }
+
     // Allow read/write access to users for their own user data
     match /users/{userId} {
-      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+
+      allow create: if isAuthenticated() && request.auth.uid == userId && request.resource.data.access == "user";
+      allow update: if isAuthenticated() && request.auth.uid == userId && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['access', 'uid']));
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
+
+      match /frqResponses/{document=**} {
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+
+        allow create: if isAuthenticated() && request.auth.uid == userId && (request.resource.data.keys().hasAll(['responseText', 'question', 'userId', 'submittedAt'])) && (request.resource.data.keys().hasOnly(['responseText', 'question', 'userId', 'submittedAt'])) && canSubmitFrqResponse();
+        allow update: if isGraderOrMemberOrAdmin() && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['feedback', 'grade', 'gradedAt', 'gradedBy', 'status']));
+      }
+    }
+
+    function canSubmitFrqResponse() {
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      let userData = userDoc.data;
+
+      let userDocAfter = getAfter(/databases/$(database)/documents/users/$(request.auth.uid));
+      let userDataAfter = userDocAfter.data;
+
+      return userData.access != "banned" && (isAdmin() || (!("lastFrqResponseAt" in userData) && 
+        "lastFrqResponseAt" in userDataAfter
+      ) || (
+        userData.lastFrqResponseAt < (request.time - duration.value(6, 'h'))
+        &&
+        userDataAfter.lastFrqResponseAt == request.resource.data.submittedAt)
+      )
+    }
+
+    match /{somePath=**}/frqResponses/{frqResponse} {
+      allow read: if isGraderOrMemberOrAdmin();
     }
     
     // Admins can read/write all user documents

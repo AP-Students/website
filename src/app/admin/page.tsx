@@ -8,8 +8,11 @@ import { useUserManagement } from "./useUserManagement";
 import apClassesData from "@/components/apClasses.json";
 import { useUser } from "../../components/hooks/UserContext";
 import Link from "next/link";
-import { formatSlug } from "@/lib/utils";
-import { PencilRuler, ShieldCheck, X } from "lucide-react";
+import { cn, formatSlug } from "@/lib/utils";
+import { Ban, ClipboardPen, PencilRuler, ShieldUser, X } from "lucide-react";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { Button } from "@/components/ui/button";
 
 const apClasses = apClassesData.apClasses;
 
@@ -162,10 +165,16 @@ function AdminPanel({ user }: { user: User }) {
                   <p className="font-bold">
                     {u.access}
                     {u.access === "admin" && (
-                      <ShieldCheck className="ml-1 inline" />
+                      <ShieldUser className="ml-1 inline stroke-amber-500" />
                     )}
                     {u.access === "member" && (
-                      <PencilRuler className="ml-1 inline" />
+                      <PencilRuler className="ml-1 inline stroke-blue-500" />
+                    )}
+                    {u.access === "grader" && (
+                      <ClipboardPen className="ml-1 inline stroke-green-500" />
+                    )}
+                    {u.access === "banned" && (
+                      <Ban className="ml-1 inline stroke-red-600" />
                     )}
                   </p>
                 </li>
@@ -179,17 +188,53 @@ function AdminPanel({ user }: { user: User }) {
         ref={dialogRef}
         className="rounded-lg border border-gray-400 p-4 pt-8 shadow-lg"
       >
+        {selectedUser?.access === "admin" && <ShieldUser />}
         <button className="absolute right-1 top-1" onClick={closeDialog}>
           <X />
         </button>
         {selectedUser && (
           <>
             <h3 className="mb-4">
-              Update role of {selectedUser.displayName} ({selectedUser.access})
+              {selectedUser.displayName} ({selectedUser.access})
+              <br />
+              <small className="text-gray-500">UID: {selectedUser.uid}</small>
+              <br />
+              <small className="text-gray-500">
+                Email: {selectedUser.email}
+              </small>
+              <br />
+              <small className="text-gray-500">
+                Created with: {selectedUser.createdWith}
+              </small>
+              <br />
+              <small className="text-gray-500">
+                Last FRQ response:{" "}
+                {selectedUser.lastFrqResponseAt?.toDate()?.toLocaleString() ??
+                  "Never"}
+              </small>
+              <br />
+              {/* <CheckboxList
+                docId={selectedUser.uid}
+                collectionName="users"
+                options={apClasses}
+                allowedSubjects={selectedUser.graderSubjectAccess ?? []}
+                onUpdate={(updatedSubjects: string[]) => {
+                  setUsers((prev) =>
+                    prev.map((user) =>
+                      user.uid === selectedUser.uid
+                        ? { ...user, graderSubjectAccess: updatedSubjects }
+                        : user,
+                    ),
+                  );
+                }}
+              /> */}
             </h3>
-            <div className="flex justify-between space-x-4">
+            <div className="flex justify-between gap-4">
               <button
-                className="rounded-md bg-red-600 px-4 py-2 text-white disabled:bg-gray-400"
+                className={cn(
+                  "rounded-md bg-blue-600 px-4 py-2 text-white",
+                  selectedUser.access === "member" && "hidden",
+                )}
                 onClick={async () => {
                   try {
                     await handleRoleChange(selectedUser, "member");
@@ -214,7 +259,38 @@ function AdminPanel({ user }: { user: User }) {
                 Set to Member
               </button>
               <button
-                className="rounded-md bg-gray-600 px-4 py-2 text-white disabled:bg-gray-400"
+                className={cn(
+                  "rounded-md bg-green-600 px-4 py-2 text-white",
+                  selectedUser.access === "grader" && "hidden",
+                )}
+                onClick={async () => {
+                  try {
+                    await handleRoleChange(selectedUser, "grader");
+                    setUsers((prev) =>
+                      prev.map((user) =>
+                        user.uid === selectedUser.uid
+                          ? { ...user, access: "grader" }
+                          : user,
+                      ),
+                    );
+                    closeDialog();
+                  } catch (error) {
+                    alert(
+                      error instanceof Error
+                        ? error.message
+                        : "An unexpected error occurred.",
+                    );
+                  }
+                }}
+                disabled={selectedUser.access === "grader"}
+              >
+                Set to Grader
+              </button>
+              <button
+                className={cn(
+                  "rounded-md bg-stone-600 px-4 py-2 text-white",
+                  selectedUser.access === "user" && "hidden",
+                )}
                 onClick={async () => {
                   try {
                     await handleRoleChange(selectedUser, "user");
@@ -238,6 +314,34 @@ function AdminPanel({ user }: { user: User }) {
               >
                 Set to User
               </button>
+              <button
+                className={cn(
+                  "rounded-md bg-red-600 px-4 py-2 text-white",
+                  selectedUser.access === "banned" && "hidden",
+                )}
+                onClick={async () => {
+                  try {
+                    await handleRoleChange(selectedUser, "banned");
+                    setUsers((prev) =>
+                      prev.map((user) =>
+                        user.uid === selectedUser.uid
+                          ? { ...user, access: "banned" }
+                          : user,
+                      ),
+                    );
+                    closeDialog();
+                  } catch (error) {
+                    alert(
+                      error instanceof Error
+                        ? error.message
+                        : "An unexpected error occurred.",
+                    );
+                  }
+                }}
+                disabled={selectedUser.access === "banned"}
+              >
+                Ban
+              </button>
             </div>
           </>
         )}
@@ -245,5 +349,71 @@ function AdminPanel({ user }: { user: User }) {
     </>
   );
 }
+
+interface CheckboxListProps {
+  options: string[];
+  docId: string;
+  collectionName: string;
+  allowedSubjects: string[];
+  onUpdate: (updatedSubjects: string[]) => void;
+}
+
+const CheckboxList: React.FC<CheckboxListProps> = ({
+  options,
+  docId,
+  collectionName,
+  allowedSubjects,
+  onUpdate,
+}) => {
+  const [checkedItems, setCheckedItems] = useState<string[]>([]);
+  useEffect(() => {
+    setCheckedItems(allowedSubjects);
+  }, [allowedSubjects]);
+
+  const handleCheckboxChange = (item: string) => {
+    setCheckedItems((prev) =>
+      prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item],
+    );
+  };
+
+  // TODO: use slugs so that firestore sec rules can read these?
+  const handleSave = async () => {
+    try {
+      const docRef = doc(db, collectionName, docId);
+      await updateDoc(docRef, {
+        graderSubjectAccess: checkedItems,
+      });
+      onUpdate(checkedItems);
+      alert("Document updated successfully!");
+    } catch (error) {
+      console.error("Error updating document:", error);
+      alert("Failed to update document:\n" + String(error));
+    }
+  };
+
+  return (
+    <div className="relative">
+      <Button className="absolute right-6 top-3" onClick={handleSave}>
+        Save
+      </Button>
+      <div className="max-h-64 overflow-y-scroll rounded-md border border-orange-500 p-2 shadow">
+        <h3>Allowed to grade these subjects:</h3>
+        {options.map((item) => (
+          <div key={item}>
+            <label>
+              <input
+                type="checkbox"
+                checked={checkedItems.includes(item)}
+                onChange={() => handleCheckboxChange(item)}
+                className="mr-1"
+              />
+              {item}
+            </label>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 export default Page;

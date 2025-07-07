@@ -138,6 +138,7 @@ export const getUser = async (): Promise<User | null> => {
                 access: userData.access ?? "user",
                 createdWith: userData.createdWith ?? getUserAuthProvider(),
                 createdAt: userData.createdAt ?? new Date(0),
+                lastFrqResponseAt: userData.lastFrqResponseAt,
               };
 
               // Cache in memory
@@ -195,9 +196,10 @@ export const getAllUsers = async (): Promise<User[]> => {
 export const updateUserRole = async (
   authUser: User | null,
   uid: string,
-  newRole: "member" | "user",
+  newRole: "member" | "grader" | "user" | "banned",
 ): Promise<void> => {
   if (!authUser || authUser.access !== "admin") {
+    console.error("Unauthorized role change attempted.");
     return;
   }
 

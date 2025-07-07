@@ -20,6 +20,10 @@ const links = [
     href: "/library",
   },
   {
+    name: "Practice",
+    href: "/peer-grading",
+  },
+  {
     name: "guides",
     href: "/guides",
   },
@@ -27,10 +31,6 @@ const links = [
     name: "Contribute",
     href: "/apply",
   },
-  // {
-  //   name: "practice",
-  //   href: "/practice",
-  // },
 ];
 
 const Navbar = ({
