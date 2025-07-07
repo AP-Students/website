@@ -13,6 +13,13 @@ import {
 } from "@/components/ui/popover";
 import type { FRQSubmission } from "@/types/frq";
 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+
 const MyFRQResponses = () => {
   const { user } = useUser();
   const [responses, setResponses] = useState<FRQSubmission[]>([]);
@@ -129,8 +136,16 @@ const MyFRQResponses = () => {
                 <p>qID: {response.question?.id}</p>
                 {/* <p>qPrompt: {response.question?.prompt}</p> */}
 
-                <strong>Your Response:</strong>
-                <p className="whitespace-pre-wrap">{response.responseText}</p>
+                <Accordion type="single" collapsible className="mb-4">
+                  <AccordionItem value="response">
+                    <AccordionTrigger>Your Response</AccordionTrigger>
+                    <AccordionContent>
+                      <p className="whitespace-pre-wrap">
+                        {response.responseText}
+                      </p>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
 
                 {completelyGraded && (
                   <>
