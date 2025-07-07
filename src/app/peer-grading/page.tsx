@@ -130,8 +130,8 @@ const FRQSubmissionPage = () => {
     <div>
       <h2 className="text-2xl font-bold">Submit an FRQ Response</h2>
       <p>
-        While we work on FiveHive's practice free response questions, you may
-        submit responses to{" "}
+        While we work on FiveHive&apos;s practice free response questions, you
+        may submit responses to{" "}
         <a
           href="https://apcentral.collegeboard.org/courses/past-exam-questions"
           className="text-blue-500 hover:underline"
@@ -163,7 +163,7 @@ const FRQSubmissionPage = () => {
               setFRQQuestionNumber={setFRQQuestionNumber}
             />
             <p className="mb-2 rounded-md border border-orange-300 bg-orange-50 px-2 py-1">
-              This text box does NOT currently save your response! It's
+              This text box does NOT currently save your response! It&apos;s
               recommended to write your response in a Google Doc or other text
               document and copy/paste it here.
             </p>

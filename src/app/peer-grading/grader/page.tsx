@@ -8,6 +8,7 @@ import {
   query,
   DocumentReference,
   deleteDoc,
+  DocumentData,
 } from "firebase/firestore";
 import { useUser } from "@/components/hooks/UserContext";
 import { db } from "@/lib/firebase";
@@ -55,6 +56,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import type { FRQSubmission, GradingStatus } from "@/types/frq";
 
 const matcher = new RegExpMatcher({
   ...englishDataset.build(),
@@ -66,9 +68,15 @@ const strategy = keepStartCensorStrategy(
 );
 const censor = new TextCensor().setStrategy(strategy);
 
+type GraderView = FRQSubmission & {
+  ref: DocumentReference<DocumentData, DocumentData>;
+  showProfanity: boolean;
+  sheetOpen: boolean;
+};
+
 const FRQGraderPage = () => {
   const { user } = useUser();
-  const [responses, setResponses] = useState<any[]>([]);
+  const [responses, setResponses] = useState<GraderView[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -80,17 +88,15 @@ const FRQGraderPage = () => {
         );
         const querySnapshot = await getDocs(q);
 
-        const data = querySnapshot.docs.map((docSnap) => {
-          const pathSegments = docSnap.ref.path.split("/");
-          const userId = pathSegments[1]; // "users/{userId}/frqResponses/{docId}"
-          return {
-            id: docSnap.id,
-            userId,
-            ref: docSnap.ref,
-            ...docSnap.data(),
-            showProfanity: false,
-          };
-        });
+        const data = querySnapshot.docs.map(
+          (docSnap) =>
+            ({
+              id: docSnap.id,
+              ...docSnap.data(),
+              ref: docSnap.ref,
+              showProfanity: false,
+            }) as GraderView,
+        );
 
         setResponses(data);
       } catch (error) {
@@ -100,7 +106,7 @@ const FRQGraderPage = () => {
       }
     };
 
-    fetchAllResponses();
+    void fetchAllResponses();
   }, []);
 
   const submitGrade = async (
@@ -114,18 +120,24 @@ const FRQGraderPage = () => {
         grade,
         feedback,
         gradedAt: new Date(),
-        gradedBy: user?.uid || "admin",
+        gradedBy: user?.uid ?? "admin",
         status: "graded",
       });
 
       const updatedResponses = [...responses];
-      updatedResponses[index].grade = grade;
-      updatedResponses[index].feedback = feedback;
-      updatedResponses[index].status = "graded";
-      setResponses(updatedResponses);
+      if (updatedResponses[index]) {
+        updatedResponses[index].grade = grade;
+        updatedResponses[index].feedback = feedback;
+        updatedResponses[index].status = "graded";
+        setResponses(updatedResponses);
 
-      setUnsavedChanges(false);
-      alert("Grade and feedback saved successfully!");
+        setUnsavedChanges(false);
+        alert("Grade and feedback saved successfully!");
+      } else {
+        alert(
+          "The change was saved successfully but was not reflected in your browser. Please reload the page.",
+        );
+      }
     } catch (err) {
       console.error("Error grading response:", err);
       alert("Failed to submit grade.\n" + String(err));
@@ -195,8 +207,10 @@ const FRQGraderPage = () => {
       });
 
       const updatedResponses = [...responses];
-      updatedResponses[index].status = status;
-      setResponses(updatedResponses);
+      if (updatedResponses[index]) {
+        updatedResponses[index].status = status as GradingStatus;
+        setResponses(updatedResponses);
+      }
     } catch (err) {
       console.error("Error updating submission status:", err);
       alert("Failed to update submission status.\n" + String(err));
@@ -238,7 +252,7 @@ const FRQGraderPage = () => {
                   <br />
                   UID: {res.userId} {res.userBanned && "(banned)"}
                   <br />
-                  QID: <strong>{res.question?.id || "Unknown"}</strong>
+                  QID: <strong>{res.question?.id ?? "Unknown"}</strong>
                   <br />
                   {res.status}{" "}
                   {res.status === "graded" && !res.grade && "(missing grade)"}
@@ -382,7 +396,7 @@ const FRQGraderPage = () => {
                     </SheetDescription>
                   </SheetHeader>
                   <p>
-                    <strong>Question:</strong> {res.question?.id || "Unknown"}
+                    <strong>Question:</strong> {res.question?.id ?? "Unknown"}
                   </p>
                   <div className="mt-2 flex items-center gap-2">
                     <strong>User Response</strong>
@@ -427,7 +441,7 @@ const FRQGraderPage = () => {
                     <strong>Grade</strong>
                     <Input
                       type="text"
-                      defaultValue={res.grade || ""}
+                      defaultValue={res.grade ?? ""}
                       onChange={(e) => {
                         setNewGrade(e.target.value);
                         setUnsavedChanges(true);
@@ -438,7 +452,7 @@ const FRQGraderPage = () => {
                   <label>
                     <strong>Feedback</strong>
                     <Textarea
-                      defaultValue={res.feedback || ""}
+                      defaultValue={res.feedback ?? ""}
                       onChange={(e) => {
                         setNewFeedback(e.target.value);
                         setUnsavedChanges(true);

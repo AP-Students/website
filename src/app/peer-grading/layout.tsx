@@ -4,7 +4,7 @@ import Footer from "@/components/global/footer";
 import Navbar from "@/components/global/navbar";
 import { useUser } from "@/components/hooks/UserContext";
 import Link from "next/link";
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { user } = useUser();
@@ -22,7 +22,9 @@ export default function Layout({ children }: { children: ReactNode }) {
           <Link className="hover:underline" href="/peer-grading/history">
             Report
           </Link>
-          {(user?.access === "admin" || user?.access === "member" || user?.access === "grader") && (
+          {(user?.access === "admin" ||
+            user?.access === "member" ||
+            user?.access === "grader") && (
             <Link className="hover:underline" href="/peer-grading/grader">
               Grade
             </Link>

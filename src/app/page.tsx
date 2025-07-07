@@ -51,7 +51,7 @@ function Hero() {
         Try{" "}
         <span className=" ml-1 font-bold">
           {" "}
-          FiveHive's Peer Grading Platform
+          FiveHive&apos;s Peer Grading Platform
         </span>
         <ChevronRight className="scale-75 rounded stroke-[3px] transition-transform group-hover:translate-x-0.5" />
       </Link>

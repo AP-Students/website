@@ -11,10 +11,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import type { FRQSubmission } from "@/types/frq";
 
 const MyFRQResponses = () => {
   const { user } = useUser();
-  const [responses, setResponses] = useState<any[]>([]);
+  const [responses, setResponses] = useState<FRQSubmission[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,10 +28,13 @@ const MyFRQResponses = () => {
         const q = query(frqResponsesRef, orderBy("submittedAt", "desc"));
 
         const querySnapshot = await getDocs(q);
-        const data = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+        const data = querySnapshot.docs.map(
+          (doc) =>
+            ({
+              id: doc.id,
+              ...doc.data(),
+            }) as FRQSubmission,
+        );
 
         setResponses(data);
       } catch (error) {
@@ -40,7 +44,7 @@ const MyFRQResponses = () => {
       }
     };
 
-    fetchResponses();
+    void fetchResponses();
   }, [user]);
 
   if (!user) {
