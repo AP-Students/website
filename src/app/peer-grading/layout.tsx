@@ -13,7 +13,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     <>
       <Navbar />
 
-      <div className="mx-auto flex max-w-4xl place-content-center pt-8">
+      <div className="mx-auto flex min-h-[calc(100vh-310px)] max-w-4xl place-content-center pt-8">
         <nav className="mt-4 grid h-min gap-2 rounded-lg border border-b border-gray-300 p-4 shadow-sm">
           <h2 className="w-48 font-bold">FiveHive Peer Grading</h2>
           <Link className="hover:underline" href="/peer-grading">
