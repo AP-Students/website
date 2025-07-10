@@ -12,6 +12,7 @@ import type { Unit } from "@/types/firestore";
 import { buttonVariants } from "@/components/ui/button";
 import { cn, formatSlug } from "@/lib/utils";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import { useEffect } from "react";
 
 const Page = ({
   params,
@@ -23,6 +24,18 @@ const Page = ({
     params,
     user?.access === "admin" || user?.access === "member",
   );
+
+  useEffect(() => {
+    if (subject && content) {
+      const unitIndex = Number(params.unit.split("-")[1]) - 1;
+      const chapterIndex = subject.units[unitIndex]!.chapters.findIndex(
+        (ch) => ch.id === params.id,
+      );
+      const chapter = subject.units[unitIndex]!.chapters[chapterIndex];
+
+      document.title = `FiveHive - ${subject.title} ${unitIndex + 1}.${chapterIndex + 1} - ${chapter?.title}`;
+    }
+  }, [subject, content, params.unit, params.id]);
 
   if (loading) {
     return (
