@@ -38,6 +38,10 @@ service cloud.firestore {
         allow create: if isAuthenticated() && request.auth.uid == userId && (request.resource.data.keys().hasAll(['responseText', 'question', 'userId', 'submittedAt'])) && (request.resource.data.keys().hasOnly(['responseText', 'question', 'userId', 'submittedAt'])) && canSubmitFrqResponse();
         allow update: if isGraderOrMemberOrAdmin() && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['feedback', 'grade', 'gradedAt', 'gradedBy', 'status']));
       }
+
+      match /chapterData/{document=**} {
+        allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      }
     }
 
     function canSubmitFrqResponse() {

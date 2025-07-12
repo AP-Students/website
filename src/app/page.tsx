@@ -60,7 +60,7 @@ function Hero() {
           By AP students. For AP students.
         </h1>
         <p className="text-balance text-lg leading-tight opacity-70 lg:text-xl">
-          Access free study guides, practice tests, and more for your AP class.
+          Free study guides, practice tests, and more for your AP classes
         </p>
       </div>
       <div className="mx-auto flex max-w-96 flex-wrap items-center justify-center gap-4 sm:max-w-max ">
