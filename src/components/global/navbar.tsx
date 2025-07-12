@@ -46,7 +46,7 @@ const Navbar = ({
     <>
       <div
         className={cn(
-          "hidden w-full items-center justify-between gap-4 pt-5 md:flex",
+          "hidden w-full items-center justify-between gap-4 md:flex sticky top-0 z-40 border-b border-gray-200 bg-background",
           className,
         )}
       >
