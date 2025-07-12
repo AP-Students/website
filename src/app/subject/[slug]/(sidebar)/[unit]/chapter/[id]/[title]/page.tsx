@@ -13,6 +13,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn, formatSlug } from "@/lib/utils";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useEffect } from "react";
+import ProgressTracker from "@/components/subject/progress-tracker";
 
 const Page = ({
   params,
@@ -89,7 +90,10 @@ const Page = ({
             <h1 className="my-2 text-balance text-left text-5xl font-extrabold sm:text-6xl">
               {unitIndex + 1}.{chapterIndex + 1} - {chapter.title}
             </h1>
-            <p className="mb-6 md:mb-10">{content.author}</p>
+            <p>{content.author}</p>
+            <div className="my-4">
+              <ProgressTracker chapterId={params.id} />
+            </div>
 
             <Renderer content={content.data} />
             <div className="flex pt-6">
