@@ -11,3 +11,13 @@ export interface User {
   createdAt: Date;
   lastFrqResponseAt: Timestamp;
 }
+
+export interface UserChapterData {
+  progress:
+    | "Not Started"
+    | "Reading"
+    | "Practicing"
+    | "Complete"
+    | "Need Review"
+    | "Skipped";
+}

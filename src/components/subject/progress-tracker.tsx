@@ -14,6 +14,7 @@ import ConfettiExplosion from "react-confetti-explosion";
 import { useUser } from "../hooks/UserContext";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import type { UserChapterData } from "@/types/user";
 
 const dropdownIcons: Record<string, React.ReactNode> = {
   Reading: <BookOpen className="size-5 stroke-yellow-500" />,
@@ -35,23 +36,17 @@ const dropdownLabels: string[] = [
 export default function ProgressTracker({ chapterId }: { chapterId: string }) {
   const { user } = useUser();
 
-  if (!user) {
-    return (
-      <Button disabled variant={"outline"}>
-        Log in to track progress
-      </Button>
-    );
-  }
-
-  const chapterDataRef = doc(db, `users/${user.uid}/chapterData/${chapterId}`);
-
   useEffect(() => {
     const fetchProgress = async () => {
       if (!user) return;
 
       try {
+        const chapterDataRef = doc(
+          db,
+          `users/${user.uid}/chapterData/${chapterId}`,
+        );
         const chapterData = await getDoc(chapterDataRef);
-        const data = chapterData.data();
+        const data = chapterData.data() as UserChapterData;
         setProgress(data?.progress ?? "Not Started");
       } catch (error) {
         console.error("Error fetching chapter progress:", error);
@@ -59,13 +54,19 @@ export default function ProgressTracker({ chapterId }: { chapterId: string }) {
     };
 
     void fetchProgress();
-  }, [user]);
+  }, [user, chapterId]);
 
   const [progress, setProgress] = useState<string>("");
   const [showConfetti, setShowConfetti] = useState(false);
 
   const updateProgress = async (newProgress: string) => {
+    if (!user) return;
+
     try {
+      const chapterDataRef = doc(
+        db,
+        `users/${user.uid}/chapterData/${chapterId}`,
+      );
       await setDoc(chapterDataRef, { progress: newProgress }, { merge: true });
 
       if (newProgress === "Complete" && !showConfetti) {
@@ -80,6 +81,14 @@ export default function ProgressTracker({ chapterId }: { chapterId: string }) {
       alert("Failed to update chapter progress:\n" + String(error));
     }
   };
+
+  if (!user) {
+    return (
+      <Button disabled variant={"outline"}>
+        Log in to track progress
+      </Button>
+    );
+  }
 
   return (
     <>
