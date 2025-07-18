@@ -28,6 +28,10 @@ const links = [
     href: "/guides",
   },
   {
+    name: "Team",
+    href: "/team",
+  },
+  {
     name: "Contribute",
     href: "/apply",
   },
