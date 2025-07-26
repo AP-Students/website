@@ -60,38 +60,52 @@ const teamMembers: TeamMember[] = [
 export default function TeamHive() {
   return (
     <div className="flex justify-center items-center min-h-[600px]">
-      <div className="relative">
-        {/* Row 1: 2 hexagons */}
-        <div className="flex justify-center relative">
-          <div className="mr-[-0.75rem]">
-            <TeamMemberHex member={teamMembers[0]} />
-          </div>
-          <div>
-            <TeamMemberHex member={teamMembers[1]} />
-          </div>
+      {/* Center container with fixed width like the CSS example */}
+      <div className="relative w-[612px]">
+        {/* Row 1: 3 hexagons - odd row (offset) */}
+        <div className="relative ml-[76.5px] mb-[-38px]">
+          <TeamMemberHex member={teamMembers[0]} className="inline-block" />
+          <TeamMemberHex member={teamMembers[1]} className="inline-block" />
+          <TeamMemberHex member={teamMembers[2]} className="inline-block" />
         </div>
         
-        {/* Row 2: 3 hexagons - offset and overlapping */}
-        <div className="flex justify-center relative mt-[-2.2rem] ml-[-2.4rem]">
-          <div className="mr-[-0.75rem]">
-            <TeamMemberHex member={teamMembers[2]} />
-          </div>
-          <div className="mr-[-0.75rem]">
-            <TeamMemberHex member={teamMembers[3]} />
-          </div>
-          <div>
-            <TeamMemberHex member={teamMembers[4]} />
-          </div>
+        {/* Row 2: 4 hexagons - even row (no offset) */}
+        <div className="relative mb-[-38px]">
+          <TeamMemberHex member={teamMembers[3]} className="inline-block" />
+          <TeamMemberHex member={teamMembers[4]} className="inline-block" />
+          <TeamMemberHex member={teamMembers[5]} className="inline-block" />
+          <TeamMemberHex member={teamMembers[6]} className="inline-block" />
         </div>
         
-        {/* Row 3: 2 hexagons - back to 2, interlocked */}
-        <div className="flex justify-center relative mt-[-2.2rem]">
-          <div className="mr-[-0.75rem]">
-            <TeamMemberHex member={teamMembers[5]} />
-          </div>
-          <div>
-            <TeamMemberHex member={teamMembers[6]} />
-          </div>
+        {/* Row 3: 3 hexagons - odd row (offset) */}
+        <div className="relative ml-[76.5px]">
+          <TeamMemberHex 
+            member={{
+              ...teamMembers[0],
+              name: "David Lee",
+              position: "QA Engineer",
+              id: 8
+            }} 
+            className="inline-block" 
+          />
+          <TeamMemberHex 
+            member={{
+              ...teamMembers[1],
+              name: "Lisa Chen",
+              position: "Product Manager",
+              id: 9
+            }} 
+            className="inline-block" 
+          />
+          <TeamMemberHex 
+            member={{
+              ...teamMembers[2],
+              name: "Ryan Kim",
+              position: "DevOps Engineer",
+              id: 10
+            }} 
+            className="inline-block" 
+          />
         </div>
       </div>
     </div>

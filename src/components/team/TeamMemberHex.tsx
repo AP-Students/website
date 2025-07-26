@@ -15,17 +15,15 @@ export default function TeamMemberHex({ member, className }: TeamMemberHexProps)
 
   return (
     <div
-      className={cn("relative group", className)}
+      className={cn("inline-block transition-transform duration-700 ease-in-out", className)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      style={{
+        transformStyle: 'preserve-3d',
+        transform: isHovered ? 'rotateY(180deg)' : 'rotateY(0deg)'
+      }}
     >
-      <div
-        className="relative w-36 h-36 transition-transform duration-700 ease-in-out transform-gpu"
-        style={{
-          transformStyle: 'preserve-3d',
-          transform: isHovered ? 'rotateY(180deg)' : 'rotateY(0deg)'
-        }}
-      >
+      <div className="relative w-[150px] h-[150px]">
         {/* Front face - Image */}
         <div
           className="absolute inset-0 w-full h-full bg-gradient-to-br from-yellow-400/30 to-amber-500/50 shadow-lg hover:shadow-xl transition-shadow duration-300"
