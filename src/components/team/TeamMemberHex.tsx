@@ -55,9 +55,9 @@ export default function TeamMemberHex({ member, className }: TeamMemberHexProps)
           </div>
         </div>
 
-        {/* Back face - Placeholder Name and Title */}
+        {/* Back face - Text Information */}
         <div
-          className="absolute inset-0 w-full h-full bg-gradient-to-br from-yellow-500/95 to-amber-600/95 shadow-lg"
+          className="absolute inset-0 w-full h-full bg-gradient-to-br from-blue-500/95 to-purple-600/95 shadow-lg"
           style={{
             clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
             backfaceVisibility: 'hidden',
@@ -70,11 +70,14 @@ export default function TeamMemberHex({ member, className }: TeamMemberHexProps)
               clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)'
             }}
           >
-            <h3 className="font-bold text-sm mb-1 leading-tight drop-shadow-sm">
-              Placeholder Name
+            <h3 className="font-bold text-sm mb-2 leading-tight drop-shadow-sm">
+              Team Member
             </h3>
-            <p className="text-xs opacity-90 leading-tight drop-shadow-sm">
-              Placeholder Title
+            <p className="text-xs opacity-90 leading-tight drop-shadow-sm mb-1">
+              Developer
+            </p>
+            <p className="text-xs opacity-75 leading-tight drop-shadow-sm">
+              FiveHive Team
             </p>
           </div>
         </div>
