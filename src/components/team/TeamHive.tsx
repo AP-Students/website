@@ -60,43 +60,38 @@ const teamMembers: TeamMember[] = [
 export default function TeamHive() {
   return (
     <div className="flex justify-center items-center min-h-[600px]">
-      <div className="relative w-fit">
-        {/* First row - 3 hexagons */}
-        <div className="flex justify-center mb-[-2.375rem] relative ml-[4.8rem]">
-          {teamMembers.slice(0, 3).map((member, index) => (
-            <TeamMemberHex
-              key={member.id}
-              member={member}
-              className="mr-1"
-            />
-          ))}
+      <div className="relative">
+        {/* Row 1: 2 hexagons */}
+        <div className="flex justify-center relative">
+          <div className="mr-[-0.75rem]">
+            <TeamMemberHex member={teamMembers[0]} />
+          </div>
+          <div>
+            <TeamMemberHex member={teamMembers[1]} />
+          </div>
         </div>
         
-        {/* Second row - 4 hexagons */}
-        <div className="flex justify-center mb-[-2.375rem] relative">
-          {teamMembers.slice(3, 7).map((member, index) => (
-            <TeamMemberHex
-              key={member.id}
-              member={member}
-              className="mr-1"
-            />
-          ))}
+        {/* Row 2: 3 hexagons - offset and overlapping */}
+        <div className="flex justify-center relative mt-[-2.2rem] ml-[-2.4rem]">
+          <div className="mr-[-0.75rem]">
+            <TeamMemberHex member={teamMembers[2]} />
+          </div>
+          <div className="mr-[-0.75rem]">
+            <TeamMemberHex member={teamMembers[3]} />
+          </div>
+          <div>
+            <TeamMemberHex member={teamMembers[4]} />
+          </div>
         </div>
         
-        {/* Third row - 3 hexagons */}
-        <div className="flex justify-center relative ml-[4.8rem]">
-          {teamMembers.slice(0, 3).map((member, index) => (
-            <TeamMemberHex
-              key={`bottom-${member.id}`}
-              member={{
-                ...member,
-                name: `Team Member ${index + 8}`,
-                position: "Position",
-                id: member.id + 10
-              }}
-              className="mr-1"
-            />
-          ))}
+        {/* Row 3: 2 hexagons - back to 2, interlocked */}
+        <div className="flex justify-center relative mt-[-2.2rem]">
+          <div className="mr-[-0.75rem]">
+            <TeamMemberHex member={teamMembers[5]} />
+          </div>
+          <div>
+            <TeamMemberHex member={teamMembers[6]} />
+          </div>
         </div>
       </div>
     </div>
