@@ -13,6 +13,7 @@ import {
 import { MenuIcon } from "lucide-react";
 import SignedInPfp from "../login/SignedInPfp";
 import { useUser } from "../hooks/UserContext";
+import { useEffect, useState } from "react";
 
 const links = [
   {
@@ -42,11 +43,30 @@ const Navbar = ({
 }) => {
   const { user } = useUser();
 
+  const [atTopOfPage, setAtTopOfPage] = useState(true);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.pageYOffset > 0) {
+        setAtTopOfPage(false);
+      } else {
+        setAtTopOfPage(true);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
   return (
     <>
       <div
         className={cn(
-          "hidden w-full items-center justify-between gap-4 md:flex sticky top-0 z-40 border-b border-gray-200 bg-background",
+          "sticky top-0 z-40 hidden w-full items-center justify-between gap-4 bg-background py-2 transition-shadow md:flex",
+          !atTopOfPage && "shadow-lg",
           className,
         )}
       >
@@ -57,7 +77,7 @@ const Navbar = ({
           )}
         >
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo.png" alt="Logo" width={100} height={100} />
+            <Image src="/logo.png" alt="Logo" width={80} height={80} />
             <h1 className="text-4xl font-bold">FiveHive</h1>
           </Link>
         </div>
