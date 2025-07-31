@@ -54,9 +54,10 @@ export default function Footer({ className }: { className?: string }) {
       <hr className="mb-4 mt-2" />
       <div className="flex flex-col">
         <h6 className="text-xs text-[#2E0F0FB2]">
-          AP® and SAT® are trademarks registered by the College Board, which is not affiliated with, and does not endorse this website.
+          AP® is a trademark registered by the College Board, which is not
+          affiliated with FiveHive and does not endorse this website.
         </h6>
-        <h6 className="text-xs text-[#2E0F0FB2] mt-1">
+        <h6 className="mt-1 text-xs text-[#2E0F0FB2]">
           &copy; 2024 FiveHive&trade;. All Rights Reserved.
         </h6>
       </div>
