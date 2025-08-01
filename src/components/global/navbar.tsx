@@ -70,12 +70,7 @@ const Navbar = ({
           className,
         )}
       >
-        <div
-          className={cn(
-            "flex items-center justify-center",
-            variant === "primary" && "grow basis-0",
-          )}
-        >
+        <div className="flex items-center justify-center pl-4 lg:grow lg:basis-0">
           <Link href="/" className="flex items-center gap-2">
             <Image src="/logo.png" alt="Logo" width={80} height={80} />
             <h1 className="text-4xl font-bold">FiveHive</h1>
@@ -83,7 +78,7 @@ const Navbar = ({
         </div>
 
         {variant === "primary" && (
-          <div className="flex space-x-12">
+          <div className="flex max-w-lg grow justify-evenly">
             {links.map((link) => (
               <NavbarLink key={link.name} href={link.href}>
                 {link.name}
@@ -92,12 +87,7 @@ const Navbar = ({
           </div>
         )}
 
-        <div
-          className={cn(
-            "flex items-center justify-center space-x-8",
-            variant === "primary" && "grow basis-0",
-          )}
-        >
+        <div className="flex shrink-0 items-center justify-center gap-4 pr-8 lg:grow lg:basis-0">
           {user ? (
             <SignedInPfp />
           ) : (
@@ -120,13 +110,13 @@ const Navbar = ({
 
       <div
         className={cn(
-          "flex w-full items-center justify-between px-8 pt-7 md:hidden",
+          "flex w-full items-center justify-between px-6 py-4 md:hidden",
           className,
         )}
       >
         <Link className="flex items-center gap-2" href="/">
-          <Image src="/logo.png" alt="Logo" width={75} height={75} />
-          <h1 className="text-3xl font-bold">FiveHive</h1>
+          <Image src="/logo.png" alt="Logo" width={80} height={80} />
+          <h1 className="text-4xl font-bold">FiveHive</h1>
         </Link>
 
         <MobileNavbar />

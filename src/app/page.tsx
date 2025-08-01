@@ -43,17 +43,13 @@ export default async function Home() {
 
 function Hero() {
   return (
-    <div className="grid h-96 place-content-center gap-4 border-b border-primary/50 bg-primary-foreground p-4 text-center shadow sm:p-8">
+    <div className="grid place-content-center gap-4 border-b border-primary/50 bg-primary-foreground p-4 pt-0 text-center shadow sm:p-8 sm:pt-0 md:pb-20 md:pt-12">
       <Link
         href={"/peer-grading"}
-        className="group mx-auto flex w-fit rounded-full border border-primary px-4 py-1 text-primary shadow-md shadow-primary/30 transition-all hover:translate-y-1 hover:shadow-none"
+        className="group mx-auto flex w-fit rounded-full border border-primary py-1 pl-4 pr-2 text-primary shadow-md shadow-primary/30 transition-all hover:translate-y-1 hover:shadow-none"
       >
-        Try{" "}
-        <span className=" ml-1 font-bold">
-          {" "}
-          FiveHive&apos;s Peer Grading Platform
-        </span>
-        <ChevronRight className="scale-75 rounded stroke-[3px] transition-transform group-hover:translate-x-0.5" />
+        Try our <span className="ml-1 font-bold">Peer Grading Platform</span>
+        <ChevronRight className="scale-75 transition-transform group-hover:translate-x-1" />
       </Link>
       <div className="flex flex-col gap-2">
         <h1 className="text-balance text-center text-4xl font-extrabold md:text-5xl lg:text-6xl">
