@@ -110,7 +110,7 @@ const Navbar = ({
 
       <div
         className={cn(
-          "flex w-full items-center justify-between px-6 py-4 md:hidden",
+          "flex w-full items-center justify-between py-2 pl-4 pr-6 md:hidden",
           className,
         )}
       >
