@@ -198,8 +198,8 @@ export default function UserManagementPage() {
   const accountType = user.createdWith === "google" ? "google" : "email";
 
   return (
-    <div className="flex min-h-screen items-center justify-center py-6 sm:bg-primary-foreground">
-      <div className="w-full max-w-xl rounded-lg bg-white p-8 sm:border sm:shadow-sm">
+    <div className="flex min-h-[calc(100vh-96px)] items-center justify-center py-6 sm:bg-primary-foreground">
+      <div className="w-full max-w-xl rounded-lg border-primary bg-white p-8 sm:border sm:shadow-sm">
         <button
           onClick={() => {
             router.back();

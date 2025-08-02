@@ -13,6 +13,7 @@ import {
 import { MenuIcon } from "lucide-react";
 import SignedInPfp from "../login/SignedInPfp";
 import { useUser } from "../hooks/UserContext";
+import { useEffect, useState } from "react";
 
 const links = [
   {
@@ -42,28 +43,42 @@ const Navbar = ({
 }) => {
   const { user } = useUser();
 
+  const [atTopOfPage, setAtTopOfPage] = useState(true);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.pageYOffset > 0) {
+        setAtTopOfPage(false);
+      } else {
+        setAtTopOfPage(true);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
   return (
     <>
       <div
         className={cn(
-          "hidden w-full items-center justify-between gap-4 pt-5 md:flex",
+          "sticky top-0 z-40 hidden w-full items-center justify-between gap-4 bg-background py-2 transition-shadow md:flex",
+          !atTopOfPage && "shadow-lg",
           className,
         )}
       >
-        <div
-          className={cn(
-            "flex items-center justify-center",
-            variant === "primary" && "grow basis-0",
-          )}
-        >
+        <div className="flex items-center justify-center pl-4 lg:grow lg:basis-0">
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo.png" alt="Logo" width={100} height={100} />
+            <Image src="/logo.png" alt="Logo" width={80} height={80} />
             <h1 className="text-4xl font-bold">FiveHive</h1>
           </Link>
         </div>
 
         {variant === "primary" && (
-          <div className="flex space-x-12">
+          <div className="flex max-w-lg grow justify-evenly">
             {links.map((link) => (
               <NavbarLink key={link.name} href={link.href}>
                 {link.name}
@@ -72,12 +87,7 @@ const Navbar = ({
           </div>
         )}
 
-        <div
-          className={cn(
-            "flex items-center justify-center space-x-8",
-            variant === "primary" && "grow basis-0",
-          )}
-        >
+        <div className="flex shrink-0 items-center justify-center gap-4 pr-8 lg:grow lg:basis-0">
           {user ? (
             <SignedInPfp />
           ) : (
@@ -100,13 +110,13 @@ const Navbar = ({
 
       <div
         className={cn(
-          "flex w-full items-center justify-between px-8 pt-7 md:hidden",
+          "flex w-full items-center justify-between py-2 pl-4 pr-6 md:hidden",
           className,
         )}
       >
         <Link className="flex items-center gap-2" href="/">
-          <Image src="/logo.png" alt="Logo" width={75} height={75} />
-          <h1 className="text-3xl font-bold">FiveHive</h1>
+          <Image src="/logo.png" alt="Logo" width={80} height={80} />
+          <h1 className="text-4xl font-bold">FiveHive</h1>
         </Link>
 
         <MobileNavbar />

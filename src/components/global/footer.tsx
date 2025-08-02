@@ -23,7 +23,7 @@ const links = [
 
 export default function Footer({ className }: { className?: string }) {
   return (
-    <footer className={cn("mx-auto max-w-6xl p-6", className)}>
+    <footer className={cn("mx-auto max-w-6xl p-6 pb-10", className)}>
       <div className="flex flex-col justify-between gap-y-6 sm:flex-row sm:items-center">
         <Link href={"/"}>
           <Image src={"/logo.png"} alt="FiveHive logo" width={98} height={34} />
@@ -52,9 +52,15 @@ export default function Footer({ className }: { className?: string }) {
         </ul>
       </div>
       <hr className="mb-4 mt-2" />
-      <h6 className="text-xs text-[#2E0F0FB2]">
-        &copy; 2024 FiveHive&trade;. All Rights Reserved.
-      </h6>
+      <div className="flex flex-col">
+        <h6 className="text-xs text-[#2E0F0FB2]">
+          AP® is a trademark registered by the College Board, which is not
+          affiliated with FiveHive and does not endorse this website.
+        </h6>
+        <h6 className="mt-1 text-xs text-[#2E0F0FB2]">
+          &copy; 2024 FiveHive&trade;. All Rights Reserved.
+        </h6>
+      </div>
     </footer>
   );
 }
