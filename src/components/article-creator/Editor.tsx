@@ -13,7 +13,7 @@ import List from "@editorjs/list";
 import Table from "@editorjs/table";
 import CodeTool from "@editorjs/code";
 import InlineCode from "@editorjs/inline-code";
-import SimpleImage from "@editorjs/simple-image";
+import Image from "@editorjs/image";
 import Embed from "@editorjs/embed";
 import Marker from "@editorjs/marker";
 import Underline from "@editorjs/underline";
@@ -22,6 +22,47 @@ import Delimiter from "@editorjs/delimiter";
 import Alert from "editorjs-alert";
 import { QuestionsAddCard } from "./custom_questions/QuestionsAddCard";
 import { ClipboardCopy } from "lucide-react";
+import {
+  deleteObject,
+  getDownloadURL,
+  getStorage,
+  ref,
+  uploadBytes,
+} from "firebase/storage";
+import { buttonVariants } from "../ui/button";
+import { cn } from "@/lib/utils";
+
+interface EditorImageData {
+  file: { url?: string; storageRefFullPath?: string; [key: string]: unknown };
+  caption?: string;
+  withBorder?: boolean;
+  withBackground?: boolean;
+  stretched?: boolean;
+}
+
+// https://github.com/editor-js/image/issues/54#issuecomment-1546833098
+// https://github.com/editor-js/image/issues/27
+class CustomImage extends Image {
+  removed() {
+    const { file } = this._data as EditorImageData;
+
+    if (!file.storageRefFullPath) return;
+
+    const storage = getStorage();
+    const storageRef = ref(storage, file.storageRefFullPath);
+    deleteObject(storageRef)
+      .then(() => {
+        console.log("Deleted " + file.storageRefFullPath);
+      })
+      .catch((error) => {
+        console.log(error);
+        alert(
+          "Failed to delete image from Firebase Storage: notify FiveHive Website Team.\n" +
+            String(error),
+        );
+      });
+  }
+}
 
 export const EDITOR_TOOLS: EditorConfig["tools"] = {
   header: {
@@ -42,8 +83,36 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
   },
 
   image: {
-    class: SimpleImage as unknown as ToolConstructable,
+    class: CustomImage as unknown as ToolConstructable,
     inlineToolbar: false,
+    config: {
+      uploader: {
+        async uploadByFile(file: File) {
+          const storage = getStorage();
+          const storageRef = ref(
+            storage,
+            "images/" + new Date().getTime() + "_" + file.name,
+          );
+
+          try {
+            const snapshot = await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+
+            return {
+              success: 1,
+              file: {
+                url: downloadURL,
+                storageRefFullPath: storageRef.fullPath,
+              },
+            };
+          } catch (err) {
+            console.log(err);
+
+            return { success: 0 };
+          }
+        },
+      },
+    },
   },
 
   list: {
@@ -205,17 +274,19 @@ const Editor = ({
   }, [editor]);
 
   return (
-    <div className="flex flex-col gap-y-4">
+    <>
       <button
-        className="flex items-center justify-center gap-1 border p-1 text-sm transition-colors hover:bg-gray-200"
+        className={cn(
+          buttonVariants({ variant: "outline" }),
+          "rounded-sm pl-3",
+        )}
         onClick={handleCopyEditorData}
       >
-        <ClipboardCopy />
-        Copy Editor Data
+        <ClipboardCopy className="mr-1" />
+        Copy Data to Clipboard
       </button>
-      <div className="opacity-50">Input:</div>
       <div className="prose w-full" id="editorjs"></div>
-    </div>
+    </>
   );
 };
 

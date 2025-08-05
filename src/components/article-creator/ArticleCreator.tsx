@@ -11,11 +11,9 @@ import { Save } from "lucide-react";
 import { type QuestionFormat } from "@/types/questions";
 import Renderer from "./Renderer";
 import {
-  processImage,
   processQuestions,
   processTable,
   revertTableObjectToArray,
-  type ImageData,
 } from "./FetchArticleFunctions";
 import { Blocker } from "@/app/admin/subject/navigation-block";
 import { Button } from "@/components/ui/button";
@@ -209,17 +207,6 @@ function ArticleCreator({ className }: { className?: string }) {
             return block;
           }
 
-          // because of .type, its inferable that block.data is of an image, but idk where the type is defined.
-          /* eslint-disable-next-line */
-          if (
-            block.type === "image" &&
-            (block.data as ImageData).url.startsWith("data:image/")
-          ) {
-            const updatedImage = await processImage(block.data as ImageData);
-            block.data = updatedImage; // Replace the block data with the updated content
-            return block;
-          }
-
           if (block.type === "list") {
             // console.dir("before", block.data.meta);
             // cleanUndefined(block);
@@ -284,7 +271,7 @@ function ArticleCreator({ className }: { className?: string }) {
 
       <div className={cn("grid grid-cols-1 pb-8 sm:grid-cols-2", className)}>
         {/* Left column: Editor */}
-        <div className="border p-4 px-8">
+        <div className="border p-4 rounded-md">
           <Editor
             content={initialData}
             setData={setData}
@@ -294,7 +281,7 @@ function ArticleCreator({ className }: { className?: string }) {
 
         {/* Right column: Renderer */}
         <div className="px-8">
-          <div className="my-4 pb-4 opacity-50">Output:</div>
+          <div className="pt-4 pb-8 opacity-50">Preview:</div>
           <Renderer content={data} />
         </div>
       </div>
