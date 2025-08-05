@@ -29,10 +29,7 @@ function cleanUndefined(obj: unknown) {
     obj.forEach(cleanUndefined);
   } else if (obj && typeof obj === "object") {
     if ("meta" in obj && obj.meta && typeof obj.meta === "object") {
-      const meta = obj.meta as {
-        start?: number;
-        counterType?: string;
-      };
+      const meta = obj.meta as { start?: number; counterType?: string };
       if (meta.start === undefined) {
         delete meta.start;
       }
@@ -48,10 +45,7 @@ function cleanUndefined(obj: unknown) {
 
 interface ArticleData {
   id: string;
-  createdAt: {
-    seconds: number;
-    nanoseconds: number;
-  };
+  createdAt: { seconds: number; nanoseconds: number };
   author: string;
   title: string;
   data: OutputData;
@@ -65,25 +59,17 @@ function ArticleCreator({ className }: { className?: string }) {
       {
         id: "vN7jsMIAZd",
         type: "header",
-        data: {
-          text: "Enter title here...",
-          level: 1,
-        },
+        data: { text: "Enter title here...", level: 1 },
       },
       {
         id: "y5P_E6yFAY",
         type: "header",
-        data: {
-          text: "Enter a subheader...",
-          level: 2,
-        },
+        data: { text: "Enter a subheader...", level: 2 },
       },
       {
         id: "R0mt9g_qT4",
         type: "paragraph",
-        data: {
-          text: "This is some text...",
-        },
+        data: { text: "This is some text..." },
       },
     ],
     version: "2.30.2",
@@ -95,25 +81,17 @@ function ArticleCreator({ className }: { className?: string }) {
       {
         id: "vN7jsMIAZd",
         type: "header",
-        data: {
-          text: "Enter title here...",
-          level: 1,
-        },
+        data: { text: "Enter title here...", level: 1 },
       },
       {
         id: "y5P_E6yFAY",
         type: "header",
-        data: {
-          text: "Enter a subheader...",
-          level: 2,
-        },
+        data: { text: "Enter a subheader...", level: 2 },
       },
       {
         id: "R0mt9g_qT4",
         type: "paragraph",
-        data: {
-          text: "This is some text...",
-        },
+        data: { text: "This is some text..." },
       },
     ],
     version: "2.30.2",
@@ -271,7 +249,7 @@ function ArticleCreator({ className }: { className?: string }) {
 
       <div className={cn("grid grid-cols-1 pb-8 sm:grid-cols-2", className)}>
         {/* Left column: Editor */}
-        <div className="border p-4 rounded-md">
+        <div className="rounded-md border p-4">
           <Editor
             content={initialData}
             setData={setData}
@@ -281,7 +259,7 @@ function ArticleCreator({ className }: { className?: string }) {
 
         {/* Right column: Renderer */}
         <div className="px-8">
-          <div className="pt-4 pb-8 opacity-50">Preview:</div>
+          <div className="pb-8 pt-4 opacity-50">Preview:</div>
           <Renderer content={data} />
         </div>
       </div>

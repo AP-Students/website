@@ -232,9 +232,7 @@ const Renderer = (props: { content: OutputData }) => {
                       value: option.value || { value: "" },
                     })),
                     answers: questionInstance.answers || [],
-                    explanation: questionInstance.explanation || {
-                      value: "",
-                    },
+                    explanation: questionInstance.explanation || { value: "" },
                   }),
                 );
 

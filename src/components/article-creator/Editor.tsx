@@ -119,9 +119,7 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
     class: List as unknown as ToolConstructable,
     inlineToolbar: true,
     shortcut: "CTRL+ALT+8",
-    config: {
-      defaultStyle: "unordered",
-    },
+    config: { defaultStyle: "unordered" },
   },
 
   questionsAddCard: {
@@ -134,9 +132,7 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
     class: MathTex as unknown as ToolConstructable,
     inlineToolbar: true,
     shortcut: "CTRL+ALT+M",
-    toolbox: {
-      title: "LaTeX",
-    },
+    toolbox: { title: "LaTeX" },
   },
 
   quote: {
@@ -150,10 +146,7 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
 
   table: {
     class: Table as unknown as ToolConstructable,
-    config: {
-      rows: 2,
-      cols: 3,
-    },
+    config: { rows: 2, cols: 3 },
   },
 
   inlineCode: {
@@ -166,24 +159,15 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
     inlineToolbar: true,
   },
 
-  Marker: {
-    class: Marker as unknown as ToolConstructable,
-  },
+  Marker: { class: Marker as unknown as ToolConstructable },
 
-  underline: {
-    class: Underline as unknown as ToolConstructable,
-  },
+  underline: { class: Underline as unknown as ToolConstructable },
 
   alert: Alert as unknown as ToolConstructable,
 
-  embed: {
-    class: Embed as unknown as ToolConstructable,
-    inlineToolbar: true,
-  },
+  embed: { class: Embed as unknown as ToolConstructable, inlineToolbar: true },
 
-  delimiter: {
-    class: Delimiter as unknown as ToolConstructable,
-  },
+  delimiter: { class: Delimiter as unknown as ToolConstructable },
 };
 
 const Editor = ({
@@ -204,25 +188,17 @@ const Editor = ({
         {
           id: "vN7jsMIAZd",
           type: "header",
-          data: {
-            text: "Enter title here...",
-            level: 1,
-          },
+          data: { text: "Enter title here...", level: 1 },
         },
         {
           id: "y5P_E6yFAY",
           type: "header",
-          data: {
-            text: "Enter a subheader...",
-            level: 2,
-          },
+          data: { text: "Enter a subheader...", level: 2 },
         },
         {
           id: "R0mt9g_qT4",
           type: "paragraph",
-          data: {
-            text: "This is some text...",
-          },
+          data: { text: "This is some text..." },
         },
       ],
       version: "2.30.2",

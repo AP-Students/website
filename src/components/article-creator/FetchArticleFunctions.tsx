@@ -126,10 +126,7 @@ export const revertTableObjectToArray = (data: OutputData) => {
     // Update the data to replace the object back with an array
     data.blocks[data.blocks.indexOf(table)] = {
       ...table,
-      data: {
-        ...table.data,
-        content: contentAsArray,
-      },
+      data: { ...table.data, content: contentAsArray },
     };
   }
 };
