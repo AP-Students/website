@@ -26,6 +26,7 @@ firestore.indexes.json
 firestore-debug.log
 storage.rules
 firebase-storage.rules
+emulator
 
 # misc
 .DS_Store

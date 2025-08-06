@@ -1,6 +1,6 @@
 // types.d.ts
 declare module "editorjs-latex";
-declare module "@editorjs/simple-image";
+declare module "@editorjs/image";
 declare module "editorjs-math";
 declare module "@editorjs/quote";
 declare module "editorjs-alert";
