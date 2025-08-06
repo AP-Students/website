@@ -1,76 +1,98 @@
 "use client";
 
 import { useState } from "react";
-import { cn } from "@/lib/utils";
 import { TeamMember } from "@/types/team";
 
-interface TeamMemberHexProps {
-  member: TeamMember;
-  className?: string;
-}
+const DEFAULT_IMAGE = "/team/default-profile.png";
+import Image from 'next/image';
 
-export default function TeamMemberHex({ member, className }: TeamMemberHexProps) {
-  const [isHovered, setIsHovered] = useState(false);
+<Image src="/team/default-profile.png" width={100} height={100} alt="Profile" />
+
+const HEX_POINTS = "50,0 98,25 98,75 50,100 2,75 2,25";
+
+
+export default function TeamMemberHex({ member }: { member: TeamMember }) {
+  const [hovered, setHovered] = useState(false);
+  const imgSrc = member.image || DEFAULT_IMAGE;
+  const clipId = `hexClip-${member.id}`;
 
   return (
     <div
-      className={cn("inline-block", className)}
+      className="relative inline-block w-40 h-40"
       style={{ perspective: "1000px" }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       <div
-        className="relative w-[150px] h-[150px] transition-transform duration-700 ease-in-out"
+        className="w-full h-full transition-transform duration-700"
         style={{
           transformStyle: "preserve-3d",
-          transform: isHovered ? "rotateY(180deg)" : "rotateY(0deg)",
+          transform: hovered ? "rotateY(180deg)" : "rotateY(0deg)",
         }}
       >
-        {/* FRONT - Default SVG avatar */}
-        <div
-          className="absolute inset-0 bg-gradient-to-br from-yellow-400 to-amber-500 shadow-lg"
-          style={{
-            clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
-            backfaceVisibility: "hidden",
-          }}
+        <svg
+          className="absolute inset-0 w-full h-full"
+          xmlns="http://www.w3.org/2000/svg"
+          xmlnsXlink="http://www.w3.org/1999/xlink"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="xMidYMid meet"
+          style={{ backfaceVisibility: "hidden" }}
         >
-          <div
-            className="absolute inset-[8px] bg-white dark:bg-gray-100 flex items-center justify-center overflow-hidden"
-            style={{
-              clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
-            }}
-          >
-            <div className="w-full h-full flex items-center justify-center">
-              <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gray-300 dark:bg-gray-600">
-                <svg
-                  className="w-full h-full text-gray-500 dark:text-gray-400"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
+          <defs>
+            <clipPath id={clipId}>
+              <polygon points={HEX_POINTS} />
+            </clipPath>
+          </defs>
+          <image
+            x="0"
+            y="0"
+            width="100"
+            height="100"
+            preserveAspectRatio="xMidYMid slice"
+            clipPath={`url(#${clipId})`}
+            href={imgSrc}
+            xlinkHref={imgSrc}
+          />
+          <polygon
+            points={HEX_POINTS}
+            fill="none"
+            stroke="#F6C13D"
+            strokeWidth={6}
+          />
+        </svg>
 
-        {/* BACK - Name & Position */}
-        <div
-          className="absolute inset-0 bg-gradient-to-br from-yellow-500/95 to-amber-600/95 shadow-lg flex items-center justify-center p-4"
+        <svg
+          className="absolute inset-0 w-full h-full"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="xMidYMid meet"
+          xmlns="http://www.w3.org/2000/svg"
           style={{
-            clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
             backfaceVisibility: "hidden",
             transform: "rotateY(180deg)",
           }}
         >
-          <div className="text-center text-white">
-            <h3 className="font-bold text-sm mb-1 leading-tight drop-shadow-sm">
-              {member.name}
-            </h3>
-            <p className="text-xs opacity-90 leading-tight drop-shadow-sm">
-              {member.position}
-            </p>
-          </div>
+          <polygon
+            points={HEX_POINTS}
+            fill="#EF7A3D"
+            stroke="#F6C13D"
+            strokeWidth={6}
+          />
+        </svg>
+
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-center text-white px-2"
+          style={{
+            backfaceVisibility: "hidden",
+            transform: "rotateY(180deg)",
+            clipPath: `polygon(${HEX_POINTS.split(' ').join(',')})`
+          }}
+        >
+          <h3 className="font-bold text-sm text-center">
+            {member.name}
+          </h3>
+          <p className="text-xs mt-1 text-center">
+            {member.position}
+          </p>
         </div>
       </div>
     </div>
