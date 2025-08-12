@@ -205,7 +205,7 @@ const customParsers: Record<
     const imageConditions = `${data.stretched ? "img-fullwidth" : ""} ${
       data.withBorder ? "img-border" : ""
     } ${data.withBackground ? "img-bg" : ""} ${data.centerImage ? "img-center" : ""}`;
-    const imgClass = _config.image.imgClass || "";
+    const imgClass = _config.image.imgClass ?? "";
     let imageSrc;
 
     if (data.url) {
@@ -216,16 +216,17 @@ const customParsers: Record<
     } else if (_config.image.path === "absolute") {
       imageSrc = data.file?.url;
     } else {
-      imageSrc = _config.image.path?.replace(/<(.+)>/, (match, p1) =>
-        String((data.file as Record<string, string>)[p1]),
+      imageSrc = _config.image.path?.replace(
+        /<(.+)>/,
+        (match, p1: string) => data.file?.[p1] ?? "",
       );
     }
 
     if (_config.image.use === "img") {
       return `<img class="${imageConditions} ${imgClass}" src="${imageSrc}" alt="${data.caption}">`;
     } else if (_config.image.use === "figure") {
-      const figureClass = _config.image.figureClass || "";
-      const figCapClass = _config.image.figCapClass || "";
+      const figureClass = _config.image.figureClass ?? "";
+      const figCapClass = _config.image.figCapClass ?? "";
 
       return `<figure class="${figureClass}"><img class="${imgClass} ${imageConditions}" src="${imageSrc}" alt="${data.caption}"><figcaption class="${figCapClass}">${data.caption}</figcaption></figure>`;
     }

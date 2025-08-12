@@ -72,7 +72,7 @@ declare module "editorjs-parser" {
     caption?: string;
     file?: {
       url?: string;
-      [key: string]: unknown;
+      [key: string]: string;
     };
     url?: string;
     stretched?: boolean;
