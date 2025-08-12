@@ -123,8 +123,8 @@ const APLink: React.FC<LinkProps> = ({
           border: `2px solid ${color}`,
         }}>
           <h1 className="text-3xl font-bold pb-1" style={{color: `${color}`}}>{course.title}</h1>
-          {course.referenceURLs && course.referenceURLs.map((urlInfo) => (
-            <h1 className="hover:underline py-0.5 opacity-75"
+          {course.referenceURLs?.map((urlInfo, index) => (
+            <h1 className="hover:underline py-0.5 opacity-75" key={index}
             onClick={
               () => {window.open(urlInfo.url, '_blank')}
             }>{urlInfo.title}</h1>
