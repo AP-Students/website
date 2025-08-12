@@ -17,6 +17,11 @@ export function decodeEntities(str: string): string {
   return txt.value;
 }
 
+export const katexMacros = {
+  "\\unit": "\\,\\mathrm{#1}",
+  "\\qty": "#1\\,\\mathrm{#2}",
+};
+
 // derived from advancedtextbox
 function parseLatex(text: string): string {
   const decoded = decodeEntities(text);
@@ -29,6 +34,7 @@ function parseLatex(text: string): string {
         return katex.renderToString(expr, {
           throwOnError: false,
           output: "html",
+          macros: katexMacros,
         });
       }
       return part;
@@ -87,6 +93,7 @@ const customParsers: Record<
       output: "html",
       throwOnError: true,
       displayMode: true,
+      macros: katexMacros,
     });
   },
 
