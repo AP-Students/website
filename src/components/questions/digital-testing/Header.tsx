@@ -3,7 +3,10 @@ import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronUp, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import katex from "katex";
-import { decodeEntities } from "@/components/article-creator/Renderer";
+import {
+  decodeEntities,
+  katexMacros,
+} from "@/components/article-creator/Renderer";
 
 interface HeaderProps {
   timeRemaining: number; // seconds
@@ -137,6 +140,7 @@ const Header: React.FC<HeaderProps> = ({
                           dangerouslySetInnerHTML={{
                             __html: katex.renderToString(line.slice(2, -1), {
                               throwOnError: false,
+                              macros: katexMacros,
                             }),
                           }}
                         ></span>
