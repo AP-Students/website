@@ -22,7 +22,7 @@ declare module "editorjs-parser" {
     imgClass?: string;
     figureClass?: string;
     figCapClass?: string;
-    path?: "absolute";
+    path?: string;
   }
 
   interface ParagraphConfig {
@@ -42,11 +42,11 @@ declare module "editorjs-parser" {
   }
 
   interface Config {
-    image?: ImageConfig;
-    paragraph?: ParagraphConfig;
-    code?: CodeConfig;
-    embed?: EmbedConfig;
-    quote?: QuoteConfig;
+    image: ImageConfig;
+    paragraph: ParagraphConfig;
+    code: CodeConfig;
+    embed: EmbedConfig;
+    quote: QuoteConfig;
   }
 
   type Item = {
@@ -78,6 +78,7 @@ declare module "editorjs-parser" {
     stretched?: boolean;
     withBorder?: boolean;
     withBackground?: boolean;
+    centerImage?: boolean;
     code?: string;
     html?: string;
     embed?: string;
