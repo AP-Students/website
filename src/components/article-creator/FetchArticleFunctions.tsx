@@ -110,39 +110,6 @@ export const processTable = async (tableData: TableData) => {
   return tableAsObject;
 };
 
-export const processImage = async (
-  imageData: ImageData,
-): Promise<{ fileKey: string; caption?: string; url: string }> => {
-  const storage = getStorage();
-
-  const { url, caption } = imageData; // Extract Base64 URL and metadata
-
-  // Decode Base64 into a Blob
-  const blob = base64ToBlob(url);
-
-  // Generate a unique file key for the image
-  const fileKey = `images/${caption || `image-${Date.now()}`}`;
-
-  // Upload Blob to Firebase Storage
-  const storageRef = ref(storage, fileKey);
-  const snapshot = await uploadBytes(storageRef, blob);
-  const downloadURL = await getDownloadURL(snapshot.ref);
-
-  // Return updated image data with Firebase URL reference
-  return { fileKey, caption, url: downloadURL };
-};
-
-// Utility: Convert Base64 string to a Blob
-const base64ToBlob = (base64: string): Blob => {
-  const [prefix, data] = base64.split(",");
-  const contentType = prefix?.match(/:(.*?);/)?.[1] ?? "";
-  const byteCharacters = atob(data!);
-  const byteNumbers = Array.from(byteCharacters, (char) => char.charCodeAt(0));
-  const byteArray = new Uint8Array(byteNumbers);
-
-  return new Blob([byteArray], { type: contentType });
-};
-
 // If you looked at article creator yk, you'll see this
 // But basically idk the block structure/types, so I can't really typecheck except use any
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment */
@@ -159,10 +126,7 @@ export const revertTableObjectToArray = (data: OutputData) => {
     // Update the data to replace the object back with an array
     data.blocks[data.blocks.indexOf(table)] = {
       ...table,
-      data: {
-        ...table.data,
-        content: contentAsArray,
-      },
+      data: { ...table.data, content: contentAsArray },
     };
   }
 };

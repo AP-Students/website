@@ -18,7 +18,7 @@ export function getFileFromIndexedDB(
   name: string,
 ): Promise<FileWrapper | null> {
   return new Promise((resolve) => {
-    const dbRequest = indexedDB.open("mediaFilesDB", 2);
+    const dbRequest = indexedDB.open("mediaFilesDB", 3);
 
     dbRequest.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;

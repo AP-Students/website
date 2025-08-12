@@ -68,3 +68,16 @@
     @apply scroll-smooth bg-background text-foreground;
   }
 }
+
+/* editorjs/image */
+.img {
+  @apply rounded-lg;
+}
+
+.img.img-border {
+  @apply border;
+}
+
+.img.img-bg {
+  @apply bg-gray-200;
+}
