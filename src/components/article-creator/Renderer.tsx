@@ -232,9 +232,7 @@ const Renderer = (props: { content: OutputData }) => {
                       value: option.value || { value: "" },
                     })),
                     answers: questionInstance.answers || [],
-                    explanation: questionInstance.explanation || {
-                      value: "",
-                    },
+                    explanation: questionInstance.explanation || { value: "" },
                   }),
                 );
 
@@ -295,15 +293,7 @@ const Renderer = (props: { content: OutputData }) => {
 
   if (!props.content) return null;
 
-  const parser = new edjsParser(
-    {
-      image: {
-        use: "figure",
-        imgClass: "img rounded-lg",
-      },
-    },
-    customParsers,
-  );
+  const parser = new edjsParser(undefined, customParsers);
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const markup = parser.parse(props.content);
 
