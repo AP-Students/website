@@ -3,7 +3,7 @@ import katex from "katex";
 import type { QuestionFile, QuestionInput } from "@/types/questions";
 import "@/styles/katexStyling.css";
 import Image from "next/image";
-import { decodeEntities } from "../Renderer";
+import { decodeEntities, katexMacros } from "../Renderer";
 
 interface Props {
   content: QuestionInput;
@@ -141,6 +141,7 @@ export function RenderContent({ content }: Props) {
                 dangerouslySetInnerHTML={{
                   __html: katex.renderToString(line.slice(2, -1), {
                     throwOnError: false,
+                    macros: katexMacros,
                   }),
                 }}
               ></span>
