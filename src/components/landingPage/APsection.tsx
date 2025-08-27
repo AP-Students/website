@@ -4,7 +4,7 @@ import Link from "next/link";
 import React, { useState } from "react";
 import { cn, formatSlug } from "@/lib/utils";
 import { BookDashed, ExternalLink, HeartHandshake } from "lucide-react";
-import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 type urlInfo = {
   title: string;
@@ -88,7 +88,6 @@ const APLink: React.FC<LinkProps> = ({
 
       <Popover>
         <PopoverTrigger asChild>
-          <li className="break-inside-avoid-column">
             <h1
               className={cn(
                 "hover:underline cursor-pointer",
@@ -116,7 +115,6 @@ const APLink: React.FC<LinkProps> = ({
                 course.title
               )}
             </h1>
-          </li>
         </PopoverTrigger>
         <PopoverContent className="flex flex-col justify-start align-start bg-background outline-0 rounded-lg z-40 px-5 py-2 shadow-lg cursor-pointer"
         style={{
