@@ -1,6 +1,6 @@
 .custom-katex .katex,
 .custom-katex .katex * {
-  color: black !important; /* Set all LaTeX content to black */
+  color: black; /* Not all KaTeX content is supposed to be visible */
 }
 
 .katex .frac-line,
