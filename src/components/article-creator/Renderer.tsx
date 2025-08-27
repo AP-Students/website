@@ -2,6 +2,7 @@ import type { OutputData } from "@editorjs/editorjs";
 import type { BlockData, Config } from "editorjs-parser";
 import edjsParser from "editorjs-parser";
 import katex from "katex";
+import "katex/contrib/mhchem";
 import hljs from "highlight.js";
 import "@/styles/highlightjs.css";
 import { useEffect, useRef } from "react";
