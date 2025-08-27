@@ -35,10 +35,10 @@ const links = [
 ];
 
 const Navbar = ({
-  variant = "primary",
+  hideLinks,
   className,
 }: {
-  variant?: "primary" | "secondary";
+  hideLinks?: boolean;
   className?: string;
 }) => {
   const { user } = useUser();
@@ -70,14 +70,19 @@ const Navbar = ({
           className,
         )}
       >
-        <div className="flex items-center justify-center pl-4 lg:grow lg:basis-0">
+        <div
+          className={cn(
+            "flex items-center pl-4 lg:grow lg:basis-0",
+            hideLinks ? "pl-10 xl:pl-20" : "justify-center",
+          )}
+        >
           <Link href="/" className="flex items-center gap-2">
             <Image src="/logo.png" alt="Logo" width={80} height={80} />
             <h1 className="text-4xl font-bold">FiveHive</h1>
           </Link>
         </div>
 
-        {variant === "primary" && (
+        {!hideLinks && (
           <div className="flex max-w-lg grow justify-evenly">
             {links.map((link) => (
               <NavbarLink key={link.name} href={link.href}>
@@ -114,7 +119,7 @@ const Navbar = ({
           className,
         )}
       >
-        <Link className="flex items-center gap-2" href="/">
+        <Link className="flex items-center gap-2 sm:pl-6" href="/">
           <Image src="/logo.png" alt="Logo" width={80} height={80} />
           <h1 className="text-4xl font-bold">FiveHive</h1>
         </Link>
