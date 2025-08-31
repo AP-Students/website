@@ -2,6 +2,7 @@ import type { OutputData } from "@editorjs/editorjs";
 import type { BlockData, Config } from "editorjs-parser";
 import edjsParser from "editorjs-parser";
 import katex from "katex";
+import "katex/contrib/mhchem";
 import hljs from "highlight.js";
 import "@/styles/highlightjs.css";
 import { useEffect, useRef } from "react";
@@ -17,6 +18,11 @@ export function decodeEntities(str: string): string {
   return txt.value;
 }
 
+export const katexMacros = {
+  "\\unit": "\\,\\mathrm{#1}",
+  "\\qty": "#1\\,\\mathrm{#2}",
+};
+
 // derived from advancedtextbox
 function parseLatex(text: string): string {
   const decoded = decodeEntities(text);
@@ -29,6 +35,7 @@ function parseLatex(text: string): string {
         return katex.renderToString(expr, {
           throwOnError: false,
           output: "html",
+          macros: katexMacros,
         });
       }
       return part;
@@ -87,6 +94,7 @@ const customParsers: Record<
       output: "html",
       throwOnError: true,
       displayMode: true,
+      macros: katexMacros,
     });
   },
 
@@ -192,6 +200,38 @@ const customParsers: Record<
       content: QuestionFormat;
     };
     return `<div class="questions-block-${instanceId}"></div>`;
+  },
+
+  image: (data, _config) => {
+    const imageConditions = `${data.stretched ? "img-fullwidth" : ""} ${
+      data.withBorder ? "img-border" : ""
+    } ${data.withBackground ? "img-bg" : ""} ${data.centerImage ? "img-center" : ""}`;
+    const imgClass = _config.image.imgClass ?? "";
+    let imageSrc;
+
+    if (data.url) {
+      // simple-image was used and the image probably is not uploaded to this server
+      // therefore, we use the absolute path provided in data.url
+      // so, _config.image.path property is useless in this case!
+      imageSrc = data.url;
+    } else if (_config.image.path === "absolute") {
+      imageSrc = data.file?.url;
+    } else {
+      imageSrc = _config.image.path?.replace(
+        /<(.+)>/,
+        (match, p1: string) => data.file?.[p1] ?? "",
+      );
+    }
+
+    if (_config.image.use === "img") {
+      return `<img class="${imageConditions} ${imgClass}" src="${imageSrc}" alt="${data.caption}">`;
+    } else if (_config.image.use === "figure") {
+      const figureClass = _config.image.figureClass ?? "";
+      const figCapClass = _config.image.figCapClass ?? "";
+
+      return `<figure class="${figureClass}"><img class="${imgClass} ${imageConditions}" src="${imageSrc}" alt="${data.caption}"><figcaption class="${figCapClass}">${data.caption}</figcaption></figure>`;
+    }
+    return "ERROR DISPLAYING IMAGE";
   },
 };
 
