@@ -65,7 +65,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
   return (
     <div className="relative flex grow flex-col">
-      <Navbar className="w-full px-10 xl:px-20" variant="secondary" />
+      <Navbar hideLinks />
 
       <div className="relative mt-8 flex justify-between gap-x-12 px-6 sm:px-10 lg:mt-16 xl:px-20">
         <div className="grow">

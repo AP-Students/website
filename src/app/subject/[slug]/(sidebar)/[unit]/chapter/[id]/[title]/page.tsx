@@ -79,10 +79,10 @@ const Page = ({
 
     return (
       <div className="relative flex grow flex-col">
-        <Navbar className="w-full px-10 xl:px-20" variant="secondary" />
+        <Navbar hideLinks />
 
-        <div className="relative mt-[5.5rem] flex min-h-screen justify-between gap-x-16 px-10 xl:px-20">
-          <div className="flex grow flex-col items-center md:ml-12">
+        <div className="relative mt-8 flex min-h-screen justify-between gap-x-16 px-10 lg:mt-16 xl:px-20">
+          <div className="grow">
             <SubjectBreadcrumb
               locations={[subject.title, unitTitle, chapter.title]}
             />
