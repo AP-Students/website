@@ -81,13 +81,13 @@ const Page = ({
       <div className="relative flex grow flex-col">
         <Navbar hideLinks />
 
-        <div className="relative mt-8 flex min-h-screen justify-between gap-x-16 px-10 lg:mt-16 xl:px-20">
-          <div className="grow">
+        <div className="relative mt-8 flex justify-between gap-x-16 px-10 lg:mt-16 xl:px-20">
+          <div className="flex grow flex-col items-center">
             <SubjectBreadcrumb
               locations={[subject.title, unitTitle, chapter.title]}
             />
 
-            <h1 className="my-2 text-balance text-left text-5xl font-extrabold sm:text-6xl">
+            <h1 className="my-2 text-balance text-center text-5xl font-extrabold">
               {unitIndex + 1}.{chapterIndex + 1} - {chapter.title}
             </h1>
             <p>{content.author}</p>
@@ -96,20 +96,22 @@ const Page = ({
             </div>
 
             <Renderer content={content.data} />
-            <div className="flex pt-6">
-              <PreviousArticle
-                subjectTitle={subject.title}
-                units={subject.units}
-                unitIndex={unitIndex}
-                chapterIndex={chapterIndex}
-              />
-              <NextArticle
-                subjectTitle={subject.title}
-                units={subject.units}
-                unitIndex={unitIndex}
-                chapterIndex={chapterIndex}
-              />
-            </div>
+          </div>
+        </div>
+        <div className="mt-auto flex justify-center">
+          <div className="flex max-w-[65ch] grow gap-3 pt-6">
+            <PreviousArticle
+              subjectTitle={subject.title}
+              units={subject.units}
+              unitIndex={unitIndex}
+              chapterIndex={chapterIndex}
+            />
+            <NextArticle
+              subjectTitle={subject.title}
+              units={subject.units}
+              unitIndex={unitIndex}
+              chapterIndex={chapterIndex}
+            />
           </div>
         </div>
 
