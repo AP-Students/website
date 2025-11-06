@@ -203,20 +203,19 @@ For any questions or additional information, feel free to reach out:
 
 - **FiveHive Lead**: @lance856 on Discord | [lance@fivehive.org](mailto:lance@fivehive.org)
 - **Survey & FAQ Team Leads**:
-  - @cpoabcdefg (Whole-Team Co-Lead)
-  - @truthl3ss (Data Analysis Co-Lead)
-  - @yuegelica (FAQ Doc Co-Lead)
+  - @cpoabcdefg on Discord (Survey/Data Analysis and FAQ Whole-Team Co-Lead)
+  - @yuegelica on Discord (FAQ Doc Co-Lead)
+  - @rickrolled0 on Discord (Data Analysis Co-Lead)
 - **Review Session Team Leads**:
-  - @cam_cummins_ (Math/CS Lecture Co-Lead)
-  - @usee2 (Science Co-Lead)
-  - @steelcrow. (English Lead)
-  - @mmbcsmen (Social Studies Lead)
-  - @lance856 (Other Subjects)
+  - @reading8446, @superdancer16, and @thecoolsavage on Discord (Math/CS Co-Lead) 
+  - @stealthnider and @ali_a_ on Discord (Science Co-Lead)
+  - @mmbcsmen, @liuren, and @martinuslutherus on Discord (Socials Studies Lead)
+  - @tar.heel on Discord (Capstone Co-Lead)
+  - @lance856 on Discord (Other subjects)
 - **Outreach Team Leads**:
-  - @froge43
-  - @eaten123
+  - @oopadoopp and @eaten123 on Discord (Outreach Leads)
 - **Website Team Lead**:
-  - @.manning.
+  - @brilliantdeviation7 on Discord (Website Team Lead)
 
 ---
 
