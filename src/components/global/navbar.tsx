@@ -25,10 +25,6 @@ const links = [
     href: "/peer-grading",
   },
   {
-    name: "guides",
-    href: "/guides",
-  },
-  {
     name: "Contribute",
     href: "/apply",
   },
@@ -65,7 +61,7 @@ const Navbar = ({
     <>
       <div
         className={cn(
-          "sticky top-0 z-40 hidden w-full items-center justify-between gap-4 bg-background py-2 transition-shadow md:flex",
+          "sticky top-0 z-50 hidden w-full items-center justify-between gap-4 bg-background py-2 transition-shadow md:flex",
           !atTopOfPage && "shadow-lg",
           className,
         )}

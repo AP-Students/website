@@ -1,14 +1,28 @@
+"use client";
+
 import Link from "next/link";
-import React from "react";
+import React, { useState } from "react";
 import { cn, formatSlug } from "@/lib/utils";
 import { BookDashed, ExternalLink, HeartHandshake } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+type urlInfo = {
+  title: string;
+  url: string;
+};
+
+type courseInfo = {
+  title: string;
+  referenceURLs?: urlInfo[];
+};
 
 interface SectionProps {
   title: string;
   numofCol: string;
   borderColor: string;
-  courses: string[];
+  courses: courseInfo[];
   external?: boolean;
+  popover?: boolean;
 }
 
 const APsection: React.FC<SectionProps> = ({
@@ -38,48 +52,7 @@ const APsection: React.FC<SectionProps> = ({
           className={`mt-1 columns-1 space-y-2 text-lg ${listMobile(+numofCol.replace(/[^1-9]/g, ""))}`}
         >
           {courses.map((course, index) => (
-            <li key={index} className="break-inside-avoid-column">
-              <Link
-                href={
-                  external
-                    ? `${course.includes("|") ? course.split(" | ")[1] : "/apply"}`
-                    : `/subject/${formatSlug(course.replace(/AP /g, ""))}`
-                }
-                target={external && course.includes("|") ? "_blank" : "_self"}
-                rel={
-                  external && course.includes("|") ? "noreferrer" : undefined
-                }
-                className={cn(
-                  "hover:underline",
-                  external && "flex items-center gap-1",
-                  external &&
-                    !course.includes("|") &&
-                    "group opacity-50 hover:text-amber-500 hover:opacity-100",
-                )}
-              >
-                {external ? (
-                  course.includes("|") ? (
-                    <>
-                      <ExternalLink className="shrink-0" />
-                      {course.split(" | ")[0]}
-                    </>
-                  ) : (
-                    <>
-                      <BookDashed className="shrink-0 group-hover:hidden" />
-                      <HeartHandshake className="hidden shrink-0 group-hover:block" />
-                      <p className="group-hover:hidden">
-                        {course.split(" | ")[0]}
-                      </p>
-                      <p className="hidden group-hover:block">
-                        Apply to join FiveHive
-                      </p>
-                    </>
-                  )
-                ) : (
-                  course
-                )}
-              </Link>
-            </li>
+            <APLink course={course} external={external} color={borderColor} key={index}></APLink>
           ))}
         </ul>
       </div>
@@ -96,6 +69,68 @@ const listMobile = (columnNumber: number) => {
   }
 
   return returnString;
+};
+
+interface LinkProps {
+  external?: boolean;
+  course: courseInfo;
+  color: string;
+}
+
+const APLink: React.FC<LinkProps> = ({
+  external,
+  course,
+  color,
+}) => {
+
+  return (
+    <div>
+
+      <Popover>
+        <PopoverTrigger asChild>
+            <h1
+              className={cn(
+                "hover:underline cursor-pointer",
+                external && "flex items-center gap-1",
+                external &&
+                  !course.title.includes("|") &&
+                  "group opacity-50",
+              )}
+            >
+              {external ? (
+                course.title.includes("|") ? (
+                  <>
+                    <ExternalLink className="shrink-0" />
+                    {course.title.split(" | ")[0]}
+                  </>
+                ) : (
+                  <>
+                    <BookDashed className="shrink-0" />
+                    <p>
+                      {course.title.split(" | ")[0]}
+                    </p>
+                  </>
+                )
+              ) : (
+                course.title
+              )}
+            </h1>
+        </PopoverTrigger>
+        <PopoverContent className="flex flex-col justify-start align-start bg-background outline-0 rounded-lg z-40 px-5 py-2 shadow-lg cursor-pointer"
+        style={{
+          border: `2px solid ${color}`,
+        }}>
+          <h1 className="text-3xl font-bold pb-1" style={{color: `${color}`}}>{course.title}</h1>
+          {course.referenceURLs?.map((urlInfo, index) => (
+            <h1 className="hover:underline py-0.5 opacity-75" key={index}
+            onClick={
+              () => {window.open(urlInfo.url, '_blank')}
+            }>{urlInfo.title}</h1>
+          ))}
+        </PopoverContent>
+      </Popover>
+    </div>
+  )
 };
 
 export default APsection;
