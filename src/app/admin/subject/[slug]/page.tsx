@@ -569,7 +569,7 @@ export default function Page({ params }: { params: { slug: string } }) {
                   "bg-blue-500 hover:bg-blue-600",
                   unsavedChanges && "animate-pulse",
                 )}
-                onClick={handleSave}
+                onClick={() => handleSave()}
               >
                 <Save className="mr-2" /> Save Changes
               </Button>
