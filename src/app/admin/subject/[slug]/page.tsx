@@ -619,7 +619,7 @@ export default function Page({ params }: { params: { slug: string } }) {
           <div className="mt-8 space-y-3 rounded-lg border border-dashed border-blue-300 p-4">
             <h2 className="text-2xl font-semibold">Cross-Port Article</h2>
             <p className="text-sm text-muted-foreground">
-              Copy a chapter/article from any subject (e.g., AP Calculus AB <-> AP Calculus BC) into this subject.
+              Copy a chapter/article from any subject (e.g., AP Calculus AB &lt;-&gt; AP Calculus BC) into this subject.
             </p>
 
             <div className="grid gap-3 md:grid-cols-2">
