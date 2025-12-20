@@ -3,25 +3,29 @@
 import Link from "next/link";
 import React, { useState } from "react";
 import { cn, formatSlug } from "@/lib/utils";
-import { BookDashed, ExternalLink, HeartHandshake } from "lucide-react";
-import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover";
+import { Book, BookDashed, ExternalLink, HeartHandshake } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
-type urlInfo = {
+type Resource = {
   title: string;
   url: string;
 };
 
-type courseInfo = {
+type Course = {
   title: string;
-  referenceURLs?: urlInfo[];
+  referenceURLs?: Resource[];
 };
 
 interface SectionProps {
   title: string;
   numofCol: string;
   borderColor: string;
-  courses: courseInfo[];
-  external?: boolean;
+  courses: Course[];
+  showReferenceList?: boolean;
   popover?: boolean;
 }
 
@@ -30,7 +34,7 @@ const APsection: React.FC<SectionProps> = ({
   courses,
   borderColor,
   numofCol,
-  external,
+  showReferenceList,
 }) => {
   return (
     <>
@@ -51,9 +55,13 @@ const APsection: React.FC<SectionProps> = ({
         <ul
           className={`mt-1 columns-1 space-y-2 text-lg ${listMobile(+numofCol.replace(/[^1-9]/g, ""))}`}
         >
-          {courses.map((course, index) => (
-            <APLink course={course} external={external} color={borderColor} key={index}></APLink>
-          ))}
+          {courses.map((course, index) =>
+            !showReferenceList ? (
+              <SubjectLink course={course.title} index={index} />
+            ) : (
+              <ReferenceListItem color={borderColor} course={course} />
+            ),
+          )}
         </ul>
       </div>
     </>
@@ -72,67 +80,72 @@ const listMobile = (columnNumber: number) => {
 };
 
 interface LinkProps {
-  external?: boolean;
-  course: courseInfo;
+  course: Course;
   color: string;
 }
 
-const APLink: React.FC<LinkProps> = ({
-  external,
-  course,
-  color,
-}) => {
+interface SubjectProps {
+  index: number;
+  course: string;
+}
 
+const SubjectLink: React.FC<SubjectProps> = ({ index, course }) => {
   return (
-    <div>
+    <li key={index} className="break-inside-avoid-column">
+      <Link
+        href={`/subject/${formatSlug(course.replace(/AP /g, ""))}`}
+        className="hover:underline"
+      >
+        {course}
+      </Link>
+    </li>
+  );
+};
 
-      <Popover>
-        <PopoverTrigger asChild>
-          <li className="break-inside-avoid-column">
-            <h1
-              className={cn(
-                "hover:underline cursor-pointer",
-                external && "flex items-center gap-1",
-                external &&
-                  !course.title.includes("|") &&
-                  "group opacity-50",
-              )}
-            >
-              {external ? (
-                course.title.includes("|") ? (
-                  <>
-                    <ExternalLink className="shrink-0" />
-                    {course.title.split(" | ")[0]}
-                  </>
-                ) : (
-                  <>
-                    <BookDashed className="shrink-0" />
-                    <p>
-                      {course.title.split(" | ")[0]}
-                    </p>
-                  </>
-                )
-              ) : (
-                course.title
-              )}
-            </h1>
-          </li>
-        </PopoverTrigger>
-        <PopoverContent className="flex flex-col justify-start align-start bg-background outline-0 rounded-lg z-40 px-5 py-2 shadow-lg cursor-pointer"
+const ReferenceListItem: React.FC<LinkProps> = ({ course, color }) => {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <h1
+          className={cn(
+            "flex w-fit cursor-pointer items-center gap-1 hover:underline",
+            course.referenceURLs &&
+              course.referenceURLs?.length < 2 &&
+              "opacity-50",
+          )}
+        >
+          {course.referenceURLs && course.referenceURLs.length > 1 ? (
+            <Book className="shrink-0" />
+          ) : (
+            <BookDashed className="shrink-0" />
+          )}
+          <p>{course.title}</p>
+        </h1>
+      </PopoverTrigger>
+      <PopoverContent
         style={{
           border: `2px solid ${color}`,
-        }}>
-          <h1 className="text-3xl font-bold pb-1" style={{color: `${color}`}}>{course.title}</h1>
-          {course.referenceURLs?.map((urlInfo, index) => (
-            <h1 className="hover:underline py-0.5 opacity-75" key={index}
-            onClick={
-              () => {window.open(urlInfo.url, '_blank')}
-            }>{urlInfo.title}</h1>
+        }}
+      >
+        <h1 className="pb-1 font-bold" style={{ color: `${color}` }}>
+          {course.title}
+        </h1>
+        <ul className="list-inside list-disc">
+          {course.referenceURLs?.map((resource, index) => (
+            <li>
+              <a
+                className="py-0.5 opacity-75 hover:underline"
+                key={index}
+                href={resource.url}
+              >
+                {resource.title}
+              </a>
+            </li>
           ))}
-        </PopoverContent>
-      </Popover>
-    </div>
-  )
+        </ul>
+      </PopoverContent>
+    </Popover>
+  );
 };
 
 export default APsection;

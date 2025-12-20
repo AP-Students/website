@@ -377,7 +377,7 @@ const FAQLibrary = () => {
           numofCol={section.numofCol}
           borderColor={section.borderColor}
           courses={section.courses}
-          external
+          showReferenceList
         />
       ))}
     </div>
