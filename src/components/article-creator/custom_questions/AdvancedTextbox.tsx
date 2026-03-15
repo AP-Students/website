@@ -243,6 +243,7 @@ export default function AdvancedTextbox({
     updatedQuestions[qIndex] = updatedQuestion;
 
     setQuestions(updatedQuestions);
+    setUnsavedChanges?.(true);
 
     // Reset input value so duplicate files can be reuploaded in the case of deletion
     // Code logic will catch actual duplicates
