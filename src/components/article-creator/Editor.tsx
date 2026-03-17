@@ -88,6 +88,11 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
     config: {
       uploader: {
         async uploadByFile(file: File) {
+          if (file.size > 5 * 1024 * 1024) {
+            alert(`File "${file.name}" is too large.`);
+            return { success: 0 };
+          }
+
           const storage = getStorage();
           const storageRef = ref(
             storage,
