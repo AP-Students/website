@@ -20,7 +20,7 @@
 - [How to Apply](#how-to-apply)
 - [Contact Us](#contact-us)
 - [Follow Us](#follow-us)
-
+- [For Developers](#for-developers)
 ---
 
 ## About FiveHive
@@ -225,6 +225,76 @@ Stay updated with our latest resources and announcements:
 
 - **Instagram**: [@fivehiveorg](https://www.instagram.com/fivehiveorg/)
 - **TikTok**: [@fivehive](https://www.tiktok.com/@fivehive)
+
+---
+## For Developers
+
+### Website Frontend
+
+1. Fork the FiveHive Website's GitHub repo.
+2. Clone the forked repo into a local folder.
+3. Run `npm install` in the project's root directory (installs libraries).
+
+Okay, now it's time to set up Firebase.
+
+1. Create a new Firebase project.
+2. Locate your "apiKey", "authDomain", and other environment variables (You will have to create a "web app" to access these).
+3. Create a file simply named `.env` in the project's root directory.
+4. In this file, list all environment variables required on separate lines. It should look something like this:
+
+```
+NEXT_PUBLIC_FIREBASE_API_KEY="key"
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="domain"
+NEXT_PUBLIC_FIREBASE_PROJECT_ID="id"
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="domain"
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="id"
+NEXT_PUBLIC_FIREBASE_APP_ID="id"
+```
+
+Then replace the placeholders with your Firebase project's variables.
+
+5. Run `npm run dev` (starts the local development server).
+
+And now, the website should load when you click on the localhost link! If it's blank, try reloading a few times.
+
+### Firebase Emulator
+
+We use Firebase Emulator to locally simulate the website's Firebase backend. To get it working, we first need to add a couple of lines in your local copy of the repo.
+
+1. Open firebase.ts (./src/lib)
+2. Replace this:
+
+```
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+```
+
+With this:
+
+```
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+connectFirestoreEmulator(db, '127.0.0.1', 8080);
+const auth = getAuth(app);
+connectAuthEmulator(auth, "http://127.0.0.1:9099");
+```
+
+This change should remain LOCAL ONLY. Don't let this escape into a git commit. Make sure to include the imports as well:
+
+```
+import { initializeApp } from "firebase/app";
+import { connectAuthEmulator, getAuth } from "firebase/auth";
+import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
+```
+
+3. Install the Firebase CLI with npm (`npm install -g firebase-tools`)
+4. Run `firebase init` to initialize your Firebase project in the directory. You only need to initialize Firebase emulator. When asked to choose which emulators to set up, choose "authentication", "firestore", and "storage". Use the default ports and enable the emulator UI.
+5. Run `firebase emulators:start`, and you should see a warning at the bottom of the website. Then, try to create an account! 
+6. If you want admin privileges, log out of your account, modify the value of "access" in the Firestore Emulator UI, then log back in.
+
+If there are any issues with the process above, please tell us, and we'll fix it!
+
 
 ---
 
