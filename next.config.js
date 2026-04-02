@@ -13,7 +13,7 @@ const config = {
     return [
       {
         source: "/lecture-feedback",
-        destination: "https://bit.ly/fivehivelecturefeedback", // Replace with the actual Google Form/survey link
+        destination: "https://forms.gle/utVZw3C6Jt9Mth8eA", // Replace with the actual Google Form/survey link
         permanent: false, // 'false' allows you to change the destination later without browser caching issues
       },
       // You can add more redirects like this:
