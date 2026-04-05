@@ -5,7 +5,7 @@ import Navbar from "@/components/global/navbar";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Footer from "@/components/global/footer";
-import APLibrary from "@/components/landingPage/APLibrary";
+import SimpleAPLibrary from "@/components/landingPage/SimpleAPLibrary";
 import FAQ from "@/components/landingPage/FAQ";
 
 export default async function Home() {
@@ -17,7 +17,7 @@ export default async function Home() {
         <Hero />
         <div className="mx-auto flex max-w-6xl flex-col px-6 pb-8 lg:px-8 ">
           <LibraryHeader />
-          <APLibrary />
+          <SimpleAPLibrary />
           <SellingPoint />
           <div id="FAQ-section">
             <h2 className="mb-2 mt-12 text-center text-5xl font-bold">FAQ</h2>
