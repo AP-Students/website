@@ -173,10 +173,16 @@ export default function AdvancedTextbox({
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const fileList = e.target.files ?? [];
-    const files = Array.from(fileList).filter(
+    let files = Array.from(fileList).filter(
       (file) =>
         file.type.startsWith("image/") || file.type.startsWith("audio/"),
     );
+
+    const validFiles = files.filter((file) => file.size <= 5 * 1024 * 1024);
+    if (validFiles.length < files.length) {
+      alert("Some files ignored. Please ensure file sizes are under 5MB.");
+      files = validFiles;
+    }
 
     if (files.length === 0) {
       alert(
@@ -239,6 +245,7 @@ export default function AdvancedTextbox({
     updatedQuestions[qIndex] = updatedQuestion;
 
     setQuestions(updatedQuestions);
+    setUnsavedChanges?.(true);
 
     // Reset input value so duplicate files can be reuploaded in the case of deletion
     // Code logic will catch actual duplicates
@@ -312,6 +319,7 @@ export default function AdvancedTextbox({
 
     updatedQuestions[qIndex] = updatedQuestion;
     setQuestions(updatedQuestions);
+    setUnsavedChanges?.(true);
   };
 
   return (

@@ -9,6 +9,21 @@ const config = {
   images: {
     domains: ["lh3.googleusercontent.com", "firebasestorage.googleapis.com"],
   },
+  async redirects() {
+    return [
+      {
+        source: "/lecture-feedback",
+        destination: "https://forms.gle/utVZw3C6Jt9Mth8eA", // Replace with the actual Google Form/survey link
+        permanent: false, // 'false' allows you to change the destination later without browser caching issues
+      },
+      // You can add more redirects like this:
+      // {
+      //   source: "/another-form",
+      //   destination: "https://forms.gle/...",
+      //   permanent: false,
+      // },
+    ];
+  },
 };
 
 export default config;
