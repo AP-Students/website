@@ -50,8 +50,8 @@ const CheckForUnderstanding: React.FC<Props> = ({ questionInstance }) => {
   };
 
   return (
-    <div className="max-w-6xl rounded-lg border border-primary bg-primary-foreground p-4">
-      <div className="markdown text-xl text-foreground">
+    <div className="inline-block min-w-full rounded-lg border border-primary bg-primary-foreground p-4 bg-green-50">
+      <div className="markdown relative text-xl text-foreground min-w-0 break-words [overflow-wrap:anywhere]">
         <RenderContent content={questionInstance.question} />
       </div>
       <div className="mt-4 grid grid-cols-1 gap-4">
