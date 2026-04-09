@@ -44,7 +44,7 @@
     "editorjs-math": "^1.0.2",
     "editorjs-parser": "^1.5.3",
     "editorjs-undo": "^2.0.28",
-    "firebase": "^10.13.0",
+    "firebase": "^10.14.1",
     "firebase-admin": "^12.3.1",
     "highlight.js": "^11.10.0",
     "katex": "^0.16.11",
