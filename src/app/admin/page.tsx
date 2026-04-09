@@ -28,7 +28,7 @@ const Page = () => {
     );
   }
 
-  if (user.access === "user") {
+  if (user.access === "user" || user.access === "banned") {
     router.push("/");
     return null;
   }

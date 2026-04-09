@@ -7,21 +7,31 @@ service cloud.firestore {
     function isAuthenticated() {
       return request.auth != null;
     }
+
+    // Safely checks whether the authenticated user's profile document exists
+    function hasUserDoc() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
     
     // Centralized function to check if the user is an admin
     function isAdmin() {
-      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.access == "admin";
+      return hasUserDoc() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.access == "admin";
     }
 
     // Centralized function to check if the user is a member or admin (role hierarchy)
     function isMemberOrAdmin() {
-      let accessLevel = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.access;
-      return isAuthenticated() && (accessLevel == "admin" || accessLevel == "member");
+      return hasUserDoc() && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.access == "admin" ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.access == "member"
+      );
     }
 
     function isGraderOrMemberOrAdmin() {
-      let accessLevel = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.access;
-      return isAuthenticated() && (accessLevel == "admin" || accessLevel == "member" || accessLevel == "grader");
+      return hasUserDoc() && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.access == "admin" ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.access == "member" ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.access == "grader"
+      );
     }
 
     // Allow read/write access to users for their own user data
@@ -35,7 +45,7 @@ service cloud.firestore {
       match /frqResponses/{document=**} {
         allow read: if isAuthenticated() && request.auth.uid == userId;
 
-        allow create: if isAuthenticated() && request.auth.uid == userId && (request.resource.data.keys().hasAll(['responseText', 'question', 'userId', 'submittedAt'])) && (request.resource.data.keys().hasOnly(['responseText', 'question', 'userId', 'submittedAt'])) && canSubmitFrqResponse();
+        allow create: if isAuthenticated() && request.auth.uid == userId && (request.resource.data.keys().hasAll(['responseText', 'question', 'userId', 'submittedAt'])) && (request.resource.data.keys().hasOnly(['responseText', 'question', 'userId', 'submittedAt'])) && request.resource.data.submittedAt == request.time && canSubmitFrqResponse();
         allow update: if isGraderOrMemberOrAdmin() && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['feedback', 'grade', 'gradedAt', 'gradedBy', 'status']));
       }
 
@@ -56,7 +66,7 @@ service cloud.firestore {
       ) || (
         userData.lastFrqResponseAt < (request.time - duration.value(6, 'h'))
         &&
-        userDataAfter.lastFrqResponseAt == request.resource.data.submittedAt)
+        userDataAfter.lastFrqResponseAt == request.time)
       )
     }
 

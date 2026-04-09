@@ -317,7 +317,6 @@ export default function AdvancedTextbox({
 
     updatedQuestions[qIndex] = updatedQuestion;
     setQuestions(updatedQuestions);
-    setUnsavedChanges?.(true);
   };
 
   return (
