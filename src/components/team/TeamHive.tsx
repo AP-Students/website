@@ -7,7 +7,122 @@ import type { TeamMember } from "@/types/team";
 const HIVE_SCALE = 0.58;
 const HEX_SIZE = 240 * HIVE_SCALE;
 
-const primaryMembers: TeamMember[] = [
+const lance: TeamMember = {
+  id: 20,
+  name: "Lance Xu",
+  position: "Founder/CEO",
+  image: "/team/lance.jpg",
+};
+
+const teamLeads: TeamMember[] = [
+  {
+    id: 13,
+    name: "Reading",
+    position: "FiveHive Lead",
+    image: "/team/Google_pfp - Wenbo W.png",
+  },
+  {
+    id: 21,
+    name: "Janya",
+    position: "Data Analysis Sub-Team Lead, Outreach Team Lead",
+    image: "/team/IMG_6216 - Janya Jain.jpeg",
+  },
+  {
+    id: 22,
+    name: "Shreya Suresh",
+    position: "Outreach Team Lead",
+    image: "/team/Shreya Suresh.png",
+  },
+  {
+    id: 23,
+    name: "Ethan Chen",
+    position: "Outreach Team Lead",
+    image: "/team/af88d83f60d8f856f74b2d83ec9c799d - Ethan.jpg",
+  },
+  {
+    id: 24,
+    name: "Scipio H",
+    position: "Survey & FAQ Team Lead",
+    image: "/team/Screenshot 2025-07-23 011653 - Scipio H.png",
+  },
+  {
+    id: 26,
+    name: "Tal Levy",
+    position: "Review Session Team Lead",
+    image: "/team/it_s the klerd of tal - Tal Levy.jpeg",
+  },
+  {
+    id: 4,
+    name: "Ashay Sarda",
+    position: "Website Team Colead",
+    image: "/team/4526954c591bc1f55f65cfb8499decf7 - Ashay Sarda - Turtle Walkers.png",
+  },
+  {
+    id: 7,
+    name: "River Antonov",
+    position: "Science Co-lead, bio crew, material & lecture",
+    image: "/team/frtshit - River Antonov",
+  },
+  {
+    id: 12,
+    name: "Anmol Nanjundareddy",
+    position: "Math/CS Colead, Lecture/Materials Member, FAQ Subteam",
+    image: "/team/bumblebee pfp - Anmol Nanjundareddy.png",
+  },
+  {
+    id: 15,
+    name: "Ali A.",
+    position: "Science Co-Lead",
+    image: "/team/─ .✦ With Filter & Stickers  - Jasmine Gadot.jpeg",
+  },
+];
+
+const subTeamLeads: TeamMember[] = [
+  {
+    id: 25,
+    name: "Liuren",
+    position: "Review Session, Lecture Sub-Team Lead",
+    image: "/team/IMG_3498 - Pierre-Louis Nguyen.jpg",
+  },
+  {
+    id: 27,
+    name: "A Ashraf",
+    position: "Data Analysis Sub-Team Lead",
+    image: "/team/ChatGPT Image Sep 13, 2025, 09_54_35 PM - Ahmed Ashraf.png",
+  },
+  {
+    id: 28,
+    name: "mmbcsmen",
+    position: "Materials Sub-Team Lead",
+    image: "/team/mmbcsmen pfp - Father Brandon.jpg",
+  },
+  {
+    id: 29,
+    name: "Matthew Belyea",
+    position: "Materials, Lecture Sub-Team Lead",
+    image: "/team/IMG_0145 - Matthew Belyea.jpeg",
+  },
+  {
+    id: 30,
+    name: "Sean",
+    position: "Materials, Lecture Sub-Team Lead",
+    image: "/team/sheep-4810513_1280 - Sean Nguyen.jpg",
+  },
+  {
+    id: 31,
+    name: "thecoolsavage",
+    position: "Materials, Lecture Sub-Team Lead",
+    image: "/team/raw - Rayan Zaman.png",
+  },
+  {
+    id: 32,
+    name: "Henry",
+    position: "Lecture Sub-Team Lead",
+    image: "/team/dukechapel - Henry H.jpg",
+  },
+];
+
+const members: TeamMember[] = [
   {
     id: 1,
     name: "Sprite",
@@ -27,12 +142,6 @@ const primaryMembers: TeamMember[] = [
     image: "/team/profilepic - Benjamin Park.png",
   },
   {
-    id: 4,
-    name: "Ashay Sarda",
-    position: "Website Team Colead",
-    image: "/team/4526954c591bc1f55f65cfb8499decf7 - Ashay Sarda - Turtle Walkers.png",
-  },
-  {
     id: 5,
     name: "Insomnia",
     position: "Lecture Member",
@@ -43,12 +152,6 @@ const primaryMembers: TeamMember[] = [
     name: "Cylix",
     position: "Review Team Member",
     image: "/team/IMG_0010 - Cylix.jpeg",
-  },
-  {
-    id: 7,
-    name: "River Antonov",
-    position: "Science Co-lead, bio crew, material & lecture",
-    image: "/team/frtshit - River Antonov",
   },
   {
     id: 8,
@@ -75,28 +178,10 @@ const primaryMembers: TeamMember[] = [
     image: "/team/OIP - Reid Alexander.jpg",
   },
   {
-    id: 12,
-    name: "Anmol Nanjundareddy",
-    position: "Math/CS Colead, Lecture/Materials Member, FAQ Subteam",
-    image: "/team/bumblebee pfp - Anmol Nanjundareddy.png",
-  },
-  {
-    id: 13,
-    name: "Reading",
-    position: "FiveHive Lead",
-    image: "/team/Google_pfp - Wenbo W.png",
-  },
-  {
     id: 14,
     name: "Roenan Soriano",
     position: "Lecturer Sub-Team",
     image: "/team/20221201_215150_Original - Richard.jpeg",
-  },
-  {
-    id: 15,
-    name: "Ali A.",
-    position: "Science Co-Lead",
-    image: "/team/─ .✦ With Filter & Stickers  - Jasmine Gadot.jpeg",
   },
   {
     id: 16,
@@ -122,22 +207,6 @@ const primaryMembers: TeamMember[] = [
     position: "Materials Sub-Team",
     image: "/team/Photo for FiveHive - Ansh Desai.jpg",
   },
-];
-
-const legacyMembers: TeamMember[] = [
-  { id: 20, name: "Lance Xu", position: "Founder/CEO", image: "/team/lance.jpg" },
-  { id: 21, name: "Janya", position: "Data Analysis Sub-Team Lead, Outreach Team Lead", image: "/team/IMG_6216 - Janya Jain.jpeg" },
-  { id: 22, name: "Shreya Suresh", position: "Outreach Team Lead", image: "/team/Shreya Suresh.png" },
-  { id: 23, name: "Ethan Chen", position: "Outreach Team Lead", image: "/team/af88d83f60d8f856f74b2d83ec9c799d - Ethan.jpg" },
-  { id: 24, name: "Scipio H", position: "Survey & FAQ Team Lead", image: "/team/Screenshot 2025-07-23 011653 - Scipio H.png" },
-  { id: 25, name: "Liuren", position: "Review Session, Lecture Sub-Team Lead", image: "/team/IMG_3498 - Pierre-Louis Nguyen.jpg" },
-  { id: 26, name: "Tal Levy", position: "Review Session Team Lead", image: "/team/it_s the klerd of tal - Tal Levy.jpeg" },
-  { id: 27, name: "A Ashraf", position: "Data Analysis Sub-Team Lead", image: "/team/ChatGPT Image Sep 13, 2025, 09_54_35 PM - Ahmed Ashraf.png" },
-  { id: 28, name: "mmbcsmen", position: "Materials Sub-Team Lead", image: "/team/mmbcsmen pfp - Father Brandon.jpg" },
-  { id: 29, name: "Matthew Belyea", position: "Materials, Lecture Sub-Team Lead", image: "/team/IMG_0145 - Matthew Belyea.jpeg" },
-  { id: 30, name: "Sean", position: "Materials, Lecture Sub-Team Lead", image: "/team/sheep-4810513_1280 - Sean Nguyen.jpg" },
-  { id: 31, name: "thecoolsavage", position: "Materials, Lecture Sub-Team Lead", image: "/team/raw - Rayan Zaman.png" },
-  { id: 32, name: "Henry", position: "Lecture Sub-Team Lead", image: "/team/dukechapel - Henry H.jpg" },
   { id: 33, name: "Zoe Xue", position: "Materials Sub-Team Member", image: "/team/ZoeProfile - zox.jpg" },
   { id: 34, name: "Silas Lovett", position: "Website Team Member", image: "/team/pfp - Silas Lovett.png" },
   { id: 35, name: "Hector Wang", position: "Lecture, Materials Sub-Team Member", image: "/team/unnamed - Hector.png" },
@@ -167,18 +236,7 @@ const legacyMembers: TeamMember[] = [
   { id: 59, name: "dlcdeon", position: "Survey, Data Analysis, FAQ Doc Sub-Team Member", image: "/team/IMG_5289 - deondeluxe.jpeg" },
 ];
 
-const teamMembers = [...primaryMembers, ...legacyMembers];
-
-function shuffleMembers(members: TeamMember[]) {
-  const shuffled = [...members];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    const temp = shuffled[i]!;
-    shuffled[i] = shuffled[j]!;
-    shuffled[j] = temp;
-  }
-  return shuffled;
-}
+const teamMembers = [lance, ...teamLeads, ...subTeamLeads, ...members];
 
 // --- Helpers: hex grid generation (axial coords) ---
 function hexRange(radius: number) {
@@ -209,29 +267,28 @@ function toPixel(q: number, r: number, size: number, originX: number, originY: n
 export default function TeamHive() {
   const hexSize = HEX_SIZE;
   const hexRadius = hexSize * 0.4;
-  const mixedTeamMembers = useMemo(() => shuffleMembers(teamMembers), []);
 
   const radius = useMemo(() => {
     let r = 0;
-    while (1 + 3 * r * (r + 1) < mixedTeamMembers.length) {
+    while (1 + 3 * r * (r + 1) < teamMembers.length) {
       r += 1;
     }
     return r;
-  }, [mixedTeamMembers]);
+  }, []);
 
   const cells = useMemo(() => {
     return hexRange(radius)
       .map((hex) => ({ ...hex, dist: axialDistance(hex) }))
       .sort((a, b) => a.dist - b.dist || a.r - b.r || a.q - b.q)
-      .slice(0, mixedTeamMembers.length);
-  }, [radius, mixedTeamMembers.length]);
+      .slice(0, teamMembers.length);
+  }, [radius]);
 
   const centerX = 0;
   const centerY = 0;
 
   const placements = useMemo(() => {
     return cells.map((hex, index) => {
-      const member = mixedTeamMembers[index];
+      const member = teamMembers[index];
       if (!member) return null;
 
       const { q, r } = hex;
@@ -243,7 +300,7 @@ export default function TeamHive() {
         top: px.y - hexSize / 2,
       };
     }).filter((placement) => placement !== null);
-  }, [cells, mixedTeamMembers, hexRadius, hexSize]);
+  }, [cells, hexRadius, hexSize]);
 
   const paddedBounds = useMemo(() => {
     if (placements.length === 0) {
