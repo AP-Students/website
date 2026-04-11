@@ -273,7 +273,7 @@ export default function TeamHive() {
   }, [placements, hexSize]);
 
   return (
-    <div className="relative mx-auto w-full max-w-[1280px] overflow-x-auto pb-4">
+    <div className="relative mx-auto w-full max-w-[1280px] overflow-x-hidden pb-4">
       <div
         className="relative mx-auto"
         style={{
