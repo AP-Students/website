@@ -14,6 +14,7 @@ import { MenuIcon } from "lucide-react";
 import SignedInPfp from "../login/SignedInPfp";
 import { useUser } from "../hooks/UserContext";
 import { useEffect, useState } from "react";
+import SearchBar from "./SearchBar";
 
 const links = [
   {
@@ -82,8 +83,12 @@ const Navbar = ({
           </Link>
         </div>
 
+        <div className="mx-2 w-full max-w-xl grow">
+          <SearchBar />
+        </div>
+
         {!hideLinks && (
-          <div className="flex max-w-lg grow justify-evenly">
+          <div className="hidden max-w-lg grow justify-evenly lg:flex">
             {links.map((link) => (
               <NavbarLink key={link.name} href={link.href}>
                 {link.name}
@@ -126,6 +131,10 @@ const Navbar = ({
 
         <MobileNavbar />
       </div>
+
+      <div className={cn("px-4 pb-3 md:hidden", className)}>
+        <SearchBar mobile />
+      </div>
     </>
   );
 };
@@ -150,6 +159,7 @@ const MobileNavbar = () => {
               </SheetTrigger>
             </SheetTitle>
           </SheetHeader>
+          <SearchBar mobile className="mt-2" />
           <div className="mt-4 flex grow flex-col gap-2">
             {links.map((link) => (
               <div key={link.name}>

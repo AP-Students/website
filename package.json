@@ -46,6 +46,7 @@
     "editorjs-undo": "^2.0.28",
     "firebase": "^10.14.1",
     "firebase-admin": "^12.3.1",
+    "fuse.js": "^7.3.0",
     "highlight.js": "^11.10.0",
     "katex": "^0.16.11",
     "lucide-react": "^0.525.0",
