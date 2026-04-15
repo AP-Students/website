@@ -111,7 +111,7 @@ const SearchBar = ({
   return (
     <div ref={containerRef} className={cn("relative w-full", className)}>
       <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 opacity-60" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 opacity-50" />
         <Input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -143,17 +143,17 @@ const SearchBar = ({
               setInputFocused(false);
             }
           }}
-          placeholder="Search guide chapters by topic"
+          placeholder="Search Our Guides!"
           className={cn(
-            "w-full rounded-full bg-background/95 pl-9 pr-4",
-            mobile && "h-11 text-base",
+            "h-10 w-full rounded-full border-transparent bg-neutral-100/90 pl-9 pr-4 text-[0.95rem] shadow-inner ring-1 ring-black/10 transition-all placeholder:text-neutral-500/90 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-primary/30",
+            mobile && "h-11 bg-background text-base shadow-sm ring-border/60",
           )}
           aria-label="Search guides"
         />
       </div>
 
       {showDropdown && (
-        <div className="absolute left-0 right-0 top-[calc(100%+0.4rem)] z-50 max-h-80 overflow-y-auto rounded-xl border bg-background p-2 shadow-xl">
+        <div className="absolute left-0 right-0 top-[calc(100%+0.35rem)] z-50 max-h-80 overflow-y-auto rounded-2xl border border-border/70 bg-background/95 p-2 shadow-xl backdrop-blur">
           {loadingIndex ? (
             <div className="flex items-center gap-2 px-2 py-3 text-sm opacity-70">
               <LoaderCircle className="size-4 animate-spin" />
