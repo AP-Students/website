@@ -14,6 +14,7 @@ import { QuestionsInput } from "./QuestionInstance";
 import { Paperclip, Trash } from "lucide-react";
 import { deleteObject, getStorage, ref } from "firebase/storage";
 import { getUser } from "@/components/hooks/users";
+import { CheckboxItem } from "@radix-ui/react-dropdown-menu";
 
 interface Props {
   questions: QuestionFormat[];
@@ -89,6 +90,7 @@ export default function AdvancedTextbox({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize currentText and fileExists when question gets loaded from db if any
+  /* Make this a vertical box again. Get the checkbox out of this and put it in a parent component. */
   useEffect(() => {
     if (origin === "option" && oIndex !== undefined) {
       if (questionInstance!.options[oIndex]?.value?.value) {
@@ -326,6 +328,7 @@ export default function AdvancedTextbox({
         ref={textareaRef}
         value={currentText}
         onChange={handleTextChange}
+        style={{ resize: "none" }}
         onKeyDown={handleKeyDown}
         placeholder={
           placeholder ??
@@ -337,7 +340,7 @@ export default function AdvancedTextbox({
         type="file"
         accept="image/*,audio/*"
         ref={fileInputRef}
-        style={{ display: "none" }}
+        style={{ display: "none"}}
         onChange={handleFileUpload}
         multiple
       />
