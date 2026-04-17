@@ -6,7 +6,7 @@ import { formatSlug } from "@/lib/utils";
 import { type Chapter, type Subject, type Unit } from "@/types/firestore";
 
 const SEARCH_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
-const SEARCH_CACHE_KEY_PREFIX = "guide-search-index-v3";
+const SEARCH_CACHE_KEY_PREFIX = "guide-search-index-v4";
 
 export type GuideChapterSearchItem = {
   subjectSlug: string;
@@ -82,6 +82,11 @@ const buildSearchableText = (input: {
     .trim();
 };
 
+type ChapterDocPayload = Chapter & {
+  data?: unknown;
+  content?: unknown;
+};
+
 const fetchUnitDocs = async (subjectSlug: string, subject: Subject) => {
   try {
     const unitsSnapshot = await getDocs(
@@ -114,7 +119,7 @@ const fetchChapterDocs = async (subjectSlug: string, unitId: string) => {
     );
 
     return chaptersSnapshot.docs.map((chapterDoc) => {
-      const chapterData = chapterDoc.data() as Chapter;
+      const chapterData = chapterDoc.data() as ChapterDocPayload;
       return {
         ...chapterData,
         id: chapterData.id || chapterDoc.id,
@@ -135,8 +140,11 @@ const isChapterVisible = (chapter: Chapter, canPreview: boolean) => {
   return chapter.isPublic !== false;
 };
 
-const mergeChapters = (unitChapters: Chapter[] = [], chapterDocs: Chapter[] = []) => {
-  const chapterMap = new Map<string, Chapter>();
+const mergeChapters = (
+  unitChapters: Chapter[] = [],
+  chapterDocs: ChapterDocPayload[] = [],
+) => {
+  const chapterMap = new Map<string, ChapterDocPayload>();
 
   unitChapters.forEach((chapter) => {
     chapterMap.set(chapter.id, chapter);
@@ -186,8 +194,11 @@ const mapSubjectToSearchItems = (
           .map((chapter) => {
             let indexedContent: unknown = chapter.content;
             if (!hasIndexedContent(indexedContent)) {
-              const chapterDocMatch = chapterDocs.find((docItem) => docItem.id === chapter.id);
-              indexedContent = chapterDocMatch?.content;
+              const chapterDocMatch = chapterDocs.find(
+                (docItem) => docItem.id === chapter.id,
+              );
+              indexedContent =
+                chapterDocMatch?.data ?? chapterDocMatch?.content ?? null;
             }
 
             return {
