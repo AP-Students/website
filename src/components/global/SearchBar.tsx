@@ -82,7 +82,7 @@ const SearchBar = ({
       return;
     }
 
-    setResults(searchGuideChapters(fuse, debouncedQuery, 10));
+    setResults(searchGuideChapters(fuse, debouncedQuery, 20));
   }, [debouncedQuery, fuse]);
 
   useEffect(() => {
