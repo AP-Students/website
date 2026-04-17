@@ -1,9 +1,9 @@
 import Fuse from "fuse.js";
-import { collection, doc, getDoc, getDocs } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
 import { formatSlug } from "@/lib/utils";
-import { type Subject } from "@/types/firestore";
+import { type Chapter, type Subject, type Unit } from "@/types/firestore";
 
 const SEARCH_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const SEARCH_CACHE_KEY_PREFIX = "guide-search-index-v2";
@@ -82,52 +82,56 @@ const buildSearchableText = (input: {
     .trim();
 };
 
-const normalizeChapterDocId = (chapterId: string) => {
-  const normalized = chapterId.split("-").slice(0, 2).join("-");
-  return normalized || chapterId;
-};
+const fetchUnitDocs = async (subjectSlug: string, subject: Subject) => {
+  const unitsSnapshot = await getDocs(collection(db, "subjects", subjectSlug, "units"));
 
-const fetchChapterContent = async (
-  subjectSlug: string,
-  unitId: string,
-  chapterId: string,
-): Promise<unknown> => {
-  const candidateChapterIds = Array.from(
-    new Set([chapterId, normalizeChapterDocId(chapterId)]),
-  );
-
-  for (const candidateChapterId of candidateChapterIds) {
-    const chapterDocRef = doc(
-      db,
-      "subjects",
-      subjectSlug,
-      "units",
-      unitId,
-      "chapters",
-      candidateChapterId,
-    );
-
-    const chapterDocSnapshot = await getDoc(chapterDocRef);
-    if (chapterDocSnapshot.exists()) {
-      const chapterDocData = chapterDocSnapshot.data() as {
-        data?: unknown;
-        content?: unknown;
-      };
-      const dataValue = chapterDocData.data;
-      if (dataValue != null) {
-        return dataValue;
-      }
-
-      const contentValue = chapterDocData.content;
-      if (contentValue != null) {
-        return contentValue;
-      }
-
-      return null;
-    }
+  if (unitsSnapshot.empty) {
+    return subject.units ?? [];
   }
 
-  return null;
+  return unitsSnapshot.docs.map((unitDoc) => {
+    const unitData = unitDoc.data() as Unit;
+    return {
+      ...unitData,
+      id: unitData.id || unitDoc.id,
+      title: unitData.title || "Untitled Unit",
+      chapters: unitData.chapters ?? [],
+    };
+  });
+};
+
+const fetchChapterDocs = async (subjectSlug: string, unitId: string) => {
+  const chaptersSnapshot = await getDocs(
+    collection(db, "subjects", subjectSlug, "units", unitId, "chapters"),
+  );
+
+  return chaptersSnapshot.docs.map((chapterDoc) => {
+    const chapterData = chapterDoc.data() as Chapter;
+    return {
+      ...chapterData,
+      id: chapterData.id || chapterDoc.id,
+    };
+  });
+};
+
+const mergeChapters = (unitChapters: Chapter[] = [], chapterDocs: Chapter[] = []) => {
+  const chapterMap = new Map<string, Chapter>();
+
+  unitChapters.forEach((chapter) => {
+    chapterMap.set(chapter.id, chapter);
+  });
+
+  chapterDocs.forEach((chapterDoc) => {
+    const existing = chapterMap.get(chapterDoc.id);
+    chapterMap.set(chapterDoc.id, {
+      ...existing,
+      ...chapterDoc,
+      id: chapterDoc.id,
+      title: chapterDoc.title ?? existing?.title ?? "Untitled Chapter",
+    });
+  });
+
+  return Array.from(chapterMap.values());
 };
 
 const hasIndexedContent = (content: unknown) => {
@@ -148,46 +152,51 @@ const mapSubjectToSearchItems = (
   subject: Subject,
   canPreview: boolean,
 ): Promise<GuideChapterSearchItem[]> => {
-  const perChapterPromises = subject.units.flatMap((unit, unitIndex) =>
-    unit.chapters
-      .filter((chapter) => chapter.isPublic === true || canPreview)
-      .map(async (chapter) => {
-        let indexedContent: unknown = chapter.content;
+  return (async () => {
+    const units = await fetchUnitDocs(subjectSlug, subject);
 
-        if (!hasIndexedContent(indexedContent)) {
-          indexedContent = await fetchChapterContent(
-            subjectSlug,
-            unit.id,
-            chapter.id,
-          );
-        }
+    const perUnitItems = await Promise.all(
+      units.map(async (unit, unitIndex) => {
+        const chapterDocs = await fetchChapterDocs(subjectSlug, unit.id);
+        const chapters = mergeChapters(unit.chapters, chapterDocs);
 
-        return {
-          subjectSlug,
-          subjectTitle: subject.title,
-          unitId: unit.id,
-          unitIndex,
-          unitTitle: unit.title,
-          chapterId: chapter.id,
-          chapterTitle: chapter.title,
-          chapterPath: buildChapterPath({
-            subjectSlug,
-            unitIndex,
-            unitId: unit.id,
-            chapterId: chapter.id,
-            chapterTitle: chapter.title,
-          }),
-          searchableText: buildSearchableText({
-            subjectTitle: subject.title,
-            unitTitle: unit.title,
-            chapterTitle: chapter.title,
-            content: indexedContent,
-          }),
-        };
+        return chapters
+          .filter((chapter) => chapter.isPublic === true || canPreview)
+          .map((chapter) => {
+            let indexedContent: unknown = chapter.content;
+            if (!hasIndexedContent(indexedContent)) {
+              const chapterDocMatch = chapterDocs.find((docItem) => docItem.id === chapter.id);
+              indexedContent = chapterDocMatch?.content;
+            }
+
+            return {
+              subjectSlug,
+              subjectTitle: subject.title,
+              unitId: unit.id,
+              unitIndex,
+              unitTitle: unit.title,
+              chapterId: chapter.id,
+              chapterTitle: chapter.title,
+              chapterPath: buildChapterPath({
+                subjectSlug,
+                unitIndex,
+                unitId: unit.id,
+                chapterId: chapter.id,
+                chapterTitle: chapter.title,
+              }),
+              searchableText: buildSearchableText({
+                subjectTitle: subject.title,
+                unitTitle: unit.title,
+                chapterTitle: chapter.title,
+                content: indexedContent,
+              }),
+            };
+          });
       }),
-  );
+    );
 
-  return Promise.all(perChapterPromises);
+    return perUnitItems.flat();
+  })();
 };
 
 const readCache = (canPreview: boolean): GuideChapterSearchItem[] | null => {
@@ -252,10 +261,6 @@ export const loadGuideSearchItems = async (
   const itemsBySubject = await Promise.all(
     subjectsSnapshot.docs.map(async (subjectDoc) => {
       const subjectData = subjectDoc.data() as Subject;
-      if (!(subjectData.units?.length ?? 0)) {
-        return [];
-      }
-
       return mapSubjectToSearchItems(subjectDoc.id, subjectData, canPreview);
     }),
   );
