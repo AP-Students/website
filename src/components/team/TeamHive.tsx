@@ -81,7 +81,7 @@ const subTeamLeads: TeamMember[] = [
   {
     id: 25,
     name: "Liuren",
-    position: "Review Session, Lecture Sub-Team Lead",
+    position: "Team Co-Lead, RS Team Co-Lead",
     image: "/team/IMG_3498 - Pierre-Louis Nguyen.jpg",
   },
   {
@@ -111,7 +111,7 @@ const subTeamLeads: TeamMember[] = [
   {
     id: 31,
     name: "thecoolsavage",
-    position: "Materials, Lecture Sub-Team Lead",
+    position: "",
     image: "/team/raw - Rayan Zaman.png",
   },
   {
@@ -126,7 +126,7 @@ const members: TeamMember[] = [
   {
     id: 1,
     name: "Sprite",
-    position: "Lecture, Review Session Team Member",
+    position: "Lecture Sub-Team Member",
     image: "/team/star-wars-visions-1-tall_6acc99ff - Spryzen.jpeg",
   },
   {
@@ -138,7 +138,7 @@ const members: TeamMember[] = [
   {
     id: 3,
     name: "ioc025",
-    position: "Lecture/Materials Team Member",
+    position: "Materials Sub-Team Member",
     image: "/team/profilepic - Benjamin Park.png",
   },
   {
@@ -150,7 +150,7 @@ const members: TeamMember[] = [
   {
     id: 6,
     name: "Cylix",
-    position: "Review Team Member",
+    position: "Materials Sub-Team Member",
     image: "/team/IMG_0010 - Cylix.jpeg",
   },
   {
@@ -162,7 +162,7 @@ const members: TeamMember[] = [
   {
     id: 9,
     name: "hub34.",
-    position: "materials subteam",
+    position: "Materials Sub-Team Member",
     image: "/team/c1117760e5fafa1f92771b2ed99147e9 - Hub35.png",
   },
   {
@@ -174,7 +174,7 @@ const members: TeamMember[] = [
   {
     id: 11,
     name: "Notanimpostor2",
-    position: "Lecture team member",
+    position: "Lecture Sub-Team Member",
     image: "/team/OIP - Reid Alexander.jpg",
   },
   {
@@ -186,7 +186,7 @@ const members: TeamMember[] = [
   {
     id: 16,
     name: "catsby523",
-    position: "lecture",
+    position: "Lecture Sub-Team Member",
     image: "/team/IMG_5897 - Ree Vool.jpeg",
   },
   {
@@ -198,42 +198,41 @@ const members: TeamMember[] = [
   {
     id: 18,
     name: "Ansh Desai",
-    position: "FAQ Doc Sub-Team",
+    position: "FAQ Doc Sub-Team Member",
     image: "/team/Photo for FiveHive - Ansh Desai.jpg",
   },
   {
     id: 19,
     name: "Ansh Desai",
-    position: "Materials Sub-Team",
+    position: "Materials Sub-Team Member",
     image: "/team/Photo for FiveHive - Ansh Desai.jpg",
   },
   { id: 33, name: "Zoe Xue", position: "Materials Sub-Team Member", image: "/team/ZoeProfile - zox.jpg" },
   { id: 34, name: "Silas Lovett", position: "Website Team Member", image: "/team/pfp - Silas Lovett.png" },
   { id: 35, name: "Hector Wang", position: "Lecture, Materials Sub-Team Member", image: "/team/unnamed - Hector.png" },
-  { id: 36, name: "anisul", position: "Outreach Team Member", image: "/team/14d5dbfc447d088546351ce57855adeb - anisul.jpg" },
-  { id: 37, name: "mqax", position: "Survey, Data Analysis Sub-Team Member", image: "/team/mqaxPFP - Max.jpg" },
+  { id: 36, name: "anisul", position: "", image: "/team/14d5dbfc447d088546351ce57855adeb - anisul.jpg" },
+  { id: 37, name: "mqax", position: "Survey Sub-Team Member, Data Analysis Sub-Team Member", image: "/team/mqaxPFP - Max.jpg" },
   { id: 38, name: "Econ Guy", position: "Lecture Sub-Team Member", image: "/team/ucsdpride - Israel Cube.jpg" },
   { id: 39, name: "pineappled juice", position: "Lecture Sub-Team Member", image: "/team/IMG_2546 - Mina.jpeg" },
-  { id: 40, name: "assassin3552", position: "Materials Sub-Team Member", image: "/team/48 - Polaris Li.jpg" },
+  { id: 40, name: "assassin3552", position: "", image: "/team/48 - Polaris Li.jpg" },
   { id: 41, name: "Tanay B", position: "Lecture, Materials Sub-Team Member", image: "/team/IMG_0810 - Tanay Bollam.jpeg" },
-  { id: 42, name: "blitzal", position: "Materials Sub-Team Member", image: "/team/blitzalpfp - Kate Damico.jpg" },
+  { id: 42, name: "blitzal", position: "", image: "/team/blitzalpfp - Kate Damico.jpg" },
   { id: 43, name: "Sripaadh Jayashree Kuppusamy", position: "FAQ Doc, Lecture, Materials Sub-Team Member", image: "/team/52e94b8f-71c0-40c6-87b3-51299c73b852 - Sripaadh Jayashree Kuppusamy.JPG" },
-  { id: 44, name: "suri", position: "Survey, FAQ Doc Sub-Team Member", image: "/team/IMG_3641 - Suri Sanchez.jpeg" },
+  { id: 44, name: "suri", position: "Survey Sub-Team Member, FAQ Doc Sub-Team Member", image: "/team/IMG_3641 - Suri Sanchez.jpeg" },
   { id: 45, name: "Jacob", position: "Materials Sub-Team Member", image: "/team/J - Hystix.jpg" },
   { id: 46, name: "Jasmine Gadot", position: "Lecture, Materials Sub-Team Member", image: "/team/IMG_2093 - Jasmine Gadot.jpeg" },
   { id: 47, name: "Elvis Peng", position: "Materials Sub-Team Member", image: "/team/OMEGA - Elvis Peng(1).png" },
   { id: 48, name: "Jackson D.", position: "Lecture Sub-Team Member", image: "/team/IMG_3156 - Jackson D..webp" },
   { id: 49, name: "braden_is", position: "Lecture, Materials Sub-Team Member", image: "/team/IMG_2502 - Sigma Make.jpeg" },
   { id: 50, name: "Ian Joo", position: "Data Analysis, Outreach Team Member", image: "/team/IMG-20250901-WA0013 - Ian Joo.jpg" },
-  { id: 51, name: "user_exists", position: "Lecture, Materials Sub-Team Member", image: "/team/c95747eb1048ca82305685580ae28cf8 - Nikolas Dyer.png" },
+  { id: 51, name: "user_exists", position: "Materials Sub-Team Member", image: "/team/c95747eb1048ca82305685580ae28cf8 - Nikolas Dyer.png" },
   { id: 52, name: "Akshaj D", position: "Data Analysis Sub-Team Member", image: "/team/Profile Picture - Akshaj Donthi.jpg" },
   { id: 53, name: "irunwithscizors", position: "Lecture Sub-Team Member", image: "/team/acnh-tuna-header - Logan Li.jpg" },
-  { id: 54, name: "dkim19375", position: "Survey Sub-Team Member", image: "/team/scratch - dkim (dkim19375).png" },
+  { id: 54, name: "dkim19375", position: "Survey Sub-Team Member, Data Analysis Sub-Team Member", image: "/team/scratch - dkim (dkim19375).png" },
   { id: 55, name: "Sarah H.", position: "Survey, Data Analysis, FAQ Doc Sub-Team Member", image: "/team/default_pfp - Sarah H..jpg" },
   { id: 56, name: "SWalexcorporation", position: "Lecture, Materials Sub-Team Member", image: "/team/IMG_1432 - Alex Saravia.jpeg" },
   { id: 57, name: "Orin Overmiller", position: "Materials Sub-Team Member", image: "/team/00f9d6ee40f00182bd69d557320d63a2 - orin overmiller.png" },
   { id: 58, name: "MG8mer", position: "Lecture Sub-Team Member", image: "/team/MG8mer.png" },
-  { id: 59, name: "dlcdeon", position: "Survey, Data Analysis, FAQ Doc Sub-Team Member", image: "/team/IMG_5289 - deondeluxe.jpeg" },
 ];
 
 const teamMembers = [lance, ...teamLeads, ...subTeamLeads, ...members];
@@ -287,19 +286,21 @@ export default function TeamHive() {
   const centerY = 0;
 
   const placements = useMemo(() => {
-    return cells.map((hex, index) => {
-      const member = teamMembers[index];
-      if (!member) return null;
+    return cells
+      .map((hex, index) => {
+        const member = teamMembers[index];
+        if (!member) return null;
 
-      const { q, r } = hex;
-      const px = toPixel(q, r, hexRadius, centerX, centerY);
-      return {
-        key: `${q},${r}`,
-        member,
-        left: px.x - hexSize / 2,
-        top: px.y - hexSize / 2,
-      };
-    }).filter((placement) => placement !== null);
+        const { q, r } = hex;
+        const px = toPixel(q, r, hexRadius, centerX, centerY);
+        return {
+          key: `${q},${r}`,
+          member,
+          left: px.x - hexSize / 2,
+          top: px.y - hexSize / 2,
+        };
+      })
+      .filter((placement) => placement !== null);
   }, [cells, hexRadius, hexSize]);
 
   const paddedBounds = useMemo(() => {
