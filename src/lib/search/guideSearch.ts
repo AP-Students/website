@@ -6,7 +6,7 @@ import { formatSlug } from "@/lib/utils";
 import { type Chapter, type Subject, type Unit } from "@/types/firestore";
 
 const SEARCH_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
-const SEARCH_CACHE_KEY_PREFIX = "guide-search-index-v4";
+const SEARCH_CACHE_KEY_PREFIX = "guide-search-index-v9";
 
 export type GuideChapterSearchItem = {
   subjectSlug: string;
@@ -180,6 +180,45 @@ const hasIndexedContent = (content: unknown) => {
   return collected.length > 0;
 };
 
+const parseUnitNumberFromTitle = (unitTitle?: string) => {
+  if (!unitTitle) {
+    return null;
+  }
+
+  const match = unitTitle.match(/unit\s*(\d+)/i);
+  if (!match) {
+    return null;
+  }
+
+  const parsed = Number(match[1]);
+  if (Number.isNaN(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return parsed - 1;
+};
+
+const resolveUnitIndex = (
+  subject: Subject,
+  unit: Unit,
+  fallbackUnitIndex: number,
+) => {
+  const canonicalUnitIndex = (subject.units ?? []).findIndex(
+    (candidate) => candidate.id === unit.id,
+  );
+
+  if (canonicalUnitIndex >= 0) {
+    return canonicalUnitIndex;
+  }
+
+  const parsedTitleIndex = parseUnitNumberFromTitle(unit.title);
+  if (parsedTitleIndex != null) {
+    return parsedTitleIndex;
+  }
+
+  return fallbackUnitIndex;
+};
+
 const mapSubjectToSearchItems = (
   subjectSlug: string,
   subject: Subject,
@@ -190,6 +229,7 @@ const mapSubjectToSearchItems = (
 
     const perUnitItems = await Promise.all(
       units.map(async (unit, unitIndex) => {
+        const resolvedUnitIndex = resolveUnitIndex(subject, unit, unitIndex);
         const chapterDocs = await fetchChapterDocs(subjectSlug, unit.id);
 
         return (unit.chapters ?? [])
@@ -209,13 +249,13 @@ const mapSubjectToSearchItems = (
               subjectSlug,
               subjectTitle: subject.title,
               unitId: unit.id,
-              unitIndex,
+              unitIndex: resolvedUnitIndex,
               unitTitle: unit.title,
               chapterId: chapter.id,
               chapterTitle: chapter.title,
               chapterPath: buildChapterPath({
                 subjectSlug,
-                unitIndex,
+                unitIndex: resolvedUnitIndex,
                 unitId: unit.id,
                 chapterId: chapter.id,
                 chapterTitle: chapter.title,
