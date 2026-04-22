@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { LoaderCircle, Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
@@ -28,10 +29,12 @@ const SearchBar = ({
   const [items, setItems] = useState<GuideChapterSearchItem[]>([]);
   const [results, setResults] = useState<GuideChapterSearchItem[]>([]);
   const [loadingIndex, setLoadingIndex] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
 
   const canPreview = isPreviewUser(user?.access);
 
@@ -97,11 +100,35 @@ const SearchBar = ({
   const hasResults = results.length > 0;
   const showDropdown = inputFocused && (hasQuery || loadingIndex);
 
+  useEffect(() => {
+    if (!isNavigating) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setIsNavigating(false);
+    }, 10000);
+
+    return () => window.clearTimeout(timeout);
+  }, [isNavigating]);
+
+  useEffect(() => {
+    if (isNavigating) {
+      setIsNavigating(false);
+    }
+  }, [pathname, isNavigating]);
+
+  const beginNavigation = () => {
+    setInputFocused(false);
+    setIsNavigating(true);
+  };
+
   const openSelectedResult = () => {
     if (selectedIndex < 0 || selectedIndex >= results.length) {
       return;
     }
 
+    beginNavigation();
     window.location.href = results[selectedIndex].chapterPath;
   };
 
@@ -166,7 +193,7 @@ const SearchBar = ({
                     "rounded-lg px-3 py-2 transition-colors hover:bg-muted",
                     selectedIndex === index && "bg-muted",
                   )}
-                  onClick={() => setInputFocused(false)}
+                  onClick={beginNavigation}
                 >
                   <p className="line-clamp-1 text-sm font-semibold">
                     {result.chapterTitle}
@@ -182,6 +209,15 @@ const SearchBar = ({
               No chapters found for &quot;{query.trim()}&quot;.
             </div>
           )}
+        </div>
+      )}
+
+      {isNavigating && (
+        <div className="fixed inset-0 z-[90] grid place-content-center bg-background/70 backdrop-blur-sm">
+          <div className="flex items-center gap-3 rounded-full border bg-background px-6 py-3 shadow-lg">
+            <LoaderCircle className="size-5 animate-spin" />
+            <p className="text-sm font-medium">Loading guide...</p>
+          </div>
         </div>
       )}
     </div>
