@@ -29,8 +29,8 @@ export type GuideSearchCache = {
 const getCacheKey = (canPreview: boolean) =>
   `${SEARCH_CACHE_KEY_PREFIX}:${canPreview ? "preview" : "public"}`;
 
-const normalizeSearchText = (text: string) =>
-  text
+const normalizeSearchText = (text: unknown) =>
+  String(text ?? "")
     .normalize("NFKD")
     .toLowerCase()
     .replace(/[\u2018\u2019\u201A\u201B\u2032\u2035`'"“”]/g, "")
