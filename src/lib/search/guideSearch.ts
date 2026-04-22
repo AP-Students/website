@@ -18,6 +18,7 @@ export type GuideChapterSearchItem = {
   chapterTitle: string;
   chapterPath: string;
   searchableText: string;
+  chapterBodyText: string;
 };
 
 export type GuideSearchCache = {
@@ -28,7 +29,14 @@ export type GuideSearchCache = {
 const getCacheKey = (canPreview: boolean) =>
   `${SEARCH_CACHE_KEY_PREFIX}:${canPreview ? "preview" : "public"}`;
 
-const normalizeQuery = (query: string) => query.trim().toLowerCase();
+const normalizeSearchText = (text: string) =>
+  text
+    .normalize("NFKD")
+    .toLowerCase()
+    .replace(/[\u2018\u2019\u201A\u201B\u2032\u2035`'"“”]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 
 const isPrimitive = (value: unknown): value is string | number | boolean => {
   const valueType = typeof value;
@@ -281,6 +289,10 @@ const mapSubjectToSearchItems = (
                 chapterTitle: chapter.title,
                 content: indexedContent,
               }),
+              chapterBodyText: collectText(indexedContent)
+                .join(" ")
+                .replace(/\s+/g, " ")
+                .trim(),
             };
           });
       }),
@@ -388,75 +400,80 @@ export const createGuideSearchFuse = (items: GuideChapterSearchItem[]) => {
   });
 };
 
-const getTitleSignalBoost = (title: string, normalizedQuery: string) => {
-  const normalizedTitle = normalizeQuery(title);
-  let boost = 0;
-
-  if (normalizedTitle === normalizedQuery) {
-    return 0.5;
-  }
-
-  if (normalizedTitle.startsWith(normalizedQuery)) {
-    boost += 0.34;
-  }
-
-  const wordMatchRegex = new RegExp(`\\b${normalizedQuery.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}\\b`, "i");
-  if (wordMatchRegex.test(normalizedTitle)) {
-    boost += 0.24;
-  }
-
-  const firstIndex = normalizedTitle.indexOf(normalizedQuery);
-  if (firstIndex >= 0) {
-    boost += Math.max(0, 0.18 - firstIndex * 0.0035);
-  }
-
-  return boost;
-};
-
-const getSearchableTextSignalBoost = (
-  searchableText: string,
-  normalizedQuery: string,
-) => {
-  const normalizedText = normalizeQuery(searchableText);
-  const firstIndex = normalizedText.indexOf(normalizedQuery);
-  if (firstIndex < 0) {
-    return 0;
-  }
-
-  return Math.max(0, 0.08 - firstIndex * 0.00012);
-};
-
 export const searchGuideChapters = (
-  fuse: Fuse<GuideChapterSearchItem>,
+  items: GuideChapterSearchItem[],
   query: string,
-  maxResults = 12,
+  maxResults = 5,
 ): GuideChapterSearchItem[] => {
-  const normalizedQuery = normalizeQuery(query);
+  const normalizedQuery = normalizeSearchText(query);
   if (normalizedQuery.length < 2) {
     return [];
   }
 
-  const results = fuse.search(normalizedQuery, { limit: maxResults });
+  const countOccurrences = (text: string, token: string) => {
+    if (!text || !token) {
+      return 0;
+    }
 
-  return results
-    .sort((left, right) => {
-      const leftBaseScore = left.score ?? 1;
-      const rightBaseScore = right.score ?? 1;
+    let count = 0;
+    let index = 0;
 
-      const leftAdjustedScore =
-        leftBaseScore -
-        getTitleSignalBoost(left.item.chapterTitle, normalizedQuery) -
-        getSearchableTextSignalBoost(left.item.searchableText, normalizedQuery);
+    while (index <= text.length - token.length) {
+      const found = text.indexOf(token, index);
+      if (found === -1) {
+        break;
+      }
 
-      const rightAdjustedScore =
-        rightBaseScore -
-        getTitleSignalBoost(right.item.chapterTitle, normalizedQuery) -
-        getSearchableTextSignalBoost(right.item.searchableText, normalizedQuery);
+      count += 1;
+      index = found + token.length;
+    }
 
-      return (
-        leftAdjustedScore - rightAdjustedScore ||
-        compareSearchItems(left.item, right.item)
-      );
+    return count;
+  };
+
+  const scoredItems = items
+    .map((item) => {
+      const normalizedTitle = normalizeSearchText(item.chapterTitle);
+      const normalizedBody = normalizeSearchText(item.chapterBodyText);
+      const titleCount = countOccurrences(normalizedTitle, normalizedQuery);
+      const bodyCount = countOccurrences(normalizedBody, normalizedQuery);
+
+      return {
+        item,
+        titleMatch: titleCount > 0,
+        titleCount,
+        bodyCount,
+      };
     })
-    .map((result) => result.item);
+    .filter((entry) => entry.titleMatch || entry.bodyCount > 0);
+
+  const sortByCount = (
+    left: {
+      item: GuideChapterSearchItem;
+      titleMatch: boolean;
+      titleCount: number;
+      bodyCount: number;
+    },
+    right: {
+      item: GuideChapterSearchItem;
+      titleMatch: boolean;
+      titleCount: number;
+      bodyCount: number;
+    },
+  ) => {
+    return (
+      right.bodyCount - left.bodyCount ||
+      right.titleCount - left.titleCount ||
+      compareSearchItems(left.item, right.item)
+    );
+  };
+
+  const titleMatches = scoredItems.filter((entry) => entry.titleMatch).sort(sortByCount);
+  const bodyOnlyMatches = scoredItems
+    .filter((entry) => !entry.titleMatch)
+    .sort(sortByCount);
+
+  return [...titleMatches, ...bodyOnlyMatches]
+    .slice(0, maxResults)
+    .map((entry) => entry.item);
 };

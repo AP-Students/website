@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { LoaderCircle, Search } from "lucide-react";
 
@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/components/hooks/UserContext";
 import {
-  createGuideSearchFuse,
   loadGuideSearchItems,
   searchGuideChapters,
   type GuideChapterSearchItem,
@@ -35,8 +34,6 @@ const SearchBar = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const canPreview = isPreviewUser(user?.access);
-
-  const fuse = useMemo(() => createGuideSearchFuse(items), [items]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -82,8 +79,8 @@ const SearchBar = ({
       return;
     }
 
-    setResults(searchGuideChapters(fuse, debouncedQuery, 20));
-  }, [debouncedQuery, fuse]);
+    setResults(searchGuideChapters(items, debouncedQuery, 5));
+  }, [debouncedQuery, items]);
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
