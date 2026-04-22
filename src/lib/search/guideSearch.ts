@@ -6,7 +6,7 @@ import { formatSlug } from "@/lib/utils";
 import { type Chapter, type Subject, type Unit } from "@/types/firestore";
 
 const SEARCH_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
-const SEARCH_CACHE_KEY_PREFIX = "guide-search-index-v9";
+const SEARCH_CACHE_KEY_PREFIX = "guide-search-index-v10";
 
 export type GuideChapterSearchItem = {
   subjectSlug: string;
@@ -201,8 +201,17 @@ const parseUnitNumberFromTitle = (unitTitle?: string) => {
 const resolveUnitIndex = (
   subject: Subject,
   unit: Unit,
+  chapterId: string,
   fallbackUnitIndex: number,
 ) => {
+  const chapterUnitIndex = (subject.units ?? []).findIndex((candidate) =>
+    (candidate.chapters ?? []).some((chapter) => chapter.id === chapterId),
+  );
+
+  if (chapterUnitIndex >= 0) {
+    return chapterUnitIndex;
+  }
+
   const canonicalUnitIndex = (subject.units ?? []).findIndex(
     (candidate) => candidate.id === unit.id,
   );
@@ -229,12 +238,18 @@ const mapSubjectToSearchItems = (
 
     const perUnitItems = await Promise.all(
       units.map(async (unit, unitIndex) => {
-        const resolvedUnitIndex = resolveUnitIndex(subject, unit, unitIndex);
         const chapterDocs = await fetchChapterDocs(subjectSlug, unit.id);
 
         return (unit.chapters ?? [])
           .filter((chapter) => isChapterVisible(chapter, canPreview))
           .map((chapter) => {
+            const resolvedUnitIndex = resolveUnitIndex(
+              subject,
+              unit,
+              chapter.id,
+              unitIndex,
+            );
+
             let indexedContent: unknown = chapter.content;
             if (!hasIndexedContent(indexedContent)) {
               const chapterDocMatch = findChapterDocMatch(
