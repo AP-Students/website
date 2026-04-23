@@ -1,10 +1,11 @@
 import Navbar from "@/components/global/navbar";
 import Footer from "@/components/global/footer";
+import APsection from "@/components/landingPage/APsection";
 import APLibrary from "@/components/landingPage/APLibrary";
 
-const Page = () => {
+export default function Page() {
   return (
-    <div>
+    <>
       <Navbar />
 
       <div className="mx-auto mt-12 flex max-w-6xl flex-col px-8 pb-8 ">
@@ -13,14 +14,13 @@ const Page = () => {
             Library
           </h1>
           <p className="w-full text-pretty text-lg opacity-70 lg:text-xl">
-            Comprehensive study guides and practice exams for every AP class.
+            Comprehensive guides and resources for every AP subject.
           </p>
         </div>
         <APLibrary />
       </div>
 
       <Footer />
-    </div>
+    </>
   );
-};
-export default Page;
+}
