@@ -82,6 +82,11 @@ const buildSearchableText = (input: {
   bodyText: string;
 }) => {
   return [input.subjectTitle, input.unitTitle, input.chapterTitle, input.bodyText]
+  content?: unknown;
+}) => {
+  const blockText = collectText(input.content).join(" ");
+
+  return [input.subjectTitle, input.unitTitle, input.chapterTitle, blockText]
     .join(" ")
     .replace(/\s+/g, " ")
     .trim();
@@ -294,6 +299,12 @@ const mapSubjectToSearchItems = (
                 bodyText: chapterBodyText,
               }),
               chapterBodyText,
+                content: indexedContent,
+              }),
+              chapterBodyText: collectText(indexedContent)
+                .join(" ")
+                .replace(/\s+/g, " ")
+                .trim(),
             };
           });
       }),

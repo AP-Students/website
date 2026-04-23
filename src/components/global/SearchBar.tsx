@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { LoaderCircle, Search } from "lucide-react";
@@ -164,6 +164,9 @@ const SearchBar = ({
               if (results.length > 0) {
                 setSelectedIndex((index) => Math.min(index + 1, results.length - 1));
               }
+              setSelectedIndex((index) =>
+                Math.min(index + 1, Math.max(results.length - 1, 0)),
+              );
               return;
             }
 
@@ -201,6 +204,7 @@ const SearchBar = ({
           aria-label="Search results"
           className="absolute left-0 right-0 top-[calc(100%+0.35rem)] z-50 max-h-80 overflow-y-auto rounded-2xl border border-border/70 bg-background/95 p-2 shadow-xl backdrop-blur"
         >
+        <div className="absolute left-0 right-0 top-[calc(100%+0.35rem)] z-50 max-h-80 overflow-y-auto rounded-2xl border border-border/70 bg-background/95 p-2 shadow-xl backdrop-blur">
           {loadingIndex ? (
             <div className="flex items-center gap-2 px-2 py-3 text-sm opacity-70">
               <LoaderCircle className="size-4 animate-spin" />
