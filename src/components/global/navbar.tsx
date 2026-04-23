@@ -14,6 +14,7 @@ import { MenuIcon } from "lucide-react";
 import SignedInPfp from "../login/SignedInPfp";
 import { useUser } from "../hooks/UserContext";
 import { useEffect, useState } from "react";
+import SearchBar from "./SearchBar";
 
 const links = [
   {
@@ -65,51 +66,57 @@ const Navbar = ({
     <>
       <div
         className={cn(
-          "sticky top-0 z-40 hidden w-full items-center justify-between gap-4 bg-background py-2 transition-shadow md:flex",
+          "sticky top-0 z-40 hidden w-full bg-background/95 py-2 backdrop-blur transition-shadow md:flex",
           !atTopOfPage && "shadow-lg",
           className,
         )}
       >
-        <div
-          className={cn(
-            "flex items-center pl-4 lg:grow lg:basis-0",
-            hideLinks ? "pl-10 xl:pl-20" : "justify-center",
-          )}
-        >
-          <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo.png" alt="Logo" width={80} height={80} />
-            <h1 className="text-4xl font-bold">FiveHive</h1>
-          </Link>
-        </div>
-
-        {!hideLinks && (
-          <div className="flex max-w-lg grow justify-evenly">
-            {links.map((link) => (
-              <NavbarLink key={link.name} href={link.href}>
-                {link.name}
-              </NavbarLink>
-            ))}
+        <div className="mx-auto flex w-full max-w-[92rem] items-center gap-3 px-4 lg:gap-5 xl:px-8">
+          <div
+            className={cn(
+              "flex shrink-0 items-center",
+              hideLinks ? "pl-2 xl:pl-4" : "",
+            )}
+          >
+            <Link href="/" className="flex items-center gap-2">
+              <Image src="/logo.png" alt="Logo" width={72} height={72} />
+              <h1 className="text-[2.1rem] font-bold leading-none">FiveHive</h1>
+            </Link>
           </div>
-        )}
 
-        <div className="flex shrink-0 items-center justify-center gap-4 pr-8 lg:grow lg:basis-0">
-          {user ? (
-            <SignedInPfp />
-          ) : (
-            <>
-              <NavbarLink href="/signup">Sign up</NavbarLink>
+          <div className={cn("min-w-0 grow", hideLinks ? "max-w-2xl" : "max-w-xl") }>
+            <SearchBar />
+          </div>
 
-              <Link
-                href="/login"
-                className={cn(
-                  buttonVariants({ variant: "default" }),
-                  "text-md px-5 font-semibold",
-                )}
-              >
-                Log in
-              </Link>
-            </>
+          {!hideLinks && (
+            <div className="hidden shrink-0 items-center gap-6 lg:flex">
+              {links.map((link) => (
+                <NavbarLink key={link.name} href={link.href}>
+                  {link.name}
+                </NavbarLink>
+              ))}
+            </div>
           )}
+
+          <div className="ml-auto flex shrink-0 items-center justify-center gap-4">
+            {user ? (
+              <SignedInPfp />
+            ) : (
+              <>
+                <NavbarLink href="/signup">Sign up</NavbarLink>
+
+                <Link
+                  href="/login"
+                  className={cn(
+                    buttonVariants({ variant: "default" }),
+                    "text-md px-5 font-semibold",
+                  )}
+                >
+                  Log in
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -125,6 +132,10 @@ const Navbar = ({
         </Link>
 
         <MobileNavbar />
+      </div>
+
+      <div className={cn("px-4 pb-3 md:hidden", className)}>
+        <SearchBar mobile />
       </div>
     </>
   );
@@ -150,6 +161,7 @@ const MobileNavbar = () => {
               </SheetTrigger>
             </SheetTitle>
           </SheetHeader>
+          <SearchBar mobile className="mt-2" />
           <div className="mt-4 flex grow flex-col gap-2">
             {links.map((link) => (
               <div key={link.name}>
