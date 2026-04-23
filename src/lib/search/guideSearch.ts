@@ -245,7 +245,9 @@ const mapSubjectToSearchItems = (
 
     const perUnitItems = await Promise.all(
       units.map(async (unit, unitIndex) => {
-        const chapterDocs = await fetchChapterDocs(subjectSlug, unit.id);
+        const chapterDocs = canPreview
+          ? await fetchChapterDocs(subjectSlug, unit.id)
+          : [];
 
         return (unit.chapters ?? [])
           .filter((chapter) => isChapterVisible(chapter, canPreview))
