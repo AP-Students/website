@@ -335,7 +335,11 @@ const writeCache = (canPreview: boolean, items: GuideChapterSearchItem[]) => {
     items,
   };
 
-  localStorage.setItem(getCacheKey(canPreview), JSON.stringify(payload));
+  try {
+    localStorage.setItem(getCacheKey(canPreview), JSON.stringify(payload));
+  } catch (error) {
+    console.warn("Failed to persist guide search cache", error);
+  }
 };
 
 const compareSearchItems = (
