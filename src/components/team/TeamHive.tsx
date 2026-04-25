@@ -21,12 +21,12 @@ const teamLeads: TeamMember[] = [
     position: "FiveHive Lead",
     image: "/team/Google_pfp - Wenbo W.png",
   },
-  {
-    id: 21,
-    name: "Janya",
-    position: "Data Analysis Sub-Team Lead, Outreach Team Lead",
-    image: "/team/IMG_6216 - Janya Jain.jpeg",
-  },
+  // {
+  //   id: 21,
+  //   name: "Janya",
+  //   position: "Data Analysis Sub-Team Lead, Outreach Team Lead",
+  //   image: "/team/IMG_6216 - Janya Jain.jpeg",
+  // },
   {
     id: 22,
     name: "Shreya Suresh",
@@ -44,12 +44,6 @@ const teamLeads: TeamMember[] = [
     name: "Scipio H",
     position: "Survey & FAQ Team Lead",
     image: "/team/Screenshot 2025-07-23 011653 - Scipio H.png",
-  },
-  {
-    id: 26,
-    name: "Tal Levy",
-    position: "Review Session Team Lead",
-    image: "/team/it_s the klerd of tal - Tal Levy.jpeg",
   },
   {
     id: 4,
@@ -81,19 +75,19 @@ const subTeamLeads: TeamMember[] = [
   {
     id: 25,
     name: "Liuren",
-    position: "Team Co-Lead, RS Team Co-Lead",
+    position: "Team Co-Lead, RST Team Lead",
     image: "/team/IMG_3498 - Pierre-Louis Nguyen.jpg",
   },
   {
     id: 27,
     name: "A Ashraf",
-    position: "Data Analysis Sub-Team Lead",
+    position: "Data Analysis Sub-Team Lead, APSS Admin",
     image: "/team/ChatGPT Image Sep 13, 2025, 09_54_35 PM - Ahmed Ashraf.png",
   },
   {
     id: 28,
     name: "mmbcsmen",
-    position: "Materials Sub-Team Lead",
+    position: "RST Co-Lead",
     image: "/team/mmbcsmen pfp - Father Brandon.jpg",
   },
   {
@@ -102,22 +96,23 @@ const subTeamLeads: TeamMember[] = [
     position: "Materials, Lecture Sub-Team Lead",
     image: "/team/IMG_0145 - Matthew Belyea.jpeg",
   },
-  {
-    id: 30,
-    name: "Sean",
-    position: "Materials, Lecture Sub-Team Lead",
-    image: "/team/sheep-4810513_1280 - Sean Nguyen.jpg",
-  },
+  // Inactive
+  // {
+  //   id: 30,
+  //   name: "Sean",
+  //   position: "Materials, Lecture Sub-Team Lead",
+  //   image: "/team/sheep-4810513_1280 - Sean Nguyen.jpg",
+  // },
   {
     id: 31,
     name: "thecoolsavage",
-    position: "Materials Sub-Team Co-Lead (Temporarily Dormant)",
+    position: "Materials Sub-Team Co-Lead",
     image: "/team/raw - Rayan Zaman.png",
   },
   {
     id: 32,
     name: "Henry",
-    position: "Lecture Sub-Team Lead",
+    position: "RST Co-Lead, Lecture Sub-Team Lead",
     image: "/team/dukechapel - Henry H.jpg",
   },
 ];
