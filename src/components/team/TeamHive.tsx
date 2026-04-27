@@ -203,7 +203,7 @@ const members: TeamMember[] = [
     image: "/team/Photo for FiveHive - Ansh Desai.jpg",
   },
   { id: 33, name: "Zoe Xue", position: "Materials Sub-Team Member", image: "/team/ZoeProfile - zox.jpg" },
-  { id: 34, name: "Silas Lovett", position: "Website Team Colead", image: "/team/pfp - Silas Lovett.png" },
+  { id: 34, name: "Silas Lovett", position: "Website Team Co-Lead", image: "/team/pfp - Silas Lovett.png" },
   { id: 35, name: "Hector Wang", position: "Lecture Sub-Team Member, Materials Sub-Team Member", image: "/team/unnamed - Hector.png" },
   { id: 36, name: "anisul", position: "Outreach Sub-Team Member (Dishonorably Relieved)", image: "/team/14d5dbfc447d088546351ce57855adeb - anisul.jpg" },
   { id: 37, name: "mqax", position: "Survey Sub-Team Member, Data Analysis Sub-Team Member", image: "/team/mqaxPFP - Max.jpg" },
