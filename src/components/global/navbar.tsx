@@ -85,7 +85,6 @@ const Navbar = ({
           </div>
 
           <div className={cn("min-w-0 grow", hideLinks ? "max-w-2xl" : "max-w-xl")}>
-          <div className={cn("min-w-0 grow", hideLinks ? "max-w-2xl" : "max-w-xl") }>
             <SearchBar />
           </div>
 
