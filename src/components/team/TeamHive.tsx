@@ -348,8 +348,6 @@ export default function TeamHive() {
                 alignItems: "center",
                 justifyContent: "center",
                 filter: "drop-shadow(0 10px 22px rgba(0,0,0,0.18))",
-
-                
                 transform: "translateZ(0)",
                 willChange: "transform",
               }}
