@@ -35,6 +35,7 @@ const SearchBar = ({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  const listboxId = useId();
 
   const canPreview = isPreviewUser(user?.access);
 
@@ -85,6 +86,11 @@ const SearchBar = ({
     setResults(searchGuideChapters(items, debouncedQuery, 5));
   }, [debouncedQuery, items]);
 
+  // Clamp selectedIndex when the results list shrinks (e.g. when items reload)
+  useEffect(() => {
+    setSelectedIndex((prev) => (prev >= results.length ? -1 : prev));
+  }, [results]);
+
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
       if (!containerRef.current?.contains(event.target as Node)) {
@@ -98,6 +104,7 @@ const SearchBar = ({
 
   const hasQuery = query.trim().length > 0;
   const hasResults = results.length > 0;
+  const queryTooShort = hasQuery && query.trim().length < 2;
   const showDropdown = inputFocused && (hasQuery || loadingIndex);
 
   useEffect(() => {
@@ -134,17 +141,29 @@ const SearchBar = ({
     router.push(selectedResult.chapterPath);
   };
 
+  const activeDescendant =
+    selectedIndex >= 0 ? `${listboxId}-option-${selectedIndex}` : undefined;
+
   return (
     <div ref={containerRef} className={cn("relative w-full", className)}>
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 opacity-50" />
         <Input
+          role="combobox"
+          aria-expanded={showDropdown}
+          aria-haspopup="listbox"
+          aria-controls={listboxId}
+          aria-autocomplete="list"
+          aria-activedescendant={activeDescendant}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           onFocus={() => setInputFocused(true)}
           onKeyDown={(event) => {
             if (event.key === "ArrowDown") {
               event.preventDefault();
+              if (results.length > 0) {
+                setSelectedIndex((index) => Math.min(index + 1, results.length - 1));
+              }
               setSelectedIndex((index) =>
                 Math.min(index + 1, Math.max(results.length - 1, 0)),
               );
@@ -179,16 +198,29 @@ const SearchBar = ({
       </div>
 
       {showDropdown && (
+        <div
+          id={listboxId}
+          role="listbox"
+          aria-label="Search results"
+          className="absolute left-0 right-0 top-[calc(100%+0.35rem)] z-50 max-h-80 overflow-y-auto rounded-2xl border border-border/70 bg-background/95 p-2 shadow-xl backdrop-blur"
+        >
         <div className="absolute left-0 right-0 top-[calc(100%+0.35rem)] z-50 max-h-80 overflow-y-auto rounded-2xl border border-border/70 bg-background/95 p-2 shadow-xl backdrop-blur">
           {loadingIndex ? (
             <div className="flex items-center gap-2 px-2 py-3 text-sm opacity-70">
               <LoaderCircle className="size-4 animate-spin" />
               Loading guides...
             </div>
+          ) : queryTooShort ? (
+            <div className="px-2 py-3 text-sm opacity-70">
+              Type at least 2 characters to search.
+            </div>
           ) : hasResults ? (
             <div className="flex flex-col gap-1">
               {results.map((result, index) => (
                 <Link
+                  id={`${listboxId}-option-${index}`}
+                  role="option"
+                  aria-selected={selectedIndex === index}
                   href={result.chapterPath}
                   key={`${result.chapterPath}-${index}`}
                   className={cn(
