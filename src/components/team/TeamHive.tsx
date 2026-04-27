@@ -21,12 +21,6 @@ const teamLeads: TeamMember[] = [
     position: "FiveHive Lead",
     image: "/team/Google_pfp - Wenbo W.png",
   },
-  // {
-  //   id: 21,
-  //   name: "Janya",
-  //   position: "Data Analysis Sub-Team Lead, Outreach Team Lead",
-  //   image: "/team/IMG_6216 - Janya Jain.jpeg",
-  // },
   {
     id: 22,
     name: "Shreya Suresh",
@@ -90,19 +84,7 @@ const subTeamLeads: TeamMember[] = [
     position: "RST Co-Lead",
     image: "/team/mmbcsmen pfp - Father Brandon.jpg",
   },
-  {
-    id: 29,
-    name: "Matthew Belyea",
-    position: "Materials, Lecture Sub-Team Lead",
-    image: "/team/IMG_0145 - Matthew Belyea.jpeg",
-  },
-  // Inactive
-  // {
-  //   id: 30,
-  //   name: "Sean",
-  //   position: "Materials, Lecture Sub-Team Lead",
-  //   image: "/team/sheep-4810513_1280 - Sean Nguyen.jpg",
-  // },
+  // Removed: Matthew Belyea (retired, not in server)
   {
     id: 31,
     name: "thecoolsavage",
@@ -118,9 +100,10 @@ const subTeamLeads: TeamMember[] = [
 ];
 
 const members: TeamMember[] = [
+  // Fixed: Spryzen / Rōnin are the same person; use the Spryzen image and correct name.
   {
     id: 1,
-    name: "Sprite",
+    name: "Spryzen (Rōnin)",
     position: "Lecture Sub-Team Member",
     image: "/team/star-wars-visions-1-tall_6acc99ff - Spryzen.jpeg",
   },
@@ -190,46 +173,97 @@ const members: TeamMember[] = [
     position: "Review Session Sub-Team Member",
     image: "/team/OIP - Reid Alexander.jpg",
   },
+
+  // Merged: Two Ansh's into one member entry
   {
     id: 18,
     name: "Ansh Desai",
-    position: "FAQ Doc Sub-Team Member",
+    position: "FAQ Doc Sub-Team Member, Materials Sub-Team Member",
     image: "/team/Photo for FiveHive - Ansh Desai.jpg",
+  },
+
+  // Removed: Zoe Xue (retired, not in server)
+  // Removed: pineappled juice (retired, not in server)
+
+  { id: 34, name: "Silas Lovett", position: "Website Team Co-Lead", image: "/team/pfp - Silas Lovett.png" },
+  {
+    id: 35,
+    name: "Hector Wang",
+    position: "Lecture Sub-Team Member, Materials Sub-Team Member",
+    image: "/team/unnamed - Hector.png",
   },
   {
-    id: 19,
-    name: "Ansh Desai",
-    position: "Materials Sub-Team Member",
-    image: "/team/Photo for FiveHive - Ansh Desai.jpg",
+    id: 36,
+    name: "anisul",
+    position: "Outreach Sub-Team Member (Dishonorably Relieved)",
+    image: "/team/14d5dbfc447d088546351ce57855adeb - anisul.jpg",
   },
-  { id: 33, name: "Zoe Xue", position: "Materials Sub-Team Member", image: "/team/ZoeProfile - zox.jpg" },
-  { id: 34, name: "Silas Lovett", position: "Website Sub-Team Member", image: "/team/pfp - Silas Lovett.png" },
-  { id: 35, name: "Hector Wang", position: "Lecture Sub-Team Member, Materials Sub-Team Member", image: "/team/unnamed - Hector.png" },
-  { id: 36, name: "anisul", position: "Outreach Sub-Team Member (Dishonorably Relieved)", image: "/team/14d5dbfc447d088546351ce57855adeb - anisul.jpg" },
-  { id: 37, name: "mqax", position: "Survey Sub-Team Member, Data Analysis Sub-Team Member", image: "/team/mqaxPFP - Max.jpg" },
+  {
+    id: 37,
+    name: "mqax",
+    position: "Survey Sub-Team Member, Data Analysis Sub-Team Member",
+    image: "/team/mqaxPFP - Max.jpg",
+  },
   { id: 38, name: "Econ Guy", position: "Lecture Sub-Team Member", image: "/team/ucsdpride - Israel Cube.jpg" },
-  { id: 39, name: "pineappled juice", position: "Lecture Sub-Team Member", image: "/team/IMG_2546 - Mina.jpeg" },
+
+  // Removed: MG8mer (retired)
   { id: 40, name: "assassin3552", position: "Materials Sub-Team Member (Temporarily Dormant)", image: "/team/48 - Polaris Li.jpg" },
-  { id: 41, name: "Tanay B", position: "Lecture Sub-Team Member, Materials Sub-Team Member", image: "/team/IMG_0810 - Tanay Bollam.jpeg" },
+  {
+    id: 41,
+    name: "Tanay B",
+    position: "Lecture Sub-Team Member, Materials Sub-Team Member",
+    image: "/team/IMG_0810 - Tanay Bollam.jpeg",
+  },
   { id: 42, name: "blitzal", position: "Materials Sub-Team Member (Dishonorably Relieved)", image: "/team/blitzalpfp - Kate Damico.jpg" },
-  { id: 43, name: "Sripaadh Jayashree Kuppusamy", position: "FAQ Doc Sub-Team Member, Lecture Sub-Team Member, Materials Sub-Team Member", image: "/team/52e94b8f-71c0-40c6-87b3-51299c73b852 - Sripaadh Jayashree Kuppusamy.JPG" },
+  {
+    id: 43,
+    name: "Sripaadh Jayashree Kuppusamy",
+    position: "FAQ Doc Sub-Team Member, Lecture Sub-Team Member, Materials Sub-Team Member",
+    image: "/team/52e94b8f-71c0-40c6-87b3-51299c73b852 - Sripaadh Jayashree Kuppusamy.JPG",
+  },
   { id: 44, name: "suri", position: "Survey Sub-Team Member", image: "/team/IMG_3641 - Suri Sanchez.jpeg" },
   { id: 45, name: "Jacob", position: "Materials Sub-Team Member", image: "/team/J - Hystix.jpg" },
-  { id: 46, name: "Jasmine Gadot", position: "Lecture Sub-Team Member, Materials Sub-Team Member", image: "/team/IMG_2093 - Jasmine Gadot.jpeg" },
+  {
+    id: 46,
+    name: "Jasmine Gadot",
+    position: "Lecture Sub-Team Member, Materials Sub-Team Member",
+    image: "/team/IMG_2093 - Jasmine Gadot.jpeg",
+  },
   { id: 47, name: "Elvis Peng", position: "Materials Sub-Team Member", image: "/team/OMEGA - Elvis Peng(1).png" },
   { id: 48, name: "Jackson D.", position: "Lecture Sub-Team Member", image: "/team/IMG_3156 - Jackson D..webp" },
   { id: 49, name: "braden_is", position: "Lecture Sub-Team Member", image: "/team/IMG_2502 - Sigma Make.jpeg" },
-  { id: 50, name: "Ian Joo", position: "Data Analysis Sub-Team Member, Outreach Sub-Team Member", image: "/team/IMG-20250901-WA0013 - Ian Joo.jpg" },
+  {
+    id: 50,
+    name: "Ian Joo",
+    position: "Data Analysis Sub-Team Member, Outreach Sub-Team Member",
+    image: "/team/IMG-20250901-WA0013 - Ian Joo.jpg",
+  },
   { id: 51, name: "user_exists", position: "Materials Sub-Team Member", image: "/team/c95747eb1048ca82305685580ae28cf8 - Nikolas Dyer.png" },
   { id: 52, name: "Akshaj D", position: "Data Analysis Sub-Team Member", image: "/team/Profile Picture - Akshaj Donthi.jpg" },
   { id: 53, name: "irunwithscizors", position: "Lecture Sub-Team Member", image: "/team/acnh-tuna-header - Logan Li.jpg" },
-  { id: 54, name: "dkim19375", position: "Survey Sub-Team Member, Data Analysis Sub-Team Member", image: "/team/scratch - dkim (dkim19375).png" },
-  { id: 55, name: "Sarah H.", position: "Survey Sub-Team Member, Data Analysis Sub-Team Member, FAQ Doc Sub-Team Member", image: "/team/default_pfp - Sarah H..jpg" },
-  { id: 56, name: "SWalexcorporation", position: "Lecture Sub-Team Member, Materials Sub-Team Member", image: "/team/IMG_1432 - Alex Saravia.jpeg" },
-  { id: 57, name: "Orin Overmiller", position: "Materials Sub-Team Member", image: "/team/00f9d6ee40f00182bd69d557320d63a2 - orin overmiller.png" },
-  { id: 58, name: "MG8mer", position: "Lecture Sub-Team Member", image: "/team/MG8mer.png" },
+  {
+    id: 54,
+    name: "dkim19375",
+    position: "Survey Sub-Team Member, Data Analysis Sub-Team Member",
+    image: "/team/scratch - dkim (dkim19375).png",
+  },
+  {
+    id: 55,
+    name: "Sarah H.",
+    position: "Survey Sub-Team Member, Data Analysis Sub-Team Member, FAQ Doc Sub-Team Member",
+    image: "/team/default_pfp - Sarah H..jpg",
+  },
+  {
+    id: 56,
+    name: "SWalexcorporation",
+    position: "Lecture Sub-Team Member, Materials Sub-Team Member",
+    image: "/team/IMG_1432 - Alex Saravia.jpeg",
+  },
+
+  // Removed: Orin Overmiller (retired)
 ];
 
+// Note: Removed retired members from the arrays above.
 const teamMembers = [lance, ...teamLeads, ...subTeamLeads, ...members];
 
 // --- Helpers: hex grid generation (axial coords) ---
@@ -348,9 +382,14 @@ export default function TeamHive() {
                 alignItems: "center",
                 justifyContent: "center",
                 filter: "drop-shadow(0 10px 22px rgba(0,0,0,0.18))",
+                transform: "translateZ(0)",
+                willChange: "transform",
               }}
             >
-              <TeamMemberHex member={placement.member} />
+              {/* Ensure the hit area matches the positioned wrapper */}
+              <div style={{ width: "100%", height: "100%", position: "relative" }}>
+                <TeamMemberHex member={placement.member} />
+              </div>
             </div>
           );
         })}
