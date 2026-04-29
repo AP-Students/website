@@ -68,7 +68,9 @@ const SearchBar = ({
 
     loadItems().catch((error) => {
       console.error("Failed to initialize guide search", error);
-      setLoadingIndex(false);
+      if (active) {
+        setLoadingIndex(false);
+      }
     });
 
     return () => {
