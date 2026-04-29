@@ -11,6 +11,7 @@ import { useUser } from "@/components/hooks/UserContext";
 import {
   loadGuideSearchItems,
   searchGuideChapters,
+  normalizeSearchText,
   type GuideChapterSearchItem,
 } from "@/lib/search/guideSearch";
 
@@ -38,6 +39,7 @@ const SearchBar = ({
   const listboxId = useId();
 
   const canPreview = isPreviewUser(user?.access);
+  const normalizedDebouncedQuery = normalizeSearchText(debouncedQuery);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -80,13 +82,13 @@ const SearchBar = ({
 
   useEffect(() => {
     setSelectedIndex(-1);
-    if (!debouncedQuery.trim()) {
+    if (!normalizedDebouncedQuery) {
       setResults([]);
       return;
     }
 
     setResults(searchGuideChapters(items, debouncedQuery, 5));
-  }, [debouncedQuery, items]);
+  }, [debouncedQuery, items, normalizedDebouncedQuery]);
 
   // Clamp selectedIndex when the results list shrinks (e.g. when items reload)
   useEffect(() => {
@@ -104,9 +106,9 @@ const SearchBar = ({
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, []);
 
-  const hasQuery = query.trim().length > 0;
+  const hasQuery = normalizedDebouncedQuery.length > 0;
   const hasResults = results.length > 0;
-  const queryTooShort = hasQuery && query.trim().length < 2;
+  const queryTooShort = hasQuery && normalizedDebouncedQuery.length < 2;
   const showDropdown = inputFocused && (hasQuery || loadingIndex);
 
   useEffect(() => {
@@ -164,7 +166,9 @@ const SearchBar = ({
             if (event.key === "ArrowDown") {
               event.preventDefault();
               setSelectedIndex((index) =>
-                Math.min(index + 1, Math.max(results.length - 1, 0)),
+                results.length === 0
+                  ? -1
+                  : Math.min(index + 1, results.length - 1),
               );
               return;
             }
@@ -203,7 +207,6 @@ const SearchBar = ({
           aria-label="Search results"
           className="absolute left-0 right-0 top-[calc(100%+0.35rem)] z-50 max-h-80 overflow-y-auto rounded-2xl border border-border/70 bg-background/95 p-2 shadow-xl backdrop-blur"
         >
-        <div className="absolute left-0 right-0 top-[calc(100%+0.35rem)] z-50 max-h-80 overflow-y-auto rounded-2xl border border-border/70 bg-background/95 p-2 shadow-xl backdrop-blur">
           {loadingIndex ? (
             <div className="flex items-center gap-2 px-2 py-3 text-sm opacity-70">
               <LoaderCircle className="size-4 animate-spin" />

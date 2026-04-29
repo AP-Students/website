@@ -28,7 +28,7 @@ export type GuideSearchCache = {
 const getCacheKey = (canPreview: boolean) =>
   `${SEARCH_CACHE_KEY_PREFIX}:${canPreview ? "preview" : "public"}`;
 
-const normalizeSearchText = (text: unknown) =>
+export const normalizeSearchText = (text: unknown) =>
   String(text ?? "")
     .normalize("NFKD")
     .toLowerCase()
@@ -62,6 +62,12 @@ const collectText = (value: unknown): string[] => {
   return [];
 };
 
+const flattenText = (content: unknown) =>
+  collectText(content)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+
 const buildChapterPath = (input: {
   subjectSlug: string;
   unitIndex: number;
@@ -82,11 +88,6 @@ const buildSearchableText = (input: {
   bodyText: string;
 }) => {
   return [input.subjectTitle, input.unitTitle, input.chapterTitle, input.bodyText]
-  content?: unknown;
-}) => {
-  const blockText = collectText(input.content).join(" ");
-
-  return [input.subjectTitle, input.unitTitle, input.chapterTitle, blockText]
     .join(" ")
     .replace(/\s+/g, " ")
     .trim();
@@ -177,19 +178,6 @@ const findChapterDocMatch = (
   return null;
 };
 
-const hasIndexedContent = (content: unknown) => {
-  if (!content || typeof content !== "object") {
-    return false;
-  }
-
-  const collected = collectText(content)
-    .join(" ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  return collected.length > 0;
-};
-
 const parseUnitNumberFromTitle = (unitTitle?: string) => {
   if (!unitTitle) {
     return null;
@@ -263,19 +251,17 @@ const mapSubjectToSearchItems = (
             );
 
             let indexedContent: unknown = chapter.content;
-            if (!hasIndexedContent(indexedContent)) {
+            let chapterBodyText = flattenText(indexedContent);
+
+            if (!chapterBodyText) {
               const chapterDocMatch = findChapterDocMatch(
                 chapterDocs,
                 chapter.id,
               );
               indexedContent =
                 chapterDocMatch?.data ?? chapterDocMatch?.content ?? null;
+              chapterBodyText = flattenText(indexedContent);
             }
-
-            const chapterBodyText = collectText(indexedContent)
-                .join(" ")
-                .replace(/\s+/g, " ")
-                .trim();
 
             return {
               subjectSlug,
@@ -299,12 +285,6 @@ const mapSubjectToSearchItems = (
                 bodyText: chapterBodyText,
               }),
               chapterBodyText,
-                content: indexedContent,
-              }),
-              chapterBodyText: collectText(indexedContent)
-                .join(" ")
-                .replace(/\s+/g, " ")
-                .trim(),
             };
           });
       }),
@@ -332,6 +312,7 @@ const readCache = (canPreview: boolean): GuideChapterSearchItem[] | null => {
     }
 
     if (Date.now() - parsed.timestamp > SEARCH_CACHE_TTL_MS) {
+      localStorage.removeItem(getCacheKey(canPreview));
       return null;
     }
 
