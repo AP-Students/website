@@ -161,9 +161,6 @@ const SearchBar = ({
           onKeyDown={(event) => {
             if (event.key === "ArrowDown") {
               event.preventDefault();
-              if (results.length > 0) {
-                setSelectedIndex((index) => Math.min(index + 1, results.length - 1));
-              }
               setSelectedIndex((index) =>
                 Math.min(index + 1, Math.max(results.length - 1, 0)),
               );
