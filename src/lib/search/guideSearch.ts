@@ -154,8 +154,8 @@ const isChapterVisible = (chapter: Chapter, canPreview: boolean) => {
     return true;
   }
 
-  // Treat undefined as visible to avoid excluding legacy data that omitted this flag.
-  return chapter.isPublic !== false;
+  // Match the public visibility rule used elsewhere in the app.
+  return chapter.isPublic === true;
 };
 
 const getChapterIdCandidates = (chapterId: string) => {
