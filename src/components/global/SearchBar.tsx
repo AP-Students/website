@@ -54,6 +54,22 @@ const SearchBar = ({
   className?: string;
   mobile?: boolean;
 }) => {
+  const isActiveViewport = useIsActiveViewport(mobile);
+
+  if (!isActiveViewport) {
+    return null;
+  }
+
+  return <SearchBarContents className={className} mobile={mobile} />;
+};
+
+const SearchBarContents = ({
+  className,
+  mobile,
+}: {
+  className?: string;
+  mobile?: boolean;
+}) => {
   const { user } = useUser();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -68,28 +84,19 @@ const SearchBar = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const listboxId = useId();
-  const isActiveViewport = useIsActiveViewport(mobile);
 
   const canPreview = isPreviewUser(user?.access);
   const normalizedDebouncedQuery = normalizeSearchText(debouncedQuery);
 
   useEffect(() => {
-    if (!isActiveViewport) {
-      return;
-    }
-
     const timer = setTimeout(() => {
       setDebouncedQuery(query);
     }, 120);
 
     return () => clearTimeout(timer);
-  }, [isActiveViewport, query]);
+  }, [query]);
 
   useEffect(() => {
-    if (!isActiveViewport) {
-      return;
-    }
-
     const shouldLoadIndex = inputFocused || normalizedDebouncedQuery.length >= 2;
 
     if (!shouldLoadIndex || hasLoadedIndex || loadingIndex) {
@@ -125,13 +132,9 @@ const SearchBar = ({
     return () => {
       active = false;
     };
-  }, [canPreview, hasLoadedIndex, inputFocused, isActiveViewport, loadingIndex, normalizedDebouncedQuery.length]);
+  }, [canPreview, hasLoadedIndex, inputFocused, loadingIndex, normalizedDebouncedQuery.length]);
 
   useEffect(() => {
-    if (!isActiveViewport) {
-      return;
-    }
-
     setSelectedIndex(-1);
     if (!normalizedDebouncedQuery) {
       setResults([]);
@@ -139,22 +142,14 @@ const SearchBar = ({
     }
 
     setResults(searchGuideChapters(items, debouncedQuery, 5));
-  }, [debouncedQuery, isActiveViewport, items, normalizedDebouncedQuery]);
+  }, [debouncedQuery, items, normalizedDebouncedQuery]);
 
   // Clamp selectedIndex when the results list shrinks (e.g. when items reload)
   useEffect(() => {
-    if (!isActiveViewport) {
-      return;
-    }
-
     setSelectedIndex((prev) => (prev >= results.length ? -1 : prev));
-  }, [isActiveViewport, results]);
+  }, [results]);
 
   useEffect(() => {
-    if (!isActiveViewport) {
-      return;
-    }
-
     const handlePointerDown = (event: MouseEvent) => {
       if (!containerRef.current?.contains(event.target as Node)) {
         setInputFocused(false);
@@ -163,7 +158,7 @@ const SearchBar = ({
 
     document.addEventListener("mousedown", handlePointerDown);
     return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, [isActiveViewport]);
+  }, []);
 
   const hasQuery = normalizedDebouncedQuery.length > 0;
   const hasResults = results.length > 0;
@@ -171,10 +166,6 @@ const SearchBar = ({
   const showDropdown = inputFocused && (hasQuery || loadingIndex);
 
   useEffect(() => {
-    if (!isActiveViewport) {
-      return;
-    }
-
     if (!isNavigating) {
       return;
     }
@@ -184,19 +175,11 @@ const SearchBar = ({
     }, 10000);
 
     return () => window.clearTimeout(timeout);
-  }, [isActiveViewport, isNavigating]);
+  }, [isNavigating]);
 
   useEffect(() => {
-    if (!isActiveViewport) {
-      return;
-    }
-
     setIsNavigating(false);
-  }, [isActiveViewport, pathname]);
-
-  if (isActiveViewport === null) {
-    return null;
-  }
+  }, [pathname]);
 
   const beginNavigation = () => {
     setInputFocused(false);
