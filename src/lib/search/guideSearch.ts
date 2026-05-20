@@ -6,6 +6,8 @@ import { type Chapter, type Subject, type Unit } from "@/types/firestore";
 
 const SEARCH_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const SEARCH_CACHE_KEY_PREFIX = "guide-search-index-v10";
+const inMemorySearchCache = new Map<string, GuideChapterSearchItem[]>();
+const inFlightSearchLoads = new Map<string, Promise<GuideChapterSearchItem[]>>();
 
 export type GuideChapterSearchItem = {
   subjectSlug: string;
@@ -355,36 +357,64 @@ export const loadGuideSearchItems = async (
   canPreview: boolean,
   forceRefresh = false,
 ): Promise<GuideChapterSearchItem[]> => {
+  const cacheKey = getCacheKey(canPreview);
+
   if (!forceRefresh) {
+    const memoryCachedItems = inMemorySearchCache.get(cacheKey);
+    if (memoryCachedItems) {
+      return memoryCachedItems;
+    }
+
     const cachedItems = readCache(canPreview);
     if (cachedItems) {
+      inMemorySearchCache.set(cacheKey, cachedItems);
       return cachedItems;
+    }
+
+    const inFlightLoad = inFlightSearchLoads.get(cacheKey);
+    if (inFlightLoad) {
+      return inFlightLoad;
     }
   }
 
-  const subjectsSnapshot = await getDocs(collection(db, "subjects"));
+  const loadPromise = (async () => {
+    const subjectsSnapshot = await getDocs(collection(db, "subjects"));
 
-  const itemsBySubject = await Promise.all(
-    subjectsSnapshot.docs.map(async (subjectDoc) => {
-      const subjectData = subjectDoc.data() as Subject;
-      try {
-        return await mapSubjectToSearchItems(
-          subjectDoc.id,
-          subjectData,
-          canPreview,
-        );
-      } catch (error) {
-        console.error(`Failed building search index for ${subjectDoc.id}`, error);
-        return [];
-      }
-    }),
-  );
+    const itemsBySubject = await Promise.all(
+      subjectsSnapshot.docs.map(async (subjectDoc) => {
+        const subjectData = subjectDoc.data() as Subject;
+        try {
+          return await mapSubjectToSearchItems(
+            subjectDoc.id,
+            subjectData,
+            canPreview,
+          );
+        } catch (error) {
+          console.error(`Failed building search index for ${subjectDoc.id}`, error);
+          return [];
+        }
+      }),
+    );
 
-  const items = itemsBySubject.flat().sort(compareSearchItems);
+    const items = itemsBySubject.flat().sort(compareSearchItems);
 
-  writeCache(canPreview, items);
+    inMemorySearchCache.set(cacheKey, items);
+    writeCache(canPreview, items);
 
-  return items;
+    return items;
+  })();
+
+  if (!forceRefresh) {
+    inFlightSearchLoads.set(cacheKey, loadPromise);
+  }
+
+  try {
+    return await loadPromise;
+  } finally {
+    if (!forceRefresh) {
+      inFlightSearchLoads.delete(cacheKey);
+    }
+  }
 };
 
 export const searchGuideChapters = (

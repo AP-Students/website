@@ -16,6 +16,36 @@ import { useUser } from "../hooks/UserContext";
 import { useEffect, useState } from "react";
 import SearchBar from "./SearchBar";
 
+const useIsMobileViewport = () => {
+  const [isMobileViewport, setIsMobileViewport] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+
+    const updateViewportState = () => {
+      setIsMobileViewport(mediaQuery.matches);
+    };
+
+    updateViewportState();
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener("change", updateViewportState);
+    } else {
+      mediaQuery.addListener(updateViewportState);
+    }
+
+    return () => {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener("change", updateViewportState);
+      } else {
+        mediaQuery.removeListener(updateViewportState);
+      }
+    };
+  }, []);
+
+  return isMobileViewport;
+};
+
 const links = [
   {
     name: "library",
@@ -43,6 +73,7 @@ const Navbar = ({
   className?: string;
 }) => {
   const { user } = useUser();
+  const isMobileViewport = useIsMobileViewport();
 
   const [atTopOfPage, setAtTopOfPage] = useState(true);
 
@@ -84,8 +115,8 @@ const Navbar = ({
             </Link>
           </div>
 
-          <div className={cn("min-w-0 grow", hideLinks ? "max-w-2xl" : "max-w-xl")}>
-            <SearchBar />
+          <div className={cn("min-w-0 grow", hideLinks ? "max-w-2xl" : "max-w-xl") }>
+            {isMobileViewport === false ? <SearchBar /> : null}
           </div>
 
           {!hideLinks && (
@@ -135,7 +166,7 @@ const Navbar = ({
       </div>
 
       <div className={cn("px-4 pb-3 md:hidden", className)}>
-        <SearchBar mobile />
+        {isMobileViewport ? <SearchBar mobile /> : null}
       </div>
     </>
   );
