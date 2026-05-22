@@ -20,9 +20,6 @@ export type GuideChapterSearchItem = {
   chapterPath: string;
   searchableText: string;
   chapterBodyText: string;
-  normalizedChapterTitle: string;
-  normalizedChapterBodyText: string;
-  normalizedSearchableText: string;
 };
 
 export type GuideSearchCache = {
@@ -290,16 +287,6 @@ const mapSubjectToSearchItems = (
                 bodyText: chapterBodyText,
               }),
               chapterBodyText,
-              normalizedChapterTitle: normalizeSearchText(chapter.title),
-              normalizedChapterBodyText: normalizeSearchText(chapterBodyText),
-              normalizedSearchableText: normalizeSearchText(
-                buildSearchableText({
-                  subjectTitle: subject.title,
-                  unitTitle: unit.title,
-                  chapterTitle: chapter.title,
-                  bodyText: chapterBodyText,
-                }),
-              ),
             };
           });
       }),
@@ -311,11 +298,6 @@ const mapSubjectToSearchItems = (
 
 const readCache = (canPreview: boolean): GuideChapterSearchItem[] | null => {
   if (typeof window === "undefined") {
-    return null;
-  }
-
-  if (canPreview) {
-    localStorage.removeItem(getCacheKey(canPreview));
     return null;
   }
 
@@ -345,11 +327,6 @@ const readCache = (canPreview: boolean): GuideChapterSearchItem[] | null => {
 
 const writeCache = (canPreview: boolean, items: GuideChapterSearchItem[]) => {
   if (typeof window === "undefined") {
-    return;
-  }
-
-  if (canPreview) {
-    localStorage.removeItem(getCacheKey(canPreview));
     return;
   }
 
@@ -422,9 +399,7 @@ export const loadGuideSearchItems = async (
     const items = itemsBySubject.flat().sort(compareSearchItems);
 
     inMemorySearchCache.set(cacheKey, items);
-    if (!forceRefresh) {
-      writeCache(canPreview, items);
-    }
+    writeCache(canPreview, items);
 
     return items;
   })();
@@ -448,7 +423,7 @@ export const searchGuideChapters = (
   maxResults = 5,
 ): GuideChapterSearchItem[] => {
   const normalizedQuery = normalizeSearchText(query);
-  if (normalizedQuery.length < 1) {
+  if (normalizedQuery.length < 2) {
     return [];
   }
 
@@ -475,14 +450,10 @@ export const searchGuideChapters = (
 
   const scoredItems = items
     .map((item) => {
-      const titleCount = countOccurrences(
-        item.normalizedChapterTitle,
-        normalizedQuery,
-      );
-      const bodyCount = countOccurrences(
-        item.normalizedChapterBodyText,
-        normalizedQuery,
-      );
+      const normalizedTitle = normalizeSearchText(item.chapterTitle);
+      const normalizedBody = normalizeSearchText(item.chapterBodyText);
+      const titleCount = countOccurrences(normalizedTitle, normalizedQuery);
+      const bodyCount = countOccurrences(normalizedBody, normalizedQuery);
 
       return {
         item,
