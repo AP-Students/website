@@ -116,7 +116,7 @@ const Navbar = ({
           </div>
 
           <div className={cn("min-w-0 grow", hideLinks ? "max-w-2xl" : "max-w-xl") }>
-            {isMobileViewport === false ? <SearchBar /> : null}
+            <SearchBar />
           </div>
 
           {!hideLinks && (
