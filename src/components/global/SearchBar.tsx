@@ -72,11 +72,8 @@ const SearchBarContents = ({
 }) => {
   const { user } = useUser();
   const [query, setQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [items, setItems] = useState<GuideChapterSearchItem[]>([]);
   const [results, setResults] = useState<GuideChapterSearchItem[]>([]);
   const [loadingIndex, setLoadingIndex] = useState(false);
-  const [hasLoadedIndex, setHasLoadedIndex] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -86,32 +83,25 @@ const SearchBarContents = ({
   const listboxId = useId();
 
   const canPreview = isPreviewUser(user?.access);
-  const normalizedDebouncedQuery = normalizeSearchText(debouncedQuery);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(query);
-    }, 120);
+    const normalizedQuery = normalizeSearchText(query);
 
-    return () => clearTimeout(timer);
-  }, [query]);
-
-  useEffect(() => {
-    const shouldLoadIndex = inputFocused || normalizedDebouncedQuery.length >= 2;
-
-    if (!shouldLoadIndex || hasLoadedIndex || loadingIndex) {
+    if (!normalizedQuery) {
+      setResults([]);
+      setLoadingIndex(false);
       return;
     }
 
     let active = true;
 
-    const loadItems = async () => {
+    const loadAndSearch = async () => {
       setLoadingIndex(true);
+
       try {
-        const searchItems = await loadGuideSearchItems(canPreview);
+        const searchItems = await loadGuideSearchItems(canPreview, true);
         if (active) {
-          setItems(searchItems);
-          setHasLoadedIndex(true);
+          setResults(searchGuideChapters(searchItems, query, 5));
         }
       } catch (error) {
         console.error("Failed to load guide search index", error);
@@ -122,7 +112,7 @@ const SearchBarContents = ({
       }
     };
 
-    loadItems().catch((error) => {
+    loadAndSearch().catch((error) => {
       console.error("Failed to initialize guide search", error);
       if (active) {
         setLoadingIndex(false);
@@ -132,17 +122,11 @@ const SearchBarContents = ({
     return () => {
       active = false;
     };
-  }, [canPreview, hasLoadedIndex, inputFocused, loadingIndex, normalizedDebouncedQuery.length]);
+  }, [canPreview, query]);
 
   useEffect(() => {
     setSelectedIndex(-1);
-    if (!normalizedDebouncedQuery) {
-      setResults([]);
-      return;
-    }
-
-    setResults(searchGuideChapters(items, debouncedQuery, 5));
-  }, [debouncedQuery, items, normalizedDebouncedQuery]);
+  }, [query]);
 
   // Clamp selectedIndex when the results list shrinks (e.g. when items reload)
   useEffect(() => {
@@ -160,9 +144,8 @@ const SearchBarContents = ({
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, []);
 
-  const hasQuery = normalizedDebouncedQuery.length > 0;
+  const hasQuery = normalizeSearchText(query).length > 0;
   const hasResults = results.length > 0;
-  const queryTooShort = hasQuery && normalizedDebouncedQuery.length < 2;
   const showDropdown = inputFocused && (hasQuery || loadingIndex);
 
   useEffect(() => {
@@ -266,10 +249,6 @@ const SearchBarContents = ({
               <LoaderCircle className="size-4 animate-spin" />
               Loading guides...
             </div>
-          ) : queryTooShort ? (
-            <div className="px-2 py-3 text-sm opacity-70">
-              Type at least 2 characters to search.
-            </div>
           ) : hasResults ? (
             <div className="flex flex-col gap-1">
               {results.map((result, index) => (
@@ -283,7 +262,19 @@ const SearchBarContents = ({
                     "rounded-lg px-3 py-2 transition-colors hover:bg-muted",
                     selectedIndex === index && "bg-muted",
                   )}
-                  onClick={beginNavigation}
+                  onClick={(event) => {
+                    if (
+                      event.button !== 0 ||
+                      event.metaKey ||
+                      event.ctrlKey ||
+                      event.shiftKey ||
+                      event.altKey
+                    ) {
+                      return;
+                    }
+
+                    beginNavigation();
+                  }}
                 >
                   <p className="line-clamp-1 text-sm font-semibold">
                     {result.chapterTitle}
@@ -294,11 +285,11 @@ const SearchBarContents = ({
                 </Link>
               ))}
             </div>
-          ) : (
+          ) : hasQuery ? (
             <div className="px-2 py-3 text-sm opacity-70">
               No chapters found for &quot;{query.trim()}&quot;.
             </div>
-          )}
+          ) : null}
         </div>
       )}
 
