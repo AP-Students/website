@@ -17,8 +17,10 @@ export type GuideChapterSearchItem = {
   unitTitle: string;
   chapterId: string;
   chapterTitle: string;
+  normalizedChapterTitle: string;
   chapterPath: string;
   searchableText: string;
+  normalizedSearchableText: string;
   chapterBodyText: string;
 };
 
@@ -29,6 +31,14 @@ export type GuideSearchCache = {
 
 const getCacheKey = (canPreview: boolean) =>
   `${SEARCH_CACHE_KEY_PREFIX}:${canPreview ? "preview" : "public"}`;
+
+export const clearGuideSearchPreviewCache = () => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  localStorage.removeItem(getCacheKey(true));
+};
 
 export const normalizeSearchText = (text: unknown) =>
   String(text ?? "")
@@ -94,6 +104,13 @@ const buildSearchableText = (input: {
     .replace(/\s+/g, " ")
     .trim();
 };
+
+const buildNormalizedSearchableText = (input: {
+  subjectTitle: string;
+  unitTitle: string;
+  chapterTitle: string;
+  bodyText: string;
+}) => normalizeSearchText(buildSearchableText(input));
 
 type ChapterDocPayload = Chapter & {
   data?: unknown;
@@ -273,6 +290,7 @@ const mapSubjectToSearchItems = (
               unitTitle: unit.title,
               chapterId: chapter.id,
               chapterTitle: chapter.title,
+              normalizedChapterTitle: normalizeSearchText(chapter.title),
               chapterPath: buildChapterPath({
                 subjectSlug,
                 unitIndex: resolvedUnitIndex,
@@ -281,6 +299,12 @@ const mapSubjectToSearchItems = (
                 chapterTitle: chapter.title,
               }),
               searchableText: buildSearchableText({
+                subjectTitle: subject.title,
+                unitTitle: unit.title,
+                chapterTitle: chapter.title,
+                bodyText: chapterBodyText,
+              }),
+              normalizedSearchableText: buildNormalizedSearchableText({
                 subjectTitle: subject.title,
                 unitTitle: unit.title,
                 chapterTitle: chapter.title,
@@ -298,6 +322,11 @@ const mapSubjectToSearchItems = (
 
 const readCache = (canPreview: boolean): GuideChapterSearchItem[] | null => {
   if (typeof window === "undefined") {
+    return null;
+  }
+
+  if (canPreview) {
+    localStorage.removeItem(getCacheKey(canPreview));
     return null;
   }
 
@@ -327,6 +356,11 @@ const readCache = (canPreview: boolean): GuideChapterSearchItem[] | null => {
 
 const writeCache = (canPreview: boolean, items: GuideChapterSearchItem[]) => {
   if (typeof window === "undefined") {
+    return;
+  }
+
+  if (canPreview) {
+    localStorage.removeItem(getCacheKey(canPreview));
     return;
   }
 
@@ -450,8 +484,8 @@ export const searchGuideChapters = (
 
   const scoredItems = items
     .map((item) => {
-      const normalizedTitle = normalizeSearchText(item.chapterTitle);
-      const normalizedBody = normalizeSearchText(item.chapterBodyText);
+      const normalizedTitle = item.normalizedChapterTitle;
+      const normalizedBody = item.normalizedSearchableText;
       const titleCount = countOccurrences(normalizedTitle, normalizedQuery);
       const bodyCount = countOccurrences(normalizedBody, normalizedQuery);
 

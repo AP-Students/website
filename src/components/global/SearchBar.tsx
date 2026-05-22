@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/components/hooks/UserContext";
 import {
+  clearGuideSearchPreviewCache,
   loadGuideSearchItems,
-  searchGuideChapters,
   normalizeSearchText,
+  searchGuideChapters,
   type GuideChapterSearchItem,
 } from "@/lib/search/guideSearch";
 
@@ -87,6 +88,12 @@ const SearchBarContents = ({
 
   const canPreview = isPreviewUser(user?.access);
   const normalizedDebouncedQuery = normalizeSearchText(debouncedQuery);
+
+  useEffect(() => {
+    if (!canPreview) {
+      clearGuideSearchPreviewCache();
+    }
+  }, [canPreview]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -283,7 +290,18 @@ const SearchBarContents = ({
                     "rounded-lg px-3 py-2 transition-colors hover:bg-muted",
                     selectedIndex === index && "bg-muted",
                   )}
-                  onClick={beginNavigation}
+                  onClick={(event) => {
+                    if (
+                      event.button !== 0 ||
+                      event.metaKey ||
+                      event.ctrlKey ||
+                      event.shiftKey ||
+                      event.altKey
+                    ) {
+                      return;
+                    }
+                    beginNavigation();
+                  }}
                 >
                   <p className="line-clamp-1 text-sm font-semibold">
                     {result.chapterTitle}
