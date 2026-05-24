@@ -5,7 +5,7 @@ import { formatSlug } from "@/lib/utils";
 import { type Chapter, type Subject, type Unit } from "@/types/firestore";
 
 const SEARCH_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
-const SEARCH_CACHE_KEY_PREFIX = "guide-search-index-v10";
+const SEARCH_CACHE_KEY_PREFIX = "guide-search-index-v11";
 const inMemorySearchCache = new Map<string, GuideChapterSearchItem[]>();
 const inFlightSearchLoads = new Map<string, Promise<GuideChapterSearchItem[]>>();
 
@@ -19,9 +19,7 @@ export type GuideChapterSearchItem = {
   chapterTitle: string;
   normalizedChapterTitle: string;
   chapterPath: string;
-  searchableText: string;
   normalizedSearchableText: string;
-  chapterBodyText: string;
 };
 
 export type GuideSearchCache = {
@@ -33,6 +31,8 @@ const getCacheKey = (canPreview: boolean) =>
   `${SEARCH_CACHE_KEY_PREFIX}:${canPreview ? "preview" : "public"}`;
 
 export const clearGuideSearchPreviewCache = () => {
+  inMemorySearchCache.delete(getCacheKey(true));
+
   if (typeof window === "undefined") {
     return;
   }
@@ -112,11 +112,6 @@ const buildNormalizedSearchableText = (input: {
   bodyText: string;
 }) => normalizeSearchText(buildSearchableText(input));
 
-type ChapterDocPayload = Chapter & {
-  data?: unknown;
-  content?: unknown;
-};
-
 const fetchUnitDocs = async (subjectSlug: string, subject: Subject) => {
   const fallbackUnits = subject.units ?? [];
 
@@ -149,25 +144,6 @@ const fetchUnitDocs = async (subjectSlug: string, subject: Subject) => {
   }
 };
 
-const fetchChapterDocs = async (subjectSlug: string, unitId: string) => {
-  try {
-    const chaptersSnapshot = await getDocs(
-      collection(db, "subjects", subjectSlug, "units", unitId, "chapters"),
-    );
-
-    return chaptersSnapshot.docs.map((chapterDoc) => {
-      const chapterData = chapterDoc.data() as ChapterDocPayload;
-      return {
-        ...chapterData,
-        id: chapterData.id || chapterDoc.id,
-      };
-    });
-  } catch (error) {
-    console.error(`Failed loading chapters for ${subjectSlug}/${unitId}`, error);
-    return [];
-  }
-};
-
 const isChapterVisible = (chapter: Chapter, canPreview: boolean) => {
   if (canPreview) {
     return true;
@@ -175,26 +151,6 @@ const isChapterVisible = (chapter: Chapter, canPreview: boolean) => {
 
   // Match the public visibility rule used elsewhere in the app.
   return chapter.isPublic === true;
-};
-
-const getChapterIdCandidates = (chapterId: string) => {
-  const shortId = chapterId.split("-").slice(0, 2).join("-");
-  return Array.from(new Set([chapterId, shortId])).filter(Boolean);
-};
-
-const findChapterDocMatch = (
-  chapterDocs: ChapterDocPayload[],
-  chapterId: string,
-) => {
-  const candidates = getChapterIdCandidates(chapterId);
-  for (const candidate of candidates) {
-    const match = chapterDocs.find((docItem) => docItem.id === candidate);
-    if (match) {
-      return match;
-    }
-  }
-
-  return null;
 };
 
 const parseUnitNumberFromTitle = (unitTitle?: string) => {
@@ -253,70 +209,47 @@ const mapSubjectToSearchItems = (
   return (async () => {
     const units = await fetchUnitDocs(subjectSlug, subject);
 
-    const perUnitItems = await Promise.all(
-      units.map(async (unit, unitIndex) => {
-        const chapterDocs = canPreview
-          ? await fetchChapterDocs(subjectSlug, unit.id)
-          : [];
+    return units.flatMap((unit, unitIndex) =>
+      (unit.chapters ?? [])
+        .filter((chapter) => isChapterVisible(chapter, canPreview))
+        .map((chapter) => {
+          const resolvedUnitIndex = resolveUnitIndex(
+            subject,
+            unit,
+            chapter.id,
+            unitIndex,
+          );
 
-        return (unit.chapters ?? [])
-          .filter((chapter) => isChapterVisible(chapter, canPreview))
-          .map((chapter) => {
-            const resolvedUnitIndex = resolveUnitIndex(
-              subject,
-              unit,
-              chapter.id,
-              unitIndex,
-            );
+          // Index only what's on the subject doc (titles + any embedded body).
+          // Chapter subcollections are never fetched — that kept the preview
+          // index fast instead of doing hundreds of per-unit reads.
+          const chapterBodyText = flattenText(chapter.content);
 
-            let indexedContent: unknown = chapter.content;
-            let chapterBodyText = flattenText(indexedContent);
-
-            if (!chapterBodyText) {
-              const chapterDocMatch = findChapterDocMatch(
-                chapterDocs,
-                chapter.id,
-              );
-              indexedContent =
-                chapterDocMatch?.data ?? chapterDocMatch?.content ?? null;
-              chapterBodyText = flattenText(indexedContent);
-            }
-
-            return {
+          return {
+            subjectSlug,
+            subjectTitle: subject.title,
+            unitId: unit.id,
+            unitIndex: resolvedUnitIndex,
+            unitTitle: unit.title,
+            chapterId: chapter.id,
+            chapterTitle: chapter.title,
+            normalizedChapterTitle: normalizeSearchText(chapter.title),
+            chapterPath: buildChapterPath({
               subjectSlug,
-              subjectTitle: subject.title,
-              unitId: unit.id,
               unitIndex: resolvedUnitIndex,
-              unitTitle: unit.title,
+              unitId: unit.id,
               chapterId: chapter.id,
               chapterTitle: chapter.title,
-              normalizedChapterTitle: normalizeSearchText(chapter.title),
-              chapterPath: buildChapterPath({
-                subjectSlug,
-                unitIndex: resolvedUnitIndex,
-                unitId: unit.id,
-                chapterId: chapter.id,
-                chapterTitle: chapter.title,
-              }),
-              searchableText: buildSearchableText({
-                subjectTitle: subject.title,
-                unitTitle: unit.title,
-                chapterTitle: chapter.title,
-                bodyText: chapterBodyText,
-              }),
-              normalizedSearchableText: buildNormalizedSearchableText({
-                subjectTitle: subject.title,
-                unitTitle: unit.title,
-                chapterTitle: chapter.title,
-                bodyText: chapterBodyText,
-              }),
-              chapterBodyText,
-            };
-          });
-      }),
+            }),
+            normalizedSearchableText: buildNormalizedSearchableText({
+              subjectTitle: subject.title,
+              unitTitle: unit.title,
+              chapterTitle: chapter.title,
+              bodyText: chapterBodyText,
+            }),
+          };
+        }),
     );
-
-    return perUnitItems.flat();
   })();
 };
 

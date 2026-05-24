@@ -77,12 +77,12 @@ const SearchBarContents = ({
   const [items, setItems] = useState<GuideChapterSearchItem[]>([]);
   const [results, setResults] = useState<GuideChapterSearchItem[]>([]);
   const [loadingIndex, setLoadingIndex] = useState(false);
-  const [hasLoadedIndex, setHasLoadedIndex] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const startedRef = useRef(false);
   const pathname = usePathname();
   const listboxId = useId();
 
@@ -90,6 +90,11 @@ const SearchBarContents = ({
   const normalizedDebouncedQuery = normalizeSearchText(debouncedQuery);
 
   useEffect(() => {
+    // Re-scope the index whenever preview access changes (login/logout): re-arm
+    // the loader and drop the old-scope results, and purge any preview-scoped
+    // (private) index when the user is not a previewer.
+    startedRef.current = false;
+    setItems([]);
     if (!canPreview) {
       clearGuideSearchPreviewCache();
     }
@@ -104,42 +109,26 @@ const SearchBarContents = ({
   }, [query]);
 
   useEffect(() => {
+    // Load the index once the user shows intent to search. This effect
+    // deliberately does NOT cancel on focus/query changes — `startedRef` gates
+    // re-entry instead — so a slow load always runs to completion. (Cancelling
+    // on dep changes is what previously orphaned the in-flight load and left the
+    // UI stuck on "Loading guides..." forever.) The canPreview effect re-arms it.
     const shouldLoadIndex = inputFocused || normalizedDebouncedQuery.length >= 2;
+    if (!shouldLoadIndex || startedRef.current) return;
 
-    if (!shouldLoadIndex || hasLoadedIndex || loadingIndex) {
-      return;
-    }
+    startedRef.current = true;
+    setLoadingIndex(true);
 
-    let active = true;
-
-    const loadItems = async () => {
-      setLoadingIndex(true);
-      try {
-        const searchItems = await loadGuideSearchItems(canPreview);
-        if (active) {
-          setItems(searchItems);
-          setHasLoadedIndex(true);
-        }
-      } catch (error) {
+    loadGuideSearchItems(canPreview)
+      .then((searchItems) => setItems(searchItems))
+      .catch((error) => {
         console.error("Failed to load guide search index", error);
-      } finally {
-        if (active) {
-          setLoadingIndex(false);
-        }
-      }
-    };
+        startedRef.current = false; // allow a retry after a failure
+      })
+      .finally(() => setLoadingIndex(false));
+  }, [canPreview, inputFocused, normalizedDebouncedQuery.length]);
 
-    loadItems().catch((error) => {
-      console.error("Failed to initialize guide search", error);
-      if (active) {
-        setLoadingIndex(false);
-      }
-    });
-
-    return () => {
-      active = false;
-    };
-  }, [canPreview, hasLoadedIndex, inputFocused, loadingIndex, normalizedDebouncedQuery.length]);
 
   useEffect(() => {
     setSelectedIndex(-1);
