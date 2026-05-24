@@ -5,7 +5,7 @@ import { formatSlug } from "@/lib/utils";
 import { type Chapter, type Subject, type Unit } from "@/types/firestore";
 
 const SEARCH_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
-const SEARCH_CACHE_KEY_PREFIX = "guide-search-index-v11";
+const SEARCH_CACHE_KEY_PREFIX = "guide-search-index-v12";
 const inMemorySearchCache = new Map<string, GuideChapterSearchItem[]>();
 const inFlightSearchLoads = new Map<string, Promise<GuideChapterSearchItem[]>>();
 
@@ -144,12 +144,10 @@ const fetchUnitDocs = async (subjectSlug: string, subject: Subject) => {
   }
 };
 
-const isChapterVisible = (chapter: Chapter, canPreview: boolean) => {
-  if (canPreview) {
-    return true;
-  }
-
-  // Match the public visibility rule used elsewhere in the app.
+const isChapterVisible = (chapter: Chapter) => {
+  // Search only surfaces published guides. Even preview (member/admin) users
+  // should not get WIP/unpublished chapters in quick-search results, so this
+  // no longer short-circuits on preview access.
   return chapter.isPublic === true;
 };
 
@@ -204,14 +202,13 @@ const resolveUnitIndex = (
 const mapSubjectToSearchItems = (
   subjectSlug: string,
   subject: Subject,
-  canPreview: boolean,
 ): Promise<GuideChapterSearchItem[]> => {
   return (async () => {
     const units = await fetchUnitDocs(subjectSlug, subject);
 
     return units.flatMap((unit, unitIndex) =>
       (unit.chapters ?? [])
-        .filter((chapter) => isChapterVisible(chapter, canPreview))
+        .filter((chapter) => isChapterVisible(chapter))
         .map((chapter) => {
           const resolvedUnitIndex = resolveUnitIndex(
             subject,
@@ -351,11 +348,7 @@ export const loadGuideSearchItems = async (
       subjectsSnapshot.docs.map(async (subjectDoc) => {
         const subjectData = subjectDoc.data() as Subject;
         try {
-          return await mapSubjectToSearchItems(
-            subjectDoc.id,
-            subjectData,
-            canPreview,
-          );
+          return await mapSubjectToSearchItems(subjectDoc.id, subjectData);
         } catch (error) {
           console.error(`Failed building search index for ${subjectDoc.id}`, error);
           return [];
