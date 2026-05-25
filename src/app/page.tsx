@@ -7,6 +7,7 @@ import Image from "next/image";
 import Footer from "@/components/global/footer";
 import APLibrary from "@/components/landingPage/APLibrary";
 import FAQ from "@/components/landingPage/FAQ";
+import SearchBar from "@/components/global/SearchBar";
 
 export default async function Home() {
   return (
@@ -17,6 +18,9 @@ export default async function Home() {
         <Hero />
         <div className="mx-auto flex max-w-6xl flex-col px-6 pb-8 lg:px-8 ">
           <LibraryHeader />
+          <div className="mx-auto mb-12 w-full max-w-xl">
+            <SearchBar />
+          </div>
           <APLibrary />
           <SellingPoint />
           <div id="FAQ-section">
