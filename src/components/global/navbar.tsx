@@ -14,37 +14,6 @@ import { MenuIcon } from "lucide-react";
 import SignedInPfp from "../login/SignedInPfp";
 import { useUser } from "../hooks/UserContext";
 import { useEffect, useState } from "react";
-import SearchBar from "./SearchBar";
-
-const useIsMobileViewport = () => {
-  const [isMobileViewport, setIsMobileViewport] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 767px)");
-
-    const updateViewportState = () => {
-      setIsMobileViewport(mediaQuery.matches);
-    };
-
-    updateViewportState();
-
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener("change", updateViewportState);
-    } else {
-      mediaQuery.addListener(updateViewportState);
-    }
-
-    return () => {
-      if (mediaQuery.removeEventListener) {
-        mediaQuery.removeEventListener("change", updateViewportState);
-      } else {
-        mediaQuery.removeListener(updateViewportState);
-      }
-    };
-  }, []);
-
-  return isMobileViewport;
-};
 
 const links = [
   {
@@ -73,7 +42,6 @@ const Navbar = ({
   className?: string;
 }) => {
   const { user } = useUser();
-  const isMobileViewport = useIsMobileViewport();
 
   const [atTopOfPage, setAtTopOfPage] = useState(true);
 
@@ -113,10 +81,6 @@ const Navbar = ({
               <Image src="/logo.png" alt="Logo" width={72} height={72} />
               <h1 className="text-[2.1rem] font-bold leading-none">FiveHive</h1>
             </Link>
-          </div>
-
-          <div className={cn("min-w-0 grow", hideLinks ? "max-w-2xl" : "max-w-xl") }>
-            <SearchBar />
           </div>
 
           {!hideLinks && (
@@ -164,10 +128,6 @@ const Navbar = ({
 
         <MobileNavbar />
       </div>
-
-      <div className={cn("px-4 pb-3 md:hidden", className)}>
-        {isMobileViewport ? <SearchBar mobile /> : null}
-      </div>
     </>
   );
 };
@@ -192,7 +152,6 @@ const MobileNavbar = () => {
               </SheetTrigger>
             </SheetTitle>
           </SheetHeader>
-          <SearchBar mobile className="mt-2" />
           <div className="mt-4 flex grow flex-col gap-2">
             {links.map((link) => (
               <div key={link.name}>

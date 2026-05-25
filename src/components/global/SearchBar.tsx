@@ -18,53 +18,7 @@ import {
 
 const isPreviewUser = (access?: string) => access === "member" || access === "admin";
 
-const useIsActiveViewport = (mobile?: boolean) => {
-  const [isActiveViewport, setIsActiveViewport] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 767px)");
-
-    const updateViewportState = () => {
-      setIsActiveViewport(mobile ? mediaQuery.matches : !mediaQuery.matches);
-    };
-
-    updateViewportState();
-
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener("change", updateViewportState);
-    } else {
-      mediaQuery.addListener(updateViewportState);
-    }
-
-    return () => {
-      if (mediaQuery.removeEventListener) {
-        mediaQuery.removeEventListener("change", updateViewportState);
-      } else {
-        mediaQuery.removeListener(updateViewportState);
-      }
-    };
-  }, [mobile]);
-
-  return isActiveViewport;
-};
-
 const SearchBar = ({
-  className,
-  mobile,
-}: {
-  className?: string;
-  mobile?: boolean;
-}) => {
-  const isActiveViewport = useIsActiveViewport(mobile);
-
-  if (!isActiveViewport) {
-    return null;
-  }
-
-  return <SearchBarContents className={className} mobile={mobile} />;
-};
-
-const SearchBarContents = ({
   className,
   mobile,
 }: {
