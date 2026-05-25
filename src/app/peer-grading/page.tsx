@@ -9,7 +9,7 @@ import {
 } from "firebase/firestore";
 import { useUser } from "@/components/hooks/UserContext";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import Editor from "@monaco-editor/react";
 
 const COOLDOWN_MS = 6 * 60 * 60 * 1000;
 
@@ -167,17 +167,26 @@ const FRQSubmissionPage = () => {
               recommended to write your response in a Google Doc or other text
               document and copy/paste it here.
             </p>
-            <Textarea
-              value={response}
-              onChange={(e) => setResponse(e.target.value)}
-              placeholder="Type your response here..."
-              rows={10}
-              className={cn(
-                "mb-4 transition-colors",
-                matcher.hasMatch(response) &&
-                  "border border-red-300 bg-red-200",
-              )}
-            />
+            <div className={cn(
+              "mb-4 h-[400px] w-full rounded-md border p-1 transition-colors overflow-hidden",
+              matcher.hasMatch(response) ? "border-red-500 bg-red-200" : "border-input"
+            )}>
+              <Editor
+                height="100%"
+                defaultLanguage="plaintext"
+                value={response}
+                onChange={(val) => setResponse(val ?? "")}
+                options={{
+                  fontFamily: "'Consolas', monospace",
+                  fontSize: 16,
+                  minimap: { enabled: false },
+                  wordWrap: "on",
+                  matchBrackets: "always",
+                  guides: { indentation: true },
+                  padding: { top: 16, bottom: 16 },
+                }}
+              />
+            </div>
             {matcher.hasMatch(response) && (
               <div className="flex gap-2">
                 <ShieldAlert className="size-12 shrink-0" />

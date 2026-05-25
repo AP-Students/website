@@ -121,11 +121,30 @@ export default function AdvancedTextbox({
     ) {
       e.stopPropagation();
     }
+
+    if (key === "Tab") {
+      e.stopPropagation();
+      e.preventDefault();
+
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newText = currentText.substring(0, start) + "  " + currentText.substring(end);
+      
+      updateQuestionText(newText);
+
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + 2;
+        }
+      }, 0);
+    }
   };
 
-  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const updateQuestionText = (newText: string) => {
     setUnsavedChanges?.(true);
-    const newText = e.target.value;
     setCurrentText(newText);
     // Clone the current question to avoid direct mutation
     const updatedQuestions = [...questions];
@@ -163,6 +182,10 @@ export default function AdvancedTextbox({
     }
 
     setQuestions(updatedQuestions); // Update state immutably
+  };
+
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    updateQuestionText(e.target.value);
   };
 
   const handleUploadClick = () => {
@@ -329,7 +352,7 @@ export default function AdvancedTextbox({
         onKeyDown={handleKeyDown}
         placeholder={
           placeholder ??
-          "Type or drag and drop here (only 1 file allowed). Latex syntax starts with $@ and ends with $ (eg: $@e^{ipi} + 1 = 0$)"
+          "Type or drag and drop here (only 1 file allowed). Latex syntax starts with $@ and ends with $ (eg: $@e^{ipi} + 1 = 0$). Code blocks use ``` around the code."
         }
       />
 

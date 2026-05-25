@@ -132,14 +132,26 @@ export function RenderContent({ content }: Props) {
     <div className="custom-katex my-2 whitespace-pre-wrap">
       {/* Render text content directly */}
       {decodeEntities(content.value)
-        .split(/(\$@[^$]+\$)/g)
-        .map((line, lineIndex) => {
-          if (line.endsWith("$")) {
+        .split(/(```[\s\S]*?```|\$@[^$]+\$)/g)
+        .map((token, tokenIndex) => {
+          if (token.startsWith("```") && token.endsWith("```")) {
+            // Strip the ``` from start and end, and remove the leading newline.
+            const codeContent = token.slice(3, -3).replace(/^\n/, "");
+            return (
+              <pre
+                key={`code-${tokenIndex}`}
+                className="my-2 whitespace-pre-wrap overflow-x-auto rounded bg-gray-200 p-2 font-mono text-sm leading-relaxed text-black w-fit"
+                style={{ fontFamily: "'Consolas', monospace" }}
+              >
+                <code>{codeContent}</code>
+              </pre>
+            );
+          } else if (token.startsWith("$@") && token.endsWith("$")) {
             return (
               <span
-                key={`latex-${lineIndex}`}
+                key={`latex-${tokenIndex}`}
                 dangerouslySetInnerHTML={{
-                  __html: katex.renderToString(line.slice(2, -1), {
+                  __html: katex.renderToString(token.slice(2, -1), {
                     throwOnError: false,
                     macros: katexMacros,
                   }),
@@ -147,7 +159,7 @@ export function RenderContent({ content }: Props) {
               ></span>
             );
           }
-          return <span key={`text-${lineIndex}`}>{line}</span>;
+          return <span key={`text-${tokenIndex}`}>{token}</span>;
         })}
 
       {/* Render files through individual components */}
