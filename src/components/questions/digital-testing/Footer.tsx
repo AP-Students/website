@@ -20,6 +20,7 @@ interface FooterProps {
   submitted: boolean;
   adminMode: boolean;
   testName: string;
+  setShowCompletionPage: (show: boolean) => void;
 }
 
 export default function Footer({
@@ -34,6 +35,7 @@ export default function Footer({
   submitted,
   adminMode,
   testName,
+  setShowCompletionPage,
 }: FooterProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -54,6 +56,9 @@ export default function Footer({
         setCurrentQuestionIndex(0);
         setShowReviewPage(false);
         setSubmitted(true);
+        if (!adminMode) {
+          setShowCompletionPage(true);
+        }
       }
     } else if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
