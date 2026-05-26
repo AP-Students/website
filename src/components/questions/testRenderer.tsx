@@ -11,6 +11,9 @@ import Highlighter, { type Highlight } from "./digital-testing/Highlighter";
 import ReviewPage, { isQuestionCorrect } from "./digital-testing/ReviewPage";
 import clsx from "clsx";
 import { cn } from "@/lib/utils";
+import { usePathname, useRouter } from "next/navigation";
+import TestCompletionPage from "./digital-testing/TestCompletionPage";
+import { useUser } from "@/components/hooks/UserContext";
 import "katex/dist/katex.min.css";
 
 interface Props {
@@ -69,6 +72,10 @@ export default function DigitalTestingPage({
   directions,
   testName,
 }: Props) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { user } = useUser();
+
   const [questions, setQuestions] = useState<QuestionFormat[]>(
     inputQuestions || initialQuestions,
   );
@@ -84,6 +91,16 @@ export default function DigitalTestingPage({
   const [showEliminationTools, setShowEliminationTools] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [showReviewPage, setShowReviewPage] = useState(false);
+  const [showCompletionPage, setShowCompletionPage] = useState(false);
+
+  const score = questions.reduce((acc, question, index) => {
+    const answers = selectedAnswers[index] ?? [];
+    return acc + (isQuestionCorrect(question, answers) ? 1 : 0);
+  }, 0);
+
+  const handleContinueAfterCompletion = () => {
+    router.push(pathname.split("/").slice(0, 3).join("/"));
+  };
 
   useEffect(() => {
     setQuestions(inputQuestions);
@@ -130,7 +147,19 @@ export default function DigitalTestingPage({
           directions={directions}
         />
       )}
-      {showReviewPage ? (
+      {showCompletionPage ? (
+        <div className="pt-8">
+          <TestCompletionPage
+            onContinue={handleContinueAfterCompletion}
+            testName={testName}
+            score={score}
+            totalQuestions={questions.length}
+            username={user?.displayName}
+            questions={questions}
+            selectedAnswers={selectedAnswers}
+          />
+        </div>
+      ) : showReviewPage ? (
         <ReviewPage
           goToQuestion={setCurrentQuestionIndex}
           currentQuestionIndex={currentQuestionIndex}
@@ -260,19 +289,22 @@ export default function DigitalTestingPage({
           </div>
         </div>
       )}
-      <Footer
-        goToQuestion={setCurrentQuestionIndex}
-        currentQuestionIndex={currentQuestionIndex}
-        setCurrentQuestionIndex={setCurrentQuestionIndex}
-        questions={questions}
-        selectedAnswers={selectedAnswers}
-        setShowReviewPage={setShowReviewPage}
-        showReviewPage={showReviewPage}
-        setSubmitted={setSubmitted}
-        submitted={submitted}
-        adminMode={adminMode}
-        testName={testName}
-      />
+      {!showCompletionPage && (
+        <Footer
+          goToQuestion={setCurrentQuestionIndex}
+          currentQuestionIndex={currentQuestionIndex}
+          setCurrentQuestionIndex={setCurrentQuestionIndex}
+          questions={questions}
+          selectedAnswers={selectedAnswers}
+          setShowReviewPage={setShowReviewPage}
+          showReviewPage={showReviewPage}
+          setSubmitted={setSubmitted}
+          submitted={submitted}
+          adminMode={adminMode}
+          testName={testName}
+          setShowCompletionPage={setShowCompletionPage}
+        />
+      )}
     </div>
   );
 }
