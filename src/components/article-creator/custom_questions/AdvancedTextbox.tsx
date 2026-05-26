@@ -117,9 +117,71 @@ export default function AdvancedTextbox({
       key === "ArrowDown" ||
       key === "ArrowLeft" ||
       key === "ArrowRight" ||
-      key === "Backspace"
+      key === "Backspace" ||
+      key === "Enter"
     ) {
       e.stopPropagation();
+    }
+
+    if (key === "Enter") {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+
+      const cursorPosition = textarea.selectionStart;
+      const textBeforeCursor = currentText.substring(0, cursorPosition);
+      const textAfterCursor = currentText.substring(textarea.selectionEnd);
+
+      // Find the current line the cursor is on
+      const lastNewLineIndex = textBeforeCursor.lastIndexOf("\n");
+      const currentLine = textBeforeCursor.substring(lastNewLineIndex + 1);
+      
+      // Match leading whitespace
+      const match = currentLine.match(/^\s*/);
+      const leadingWhitespace = match ? match[0] : "";
+
+      if (leadingWhitespace) {
+        e.preventDefault();
+        const newText = textBeforeCursor + "\n" + leadingWhitespace + textAfterCursor;
+        updateQuestionText(newText);
+
+        setTimeout(() => {
+          if (textareaRef.current) {
+            textareaRef.current.selectionStart = textareaRef.current.selectionEnd = cursorPosition + 1 + leadingWhitespace.length;
+          }
+        }, 0);
+      }
+    }
+
+    if (key === "Backspace") {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+
+      const cursorPosition = textarea.selectionStart;
+      if (cursorPosition === textarea.selectionEnd && cursorPosition > 0) {
+        const textBeforeCursor = currentText.substring(0, cursorPosition);
+        const lastNewLineIndex = textBeforeCursor.lastIndexOf("\n");
+        const currentLine = textBeforeCursor.substring(lastNewLineIndex + 1);
+
+        // If the line up to the cursor is purely spaces, treat it as indentation
+        if (currentLine.length > 0 && /^\s+$/.test(currentLine)) {
+          e.preventDefault();
+          
+          // delete 2 spaces instead of 1 if possible
+          const spacesToDelete = currentLine.length % 2 !== 0 ? 1 : 2;
+
+          const newText = 
+            currentText.substring(0, cursorPosition - spacesToDelete) + 
+            currentText.substring(cursorPosition);
+            
+          updateQuestionText(newText);
+
+          setTimeout(() => {
+            if (textareaRef.current) {
+              textareaRef.current.selectionStart = textareaRef.current.selectionEnd = cursorPosition - spacesToDelete;
+            }
+          }, 0);
+        }
+      }
     }
 
     if (key === "Tab") {
@@ -131,13 +193,13 @@ export default function AdvancedTextbox({
 
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
-      const newText = currentText.substring(0, start) + "  " + currentText.substring(end);
+      const newText = currentText.substring(0, start) + "   " + currentText.substring(end);
       
       updateQuestionText(newText);
 
       setTimeout(() => {
         if (textareaRef.current) {
-          textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + 2;
+          textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + 3;
         }
       }, 0);
     }
