@@ -175,14 +175,25 @@ function ArticleCreator({ className }: { className?: string }) {
             const updatedQuestions = await processQuestions(
               block.data.questions as QuestionFormat[],
             );
-            block.data.questions = updatedQuestions;
-            return block;
+
+            return {
+              ...block,
+              data: {
+                ...block.data,
+                questions: updatedQuestions,
+              },
+            };
           }
 
           if (block.type === "table") {
             const updatedTable = await processTable(block.data);
-            block.data.content = updatedTable;
-            return block;
+            return {
+              ...block,
+              data: {
+                ...block.data,
+                content: updatedTable,
+              },
+            };
           }
 
           if (block.type === "list") {
@@ -190,25 +201,43 @@ function ArticleCreator({ className }: { className?: string }) {
             // cleanUndefined(block);
             // console.dir("after", block.data.meta);
 
-            if (block.data.meta.start === undefined) {
-              delete block.data.meta.start;
-            }
-            if (block.data.meta.counterType === undefined) {
-              block.data.meta.counterType = "numeric";
+            const meta = { ...block.data.meta };
+
+            if (meta.start === undefined) {
+              delete meta.start;
             }
 
-            return block;
+            if (meta.counterType === undefined) {
+              meta.counterType = "numeric";
+            }
+
+            return {
+              ...block,
+              data: {
+                ...block.data,
+                meta,
+              },
+            };
             // return JSON.parse(JSON.stringify(block)) as OutputBlockData;
           }
 
-          return block; // If not a questions block, return original block
+          return { ...block }; // If not a questions block, return original block
         }),
       );
 
       /* eslint-enable */
 
-      newArticle.data.blocks = updatedDataBlocks;
-      await setDoc(docRef, newArticle);
+      const updatedArticle = {
+        ...newArticle,
+        data: {
+          ...data,
+          blocks: updatedDataBlocks,
+        },
+      };
+
+      await setDoc(docRef, updatedArticle);
+
+      setData(updatedArticle.data); // re-render
 
       alert(`Article saved successfully.`);
       setUnsavedChanges(false);
@@ -258,7 +287,7 @@ function ArticleCreator({ className }: { className?: string }) {
         </div>
 
         {/* Right column: Renderer */}
-        <div className="px-8">
+        <div className="px-8 break-words overflow-hidden">
           <div className="pb-8 pt-4 opacity-50">Preview:</div>
           <Renderer content={data} />
         </div>

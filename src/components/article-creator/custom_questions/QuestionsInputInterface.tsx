@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 
 interface Props {
   questions: QuestionFormat[];
-  setQuestions: (questions: QuestionFormat[]) => void;
+  setQuestions: React.Dispatch<React.SetStateAction<QuestionFormat[]>>;
   testRenderer?: boolean;
   setUnsavedChanges?: (unsavedChanges: boolean) => void;
 }
@@ -68,7 +68,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
           { value: { value: "", files: [] }, id: "3" },
           { value: { value: "", files: [] }, id: "4" },
         ],
-        answers: [""],
+        answers: [],
         explanation: {
           value: "",
           files: [],
@@ -176,10 +176,16 @@ const QuestionsInputInterface: React.FC<Props> = ({
 
   const deleteOption = (qIndex: number, oIndex: number) => {
     const newQuestions = [...questions];
-    const newOptions = newQuestions[qIndex]!.options.filter(
-      (_, index) => index !== oIndex,
-    );
-    newQuestions[qIndex]!.options = newOptions;
+    const question = newQuestions[qIndex];
+    if (!question) return;
+
+    const optionToDelete = question.options[oIndex];
+    if (!optionToDelete) return;
+
+    question.options = question.options.filter((_, index) => index !== oIndex);
+
+    question.answers = question.answers.filter((id) => id !== optionToDelete.id);
+
     setQuestions(newQuestions);
     setUnsavedChanges?.(true);
   };
@@ -268,13 +274,61 @@ const QuestionsInputInterface: React.FC<Props> = ({
                   <div key={oIndex} className="mb-2 min-w-full">
                     <div className="flex justify-between">
                       Option {oIndex + 1}
-                      <button
-                        type="button"
-                        onClick={() => deleteOption(qIndex, oIndex)}
-                        className="text-red-500 hover:text-red-600"
-                      >
-                        <Trash size={20} />
-                      </button>
+                      <div className="flex flex-row justify-end">
+                        <label className="flex items-center gap-2 cursor-pointer select-none mr-6">
+                          <input
+                            type="checkbox"
+                            className="
+                              h-4 w-4
+                              rounded
+                              border-gray-400
+                              accent-black
+                              bg-gray-200
+                              focus:ring-2
+                              focus:ring-gray-500
+                              focus:ring-offset-1
+                              cursor-pointer
+                            "
+                            checked={questionInstance.answers.includes(option.id)}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+
+                              setQuestions((prevQuestions) =>
+                              prevQuestions.map((question, index) => {
+                                if (index !== qIndex) return question;
+
+                                const newAnswers = checked
+                                  ? Array.from(new Set([...(question.answers || []), option.id]))
+                                  : (question.answers || []).filter((id) => id !== option.id);
+
+                                // Log the updated answers for debugging
+                                console.log(
+                                  `Question ${qIndex} updated answers:`,
+                                  newAnswers
+                                );
+
+                                return {
+                                  ...question,
+                                  answers: newAnswers,
+                                };
+                              }));
+
+                            }}
+                          />
+                          <span className="text-sm text-gray-700">
+                            Correct Answer?
+                          </span>
+                        </label>
+
+                        <button
+                          type="button"
+                          onClick={() => deleteOption(qIndex, oIndex)}
+                          className="text-red-500 hover:text-red-600 mb-1"
+                        >
+                          <Trash size={20} />
+                        </button>
+                      </div>
+
                     </div>
                     <AdvancedTextbox
                       questions={questions}
@@ -297,31 +351,6 @@ const QuestionsInputInterface: React.FC<Props> = ({
               </div>
 
               <div className="my-4 flex justify-between gap-2">
-                <div className="max-w-48">
-                  <label htmlFor="correctAnswer">Correct answer(s)</label>
-                  <Input
-                    id="correctAnswer"
-                    type="text"
-                    value={questionInstance.answers.join(",")}
-                    placeholder={
-                      questionInstance.type === "mcq"
-                        ? "Example: 1"
-                        : "Example: 1,3"
-                    }
-                    onChange={(e) => {
-                      const inputValue = e.target.value;
-                      const correctAnswers = inputValue
-                        .split(",")
-                        .map((answer) => answer.trim());
-                      updateQuestion(qIndex, {
-                        ...questionInstance,
-                        answers: correctAnswers,
-                      });
-                      validateCorrectAnswer(inputValue, questionInstance.type);
-                    }}
-                  />
-                  {error && <div className="text-red-500">{error}</div>}
-                </div>
                 <div>
                   <label htmlFor="topic">Topic</label>
                   <Input

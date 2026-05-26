@@ -81,7 +81,7 @@ const Page = ({
       <div className="relative flex grow flex-col">
         <Navbar hideLinks />
 
-        <div className="relative mt-8 flex justify-between gap-x-16 px-10 lg:mt-16 xl:px-20">
+        <div className="relative mt-8 flex justify-between gap-x-16 px-10 lg:mt-16 xl:px-20 break-words overflow-hidden">
           <div className="flex grow flex-col items-center">
             <SubjectBreadcrumb
               locations={[subject.title, unitTitle, chapter.title]}
