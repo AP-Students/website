@@ -26,7 +26,7 @@ const completionMessages = [
   "No one can match your unreal talent, {username}!",
   "I can't believe how good you are at this, {username}. Are you sure you're not an AI?",
   "With this treasure I summon...A Perfect SCORE!! You absolutely exorcised this set.",
-  "SSSadistic , {username}! Absolutley shocked the proctors.",
+  "SSSadistic, {username}! Absolutely shocked the proctors.",
 ];
 
 export default function TestCompletionPage({
