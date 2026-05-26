@@ -42,9 +42,8 @@ export default function TestCompletionPage({
   const [randomMessage] = useState(() => {
     const selected =
       completionMessages[Math.floor(Math.random() * completionMessages.length)] ??
-      completionMessages[0] ??
       "Great work, {username}!";
-    const displayName = username?.trim() || "there";
+    const displayName = username?.trim() ?? "there";
     return selected
       .replaceAll("{username}", displayName)
       .replaceAll("[UserName]", displayName);
