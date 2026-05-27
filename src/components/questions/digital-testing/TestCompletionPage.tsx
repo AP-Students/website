@@ -54,7 +54,7 @@ export default function TestCompletionPage({
   artSrc = "/mcq-completion-art.svg",
 }: TestCompletionPageProps) {
   const [randomMessage] = useState(() => {
-    const displayName = username?.trim() || "there";
+    const displayName = username?.trim() ?? "there";
 
     const pool =
       score === totalQuestions
@@ -69,7 +69,7 @@ export default function TestCompletionPage({
       pool[Math.floor(Math.random() * pool.length)] ??
       "Great work, {username}!";
 
-    return selected
+    return (selected ?? "Great work, {username}!")
       .replaceAll("{username}", displayName)
       .replaceAll("[UserName]", displayName);
   });
@@ -164,7 +164,7 @@ export default function TestCompletionPage({
               Review the questions below to see what you got right and wrong.
             </p>
             <p className="mt-2 text-sm font-medium text-slate-500">
-              {testName || "Practice Test"}
+              {testName ?? "Practice Test"}
             </p>
           </div>
 
