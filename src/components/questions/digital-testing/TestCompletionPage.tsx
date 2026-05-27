@@ -8,6 +8,7 @@ import { isQuestionCorrect } from "./ReviewPage";
 
 interface TestCompletionPageProps {
   onContinue: () => void;
+  onReviewAnswers: () => void;
   testName: string;
   score: number;
   totalQuestions: number;
@@ -17,20 +18,33 @@ interface TestCompletionPageProps {
   selectedAnswers: Record<number, string[]>;
 }
 
-const completionMessages = [
-  "Great work, {username}! You are the GOAT.",
-  "Excellent Performance, {username}.",
-  "Practice complete, {username}. It seems like you're starting to get the hang of this!",
-  "Nicely done, {username}. Another MCQ set defeated straight into the ground.",
-  "That was a clean finish on your end, {username}.",
-  "No one can match your unreal talent, {username}!",
-  "I can't believe how good you are at this, {username}. Are you sure you're not an AI?",
+const highScoreMessages = [
+  "Strong finish, {username}. You're close to mastery.",
+  "Great result, {username}. You handled that set really well.",
+  "Solid performance, {username}. A little more polish and you're there.",
+];
+
+const mediumScoreMessages = [
+  "Good work, {username}. The review screen can help lock in the misses.",
+  "You’re building momentum, {username}. Review the missed questions and keep going.",
+  "Nice effort, {username}. A careful review will turn this into a stronger score next time.",
+];
+
+const lowScoreMessages = [
+  "You finished the set, {username}. Use the review screen to learn from the misses.",
+  "Keep going, {username}. The important part now is understanding what went wrong.",
+  "This one was rough, {username}, but the explanations can turn it around next time.",
+];
+
+const perfectScoreMessages = [
   "With this treasure I summon...A Perfect SCORE!! You absolutely exorcised this set.",
-  "SSSadistic, {username}! Absolutely shocked the proctors.",
+  "Perfect score, {username}. That was unstoppable.",
+  "Flawless work, {username}. You got every question right.",
 ];
 
 export default function TestCompletionPage({
   onContinue,
+  onReviewAnswers,
   testName,
   score,
   totalQuestions,
@@ -40,10 +54,21 @@ export default function TestCompletionPage({
   artSrc = "/mcq-completion-art.svg",
 }: TestCompletionPageProps) {
   const [randomMessage] = useState(() => {
+    const displayName = username?.trim() || "there";
+
+    const pool =
+      score === totalQuestions
+        ? perfectScoreMessages
+        : totalQuestions > 0 && score / totalQuestions >= 0.8
+          ? highScoreMessages
+          : totalQuestions > 0 && score / totalQuestions >= 0.5
+            ? mediumScoreMessages
+            : lowScoreMessages;
+
     const selected =
-      completionMessages[Math.floor(Math.random() * completionMessages.length)] ??
+      pool[Math.floor(Math.random() * pool.length)] ??
       "Great work, {username}!";
-    const displayName = username?.trim() ?? "there";
+
     return selected
       .replaceAll("{username}", displayName)
       .replaceAll("[UserName]", displayName);
@@ -182,12 +207,20 @@ export default function TestCompletionPage({
           </div>
 
           <div className="border-t border-slate-200 p-6 sm:p-8">
-            <button
-              className="w-full rounded-full bg-[#173a7a] px-8 py-3 text-base font-semibold text-white transition-colors hover:bg-[#132f63]"
-              onClick={onContinue}
-            >
-              Continue
-            </button>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <button
+                className="w-full rounded-full border border-[#173a7a] px-8 py-3 text-base font-semibold text-[#173a7a] transition-colors hover:bg-[#eef3ff]"
+                onClick={onReviewAnswers}
+              >
+                Review answers
+              </button>
+              <button
+                className="w-full rounded-full bg-[#173a7a] px-8 py-3 text-base font-semibold text-white transition-colors hover:bg-[#132f63]"
+                onClick={onContinue}
+              >
+                Continue
+              </button>
+            </div>
           </div>
         </div>
       </div>
