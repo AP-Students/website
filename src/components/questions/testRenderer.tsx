@@ -34,7 +34,7 @@ const initialQuestions: QuestionFormat[] = [
       { id: "3", value: { value: "Rome", files: [] } },
       { id: "4", value: { value: "Berlin", files: [] } },
     ],
-    answers: ["Paris"],
+    answers: ["1"],
     explanation: { value: "Paris is the capital city of France.", files: [] },
     content: {
       value:
@@ -53,7 +53,7 @@ const initialQuestions: QuestionFormat[] = [
       { id: "3", value: { value: "Osaka", files: [] } },
       { id: "4", value: { value: "Hiroshima", files: [] } },
     ],
-    answers: ["Tokyo"],
+    answers: ["1"],
     explanation: { value: "Tokyo is the capital city of Japan.", files: [] },
     content: {
       value:
@@ -97,6 +97,13 @@ export default function DigitalTestingPage({
     const answers = selectedAnswers[index] ?? [];
     return acc + (isQuestionCorrect(question, answers) ? 1 : 0);
   }, 0);
+
+  const handleReviewAnswers = () => {
+    setShowCompletionPage(false);
+    setShowReviewPage(true);
+    setSubmitted(true);
+    setCurrentQuestionIndex(0);
+  };
 
   const handleContinueAfterCompletion = () => {
     router.push(pathname.split("/").slice(0, 3).join("/"));
@@ -151,6 +158,7 @@ export default function DigitalTestingPage({
         <div className="pt-8">
           <TestCompletionPage
             onContinue={handleContinueAfterCompletion}
+            onReviewAnswers={handleReviewAnswers}
             testName={testName}
             score={score}
             totalQuestions={questions.length}
