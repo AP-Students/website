@@ -9,7 +9,7 @@ interface QuestionPanelProps {
   showEliminationTools: boolean;
   questionInstance: QuestionFormat | undefined;
   selectedAnswers: string[];
-  onSelectAnswer: (optionId: string) => void;
+  onSelectAnswer: (optionIndex: string) => void;
   currentQuestionIndex: number; // Pass current question index as a prop
   questionsLength: number;
   submitted: boolean;
@@ -78,17 +78,18 @@ export default function QuestionPanel({
 
   if (!questionInstance) return null;
 
-  const toggleStrike = (index: number, optionId: string) => {
+  const toggleStrike = (index: number) => {
     const newStrikedAnswers = [...strikedAnswers];
     const currentStrikes = new Set(newStrikedAnswers[currentQuestionIndex]);
+    const optionKey = String(index + 1);
 
     if (currentStrikes.has(index)) {
       currentStrikes.delete(index);
     } else {
       currentStrikes.add(index);
 
-      if (selectedAnswers.includes(optionId)) {
-        onSelectAnswer(optionId); // Toggle selection off
+      if (selectedAnswers.includes(optionKey)) {
+        onSelectAnswer(optionKey); // Toggle selection off
       }
     }
 
@@ -114,11 +115,11 @@ export default function QuestionPanel({
                   "relative rounded-lg border-2 border-black transition-opacity",
                   isStrikedThrough && "striked-through",
                   submitted &&
-                    selectedAnswers.includes(option.id) &&
+                    selectedAnswers.includes(String(index + 1)) &&
                     questionInstance.answers.includes(`${index + 1}`) &&
                     "border-green-500 bg-green-200",
                   submitted &&
-                    selectedAnswers.includes(option.id) &&
+                    selectedAnswers.includes(String(index + 1)) &&
                     !questionInstance.answers.includes(`${index + 1}`) &&
                     "border-red-500 bg-red-200",
                 )}
@@ -126,16 +127,16 @@ export default function QuestionPanel({
                 <label className="flex cursor-pointer items-center gap-2 p-2">
                   <LetterCircle
                     letter={String.fromCharCode(65 + index)}
-                    checked={selectedAnswers.includes(option.id)}
+                    checked={selectedAnswers.includes(String(index + 1))}
                   />
                   <input
                     type={
                       questionInstance.type === "mcq" ? "radio" : "checkbox"
                     }
                     name="options"
-                    value={option.id}
-                    checked={selectedAnswers.includes(option.id)}
-                    onChange={() => onSelectAnswer(option.id)}
+                    value={String(index + 1)}
+                    checked={selectedAnswers.includes(String(index + 1))}
+                    onChange={() => onSelectAnswer(String(index + 1))}
                     disabled={submitted}
                     hidden
                   />
@@ -152,7 +153,7 @@ export default function QuestionPanel({
                     <div className="ml-auto flex items-center gap-2">
                       {isStrikedThrough ? (
                         <button
-                          onClick={() => toggleStrike(index, option.id)}
+                          onClick={() => toggleStrike(index)}
                           className="text-sm font-medium text-[#3075c1]"
                         >
                           Undo
@@ -160,7 +161,7 @@ export default function QuestionPanel({
                       ) : (
                         <StrikeButton
                           letter={String.fromCharCode(65 + index)}
-                          onClick={() => toggleStrike(index, option.id)}
+                          onClick={() => toggleStrike(index)}
                           active={isStrikedThrough}
                         />
                       )}
