@@ -140,8 +140,8 @@ export function RenderContent({ content }: Props) {
             return (
               <pre
                 key={`code-${tokenIndex}`}
-                className="my-2 whitespace-pre-wrap overflow-x-auto rounded bg-gray-200 p-2 font-mono text-sm leading-relaxed text-black max-w-full"
-                style={{ fontFamily: "'Consolas', monospace" }}
+                className="my-2 whitespace-pre-wrap overflow-x-auto rounded p-2 font-mono text-sm leading-relaxed text-black max-w-full"
+                style={{ fontFamily: "'Consolas', monospace", backgroundColor: "#f0f0f0" }}
               >
                 <code>{codeContent}</code>
               </pre>
