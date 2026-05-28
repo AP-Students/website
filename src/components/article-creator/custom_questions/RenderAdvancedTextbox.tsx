@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import katex from "katex";
 import type { QuestionFile, QuestionInput } from "@/types/questions";
-import "@/styles/katexStyling.css";
+import "../../../styles/katexStyling.css";
 import Image from "next/image";
 import { decodeEntities, katexMacros } from "../Renderer";
 
@@ -140,7 +140,7 @@ export function RenderContent({ content }: Props) {
             return (
               <pre
                 key={`code-${tokenIndex}`}
-                className="my-2 whitespace-pre-wrap overflow-x-auto rounded bg-gray-200 p-2 font-mono text-sm leading-relaxed text-black w-fit"
+                className="my-2 whitespace-pre-wrap overflow-x-auto rounded bg-gray-200 p-2 font-mono text-sm leading-relaxed text-black max-w-full"
                 style={{ fontFamily: "'Consolas', monospace" }}
               >
                 <code>{codeContent}</code>
