@@ -9,7 +9,9 @@ import {
 } from "firebase/firestore";
 import { useUser } from "@/components/hooks/UserContext";
 import { Button } from "@/components/ui/button";
-import Editor from "@monaco-editor/react";
+import dynamic from "next/dynamic";
+
+const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
 const COOLDOWN_MS = 6 * 60 * 60 * 1000;
 
