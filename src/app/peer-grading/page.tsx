@@ -42,6 +42,7 @@ const FRQSubmissionPage = () => {
   const [FRQQuestionNumber, setFRQQuestionNumber] = useState<number | null>(
     null,
   );
+  const isAPComputerScienceA = FRQSubject === "AP Computer Science A";
 
   // Set cooldown from user data
   useEffect(() => {
@@ -171,21 +172,30 @@ const FRQSubmissionPage = () => {
               "mb-4 h-[400px] w-full rounded-md border p-1 transition-colors overflow-hidden",
               matcher.hasMatch(response) ? "border-red-500 bg-red-200" : "border-input"
             )}>
-              <Editor
-                height="100%"
-                defaultLanguage="plaintext"
-                value={response}
-                onChange={(val) => setResponse(val ?? "")}
-                options={{
-                  fontFamily: "'Consolas', monospace",
-                  fontSize: 16,
-                  minimap: { enabled: false },
-                  wordWrap: "on",
-                  matchBrackets: "always",
-                  guides: { indentation: true },
-                  padding: { top: 16, bottom: 16 },
-                }}
-              />
+              {isAPComputerScienceA ? (
+                <Editor
+                  height="100%"
+                  defaultLanguage="plaintext"
+                  value={response}
+                  onChange={(val) => setResponse(val ?? "")}
+                  options={{
+                    fontFamily: "'Consolas', monospace",
+                    fontSize: 16,
+                    minimap: { enabled: false },
+                    wordWrap: "on",
+                    matchBrackets: "always",
+                    guides: { indentation: true },
+                    padding: { top: 16, bottom: 16 },
+                  }}
+                />
+              ) : (
+                <textarea
+                  value={response}
+                  onChange={(e) => setResponse(e.target.value)}
+                  className="h-full w-full resize-none border-0 bg-transparent p-4 font-mono text-base outline-none"
+                  style={{ fontFamily: "'Consolas', monospace" }}
+                />
+              )}
             </div>
             {matcher.hasMatch(response) && (
               <div className="flex gap-2">
