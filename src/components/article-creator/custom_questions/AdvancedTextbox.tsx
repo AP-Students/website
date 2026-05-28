@@ -218,7 +218,7 @@ export default function AdvancedTextbox({
       const updatedQuestion: QuestionFormat = {
         ...questionInstance!,
         [origin]: {
-          ...(questionInstance ? [origin] : QuestionsInput),
+          ...questionInstance![origin],
           value: newText,
           files: questionInstance?.[origin]?.files ?? [], // Keep the files they exist
         }, // Clone question
