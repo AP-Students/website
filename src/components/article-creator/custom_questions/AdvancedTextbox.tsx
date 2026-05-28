@@ -193,13 +193,16 @@ export default function AdvancedTextbox({
 
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
-      const newText = currentText.substring(0, start) + "   " + currentText.substring(end);
+      const indent = "  ";
+      const newText =
+      currentText.substring(0, start) + indent + currentText.substring(end);
       
       updateQuestionText(newText);
 
       setTimeout(() => {
         if (textareaRef.current) {
-          textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + 3;
+          textareaRef.current.selectionStart = textareaRef.current.selectionEnd =
+            start + indent.length;
         }
       }, 0);
     }
