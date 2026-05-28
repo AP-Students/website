@@ -465,8 +465,7 @@ const FRQGraderPage = () => {
                       </Button>
                     )}
                   </div>
-                  <pre className="m-4 mt-0 whitespace-pre-wrap rounded-md border bg-gray-100 px-3 py-2 font-mono text-base" style={{ fontFamily: "'Consolas', monospace" }}>
-                    <code>
+                   <pre className="m-4 mt-0 max-w-full overflow-x-auto whitespace-pre-wrap rounded-md border bg-gray-100 px-3 py-2 font-mono text-base" style={{ fontFamily: "'Consolas', monospace" }}>                    <code>
                       {res.showProfanity
                         ? res.responseText
                         : censor.applyTo(
