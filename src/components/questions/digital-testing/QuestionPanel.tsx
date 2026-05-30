@@ -4,12 +4,13 @@ import clsx from "clsx";
 import "@/styles/strikeThrough.css";
 import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
 import { Check, X } from "lucide-react";
+import { isQuestionCorrect } from "./ReviewPage";
 
 interface QuestionPanelProps {
   showEliminationTools: boolean;
   questionInstance: QuestionFormat | undefined;
   selectedAnswers: string[];
-  onSelectAnswer: (optionIndex: string) => void;
+  onSelectAnswer: (optionId: string) => void;
   currentQuestionIndex: number; // Pass current question index as a prop
   questionsLength: number;
   submitted: boolean;
@@ -78,18 +79,17 @@ export default function QuestionPanel({
 
   if (!questionInstance) return null;
 
-  const toggleStrike = (index: number) => {
+  const toggleStrike = (index: number, optionId: string) => {
     const newStrikedAnswers = [...strikedAnswers];
     const currentStrikes = new Set(newStrikedAnswers[currentQuestionIndex]);
-    const optionKey = String(index + 1);
 
     if (currentStrikes.has(index)) {
       currentStrikes.delete(index);
     } else {
       currentStrikes.add(index);
 
-      if (selectedAnswers.includes(optionKey)) {
-        onSelectAnswer(optionKey); // Toggle selection off
+      if (selectedAnswers.includes(optionId)) {
+        onSelectAnswer(optionId); // Toggle selection off
       }
     }
 
@@ -115,28 +115,28 @@ export default function QuestionPanel({
                   "relative rounded-lg border-2 border-black transition-opacity",
                   isStrikedThrough && "striked-through",
                   submitted &&
-                    selectedAnswers.includes(String(index + 1)) &&
-                    questionInstance.answers.includes(`${index + 1}`) &&
+                    selectedAnswers.includes(option.id) &&
+                    isQuestionCorrect(questionInstance, [option.id]) &&
                     "border-green-500 bg-green-200",
                   submitted &&
-                    selectedAnswers.includes(String(index + 1)) &&
-                    !questionInstance.answers.includes(`${index + 1}`) &&
+                    selectedAnswers.includes(option.id) &&
+                    !isQuestionCorrect(questionInstance, [option.id]) &&
                     "border-red-500 bg-red-200",
                 )}
               >
                 <label className="flex cursor-pointer items-center gap-2 p-2">
                   <LetterCircle
                     letter={String.fromCharCode(65 + index)}
-                    checked={selectedAnswers.includes(String(index + 1))}
+                    checked={selectedAnswers.includes(option.id)}
                   />
                   <input
                     type={
                       questionInstance.type === "mcq" ? "radio" : "checkbox"
                     }
                     name="options"
-                    value={String(index + 1)}
-                    checked={selectedAnswers.includes(String(index + 1))}
-                    onChange={() => onSelectAnswer(String(index + 1))}
+                    value={option.id}
+                    checked={selectedAnswers.includes(option.id)}
+                    onChange={() => onSelectAnswer(option.id)}
                     disabled={submitted}
                     hidden
                   />
@@ -153,7 +153,7 @@ export default function QuestionPanel({
                     <div className="ml-auto flex items-center gap-2">
                       {isStrikedThrough ? (
                         <button
-                          onClick={() => toggleStrike(index)}
+                          onClick={() => toggleStrike(index, option.id)}
                           className="text-sm font-medium text-[#3075c1]"
                         >
                           Undo
@@ -161,7 +161,7 @@ export default function QuestionPanel({
                       ) : (
                         <StrikeButton
                           letter={String.fromCharCode(65 + index)}
-                          onClick={() => toggleStrike(index)}
+                          onClick={() => toggleStrike(index, option.id)}
                           active={isStrikedThrough}
                         />
                       )}
@@ -169,7 +169,7 @@ export default function QuestionPanel({
                   )}
 
                   {submitted &&
-                    (questionInstance.answers.includes(`${index + 1}`) ? (
+                    (isQuestionCorrect(questionInstance, [option.id]) ? (
                       <Check className="ml-auto stroke-green-500 stroke-[3px]" />
                     ) : (
                       <X className="ml-auto stroke-red-500 stroke-[3px]" />
