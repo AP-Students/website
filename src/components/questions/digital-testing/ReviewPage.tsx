@@ -18,27 +18,39 @@ export function isQuestionCorrect(
   question: QuestionFormat,
   selected: string[],
 ) {
-  const normalizedSelected = selected.flatMap((selectedId) => {
-    const optionIndex = question.options.findIndex(
-      (option) => option.id === selectedId,
+  const toCanonicalOptionId = (value: string) => {
+    const trimmedValue = value.trim();
+
+    const directOption = question.options.find(
+      (option) => option.id === trimmedValue,
     );
+    if (directOption) return directOption.id;
 
-    return optionIndex >= 0
-      ? [selectedId, String(optionIndex + 1)]
-      : [selectedId];
-  });
+    const optionIndex = Number.parseInt(trimmedValue, 10) - 1;
+    if (Number.isInteger(optionIndex) && question.options[optionIndex]) {
+      return question.options[optionIndex]!.id;
+    }
 
-  const normalizedAnswers = question.answers.map((answer) => answer.trim());
+    return trimmedValue;
+  };
+
+  const normalizedSelected = new Set(selected.map(toCanonicalOptionId));
+  const normalizedAnswers = new Set(
+    question.answers.map((answer) => toCanonicalOptionId(answer)),
+  );
 
   if (question.type === "mcq") {
-    return normalizedAnswers.some((answer) => {
-      return normalizedSelected.includes(answer);
-    });
+    for (const answer of normalizedAnswers) {
+      if (normalizedSelected.has(answer)) return true;
+    }
+
+    return false;
   }
 
-  if (normalizedSelected.length !== normalizedAnswers.length) return false;
+  if (normalizedSelected.size !== normalizedAnswers.size) return false;
+
   for (const answer of normalizedAnswers) {
-    if (!normalizedSelected.includes(answer)) return false;
+    if (!normalizedSelected.has(answer)) return false;
   }
 
   return true;
