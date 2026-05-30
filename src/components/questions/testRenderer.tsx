@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Bookmark, Check, X } from "lucide-react";
 import Header from "./digital-testing/Header";
 import QuestionPanel from "./digital-testing/QuestionPanel";
@@ -15,6 +15,7 @@ import { usePathname, useRouter } from "next/navigation";
 import TestCompletionPage from "./digital-testing/TestCompletionPage";
 import { useUser } from "@/components/hooks/UserContext";
 import "katex/dist/katex.min.css";
+import { getTestParentPath } from "./digital-testing/pathUtils";
 
 interface Props {
   inputQuestions: QuestionFormat[];
@@ -93,10 +94,12 @@ export default function DigitalTestingPage({
   const [showReviewPage, setShowReviewPage] = useState(false);
   const [showCompletionPage, setShowCompletionPage] = useState(false);
 
-  const score = questions.reduce((acc, question, index) => {
-    const answers = selectedAnswers[index] ?? [];
-    return acc + (isQuestionCorrect(question, answers) ? 1 : 0);
-  }, 0);
+  const score = useMemo(() => {
+    return questions.reduce((acc, question, index) => {
+      const answers = selectedAnswers[index] ?? [];
+      return acc + (isQuestionCorrect(question, answers) ? 1 : 0);
+    }, 0);
+  }, [questions, selectedAnswers]);
 
   const handleReviewAnswers = () => {
     setShowCompletionPage(false);
@@ -106,7 +109,7 @@ export default function DigitalTestingPage({
   };
 
   const handleContinueAfterCompletion = () => {
-    router.push(pathname.split("/").slice(0, 3).join("/"));
+    router.push(getTestParentPath(pathname));
   };
 
   useEffect(() => {
@@ -146,7 +149,7 @@ export default function DigitalTestingPage({
 
   return (
     <div className="flex flex-col">
-      {!adminMode && (
+      {!adminMode && !showCompletionPage && (
         <Header
           setSubmitted={setSubmitted}
           submitted={submitted}
