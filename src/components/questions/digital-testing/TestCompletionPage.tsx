@@ -54,7 +54,7 @@ export default function TestCompletionPage({
   artSrc = "/mcq-completion-art.svg",
 }: TestCompletionPageProps) {
   const [randomMessage] = useState(() => {
-    const displayName = username?.trim() ?? "there";
+    const displayName = username?.trim() || "there";
 
     const pool =
       score === totalQuestions
