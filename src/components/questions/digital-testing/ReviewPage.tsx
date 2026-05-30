@@ -28,7 +28,7 @@ export function isQuestionCorrect(
 
     const optionIndex = Number.parseInt(trimmedValue, 10) - 1;
     if (Number.isInteger(optionIndex) && question.options[optionIndex]) {
-      return question.options[optionIndex]!.id;
+      return question.options[optionIndex].id;
     }
 
     return trimmedValue;
