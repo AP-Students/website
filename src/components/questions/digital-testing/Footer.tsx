@@ -7,6 +7,7 @@ import {
 import clsx from "clsx";
 import type { QuestionFormat } from "@/types/questions";
 import { useRouter, usePathname } from "next/navigation";
+import { getTestParentPath } from "./pathUtils";
 
 interface FooterProps {
   goToQuestion: (index: number) => void;
@@ -50,7 +51,7 @@ export default function Footer({
             "Exit the test? All progress will be lost. FiveHive does not currently save your progress (but we're working on it!).",
           )
         ) {
-          router.push(pathname.split("/").slice(0, 3).join("/"));
+          router.push(getTestParentPath(pathname));
         }
       } else {
         setCurrentQuestionIndex(0);
