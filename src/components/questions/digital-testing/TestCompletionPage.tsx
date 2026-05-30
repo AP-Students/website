@@ -26,7 +26,7 @@ const highScoreMessages = [
 
 const mediumScoreMessages = [
   "Good work, {username}. The review screen can help lock in the misses.",
-  "You’re building momentum, {username}. Review the missed questions and keep going.",
+  "You're building momentum, {username}. Review the missed questions and keep going.",
   "Nice effort, {username}. A careful review will turn this into a stronger score next time.",
 ];
 
@@ -37,9 +37,11 @@ const lowScoreMessages = [
 ];
 
 const perfectScoreMessages = [
-  "With this treasure I summon...A Perfect SCORE!! You absolutely exorcised this set.",
+  "With this treasure I summon...A Perfect SCORE!! {username} absolutely exorcised this set.",
   "Perfect score, {username}. That was unstoppable.",
   "Flawless work, {username}. You got every question right.",
+  "It get's so lonely when you reach the top, {username}. But perfection is key!",
+  "You’ve reached the Self-Embodiment of Perfection {username}!",
 ];
 
 export default function TestCompletionPage({
@@ -53,9 +55,9 @@ export default function TestCompletionPage({
   selectedAnswers,
   artSrc = "/mcq-completion-art.svg",
 }: TestCompletionPageProps) {
-  const [randomMessage] = useState(() => {
-    const displayName = username?.trim() || "there";
+  const displayName = username?.trim() ?? "there";
 
+  const [randomMessage] = useState(() => {
     const pool =
       score === totalQuestions
         ? perfectScoreMessages
@@ -69,7 +71,7 @@ export default function TestCompletionPage({
       pool[Math.floor(Math.random() * pool.length)] ??
       "Great work, {username}!";
 
-    return (selected ?? "Great work, {username}!")
+    return selected
       .replaceAll("{username}", displayName)
       .replaceAll("[UserName]", displayName);
   });
@@ -127,6 +129,10 @@ export default function TestCompletionPage({
               </h2>
             </div>
 
+            <div className="inline-flex rounded-full border border-[#f2c37f] bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm">
+              Student: {displayName}
+            </div>
+
             <p className="max-w-xl text-base leading-8 text-slate-700 sm:text-lg">
               {randomMessage}
             </p>
@@ -163,9 +169,7 @@ export default function TestCompletionPage({
             <p className="mt-4 text-sm text-slate-500">
               Review the questions below to see what you got right and wrong.
             </p>
-            <p className="mt-2 text-sm font-medium text-slate-500">
-              {testName ?? "Practice Test"}
-            </p>
+            <p className="mt-2 text-sm font-medium text-slate-500">{testName}</p>
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6">
