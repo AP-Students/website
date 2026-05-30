@@ -37,11 +37,11 @@ const lowScoreMessages = [
 ];
 
 const perfectScoreMessages = [
-  "With this treasure I summon...A Perfect SCORE!! {username} absolutely exorcised this set.",
+  "With this treasure I summon...A Perfect SCORE!! {username} absolutely crushed this set.",
   "Perfect score, {username}. That was unstoppable.",
   "Flawless work, {username}. You got every question right.",
-  "It get's so lonely when you reach the top, {username}. But perfection is key!",
-  "You’ve reached the Self-Embodiment of Perfection {username}!",
+  "It's lonely at the top, {username}, but perfection is the goal.",
+  "You've reached the Self-Embodiment of Perfection, {username}!",
 ];
 
 export default function TestCompletionPage({
@@ -67,8 +67,7 @@ export default function TestCompletionPage({
             ? mediumScoreMessages
             : lowScoreMessages;
 
-    const selected =
-      pool[Math.floor(Math.random() * pool.length)] ??
+    const selected = pool[Math.floor(Math.random() * pool.length)] ??
       "Great work, {username}!";
 
     return selected
