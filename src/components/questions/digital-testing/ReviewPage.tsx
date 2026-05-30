@@ -18,13 +18,27 @@ export function isQuestionCorrect(
   question: QuestionFormat,
   selected: string[],
 ) {
+  const normalizedSelected = selected.flatMap((selectedId) => {
+    const optionIndex = question.options.findIndex(
+      (option) => option.id === selectedId,
+    );
+
+    return optionIndex >= 0
+      ? [selectedId, String(optionIndex + 1)]
+      : [selectedId];
+  });
+
+  const normalizedAnswers = question.answers.map((answer) => answer.trim());
+
   if (question.type === "mcq") {
-    return question.answers.includes(selected[0]!);
+    return normalizedAnswers.some((answer) => {
+      return normalizedSelected.includes(answer);
+    });
   }
 
-  if (selected.length !== question.answers.length) return false;
-  for (const answer of question.answers) {
-    if (!selected.includes(answer)) return false;
+  if (normalizedSelected.length !== normalizedAnswers.length) return false;
+  for (const answer of normalizedAnswers) {
+    if (!normalizedSelected.includes(answer)) return false;
   }
 
   return true;
