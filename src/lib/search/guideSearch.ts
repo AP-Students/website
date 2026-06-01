@@ -1,4 +1,3 @@
-import Fuse from "fuse.js";
 import { collection, getDocs } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
@@ -6,7 +5,9 @@ import { formatSlug } from "@/lib/utils";
 import { type Chapter, type Subject, type Unit } from "@/types/firestore";
 
 const SEARCH_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
-const SEARCH_CACHE_KEY_PREFIX = "guide-search-index-v10";
+const SEARCH_CACHE_KEY_PREFIX = "guide-search-index-v12";
+const inMemorySearchCache = new Map<string, GuideChapterSearchItem[]>();
+const inFlightSearchLoads = new Map<string, Promise<GuideChapterSearchItem[]>>();
 
 export type GuideChapterSearchItem = {
   subjectSlug: string;
@@ -16,9 +17,9 @@ export type GuideChapterSearchItem = {
   unitTitle: string;
   chapterId: string;
   chapterTitle: string;
+  normalizedChapterTitle: string;
   chapterPath: string;
-  searchableText: string;
-  chapterBodyText: string;
+  normalizedSearchableText: string;
 };
 
 export type GuideSearchCache = {
@@ -29,7 +30,17 @@ export type GuideSearchCache = {
 const getCacheKey = (canPreview: boolean) =>
   `${SEARCH_CACHE_KEY_PREFIX}:${canPreview ? "preview" : "public"}`;
 
-const normalizeSearchText = (text: unknown) =>
+export const clearGuideSearchPreviewCache = () => {
+  inMemorySearchCache.delete(getCacheKey(true));
+
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  localStorage.removeItem(getCacheKey(true));
+};
+
+export const normalizeSearchText = (text: unknown) =>
   String(text ?? "")
     .normalize("NFKD")
     .toLowerCase()
@@ -63,6 +74,12 @@ const collectText = (value: unknown): string[] => {
   return [];
 };
 
+const flattenText = (content: unknown) =>
+  collectText(content)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+
 const buildChapterPath = (input: {
   subjectSlug: string;
   unitIndex: number;
@@ -80,20 +97,20 @@ const buildSearchableText = (input: {
   subjectTitle: string;
   unitTitle: string;
   chapterTitle: string;
-  content?: unknown;
+  bodyText: string;
 }) => {
-  const blockText = collectText(input.content).join(" ");
-
-  return [input.subjectTitle, input.unitTitle, input.chapterTitle, blockText]
+  return [input.subjectTitle, input.unitTitle, input.chapterTitle, input.bodyText]
     .join(" ")
     .replace(/\s+/g, " ")
     .trim();
 };
 
-type ChapterDocPayload = Chapter & {
-  data?: unknown;
-  content?: unknown;
-};
+const buildNormalizedSearchableText = (input: {
+  subjectTitle: string;
+  unitTitle: string;
+  chapterTitle: string;
+  bodyText: string;
+}) => normalizeSearchText(buildSearchableText(input));
 
 const fetchUnitDocs = async (subjectSlug: string, subject: Subject) => {
   const fallbackUnits = subject.units ?? [];
@@ -127,65 +144,11 @@ const fetchUnitDocs = async (subjectSlug: string, subject: Subject) => {
   }
 };
 
-const fetchChapterDocs = async (subjectSlug: string, unitId: string) => {
-  try {
-    const chaptersSnapshot = await getDocs(
-      collection(db, "subjects", subjectSlug, "units", unitId, "chapters"),
-    );
-
-    return chaptersSnapshot.docs.map((chapterDoc) => {
-      const chapterData = chapterDoc.data() as ChapterDocPayload;
-      return {
-        ...chapterData,
-        id: chapterData.id || chapterDoc.id,
-      };
-    });
-  } catch (error) {
-    console.error(`Failed loading chapters for ${subjectSlug}/${unitId}`, error);
-    return [];
-  }
-};
-
-const isChapterVisible = (chapter: Chapter, canPreview: boolean) => {
-  if (canPreview) {
-    return true;
-  }
-
-  // Treat undefined as visible to avoid excluding legacy data that omitted this flag.
-  return chapter.isPublic !== false;
-};
-
-const getChapterIdCandidates = (chapterId: string) => {
-  const shortId = chapterId.split("-").slice(0, 2).join("-");
-  return Array.from(new Set([chapterId, shortId])).filter(Boolean);
-};
-
-const findChapterDocMatch = (
-  chapterDocs: ChapterDocPayload[],
-  chapterId: string,
-) => {
-  const candidates = getChapterIdCandidates(chapterId);
-  for (const candidate of candidates) {
-    const match = chapterDocs.find((docItem) => docItem.id === candidate);
-    if (match) {
-      return match;
-    }
-  }
-
-  return null;
-};
-
-const hasIndexedContent = (content: unknown) => {
-  if (!content || typeof content !== "object") {
-    return false;
-  }
-
-  const collected = collectText(content)
-    .join(" ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  return collected.length > 0;
+const isChapterVisible = (chapter: Chapter) => {
+  // Search only surfaces published guides. Even preview (member/admin) users
+  // should not get WIP/unpublished chapters in quick-search results, so this
+  // no longer short-circuits on preview access.
+  return chapter.isPublic === true;
 };
 
 const parseUnitNumberFromTitle = (unitTitle?: string) => {
@@ -239,71 +202,61 @@ const resolveUnitIndex = (
 const mapSubjectToSearchItems = (
   subjectSlug: string,
   subject: Subject,
-  canPreview: boolean,
 ): Promise<GuideChapterSearchItem[]> => {
   return (async () => {
     const units = await fetchUnitDocs(subjectSlug, subject);
 
-    const perUnitItems = await Promise.all(
-      units.map(async (unit, unitIndex) => {
-        const chapterDocs = await fetchChapterDocs(subjectSlug, unit.id);
+    return units.flatMap((unit, unitIndex) =>
+      (unit.chapters ?? [])
+        .filter((chapter) => isChapterVisible(chapter))
+        .map((chapter) => {
+          const resolvedUnitIndex = resolveUnitIndex(
+            subject,
+            unit,
+            chapter.id,
+            unitIndex,
+          );
 
-        return (unit.chapters ?? [])
-          .filter((chapter) => isChapterVisible(chapter, canPreview))
-          .map((chapter) => {
-            const resolvedUnitIndex = resolveUnitIndex(
-              subject,
-              unit,
-              chapter.id,
-              unitIndex,
-            );
+          // Index only what's on the subject doc (titles + any embedded body).
+          // Chapter subcollections are never fetched — that kept the preview
+          // index fast instead of doing hundreds of per-unit reads.
+          const chapterBodyText = flattenText(chapter.content);
 
-            let indexedContent: unknown = chapter.content;
-            if (!hasIndexedContent(indexedContent)) {
-              const chapterDocMatch = findChapterDocMatch(
-                chapterDocs,
-                chapter.id,
-              );
-              indexedContent =
-                chapterDocMatch?.data ?? chapterDocMatch?.content ?? null;
-            }
-
-            return {
+          return {
+            subjectSlug,
+            subjectTitle: subject.title,
+            unitId: unit.id,
+            unitIndex: resolvedUnitIndex,
+            unitTitle: unit.title,
+            chapterId: chapter.id,
+            chapterTitle: chapter.title,
+            normalizedChapterTitle: normalizeSearchText(chapter.title),
+            chapterPath: buildChapterPath({
               subjectSlug,
-              subjectTitle: subject.title,
-              unitId: unit.id,
               unitIndex: resolvedUnitIndex,
-              unitTitle: unit.title,
+              unitId: unit.id,
               chapterId: chapter.id,
               chapterTitle: chapter.title,
-              chapterPath: buildChapterPath({
-                subjectSlug,
-                unitIndex: resolvedUnitIndex,
-                unitId: unit.id,
-                chapterId: chapter.id,
-                chapterTitle: chapter.title,
-              }),
-              searchableText: buildSearchableText({
-                subjectTitle: subject.title,
-                unitTitle: unit.title,
-                chapterTitle: chapter.title,
-                content: indexedContent,
-              }),
-              chapterBodyText: collectText(indexedContent)
-                .join(" ")
-                .replace(/\s+/g, " ")
-                .trim(),
-            };
-          });
-      }),
+            }),
+            normalizedSearchableText: buildNormalizedSearchableText({
+              subjectTitle: subject.title,
+              unitTitle: unit.title,
+              chapterTitle: chapter.title,
+              bodyText: chapterBodyText,
+            }),
+          };
+        }),
     );
-
-    return perUnitItems.flat();
   })();
 };
 
 const readCache = (canPreview: boolean): GuideChapterSearchItem[] | null => {
   if (typeof window === "undefined") {
+    return null;
+  }
+
+  if (canPreview) {
+    localStorage.removeItem(getCacheKey(canPreview));
     return null;
   }
 
@@ -314,12 +267,19 @@ const readCache = (canPreview: boolean): GuideChapterSearchItem[] | null => {
 
   try {
     const parsed = JSON.parse(rawValue) as GuideSearchCache;
+    if (typeof parsed.timestamp !== "number" || !Array.isArray(parsed.items)) {
+      localStorage.removeItem(getCacheKey(canPreview));
+      return null;
+    }
+
     if (Date.now() - parsed.timestamp > SEARCH_CACHE_TTL_MS) {
+      localStorage.removeItem(getCacheKey(canPreview));
       return null;
     }
 
     return parsed.items;
   } catch {
+    localStorage.removeItem(getCacheKey(canPreview));
     return null;
   }
 };
@@ -329,12 +289,21 @@ const writeCache = (canPreview: boolean, items: GuideChapterSearchItem[]) => {
     return;
   }
 
+  if (canPreview) {
+    localStorage.removeItem(getCacheKey(canPreview));
+    return;
+  }
+
   const payload: GuideSearchCache = {
     timestamp: Date.now(),
     items,
   };
 
-  localStorage.setItem(getCacheKey(canPreview), JSON.stringify(payload));
+  try {
+    localStorage.setItem(getCacheKey(canPreview), JSON.stringify(payload));
+  } catch (error) {
+    console.warn("Failed to persist guide search cache", error);
+  }
 };
 
 const compareSearchItems = (
@@ -352,52 +321,60 @@ export const loadGuideSearchItems = async (
   canPreview: boolean,
   forceRefresh = false,
 ): Promise<GuideChapterSearchItem[]> => {
+  const cacheKey = getCacheKey(canPreview);
+
   if (!forceRefresh) {
+    const memoryCachedItems = inMemorySearchCache.get(cacheKey);
+    if (memoryCachedItems) {
+      return memoryCachedItems;
+    }
+
     const cachedItems = readCache(canPreview);
     if (cachedItems) {
+      inMemorySearchCache.set(cacheKey, cachedItems);
       return cachedItems;
+    }
+
+    const inFlightLoad = inFlightSearchLoads.get(cacheKey);
+    if (inFlightLoad) {
+      return inFlightLoad;
     }
   }
 
-  const subjectsSnapshot = await getDocs(collection(db, "subjects"));
+  const loadPromise = (async () => {
+    const subjectsSnapshot = await getDocs(collection(db, "subjects"));
 
-  const itemsBySubject = await Promise.all(
-    subjectsSnapshot.docs.map(async (subjectDoc) => {
-      const subjectData = subjectDoc.data() as Subject;
-      try {
-        return await mapSubjectToSearchItems(
-          subjectDoc.id,
-          subjectData,
-          canPreview,
-        );
-      } catch (error) {
-        console.error(`Failed building search index for ${subjectDoc.id}`, error);
-        return [];
-      }
-    }),
-  );
+    const itemsBySubject = await Promise.all(
+      subjectsSnapshot.docs.map(async (subjectDoc) => {
+        const subjectData = subjectDoc.data() as Subject;
+        try {
+          return await mapSubjectToSearchItems(subjectDoc.id, subjectData);
+        } catch (error) {
+          console.error(`Failed building search index for ${subjectDoc.id}`, error);
+          return [];
+        }
+      }),
+    );
 
-  const items = itemsBySubject.flat().sort(compareSearchItems);
+    const items = itemsBySubject.flat().sort(compareSearchItems);
 
-  writeCache(canPreview, items);
+    inMemorySearchCache.set(cacheKey, items);
+    writeCache(canPreview, items);
 
-  return items;
-};
+    return items;
+  })();
 
-export const createGuideSearchFuse = (items: GuideChapterSearchItem[]) => {
-  return new Fuse(items, {
-    includeScore: true,
-    minMatchCharLength: 2,
-    threshold: 0.4,
-    ignoreLocation: false,
-    distance: 120,
-    keys: [
-      { name: "chapterTitle", weight: 0.62 },
-      { name: "unitTitle", weight: 0.14 },
-      { name: "subjectTitle", weight: 0.08 },
-      { name: "searchableText", weight: 0.16 },
-    ],
-  });
+  if (!forceRefresh) {
+    inFlightSearchLoads.set(cacheKey, loadPromise);
+  }
+
+  try {
+    return await loadPromise;
+  } finally {
+    if (!forceRefresh) {
+      inFlightSearchLoads.delete(cacheKey);
+    }
+  }
 };
 
 export const searchGuideChapters = (
@@ -433,8 +410,8 @@ export const searchGuideChapters = (
 
   const scoredItems = items
     .map((item) => {
-      const normalizedTitle = normalizeSearchText(item.chapterTitle);
-      const normalizedBody = normalizeSearchText(item.chapterBodyText);
+      const normalizedTitle = item.normalizedChapterTitle;
+      const normalizedBody = item.normalizedSearchableText;
       const titleCount = countOccurrences(normalizedTitle, normalizedQuery);
       const bodyCount = countOccurrences(normalizedBody, normalizedQuery);
 
@@ -462,8 +439,8 @@ export const searchGuideChapters = (
     },
   ) => {
     return (
-      right.bodyCount - left.bodyCount ||
       right.titleCount - left.titleCount ||
+      right.bodyCount - left.bodyCount ||
       compareSearchItems(left.item, right.item)
     );
   };

@@ -74,7 +74,7 @@ const Navbar = ({
         <div className="mx-auto flex w-full max-w-[92rem] items-center gap-3 px-4 lg:gap-5 xl:px-8">
           <div
             className={cn(
-              "flex shrink-0 items-center",
+              "flex shrink-0 items-center w-[30%]",
               hideLinks ? "pl-2 xl:pl-4" : "",
             )}
           >
@@ -84,12 +84,8 @@ const Navbar = ({
             </Link>
           </div>
 
-          <div className={cn("min-w-0 grow", hideLinks ? "max-w-2xl" : "max-w-xl") }>
-            <SearchBar />
-          </div>
-
           {!hideLinks && (
-            <div className="hidden shrink-0 items-center gap-6 lg:flex">
+            <div className="hidden flex-1 shrink-0 justify-center items-center gap-6 lg:flex">
               {links.map((link) => (
                 <NavbarLink key={link.name} href={link.href}>
                   {link.name}
@@ -98,7 +94,7 @@ const Navbar = ({
             </div>
           )}
 
-          <div className="ml-auto flex shrink-0 items-center justify-center gap-4">
+          <div className="ml-auto flex shrink-0 items-center justify-end gap-4 w-[30%]">
             {user ? (
               <SignedInPfp />
             ) : (

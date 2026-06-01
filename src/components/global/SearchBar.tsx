@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { LoaderCircle, Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/components/hooks/UserContext";
 import {
+  clearGuideSearchPreviewCache,
   loadGuideSearchItems,
+  normalizeSearchText,
   searchGuideChapters,
   type GuideChapterSearchItem,
 } from "@/lib/search/guideSearch";
@@ -34,9 +36,23 @@ const SearchBar = ({
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const startedRef = useRef(false);
   const pathname = usePathname();
+  const listboxId = useId();
 
   const canPreview = isPreviewUser(user?.access);
+  const normalizedDebouncedQuery = normalizeSearchText(debouncedQuery);
+
+  useEffect(() => {
+    // Re-scope the index whenever preview access changes (login/logout): re-arm
+    // the loader and drop the old-scope results, and purge any preview-scoped
+    // (private) index when the user is not a previewer.
+    startedRef.current = false;
+    setItems([]);
+    if (!canPreview) {
+      clearGuideSearchPreviewCache();
+    }
+  }, [canPreview]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -47,43 +63,41 @@ const SearchBar = ({
   }, [query]);
 
   useEffect(() => {
-    let active = true;
+    // Load the index once the user shows intent to search. This effect
+    // deliberately does NOT cancel on focus/query changes — `startedRef` gates
+    // re-entry instead — so a slow load always runs to completion. (Cancelling
+    // on dep changes is what previously orphaned the in-flight load and left the
+    // UI stuck on "Loading guides..." forever.) The canPreview effect re-arms it.
+    const shouldLoadIndex = inputFocused || normalizedDebouncedQuery.length >= 2;
+    if (!shouldLoadIndex || startedRef.current) return;
 
-    const loadItems = async () => {
-      setLoadingIndex(true);
-      try {
-        const searchItems = await loadGuideSearchItems(canPreview);
-        if (active) {
-          setItems(searchItems);
-        }
-      } catch (error) {
+    startedRef.current = true;
+    setLoadingIndex(true);
+
+    loadGuideSearchItems(canPreview)
+      .then((searchItems) => setItems(searchItems))
+      .catch((error) => {
         console.error("Failed to load guide search index", error);
-      } finally {
-        if (active) {
-          setLoadingIndex(false);
-        }
-      }
-    };
+        startedRef.current = false; // allow a retry after a failure
+      })
+      .finally(() => setLoadingIndex(false));
+  }, [canPreview, inputFocused, normalizedDebouncedQuery.length]);
 
-    loadItems().catch((error) => {
-      console.error("Failed to initialize guide search", error);
-      setLoadingIndex(false);
-    });
-
-    return () => {
-      active = false;
-    };
-  }, [canPreview]);
 
   useEffect(() => {
     setSelectedIndex(-1);
-    if (!debouncedQuery.trim()) {
+    if (!normalizedDebouncedQuery) {
       setResults([]);
       return;
     }
 
     setResults(searchGuideChapters(items, debouncedQuery, 5));
-  }, [debouncedQuery, items]);
+  }, [debouncedQuery, items, normalizedDebouncedQuery]);
+
+  // Clamp selectedIndex when the results list shrinks (e.g. when items reload)
+  useEffect(() => {
+    setSelectedIndex((prev) => (prev >= results.length ? -1 : prev));
+  }, [results]);
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
@@ -96,8 +110,9 @@ const SearchBar = ({
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, []);
 
-  const hasQuery = query.trim().length > 0;
+  const hasQuery = normalizedDebouncedQuery.length > 0;
   const hasResults = results.length > 0;
+  const queryTooShort = hasQuery && normalizedDebouncedQuery.length < 2;
   const showDropdown = inputFocused && (hasQuery || loadingIndex);
 
   useEffect(() => {
@@ -113,30 +128,41 @@ const SearchBar = ({
   }, [isNavigating]);
 
   useEffect(() => {
-    if (isNavigating) {
-      setIsNavigating(false);
-    }
-  }, [pathname, isNavigating]);
+    setIsNavigating(false);
+  }, [pathname]);
 
   const beginNavigation = () => {
     setInputFocused(false);
     setIsNavigating(true);
   };
 
+  const router = useRouter();
+
   const openSelectedResult = () => {
-    if (selectedIndex < 0 || selectedIndex >= results.length) {
+    const selectedResult = results[selectedIndex];
+
+    if (selectedIndex < 0 || selectedIndex >= results.length || !selectedResult) {
       return;
     }
 
     beginNavigation();
-    window.location.href = results[selectedIndex].chapterPath;
+    router.push(selectedResult.chapterPath);
   };
+
+  const activeDescendant =
+    selectedIndex >= 0 ? `${listboxId}-option-${selectedIndex}` : undefined;
 
   return (
     <div ref={containerRef} className={cn("relative w-full", className)}>
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 opacity-50" />
         <Input
+          role="combobox"
+          aria-expanded={showDropdown}
+          aria-haspopup="listbox"
+          aria-controls={listboxId}
+          aria-autocomplete="list"
+          aria-activedescendant={activeDescendant}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           onFocus={() => setInputFocused(true)}
@@ -144,14 +170,16 @@ const SearchBar = ({
             if (event.key === "ArrowDown") {
               event.preventDefault();
               setSelectedIndex((index) =>
-                Math.min(index + 1, Math.max(results.length - 1, 0)),
+                results.length === 0
+                  ? -1
+                  : Math.min(index + 1, results.length - 1),
               );
               return;
             }
 
             if (event.key === "ArrowUp") {
               event.preventDefault();
-              setSelectedIndex((index) => Math.max(index - 1, 0));
+              setSelectedIndex((index) => Math.max(index - 1, -1));
               return;
             }
 
@@ -177,23 +205,46 @@ const SearchBar = ({
       </div>
 
       {showDropdown && (
-        <div className="absolute left-0 right-0 top-[calc(100%+0.35rem)] z-50 max-h-80 overflow-y-auto rounded-2xl border border-border/70 bg-background/95 p-2 shadow-xl backdrop-blur">
+        <div
+          id={listboxId}
+          role="listbox"
+          aria-label="Search results"
+          className="absolute left-0 right-0 top-[calc(100%+0.35rem)] z-50 max-h-80 overflow-y-auto rounded-2xl border border-border/70 bg-background/95 p-2 shadow-xl backdrop-blur"
+        >
           {loadingIndex ? (
             <div className="flex items-center gap-2 px-2 py-3 text-sm opacity-70">
               <LoaderCircle className="size-4 animate-spin" />
               Loading guides...
             </div>
+          ) : queryTooShort ? (
+            <div className="px-2 py-3 text-sm opacity-70">
+              Type at least 2 characters to search.
+            </div>
           ) : hasResults ? (
             <div className="flex flex-col gap-1">
               {results.map((result, index) => (
                 <Link
+                  id={`${listboxId}-option-${index}`}
+                  role="option"
+                  aria-selected={selectedIndex === index}
                   href={result.chapterPath}
                   key={`${result.chapterPath}-${index}`}
                   className={cn(
                     "rounded-lg px-3 py-2 transition-colors hover:bg-muted",
                     selectedIndex === index && "bg-muted",
                   )}
-                  onClick={beginNavigation}
+                  onClick={(event) => {
+                    if (
+                      event.button !== 0 ||
+                      event.metaKey ||
+                      event.ctrlKey ||
+                      event.shiftKey ||
+                      event.altKey
+                    ) {
+                      return;
+                    }
+                    beginNavigation();
+                  }}
                 >
                   <p className="line-clamp-1 text-sm font-semibold">
                     {result.chapterTitle}
