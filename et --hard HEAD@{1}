@@ -1,0 +1,28 @@
+[33m40a2d51[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32msearch-bar[m[33m, [m[1;31morigin/search-bar[m[33m)[m HEAD@{0}: reset: moving to 40a2d518d399ac631d88b7aed1a0c80ce7b0df6a
+[33mb4d6e80[m HEAD@{1}: reset: moving to b4d6e808bd7155ddc496b9a8d9c2ae6f683aeb10
+[33m62e58d3[m HEAD@{2}: reset: moving to 62e58d3b7db5592dee7382e9db772bff7512dd23
+[33m31a69c8[m HEAD@{3}: pull --tags origin search-bar: Fast-forward
+[33m62e58d3[m HEAD@{4}: reset: moving to 62e58d3b7db5592dee7382e9db772bff7512dd23
+[33m31a69c8[m HEAD@{5}: commit: revert guideSearch.ts
+[33m4dd54f2[m HEAD@{6}: commit: rollback
+[33mb00bcd2[m HEAD@{7}: commit: reattempt issue fix
+[33md71a617[m HEAD@{8}: commit: attempt issue fix
+[33m1a84f82[m HEAD@{9}: commit: fix error based off logs
+[33m6d58dbc[m HEAD@{10}: commit: add debug console for search bar
+[33m66526f9[m HEAD@{11}: commit: Revert "firebase interference chack"
+[33m5cd4ca4[m HEAD@{12}: commit: firebase interference chack
+[33m62e58d3[m HEAD@{13}: commit: view inside guide
+[33mb4d6e80[m HEAD@{14}: commit: universal bock
+[33m40a2d51[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32msearch-bar[m[33m, [m[1;31morigin/search-bar[m[33m)[m HEAD@{15}: commit: universal searching
+[33mce9cbef[m HEAD@{16}: commit: improve search bar functionality
+[33mda5a872[m HEAD@{17}: commit: file import strat
+[33mf2d58fb[m HEAD@{18}: checkout: moving from main to search-bar
+[33m52d0d1d[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{19}: checkout: moving from search-bar to main
+[33mf2d58fb[m HEAD@{20}: commit: firebase stuff
+[33m6f2b307[m HEAD@{21}: checkout: moving from main to search-bar
+[33m52d0d1d[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{22}: checkout: moving from search-bar to main
+[33m6f2b307[m HEAD@{23}: commit: fix serach bar embedding
+[33m7a396c0[m HEAD@{24}: commit: base search bar
+[33m52d0d1d[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{25}: checkout: moving from search-bar to search-bar
+[33m52d0d1d[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{26}: checkout: moving from main to search-bar
+[33m52d0d1d[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{27}: clone: from https://github.com/Famousmaster206/FiveHive-website.git
