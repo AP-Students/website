@@ -4,6 +4,18 @@ import { Upload, ClipboardCopy } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+type EditorJsonCandidate = {
+  blocks: unknown[];
+  time: number;
+};
+
+function isEditorJsonCandidate(value: unknown): value is EditorJsonCandidate {
+  if (!value || typeof value !== "object") return false;
+
+  const candidate = value as Record<string, unknown>;
+  return Array.isArray(candidate.blocks) && typeof candidate.time === "number";
+}
+
 const AdminImport = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [pastedJson, setPastedJson] = useState<string>("");
@@ -45,12 +57,7 @@ const AdminImport = () => {
 
     try {
       const parsed = JSON.parse(pastedJson) as unknown;
-      // Basic validation: must be object with time and blocks
-      if (
-        !parsed ||
-        typeof parsed !== "object" ||
-        !(Array.isArray((parsed as any).blocks) && typeof (parsed as any).time === "number")
-      ) {
+      if (!isEditorJsonCandidate(parsed)) {
         alert("JSON appears invalid for EditorJS format.");
         return;
       }
