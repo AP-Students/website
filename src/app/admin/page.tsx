@@ -10,6 +10,7 @@ import { useUser } from "../../components/hooks/UserContext";
 import Link from "next/link";
 import { cn, formatSlug } from "@/lib/utils";
 import { Ban, ClipboardPen, PencilRuler, ShieldUser, X } from "lucide-react";
+import AdminImport from "@/components/admin/AdminImport";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,13 @@ const Page = () => {
       <div className="mx-auto flex max-w-3xl flex-col p-8">
         <h1 className="text-5xl font-extrabold lg:text-6xl">Admin Dashboard</h1>
 
-        {user.access === "admin" && <AdminPanel user={user} />}
+        {user.access === "admin" && (
+          <>
+            <AdminPanel user={user} />
+            <h2 className="mt-6 text-2xl font-bold">Import Editor JSON</h2>
+            <AdminImport />
+          </>
+        )}
 
         <SelectCourse />
       </div>
