@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import type { QuestionFormat } from "@/types/questions";
 import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
+import { Textarea } from "@/components/ui/textarea";
 
 interface QuizRendererProps {
   questions: QuestionFormat[];
@@ -17,12 +18,23 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
   const [score, setScore] = useState<number>(0);
 
   const questionInstance = questions[currentQuestionIndex]!;
+  const isFrq = questionInstance.type === "frq";
+
+  // FRQs are self-assessed, so they don't count toward the score.
+  const gradableCount = questions.filter((q) => q.type !== "frq").length;
 
   const handleSelectOption = (optionId: string): void => {
     setAnswers({
       ...answers,
       [currentQuestionIndex]:
         questionInstance.type === "mcq" ? [optionId] : toggleAnswer(optionId),
+    });
+  };
+
+  const handleFrqChange = (value: string): void => {
+    setAnswers({
+      ...answers,
+      [currentQuestionIndex]: [value],
     });
   };
 
@@ -43,9 +55,10 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
   };
 
   const handleSubmitTest = (): void => {
-    const correctCount = Object.keys(answers).reduce((acc, key) => {
-      const index = parseInt(key);
-      const questionAnswers = questions[index]?.answers ?? [];
+    const correctCount = questions.reduce((acc, question, index) => {
+      // Skip free-response questions - they are not auto-graded.
+      if (question.type === "frq") return acc;
+      const questionAnswers = question.answers;
       const userAnswers = answers[index] ?? [];
       const isCorrect =
         questionAnswers.length === userAnswers.length &&
@@ -66,16 +79,37 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
       <div className="inline-block rounded-2xl bg-primary px-2.5 py-0.5 text-lg font-medium tabular-nums text-zinc-50">
         {!showResults && `${currentQuestionIndex + 1}/${questions.length}`}
         {showResults &&
-          `Score: ${score}/${questions.length} (${((score / questions.length) * 100).toFixed(2)}%)`}
+          (gradableCount > 0
+            ? `Score: ${score}/${gradableCount} (${((score / gradableCount) * 100).toFixed(2)}%)`
+            : "Answers revealed")}
       </div>
       <div className="markdown text-xl text-foreground">
         <RenderContent content={questionInstance.question} />
       </div>
-      <div className="mt-4 grid grid-cols-1 gap-4">
-        {questionInstance.options.map((option) => (
-          <button
-            key={option.id}
-            className={`rounded-md border px-2 text-left shadow transition-colors
+
+      {isFrq ? (
+        <div className="mt-4">
+          <label
+            htmlFor={`frq-answer-${currentQuestionIndex}`}
+            className="sr-only"
+          >
+            Your answer
+          </label>
+          <Textarea
+            id={`frq-answer-${currentQuestionIndex}`}
+            value={answers[currentQuestionIndex]?.[0] ?? ""}
+            onChange={(e) => handleFrqChange(e.target.value)}
+            disabled={showResults}
+            placeholder="Type your answer here, or leave blank to see the sample answer..."
+            className="min-h-32 bg-white"
+          />
+        </div>
+      ) : (
+        <div className="mt-4 grid grid-cols-1 gap-4">
+          {questionInstance.options.map((option) => (
+            <button
+              key={option.id}
+              className={`rounded-md border px-2 text-left shadow transition-colors
             ${
               showResults
                 ? isAnswerCorrect(option.id)
@@ -90,15 +124,29 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
                   : "border-gray-300 bg-white"
             }
             `}
-            onClick={() => handleSelectOption(option.id)}
-            disabled={showResults}
-          >
-            <RenderContent content={option.value} />
-          </button>
-        ))}
-      </div>
+              onClick={() => handleSelectOption(option.id)}
+              disabled={showResults}
+            >
+              <RenderContent content={option.value} />
+            </button>
+          ))}
+        </div>
+      )}
 
-      {showResults && questionInstance.explanation && (
+      {showResults && isFrq && (
+        <div className="mt-4 rounded-md border border-primary bg-white p-3">
+          <strong>Sample answer:</strong>
+          {questionInstance.explanation.value ? (
+            <RenderContent content={questionInstance.explanation} />
+          ) : (
+            <p className="mt-1 italic text-gray-500">
+              No sample answer was provided for this question.
+            </p>
+          )}
+        </div>
+      )}
+
+      {showResults && !isFrq && questionInstance.explanation.value && (
         <div className="mt-4 rounded-md border border-primary bg-white p-3">
           <strong>Explanation:</strong>
           <RenderContent content={questionInstance.explanation} />

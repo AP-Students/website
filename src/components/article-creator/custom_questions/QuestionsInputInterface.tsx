@@ -186,9 +186,13 @@ const QuestionsInputInterface: React.FC<Props> = ({
 
   const validateCorrectAnswer = (
     value: string,
-    type: "mcq" | "multi-answer",
+    type: QuestionFormat["type"],
   ) => {
     let errorMessage = "";
+    if (type === "frq") {
+      setError("");
+      return true;
+    }
     if (type === "mcq") {
       if (!/^\d$/.test(value)) {
         errorMessage = "Only a single number is allowed for MCQ. (e.g. 1)";
@@ -262,66 +266,70 @@ const QuestionsInputInterface: React.FC<Props> = ({
                 />
               </div>
 
-              <div className="my-4">
-                <span className="text-lg font-bold">Options</span>
-                {questionInstance.options.map((option, oIndex) => (
-                  <div key={oIndex} className="mb-2 min-w-full">
-                    <div className="flex justify-between">
-                      Option {oIndex + 1}
-                      <button
-                        type="button"
-                        onClick={() => deleteOption(qIndex, oIndex)}
-                        className="text-red-500 hover:text-red-600"
-                      >
-                        <Trash size={20} />
-                      </button>
+              {questionInstance.type !== "frq" && (
+                <div className="my-4">
+                  <span className="text-lg font-bold">Options</span>
+                  {questionInstance.options.map((option, oIndex) => (
+                    <div key={oIndex} className="mb-2 min-w-full">
+                      <div className="flex justify-between">
+                        Option {oIndex + 1}
+                        <button
+                          type="button"
+                          onClick={() => deleteOption(qIndex, oIndex)}
+                          className="text-red-500 hover:text-red-600"
+                        >
+                          <Trash size={20} />
+                        </button>
+                      </div>
+                      <AdvancedTextbox
+                        questions={questions}
+                        setQuestions={setQuestions}
+                        setUnsavedChanges={setUnsavedChanges}
+                        origin={"option"}
+                        qIndex={qIndex}
+                        oIndex={oIndex}
+                        placeholder="Enter option here..."
+                      />
                     </div>
-                    <AdvancedTextbox
-                      questions={questions}
-                      setQuestions={setQuestions}
-                      setUnsavedChanges={setUnsavedChanges}
-                      origin={"option"}
-                      qIndex={qIndex}
-                      oIndex={oIndex}
-                      placeholder="Enter option here..."
-                    />
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => addOption(qIndex)}
-                  className="flex items-center text-green-500 hover:text-green-600"
-                >
-                  Add option <CirclePlus className="ml-1 size-5" />
-                </button>
-              </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => addOption(qIndex)}
+                    className="flex items-center text-green-500 hover:text-green-600"
+                  >
+                    Add option <CirclePlus className="ml-1 size-5" />
+                  </button>
+                </div>
+              )}
 
               <div className="my-4 flex justify-between gap-2">
-                <div className="max-w-48">
-                  <label htmlFor="correctAnswer">Correct answer(s)</label>
-                  <Input
-                    id="correctAnswer"
-                    type="text"
-                    value={questionInstance.answers.join(",")}
-                    placeholder={
-                      questionInstance.type === "mcq"
-                        ? "Example: 1"
-                        : "Example: 1,3"
-                    }
-                    onChange={(e) => {
-                      const inputValue = e.target.value;
-                      const correctAnswers = inputValue
-                        .split(",")
-                        .map((answer) => answer.trim());
-                      updateQuestion(qIndex, {
-                        ...questionInstance,
-                        answers: correctAnswers,
-                      });
-                      validateCorrectAnswer(inputValue, questionInstance.type);
-                    }}
-                  />
-                  {error && <div className="text-red-500">{error}</div>}
-                </div>
+                {questionInstance.type !== "frq" && (
+                  <div className="max-w-48">
+                    <label htmlFor="correctAnswer">Correct answer(s)</label>
+                    <Input
+                      id="correctAnswer"
+                      type="text"
+                      value={questionInstance.answers.join(",")}
+                      placeholder={
+                        questionInstance.type === "mcq"
+                          ? "Example: 1"
+                          : "Example: 1,3"
+                      }
+                      onChange={(e) => {
+                        const inputValue = e.target.value;
+                        const correctAnswers = inputValue
+                          .split(",")
+                          .map((answer) => answer.trim());
+                        updateQuestion(qIndex, {
+                          ...questionInstance,
+                          answers: correctAnswers,
+                        });
+                        validateCorrectAnswer(inputValue, questionInstance.type);
+                      }}
+                    />
+                    {error && <div className="text-red-500">{error}</div>}
+                  </div>
+                )}
                 <div>
                   <label htmlFor="topic">Topic</label>
                   <Input
@@ -341,14 +349,22 @@ const QuestionsInputInterface: React.FC<Props> = ({
               </div>
 
               <div className="my-4">
-                <label>Explanation (optional)</label>
+                <label>
+                  {questionInstance.type === "frq"
+                    ? "Sample answer (shown to the learner after they submit)"
+                    : "Explanation (optional)"}
+                </label>
                 <AdvancedTextbox
                   questions={questions}
                   setQuestions={setQuestions}
                   setUnsavedChanges={setUnsavedChanges}
                   origin={"explanation"}
                   qIndex={qIndex}
-                  placeholder="Explain the answer here..."
+                  placeholder={
+                    questionInstance.type === "frq"
+                      ? "Enter the model/sample answer here..."
+                      : "Explain the answer here..."
+                  }
                 />
               </div>
 
@@ -359,13 +375,14 @@ const QuestionsInputInterface: React.FC<Props> = ({
                   onChange={(e) =>
                     updateQuestion(qIndex, {
                       ...questionInstance,
-                      type: e.target.value as "mcq" | "multi-answer",
+                      type: e.target.value as QuestionFormat["type"],
                     })
                   }
                   className="rounded-md border border-gray-300 bg-gray-50 p-2"
                 >
                   <option value="mcq">MCQ</option>
                   <option value="multi-answer">Multi-Answer</option>
+                  <option value="frq">Free Response</option>
                 </select>
 
                 <button

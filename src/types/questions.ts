@@ -16,9 +16,9 @@ export interface Option {
 
 export interface QuestionFormat {
   question: QuestionInput; // What the question is
-  type: "mcq" | "multi-answer"; // Type of question - toggles betwen 1 choice vs multiple choices
-  options: Option[]; // What the client can select as an answer to the question
-  answers: string[]; // The correct answer(s)
+  type: "mcq" | "multi-answer" | "frq"; // Type of question - mcq (1 choice), multi-answer (multiple choices), or frq (free response)
+  options: Option[]; // What the client can select as an answer to the question (empty for frq)
+  answers: string[]; // The correct answer(s) (empty for frq - the explanation holds the sample answer)
   explanation: QuestionInput; // Explanation of the question
   content: QuestionInput; // Leftside content to be shown for test renderer
   bookmarked?: boolean; // for test renderer
