@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 import { RotateCw } from "lucide-react";
 import type { QuestionFormat } from "@/types/questions";
 import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
@@ -12,6 +12,7 @@ interface Props {
 
 const CheckForUnderstanding: React.FC<Props> = ({ questionInstance }) => {
   const isFrq = questionInstance.type === "frq";
+  const frqId = useId();
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [frqAnswer, setFrqAnswer] = useState<string>("");
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
@@ -66,11 +67,11 @@ const CheckForUnderstanding: React.FC<Props> = ({ questionInstance }) => {
 
       {isFrq ? (
         <div className="mt-4">
-          <label htmlFor="frq-answer" className="sr-only">
+          <label htmlFor={frqId} className="sr-only">
             Your answer
           </label>
           <Textarea
-            id="frq-answer"
+            id={frqId}
             value={frqAnswer}
             onChange={(e) => setFrqAnswer(e.target.value)}
             disabled={submitted}

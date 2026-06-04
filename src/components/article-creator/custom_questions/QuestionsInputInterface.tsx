@@ -324,7 +324,10 @@ const QuestionsInputInterface: React.FC<Props> = ({
                           ...questionInstance,
                           answers: correctAnswers,
                         });
-                        validateCorrectAnswer(inputValue, questionInstance.type);
+                        validateCorrectAnswer(
+                          inputValue,
+                          questionInstance.type,
+                        );
                       }}
                     />
                     {error && <div className="text-red-500">{error}</div>}
@@ -382,7 +385,8 @@ const QuestionsInputInterface: React.FC<Props> = ({
                 >
                   <option value="mcq">MCQ</option>
                   <option value="multi-answer">Multi-Answer</option>
-                  <option value="frq">Free Response</option>
+                  {/* FRQ is article-only; the digital-testing renderer can't grade/render it */}
+                  {!testRenderer && <option value="frq">Free Response</option>}
                 </select>
 
                 <button

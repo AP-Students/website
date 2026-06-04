@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import type { QuestionFormat } from "@/types/questions";
 import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
@@ -19,6 +19,7 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
 
   const questionInstance = questions[currentQuestionIndex]!;
   const isFrq = questionInstance.type === "frq";
+  const frqId = useId();
 
   // FRQs are self-assessed, so they don't count toward the score.
   const gradableCount = questions.filter((q) => q.type !== "frq").length;
@@ -32,10 +33,10 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
   };
 
   const handleFrqChange = (value: string): void => {
-    setAnswers({
-      ...answers,
+    setAnswers((prev) => ({
+      ...prev,
       [currentQuestionIndex]: [value],
-    });
+    }));
   };
 
   const toggleAnswer = (optionId: string): string[] => {
@@ -90,13 +91,13 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
       {isFrq ? (
         <div className="mt-4">
           <label
-            htmlFor={`frq-answer-${currentQuestionIndex}`}
+            htmlFor={`${frqId}-${currentQuestionIndex}`}
             className="sr-only"
           >
             Your answer
           </label>
           <Textarea
-            id={`frq-answer-${currentQuestionIndex}`}
+            id={`${frqId}-${currentQuestionIndex}`}
             value={answers[currentQuestionIndex]?.[0] ?? ""}
             onChange={(e) => handleFrqChange(e.target.value)}
             disabled={showResults}
