@@ -9,7 +9,7 @@ type EditorJsBlock = {
   type: string;
   data: {
     instanceId?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 };
 
