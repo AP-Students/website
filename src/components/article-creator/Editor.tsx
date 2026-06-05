@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from "react";
+import React, { memo, useEffect, useRef, useState } from "react";
 import {
   type EditorConfig,
   type ToolConstructable,
@@ -250,8 +250,16 @@ const Editor = ({
   const isValidEditorOutputData = (value: unknown): value is OutputData => {
     if (!value || typeof value !== "object") return false;
 
-    const candidate = value as { blocks?: unknown; time?: unknown };
-    return Array.isArray(candidate.blocks) && typeof candidate.time === "number";
+    const candidate = value as {
+      blocks?: unknown;
+      time?: unknown;
+      version?: unknown;
+    };
+    return (
+      Array.isArray(candidate.blocks) &&
+      typeof candidate.time === "number" &&
+      typeof candidate.version === "string"
+    );
   };
 
   const importEditorData = async (parsed: unknown) => {

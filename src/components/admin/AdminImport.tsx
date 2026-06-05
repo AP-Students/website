@@ -63,7 +63,6 @@ const AdminImport = () => {
       }
 
       alert("JSON imported and validated successfully.");
-      // TODO: hook up further actions (save to Firestore / open in editor)
       console.log("Imported JSON:", parsed);
     } catch (err) {
       console.error(err);
@@ -118,7 +117,7 @@ const AdminImport = () => {
           onClick={handleImportPastedJson}
           type="button"
         >
-          Import Pasted JSON
+          Validate Pasted JSON
         </button>
       </div>
     </div>

@@ -44,7 +44,7 @@ const Page = () => {
         {user.access === "admin" && (
           <>
             <AdminPanel user={user} />
-            <h2 className="mt-6 text-2xl font-bold">Import Editor JSON</h2>
+            <h2 className="mt-6 text-2xl font-bold">Validate Editor JSON</h2>
             <AdminImport />
           </>
         )}
