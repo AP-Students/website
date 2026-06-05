@@ -4,8 +4,17 @@ import { Upload, ClipboardCopy } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+type EditorJsBlock = {
+  id: string;
+  type: string;
+  data: {
+    instanceId?: string;
+    [key: string]: any;
+  };
+};
+
 type EditorJsonCandidate = {
-  blocks: unknown[];
+  blocks: EditorJsBlock[];
   time: number;
 };
 
@@ -16,22 +25,51 @@ function isEditorJsonCandidate(value: unknown): value is EditorJsonCandidate {
   return Array.isArray(candidate.blocks) && typeof candidate.time === "number";
 }
 
+const generateBlockId = (): string => Math.random().toString(36).substring(2, 12);
+
+const generateUuid = (): string => {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+  });
+};
+
 const AdminImport = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [pastedJson, setPastedJson] = useState<string>("");
+  const [status, setStatus] = useState<{ type: "success" | "error" | null; message: string }>({
+    type: null,
+    message: "",
+  });
+
+  const showStatus = (type: "success" | "error", message: string) => {
+    setStatus({ type, message });
+  };
 
   const handleCopyPastedJson = async () => {
     if (!pastedJson) {
-      alert("Nothing to copy.");
+      showStatus("error", "Nothing to copy.");
       return;
     }
 
     try {
-      await navigator.clipboard.writeText(pastedJson);
-      alert("JSON copied to clipboard.");
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(pastedJson);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = pastedJson;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand("copy");
+        textArea.remove();
+      }
+      showStatus("success", "JSON copied to clipboard.");
     } catch (err) {
       console.error(err);
-      alert("Failed to copy to clipboard.");
+      showStatus("error", "Failed to copy to clipboard.");
     }
   };
 
@@ -43,30 +81,48 @@ const AdminImport = () => {
     try {
       const text = await file.text();
       setPastedJson(text);
+      showStatus("success", `File "${file.name}" loaded successfully.`);
     } catch (err) {
       console.error(err);
-      alert("Failed to read JSON file.");
+      showStatus("error", "Failed to read JSON file.");
     }
   };
 
   const handleImportPastedJson = () => {
     if (!pastedJson.trim()) {
-      alert("Paste JSON text first.");
+      showStatus("error", "Paste JSON text first.");
       return;
     }
 
     try {
       const parsed = JSON.parse(pastedJson) as unknown;
       if (!isEditorJsonCandidate(parsed)) {
-        alert("JSON appears invalid for EditorJS format.");
+        showStatus("error", "JSON appears invalid for EditorJS format.");
         return;
       }
 
-      alert("JSON imported and validated successfully.");
-      console.log("Imported JSON:", parsed);
+      // Re-map the blocks to decouple original ids and instanceIds
+      const decoupledBlocks = parsed.blocks.map((block) => ({
+        ...block,
+        id: generateBlockId(),
+        data: {
+          ...block.data,
+          ...(block.data?.instanceId ? { instanceId: generateUuid() } : {}),
+        },
+      }));
+
+      const finalImportedData: EditorJsonCandidate = {
+        ...parsed,
+        blocks: decoupledBlocks,
+      };
+
+      // Set state to the decoupled payload so it's ready to use or copy
+      setPastedJson(JSON.stringify(finalImportedData, null, 2));
+      showStatus("success", "JSON imported and validated successfully. New independent block IDs and instanceIds assigned!");
+      console.log("Imported JSON with decoupled IDs:", finalImportedData);
     } catch (err) {
       console.error(err);
-      alert("Failed to parse pasted JSON.\n" + String(err));
+      showStatus("error", "Failed to parse pasted JSON.\n" + String(err));
     }
   };
 
@@ -100,6 +156,19 @@ const AdminImport = () => {
         type="file"
       />
 
+      {status.type && (
+        <div
+          className={cn(
+            "mb-4 rounded p-2 text-xs font-medium border",
+            status.type === "success"
+              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+              : "bg-rose-50 text-rose-800 border-rose-200"
+          )}
+        >
+          {status.message}
+        </div>
+      )}
+
       <label className="mb-2 block text-sm font-medium" htmlFor="admin-pasted-json">
         Paste raw Editor JSON
       </label>
@@ -108,7 +177,10 @@ const AdminImport = () => {
         className="min-h-40 w-full rounded-sm border p-2 font-mono text-xs"
         placeholder='Paste JSON from "Copy Data to Clipboard" here'
         value={pastedJson}
-        onChange={(e) => setPastedJson(e.target.value)}
+        onChange={(e) => {
+          setPastedJson(e.target.value);
+          if (status.type) setStatus({ type: null, message: "" });
+        }}
       />
 
       <div className="mt-2 flex justify-end">
@@ -125,4 +197,3 @@ const AdminImport = () => {
 };
 
 export default AdminImport;
-
