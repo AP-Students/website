@@ -1,4 +1,4 @@
-import { memo, useEffect } from "react";
+import React, { memo, useEffect, useRef, useState } from "react";
 import {
   type EditorConfig,
   type ToolConstructable,
@@ -21,7 +21,7 @@ import MathTex from "editorjs-math";
 import Delimiter from "@editorjs/delimiter";
 import Alert from "editorjs-alert";
 import { QuestionsAddCard } from "./custom_questions/QuestionsAddCard";
-import { ClipboardCopy } from "lucide-react";
+import { ClipboardCopy, Upload } from "lucide-react";
 import {
   deleteObject,
   getDownloadURL,
@@ -192,6 +192,9 @@ const Editor = ({
   setData: (data: OutputData) => void;
   content: OutputData;
 }) => {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [pastedJson, setPastedJson] = useState<string>("");
+
   const { editor, editorRef } = useEditor({
     holder: "editorjs",
     tools: EDITOR_TOOLS,
@@ -244,6 +247,72 @@ const Editor = ({
     }
   };
 
+  const isValidEditorOutputData = (value: unknown): value is OutputData => {
+    if (!value || typeof value !== "object") return false;
+
+    const candidate = value as {
+      blocks?: unknown;
+      time?: unknown;
+      version?: unknown;
+    };
+    return (
+      Array.isArray(candidate.blocks) &&
+      typeof candidate.time === "number" &&
+      typeof candidate.version === "string"
+    );
+  };
+
+  const importEditorData = async (parsed: unknown) => {
+    if (!isValidEditorOutputData(parsed)) {
+      alert(
+        "Invalid EditorJS JSON. Data must include at least numeric time and a blocks array.",
+      );
+      return;
+    }
+
+    if (!editorRef.current?.render) {
+      alert("Editor is not ready yet. Please try again in a moment.");
+      return;
+    }
+
+    await editorRef.current.render(parsed);
+    setData(parsed);
+    setUnsavedChanges(true);
+  };
+
+  const handleUploadEditorData = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    try {
+      const fileText = await file.text();
+      const parsed = JSON.parse(fileText) as unknown;
+      await importEditorData(parsed);
+    } catch (error) {
+      console.error("Error importing editor data:\n", error);
+      alert("Failed to import JSON data.\n" + String(error));
+    }
+  };
+
+  const handleImportPastedJson = async () => {
+    if (!pastedJson.trim()) {
+      alert("Paste JSON text first.");
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(pastedJson) as unknown;
+      await importEditorData(parsed);
+    } catch (error) {
+      console.error("Error importing pasted JSON:\n", error);
+      alert("Failed to parse pasted JSON.\n" + String(error));
+    }
+  };
+
   useEffect(() => {
     return () => {
       // Check if the editor exists and is not already destroyed
@@ -264,16 +333,65 @@ const Editor = ({
 
   return (
     <>
-      <button
-        className={cn(
-          buttonVariants({ variant: "outline" }),
-          "rounded-sm pl-3",
-        )}
-        onClick={handleCopyEditorData}
-      >
-        <ClipboardCopy className="mr-1" />
-        Copy Data to Clipboard
-      </button>
+      <div className="mb-4 flex flex-wrap gap-2">
+        <button
+          className={cn(
+            buttonVariants({ variant: "outline" }),
+            "rounded-sm pl-3",
+          )}
+          onClick={handleCopyEditorData}
+          type="button"
+        >
+          <ClipboardCopy className="mr-1" />
+          Copy Data to Clipboard
+        </button>
+
+        <button
+          className={cn(
+            buttonVariants({ variant: "outline" }),
+            "rounded-sm pl-3",
+          )}
+          onClick={() => fileInputRef.current?.click()}
+          type="button"
+        >
+          <Upload className="mr-1" />
+          Upload JSON
+        </button>
+      </div>
+
+      <input
+        accept="application/json,.json"
+        className="hidden"
+        onChange={handleUploadEditorData}
+        ref={fileInputRef}
+        type="file"
+      />
+
+      <div className="mb-4 rounded-sm border p-3">
+        <label className="mb-2 block text-sm font-medium" htmlFor="pasted-editor-json">
+          Paste raw Editor JSON
+        </label>
+        <textarea
+          className="min-h-40 w-full rounded-sm border p-2 font-mono text-xs"
+          id="pasted-editor-json"
+          onChange={(event) => setPastedJson(event.target.value)}
+          placeholder='Paste JSON from "Copy Data to Clipboard" here'
+          value={pastedJson}
+        />
+        <div className="mt-2 flex justify-end">
+          <button
+            className={cn(
+              buttonVariants({ variant: "outline" }),
+              "rounded-sm",
+            )}
+            onClick={handleImportPastedJson}
+            type="button"
+          >
+            Import Pasted JSON
+          </button>
+        </div>
+      </div>
+
       <div className="prose w-full" id="editorjs"></div>
     </>
   );
