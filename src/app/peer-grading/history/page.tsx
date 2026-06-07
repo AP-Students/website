@@ -140,9 +140,8 @@ const MyFRQResponses = () => {
                   <AccordionItem value="response">
                     <AccordionTrigger>Your Response</AccordionTrigger>
                     <AccordionContent>
-                      <p className="whitespace-pre-wrap">
-                        {response.responseText}
-                      </p>
+                       <pre className="max-w-full overflow-x-auto whitespace-pre-wrap rounded bg-gray-100 p-2 font-mono text-base" style={{ fontFamily: "'Consolas', monospace" }}>                        <code>{response.responseText}</code>
+                      </pre>
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>

@@ -23,8 +23,9 @@ A summary of the change, anything else that will help review this PR
 
 A few screenshots or a video
 
-# How Has This Been Tested?
+# How Has This Been Tested? How can the reviewer test it?
 <!-- Please describe how you tested your changes -->
+<!-- Please describe with detail how a reviewer can test it -->
 
 A detailed explanation of how the code was tested
 

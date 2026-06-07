@@ -117,15 +117,99 @@ export default function AdvancedTextbox({
       key === "ArrowDown" ||
       key === "ArrowLeft" ||
       key === "ArrowRight" ||
-      key === "Backspace"
+      key === "Backspace" ||
+      key === "Enter"
     ) {
       e.stopPropagation();
     }
+
+    if (key === "Enter") {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+
+      const cursorPosition = textarea.selectionStart;
+      const textBeforeCursor = currentText.substring(0, cursorPosition);
+      const textAfterCursor = currentText.substring(textarea.selectionEnd);
+
+      // Find the current line the cursor is on
+      const lastNewLineIndex = textBeforeCursor.lastIndexOf("\n");
+      const currentLine = textBeforeCursor.substring(lastNewLineIndex + 1);
+      
+      // Match leading whitespace
+      const match = currentLine.match(/^\s*/);
+      const leadingWhitespace = match ? match[0] : "";
+
+      if (leadingWhitespace) {
+        e.preventDefault();
+        const newText = textBeforeCursor + "\n" + leadingWhitespace + textAfterCursor;
+        updateQuestionText(newText);
+
+        setTimeout(() => {
+          if (textareaRef.current) {
+            textareaRef.current.selectionStart = textareaRef.current.selectionEnd = cursorPosition + 1 + leadingWhitespace.length;
+          }
+        }, 0);
+      }
+    }
+
+    if (key === "Backspace") {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+
+      const cursorPosition = textarea.selectionStart;
+      if (cursorPosition === textarea.selectionEnd && cursorPosition > 0) {
+        const textBeforeCursor = currentText.substring(0, cursorPosition);
+        const lastNewLineIndex = textBeforeCursor.lastIndexOf("\n");
+        const currentLine = textBeforeCursor.substring(lastNewLineIndex + 1);
+
+        // If the line up to the cursor is purely spaces, treat it as indentation
+        if (currentLine.length > 0 && /^\s+$/.test(currentLine)) {
+          e.preventDefault();
+          
+          // delete 2 spaces instead of 1 if possible
+          const spacesToDelete = currentLine.length % 2 !== 0 ? 1 : 2;
+
+          const newText = 
+            currentText.substring(0, cursorPosition - spacesToDelete) + 
+            currentText.substring(cursorPosition);
+            
+          updateQuestionText(newText);
+
+          setTimeout(() => {
+            if (textareaRef.current) {
+              textareaRef.current.selectionStart = textareaRef.current.selectionEnd = cursorPosition - spacesToDelete;
+            }
+          }, 0);
+        }
+      }
+    }
+
+    if (key === "Tab") {
+      e.stopPropagation();
+      e.preventDefault();
+
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const indent = "  ";
+      const newText =
+      currentText.substring(0, start) + indent + currentText.substring(end);
+      
+      updateQuestionText(newText);
+
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.selectionStart = textareaRef.current.selectionEnd =
+            start + indent.length;
+        }
+      }, 0);
+    }
   };
 
-  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const updateQuestionText = (newText: string) => {
     setUnsavedChanges?.(true);
-    const newText = e.target.value;
     setCurrentText(newText);
     // Clone the current question to avoid direct mutation
     const updatedQuestions = [...questions];
@@ -137,7 +221,7 @@ export default function AdvancedTextbox({
       const updatedQuestion: QuestionFormat = {
         ...questionInstance!,
         [origin]: {
-          ...(questionInstance ? [origin] : QuestionsInput),
+          ...questionInstance![origin],
           value: newText,
           files: questionInstance?.[origin]?.files ?? [], // Keep the files they exist
         }, // Clone question
@@ -163,6 +247,10 @@ export default function AdvancedTextbox({
     }
 
     setQuestions(updatedQuestions); // Update state immutably
+  };
+
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    updateQuestionText(e.target.value);
   };
 
   const handleUploadClick = () => {
@@ -329,7 +417,7 @@ export default function AdvancedTextbox({
         onKeyDown={handleKeyDown}
         placeholder={
           placeholder ??
-          "Type or drag and drop here (only 1 file allowed). Latex syntax starts with $@ and ends with $ (eg: $@e^{ipi} + 1 = 0$)"
+          "Type or drag and drop here (only 1 file allowed). Latex syntax starts with $@ and ends with $ (eg: $@e^{ipi} + 1 = 0$). Code blocks use ``` around the code."
         }
       />
 

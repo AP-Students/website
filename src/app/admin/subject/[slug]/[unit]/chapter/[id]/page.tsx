@@ -1,5 +1,9 @@
 "use client";
-import ArticleCreator from "@/components/article-creator/ArticleCreator";
+import dynamic from "next/dynamic";
+const ArticleCreator = dynamic(
+  () => import("@/components/article-creator/ArticleCreator"),
+  { ssr: false },
+);
 import { useUser } from "@/components/hooks/UserContext";
 import { buttonVariants } from "@/components/ui/button";
 import { ArrowLeft, ExternalLink, UserRoundCog } from "lucide-react";
