@@ -86,7 +86,7 @@ export default function DigitalTestingPage({
   >({});
 
   const [contentHighlights, setContentHighlights] = useState<Highlight[][]>(
-    initialQuestions.map(() => []),
+    (inputQuestions || initialQuestions).map(() => []),
   );
 
   const [showEliminationTools, setShowEliminationTools] = useState(false);
@@ -125,13 +125,12 @@ export default function DigitalTestingPage({
 
   const toggleBookmark = () => {
     const updatedQuestions = [...questions];
-    if (updatedQuestions[currentQuestionIndex]) {
-      updatedQuestions[currentQuestionIndex] = {
-        ...updatedQuestions[currentQuestionIndex],
-        bookmarked: !updatedQuestions[currentQuestionIndex].bookmarked,
-      };
-      setQuestions(updatedQuestions);
-    }
+    if (!updatedQuestions[currentQuestionIndex]) return;
+
+    updatedQuestions[currentQuestionIndex] = {
+      ...updatedQuestions[currentQuestionIndex],
+      bookmarked: !updatedQuestions[currentQuestionIndex].bookmarked,
+    };
     setQuestions(updatedQuestions);
   };
 
