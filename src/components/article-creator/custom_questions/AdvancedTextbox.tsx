@@ -8,12 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import type {
   QuestionFile,
   QuestionFormat,
-  QuestionInput,
 } from "@/types/questions";
-import { QuestionsInput } from "./QuestionInstance";
-import { Paperclip, Trash } from "lucide-react";
-import { deleteObject, getStorage, ref } from "firebase/storage";
+import { Paperclip, Trash, ChevronLeft, ChevronRight } from "lucide-react";
+import { deleteObject, getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getUser } from "@/components/hooks/users";
+import { getFileFromIndexedDB } from "./RenderAdvancedTextbox";
 
 interface Props {
   questions: QuestionFormat[];
@@ -82,6 +81,61 @@ function deleteFileFromIndexedDB(name: string) {
   });
 }
 
+// Helper component to display visual thumbnails/previews of files in editing mode
+const ThumbnailPreview: React.FC<{ file: QuestionFile }> = ({ file }) => {
+  const [src, setSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    let url: string | null = null;
+    if (file.url) {
+      setSrc(file.url);
+      return;
+    }
+
+    const loadLocal = async () => {
+      try {
+        const stored = await getFileFromIndexedDB(file.key);
+        if (stored?.file) {
+          url = URL.createObjectURL(stored.file);
+          setSrc(url);
+        }
+      } catch (err) {
+        console.error("Error loading thumbnail:", err);
+      }
+    };
+    void loadLocal();
+
+    return () => {
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [file]);
+
+  if (!src) {
+    return (
+      <div className="flex h-20 w-20 items-center justify-center rounded bg-gray-100 text-gray-400">
+        <span className="text-[10px]">Loading...</span>
+      </div>
+    );
+  }
+
+  if (file.key.startsWith("image-") || file.key.startsWith("image/")) {
+    return (
+      <img
+        src={src}
+        alt="Thumbnail preview"
+        className="h-20 w-20 rounded object-cover border border-gray-200"
+      />
+    );
+  }
+
+  return (
+    <div className="flex h-20 w-20 flex-col items-center justify-center rounded bg-blue-50 border border-blue-200 text-blue-500">
+      <Paperclip size={20} />
+      <span className="mt-1 text-[9px] truncate max-w-[70px] px-1">{file.name}</span>
+    </div>
+  );
+};
+
 export default function AdvancedTextbox({
   questions,
   qIndex,
@@ -94,16 +148,19 @@ export default function AdvancedTextbox({
   const questionInstance = questions[qIndex];
   const [currentText, setCurrentText] = useState<string>("");
   const [uploadedFiles, setUploadedFiles] = useState<QuestionFile[]>([]);
+  const [uploadStatuses, setUploadStatuses] = useState<
+    Record<string, { status: "uploading" | "success" | "error"; error?: string }>
+  >({});
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize currentText and fileExists when question gets loaded from db if any
+  // Sync state when loaded
   useEffect(() => {
     if (origin === "option" && oIndex !== undefined) {
       if (questionInstance!.options[oIndex]?.value?.value) {
         setCurrentText(questionInstance!.options[oIndex].value.value);
       }
-
       setUploadedFiles(questionInstance!.options[oIndex]?.value?.files ?? []);
     } else if (
       origin === "question" ||
@@ -117,8 +174,8 @@ export default function AdvancedTextbox({
     }
   }, [questionInstance, oIndex, origin]);
 
+  // Handle keys logic
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Keys are being handled by EditorJS rather than default behavior, so we need to block the EditorJS behavior
     const key = e.key;
 
     if (
@@ -140,11 +197,9 @@ export default function AdvancedTextbox({
       const textBeforeCursor = currentText.substring(0, cursorPosition);
       const textAfterCursor = currentText.substring(textarea.selectionEnd);
 
-      // Find the current line the cursor is on
       const lastNewLineIndex = textBeforeCursor.lastIndexOf("\n");
       const currentLine = textBeforeCursor.substring(lastNewLineIndex + 1);
       
-      // Match leading whitespace
       const match = currentLine.match(/^\s*/);
       const leadingWhitespace = match ? match[0] : "";
 
@@ -171,11 +226,9 @@ export default function AdvancedTextbox({
         const lastNewLineIndex = textBeforeCursor.lastIndexOf("\n");
         const currentLine = textBeforeCursor.substring(lastNewLineIndex + 1);
 
-        // If the line up to the cursor is purely spaces, treat it as indentation
         if (currentLine.length > 0 && /^\s+$/.test(currentLine)) {
           e.preventDefault();
           
-          // delete 2 spaces instead of 1 if possible
           const spacesToDelete = currentLine.length % 2 !== 0 ? 1 : 2;
 
           const newText = 
@@ -217,10 +270,37 @@ export default function AdvancedTextbox({
     }
   };
 
+  const updateQuestionsWithFiles = (newFiles: QuestionFile[]) => {
+    setUnsavedChanges?.(true);
+    const updatedQuestions = [...questions];
+    const updatedQuestion = { ...questionInstance! };
+
+    if (origin === "question" || origin === "explanation" || origin === "content") {
+      updatedQuestion[origin] = {
+        ...updatedQuestion[origin],
+        files: newFiles,
+      };
+    } else if (origin === "option" && oIndex !== undefined) {
+      updatedQuestion.options = [
+        ...updatedQuestion.options.slice(0, oIndex),
+        {
+          value: {
+            ...updatedQuestion.options[oIndex]!.value,
+            files: newFiles,
+          },
+          id: updatedQuestion.options[oIndex]!.id,
+        },
+        ...updatedQuestion.options.slice(oIndex + 1),
+      ];
+    }
+
+    updatedQuestions[qIndex] = updatedQuestion;
+    setQuestions(updatedQuestions);
+  };
+
   const updateQuestionText = (newText: string) => {
     setUnsavedChanges?.(true);
     setCurrentText(newText);
-    // Clone the current question to avoid direct mutation
     const updatedQuestions = [...questions];
     if (
       origin === "question" ||
@@ -232,12 +312,11 @@ export default function AdvancedTextbox({
         [origin]: {
           ...questionInstance![origin],
           value: newText,
-          files: questionInstance?.[origin]?.files ?? [], // Keep the files they exist
-        }, // Clone question
+          files: questionInstance?.[origin]?.files ?? [],
+        },
       };
       updatedQuestions[qIndex] = updatedQuestion;
     } else if (origin === "option" && oIndex !== undefined) {
-      // oIndex !== undefined because 0 is falsy
       const updatedQuestion: QuestionFormat = {
         ...questionInstance!,
         options: [
@@ -255,7 +334,7 @@ export default function AdvancedTextbox({
       updatedQuestions[qIndex] = updatedQuestion;
     }
 
-    setQuestions(updatedQuestions); // Update state immutably
+    setQuestions(updatedQuestions);
   };
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -264,6 +343,44 @@ export default function AdvancedTextbox({
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
+  };
+
+  // Immediate upload to Firebase Storage
+  const uploadSingleFile = async (fileKey: string, file: File) => {
+    setUploadStatuses((prev) => ({
+      ...prev,
+      [fileKey]: { status: "uploading" },
+    }));
+
+    try {
+      const storage = getStorage();
+      const storageRef = ref(storage, fileKey);
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      setUploadStatuses((prev) => ({
+        ...prev,
+        [fileKey]: { status: "success" },
+      }));
+
+      // Update the file URL in the state and questions
+      setUploadedFiles((prevFiles) => {
+        const updated = prevFiles.map((f) =>
+          f.key === fileKey ? { ...f, url: downloadURL } : f
+        );
+        updateQuestionsWithFiles(updated);
+        return updated;
+      });
+    } catch (err) {
+      console.error(`Failed to upload file ${file.name}:`, err);
+      setUploadStatuses((prev) => ({
+        ...prev,
+        [fileKey]: {
+          status: "error",
+          error: err instanceof Error ? err.message : "Upload failed",
+        },
+      }));
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -283,71 +400,40 @@ export default function AdvancedTextbox({
       alert(
         "No valid file selected (photo or audio). Try uploading again or contact support.",
       );
-      return; // Early return if file is not defined
+      return;
     }
 
-    const storeAndAppendIfNewKey = (
-      questionInput: QuestionInput,
-      files: File[],
-    ) => {
-      const newFiles = files.flatMap((file) => {
-        const fileKey = `${file.type}-${file.lastModified}`;
-        if (questionInput.files.map((file) => file.key).includes(fileKey)) {
-          return [];
-        } else {
-          storeFileInIndexedDB(fileKey, file);
-          return [
-            {
-              key: fileKey,
-              name: file.name,
-            },
-          ];
-        }
+    const newFiles: QuestionFile[] = [];
+    const filesToUpload: { key: string; file: File }[] = [];
+
+    files.forEach((file) => {
+      // Create a unique key that works cleanly in storage
+      const sanitizedType = file.type.replace(/\//g, "-");
+      const fileKey = `${sanitizedType}-${Date.now()}-${file.name}`;
+      
+      storeFileInIndexedDB(fileKey, file);
+
+      newFiles.push({
+        key: fileKey,
+        name: file.name,
+        order: uploadedFiles.length + newFiles.length,
       });
-      // Recreate array for set state
-      questionInput.files = [...questionInput.files, ...newFiles];
-    };
 
-    const updatedQuestions = [...questions];
-    const updatedQuestion: QuestionFormat = { ...questionInstance! };
+      filesToUpload.push({ key: fileKey, file });
+    });
 
-    if (origin === "question") {
-      const questionInput: QuestionInput = { ...updatedQuestion.question };
-      storeAndAppendIfNewKey(questionInput, files);
-      updatedQuestion.question = questionInput;
-      setUploadedFiles(questionInput.files);
-    } else if (origin === "option" && oIndex !== undefined) {
-      // Update a specific option by oIndex
-      const optionInput: QuestionInput = {
-        ...updatedQuestion.options[oIndex]!.value,
-      };
-      storeAndAppendIfNewKey(optionInput, files);
-      updatedQuestion.options[oIndex]!.value = optionInput; // Update only the specified option
-      setUploadedFiles(optionInput.files);
-    } else if (origin === "explanation") {
-      const questionInput: QuestionInput = {
-        ...updatedQuestion.explanation,
-      };
-      storeAndAppendIfNewKey(questionInput, files);
-      updatedQuestion.explanation = questionInput;
-      setUploadedFiles(questionInput.files);
-    } else if (origin === "content") {
-      const questionInput: QuestionInput = { ...updatedQuestion.content };
-      storeAndAppendIfNewKey(questionInput, files);
-      updatedQuestion.content = questionInput;
-      setUploadedFiles(questionInput.files);
-    }
-    updatedQuestions[qIndex] = updatedQuestion;
+    const nextFiles = [...uploadedFiles, ...newFiles];
+    setUploadedFiles(nextFiles);
+    updateQuestionsWithFiles(nextFiles);
 
-    setQuestions(updatedQuestions);
-    setUnsavedChanges?.(true);
-
-    // Reset input value so duplicate files can be reuploaded in the case of deletion
-    // Code logic will catch actual duplicates
     e.target.value = "";
+
+    // Trigger immediate uploads
+    filesToUpload.forEach(({ key, file }) => {
+      void uploadSingleFile(key, file);
+    });
   };
 
-  // Function to delete a file from Firebase Storage
   async function deleteFileFromStorage(fileKey: string): Promise<void> {
     const user = await getUser();
 
@@ -368,57 +454,78 @@ export default function AdvancedTextbox({
       }
 
       console.error(`Error deleting file ${fileKey} from storage:`, error);
-      // You might want to handle specific error codes here
       return;
     }
   }
 
-  const handleDeleteFile = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const fileKey = e.currentTarget.dataset.fileKey;
+  const handleDeleteFile = (fileKey: string) => {
+    const nextFiles = uploadedFiles.filter((file) => file.key !== fileKey);
+    setUploadedFiles(nextFiles);
+    updateQuestionsWithFiles(nextFiles);
 
-    if (!fileKey) {
-      alert("Error deleting file, please try again");
-      return;
+    setUploadStatuses((prev) => {
+      const next = { ...prev };
+      delete next[fileKey];
+      return next;
+    });
+
+    void deleteFileFromIndexedDB(fileKey);
+    void deleteFileFromStorage(fileKey);
+  };
+
+  const handleRetryUpload = async (fileKey: string, fileName: string) => {
+    try {
+      const stored = await getFileFromIndexedDB(fileKey);
+      if (stored?.file) {
+        void uploadSingleFile(fileKey, stored.file);
+      } else {
+        alert(`Could not find local file data for "${fileName}". Please remove and re-upload.`);
+      }
+    } catch (err) {
+      console.error("Retry load from IndexedDB failed:", err);
+      alert("Failed to retry. Please try uploading the file again.");
     }
+  };
 
-    const updatedQuestions = [...questions];
-    const updatedQuestion: QuestionFormat = { ...questionInstance! };
+  const updateFileAlt = (fileKey: string, newAlt: string) => {
+    const updated = uploadedFiles.map((f) =>
+      f.key === fileKey ? { ...f, alt: newAlt } : f
+    );
+    setUploadedFiles(updated);
+    updateQuestionsWithFiles(updated);
+  };
 
-    const deleteFile = (question: QuestionInput) => {
-      deleteFileFromIndexedDB(fileKey).catch((error) => {
-        console.error("Error deleting file from IndexedDB:", error);
-      });
-      deleteFileFromStorage(fileKey).catch((error) => {
-        console.error("Error deleting file from Storage:", error);
-      });
+  const moveFile = (index: number, direction: "left" | "right") => {
+    const targetIndex = index + (direction === "left" ? -1 : 1);
+    if (targetIndex < 0 || targetIndex >= uploadedFiles.length) return;
 
-      question.files = question.files.filter((file) => file.key !== fileKey);
-      setUploadedFiles(question.files);
-    };
+    const nextFiles = [...uploadedFiles];
+    const temp = nextFiles[index]!;
+    nextFiles[index] = nextFiles[targetIndex]!;
+    nextFiles[targetIndex] = temp;
 
-    if (
-      origin === "question" ||
-      origin === "explanation" ||
-      origin === "content"
-    ) {
-      const questionInput: QuestionInput = { ...updatedQuestion[origin] };
+    const orderedFiles = nextFiles.map((f, idx) => ({ ...f, order: idx }));
+    setUploadedFiles(orderedFiles);
+    updateQuestionsWithFiles(orderedFiles);
+  };
 
-      deleteFile(questionInput);
+  const insertPlaceholder = (file: QuestionFile, index: number) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
 
-      updatedQuestion[origin] = questionInput;
-    } else if (origin === "option" && oIndex !== undefined) {
-      const optionInput: QuestionInput = {
-        ...updatedQuestion.options[oIndex]!.value,
-      };
+    const placeholderText = `[image:${index + 1}]`;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
 
-      deleteFile(optionInput);
+    const newText =
+      currentText.substring(0, start) + placeholderText + currentText.substring(end);
+    
+    updateQuestionText(newText);
 
-      updatedQuestion.options[oIndex]!.value = optionInput;
-    }
-
-    updatedQuestions[qIndex] = updatedQuestion;
-    setQuestions(updatedQuestions);
-    setUnsavedChanges?.(true);
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + placeholderText.length, start + placeholderText.length);
+    }, 0);
   };
 
   return (
@@ -430,7 +537,7 @@ export default function AdvancedTextbox({
         onKeyDown={handleKeyDown}
         placeholder={
           placeholder ??
-          "Type or drag and drop here (only 1 file allowed). Latex syntax starts with $@ and ends with $ (eg: $@e^{ipi} + 1 = 0$). Code blocks use ``` around the code."
+          "Type or drag and drop here. Latex syntax starts with $@ and ends with $ (eg: $@e^{ipi} + 1 = 0$). Code blocks use ``` around the code. References to images can be made via [image:1] placeholders."
         }
       />
 
@@ -443,28 +550,128 @@ export default function AdvancedTextbox({
         multiple
       />
 
-      {/* Section under the textarea for upload and delete buttons */}
-      <div className="mt-2">
-        {uploadedFiles.length > 0 &&
-          uploadedFiles.map((file) => (
-            <div key={file.key} className="mb-2 flex items-center space-x-2">
-              <button
-                type="button"
-                className="flex items-center text-red-500 hover:underline"
-                onClick={handleDeleteFile}
-                data-file-key={file.key}
+      {/* Grid of uploaded file cards with visual preview, load states, and alt tag fields */}
+      {uploadedFiles.length > 0 && (
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {uploadedFiles.map((file, index) => {
+            const statusInfo = uploadStatuses[file.key] ?? {
+              status: file.url ? "success" : "uploading",
+            };
+            return (
+              <div
+                key={file.key}
+                className="flex flex-col rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition-all duration-200 hover:shadow"
               >
-                Delete file <Trash className="ml-1 size-5" />
-              </button>
-              <div>{file.name}</div>
-            </div>
-          ))}
+                <div className="flex items-start gap-3">
+                  <div className="relative shrink-0">
+                    <ThumbnailPreview file={file} />
+                    {statusInfo.status === "uploading" && (
+                      <div className="absolute inset-0 flex items-center justify-center rounded bg-black/40">
+                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-xs font-semibold text-gray-800" title={file.name}>
+                      {file.name}
+                    </div>
+
+                    {statusInfo.status === "error" && (
+                      <div className="mt-1 flex flex-col gap-1">
+                        <span className="text-[10px] font-bold text-red-500">
+                          Upload failed: {statusInfo.error ?? "Unknown error"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRetryUpload(file.key, file.name)}
+                          className="w-fit text-[10px] font-medium text-blue-600 hover:underline"
+                        >
+                          Retry Upload
+                        </button>
+                      </div>
+                    )}
+
+                    {statusInfo.status === "success" && (
+                      <span className="mt-1 inline-flex items-center rounded bg-green-50 px-1.5 py-0.5 text-[9px] font-medium text-green-700 border border-green-200">
+                        Uploaded
+                      </span>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteFile(file.key)}
+                    className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-500 transition-colors"
+                    title="Remove file"
+                  >
+                    <Trash size={14} />
+                  </button>
+                </div>
+
+                <div className="mt-3 flex flex-col gap-2 border-t border-gray-100 pt-2">
+                  <div className="flex items-center gap-1.5">
+                    <label
+                      htmlFor={`alt-${file.key}`}
+                      className="text-[9px] font-bold text-gray-500 uppercase tracking-wider shrink-0"
+                    >
+                      Alt:
+                    </label>
+                    <input
+                      id={`alt-${file.key}`}
+                      type="text"
+                      placeholder="Alt text (e.g. Graph of sales)"
+                      value={file.alt ?? ""}
+                      onChange={(e) => updateFileAlt(file.key, e.target.value)}
+                      className="flex h-7 w-full rounded border border-gray-200 bg-background px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-300 placeholder:text-gray-400"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        disabled={index === 0}
+                        onClick={() => moveFile(index, "left")}
+                        className="rounded border border-gray-200 bg-gray-50 p-1 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-gray-50 transition-colors"
+                        title="Move left/up"
+                      >
+                        <ChevronLeft size={12} />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={index === uploadedFiles.length - 1}
+                        onClick={() => moveFile(index, "right")}
+                        className="rounded border border-gray-200 bg-gray-50 p-1 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-gray-50 transition-colors"
+                        title="Move right/down"
+                      >
+                        <ChevronRight size={12} />
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => insertPlaceholder(file, index)}
+                      className="rounded border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700 hover:bg-blue-100 transition-colors"
+                      title="Insert inline placeholder tag"
+                    >
+                      Insert Inline
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="mt-2 flex justify-end">
         <button
           type="button"
-          className="flex items-center text-blue-500 hover:underline"
+          className="flex items-center gap-1 rounded-md border border-blue-500 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-all shadow-sm"
           onClick={handleUploadClick}
         >
-          Add file <Paperclip className="ml-1 size-5" />
+          <Paperclip size={14} /> Add file
         </button>
       </div>
     </div>
