@@ -26,9 +26,16 @@ export function isQuestionCorrect(
     );
     if (directOption) return directOption.id;
 
-    const optionIndex = Number.parseInt(trimmedValue, 10) - 1;
-    if (Number.isInteger(optionIndex) && question.options[optionIndex]) {
-      return question.options[optionIndex].id;
+    const parsed = Number.parseInt(trimmedValue, 10);
+    const leftover = trimmedValue.slice(String(parsed).length);
+
+    // parseInt("1abc", 10) returns 1; ensure the whole token is numeric (e.g. "1" or " 01 ").
+    if (
+      Number.isInteger(parsed) &&
+      leftover.trim() === "" &&
+      question.options[parsed - 1]
+    ) {
+      return question.options[parsed - 1].id;
     }
 
     return trimmedValue;
