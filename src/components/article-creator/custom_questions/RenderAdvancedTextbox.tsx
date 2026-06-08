@@ -2,11 +2,13 @@ import React, { useState, useEffect } from "react";
 import katex from "katex";
 import type { QuestionFile, QuestionInput } from "@/types/questions";
 import "../../../styles/katexStyling.css";
-import Image from "next/image";
 import { decodeEntities, katexMacros } from "../Renderer";
+
+import { cn } from "@/lib/utils";
 
 interface Props {
   content: QuestionInput;
+  origin?: "question" | "explanation" | "option" | "content";
 }
 
 interface FileWrapper {
@@ -100,14 +102,12 @@ const FileRenderer: React.FC<{ file: QuestionFile }> = ({ file }) => {
 
   if (file.key.startsWith("image/")) {
     return (
-      <div className="my-2">
-        <Image
+      <div className="my-2 w-full flex justify-center">
+        <img
           src={objectUrl}
-          alt="Uploaded image"
-          width={16}
-          height={9}
-          layout="responsive"
-          className="h-auto max-w-full"
+          alt={file.alt ?? "Uploaded image"}
+          loading="lazy"
+          className="h-auto max-h-[450px] w-auto max-w-full rounded-md object-contain shadow-sm transition-shadow duration-200 hover:shadow-md"
         />
       </div>
     );
@@ -116,7 +116,7 @@ const FileRenderer: React.FC<{ file: QuestionFile }> = ({ file }) => {
   if (file.key.startsWith("audio/")) {
     return (
       <div className="my-2">
-        <audio controls>
+        <audio controls className="w-full max-w-md">
           <source src={objectUrl} type="audio/mpeg" />
           Your browser does not support the audio element.
         </audio>
@@ -127,45 +127,139 @@ const FileRenderer: React.FC<{ file: QuestionFile }> = ({ file }) => {
   return null;
 };
 
-export function RenderContent({ content }: Props) {
+export function RenderContent({ content, origin }: Props) {
+  // Sort files by their order index, default to stable positioning
+  const sortedFiles = [...(content.files || [])].sort((a, b) => {
+    const orderA = a.order ?? 999;
+    const orderB = b.order ?? 999;
+    return orderA - orderB;
+  });
+
+  const renderedInlineKeys = new Set<string>();
+
+  // Function to search for a matching file based on placeholder string
+  const getMatchingFile = (param: string) => {
+    const trimmed = param.trim();
+    // 1. Check if 1-based index (e.g., [image:1])
+    const index = parseInt(trimmed, 10);
+    if (!isNaN(index) && index > 0 && index <= sortedFiles.length) {
+      return sortedFiles[index - 1];
+    }
+    // 2. Check if direct file key matches
+    const byKey = sortedFiles.find((f) => f.key === trimmed);
+    if (byKey) return byKey;
+    // 3. Check if filename matches (case-insensitive)
+    const byName = sortedFiles.find(
+      (f) =>
+        f.name.toLowerCase() === trimmed.toLowerCase() ||
+        f.name.split(".")[0]?.toLowerCase() === trimmed.toLowerCase()
+    );
+    if (byName) return byName;
+    return null;
+  };
+
+  const tokens = decodeEntities(content.value)
+    .split(/(```[\s\S]*?```|\$@[^$]+\$|\[image:[^\]]+\])/g)
+    .map((token, tokenIndex) => {
+      if (token.startsWith("```") && token.endsWith("```")) {
+        const codeContent = token.slice(3, -3).replace(/^\n/, "");
+        return (
+          <pre
+            key={`code-${tokenIndex}`}
+            className="my-2 whitespace-pre-wrap overflow-x-auto rounded p-2 font-mono text-sm leading-relaxed text-black max-w-full"
+            style={{ fontFamily: "'Consolas', monospace", backgroundColor: "#f0f0f0" }}
+          >
+            <code>{codeContent}</code>
+          </pre>
+        );
+      } else if (token.startsWith("$@") && token.endsWith("$")) {
+        return (
+          <span
+            key={`latex-${tokenIndex}`}
+            dangerouslySetInnerHTML={{
+              __html: katex.renderToString(token.slice(2, -1), {
+                throwOnError: false,
+                macros: katexMacros,
+              }),
+            }}
+          ></span>
+        );
+      } else if (token.startsWith("[image:") && token.endsWith("]")) {
+        const param = token.slice(7, -1);
+        const matchedFile = getMatchingFile(param);
+        if (matchedFile) {
+          renderedInlineKeys.add(matchedFile.key);
+          return (
+            <div key={`inline-img-${tokenIndex}`} className="my-4 block text-center">
+              <FileRenderer file={matchedFile} />
+              {matchedFile.alt && (
+                <span className="mt-1 block text-center text-xs italic text-gray-500">
+                  {matchedFile.alt}
+                </span>
+              )}
+            </div>
+          );
+        }
+      }
+      return <span key={`text-${tokenIndex}`}>{token}</span>;
+    });
+
+  // Filter out files that were already rendered inline
+  const remainingFiles = sortedFiles.filter((file) => !renderedInlineKeys.has(file.key));
+  const remainingImages = remainingFiles.filter((file) => file.key.startsWith("image/"));
+  const remainingAudio = remainingFiles.filter((file) => file.key.startsWith("audio/"));
+
   return (
     <div className="custom-katex my-2 whitespace-pre-wrap">
-      {/* Render text content directly */}
-      {decodeEntities(content.value)
-        .split(/(```[\s\S]*?```|\$@[^$]+\$)/g)
-        .map((token, tokenIndex) => {
-          if (token.startsWith("```") && token.endsWith("```")) {
-            // Strip the ``` from start and end, and remove the leading newline.
-            const codeContent = token.slice(3, -3).replace(/^\n/, "");
-            return (
-              <pre
-                key={`code-${tokenIndex}`}
-                className="my-2 whitespace-pre-wrap overflow-x-auto rounded p-2 font-mono text-sm leading-relaxed text-black max-w-full"
-                style={{ fontFamily: "'Consolas', monospace", backgroundColor: "#f0f0f0" }}
-              >
-                <code>{codeContent}</code>
-              </pre>
-            );
-          } else if (token.startsWith("$@") && token.endsWith("$")) {
-            return (
-              <span
-                key={`latex-${tokenIndex}`}
-                dangerouslySetInnerHTML={{
-                  __html: katex.renderToString(token.slice(2, -1), {
-                    throwOnError: false,
-                    macros: katexMacros,
-                  }),
-                }}
-              ></span>
-            );
-          }
-          return <span key={`text-${tokenIndex}`}>{token}</span>;
-        })}
+      {/* Render parsed inline block elements */}
+      {tokens}
 
-      {/* Render files through individual components */}
-      {content.files?.map((file) => (
+      {/* Render any leftover audio files */}
+      {remainingAudio.map((file) => (
         <FileRenderer key={file.key} file={file} />
       ))}
+
+      {/* Render remaining images */}
+      {remainingImages.length > 0 && (
+        <div className="mt-4">
+          {origin === "question" && remainingImages.length >= 2 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+              {remainingImages.map((file, idx) => {
+                const isThirdOfThree = remainingImages.length === 3 && idx === 2;
+                return (
+                  <div
+                    key={file.key}
+                    className={cn(
+                      "flex flex-col items-center justify-center p-2 rounded-lg border border-gray-200 bg-gray-50/40 shadow-sm",
+                      isThirdOfThree && "sm:col-span-2 sm:max-w-2xl sm:mx-auto w-full"
+                    )}
+                  >
+                    <FileRenderer file={file} />
+                    {file.alt && (
+                      <span className="mt-1 block text-center text-xs italic text-gray-500">
+                        {file.alt}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {remainingImages.map((file) => (
+                <div key={file.key} className="flex flex-col items-center">
+                  <FileRenderer file={file} />
+                  {file.alt && (
+                    <span className="mt-1 block text-center text-xs italic text-gray-500">
+                      {file.alt}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
