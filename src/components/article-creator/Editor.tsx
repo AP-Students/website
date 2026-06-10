@@ -2,6 +2,7 @@ import React, { memo, useEffect, useRef, useState } from "react";
 import {
   type EditorConfig,
   type OutputData,
+  type ToolConstructable,
 } from "@editorjs/editorjs";
 import useEditor from "hooks/useEditor";
 
@@ -39,15 +40,13 @@ interface EditorImageData {
   stretched?: boolean;
 }
 
-type MenuConfig = Array<{
+type MenuConfigItemList = Array<{
   name: string;
   icon: string;
   title: string;
   onActivate?: () => void;
   toggle?: boolean;
 }>;
-
-type ToolConstructable = any;
 
 type CustomImageTool = {
   _data: EditorImageData;
@@ -60,7 +59,7 @@ type CustomImageTool = {
   block: {
     id: string;
   };
-  renderSettings(): MenuConfig;
+  renderSettings(): MenuConfigItemList;
 };
 
 const pendingStorageDeletes = new Set<string>();
@@ -77,11 +76,11 @@ function isStorageObjectNotFoundError(error: unknown): boolean {
 // https://github.com/editor-js/image/issues/54#issuecomment-1546833098
 // https://github.com/editor-js/image/issues/27
 class CustomImage extends Image {
-  renderSettings(): MenuConfig {
+  renderSettings(): MenuConfigItemList {
     const typedTool = this as unknown as CustomImageTool;
     const baseImageTool = Image as unknown as {
       prototype: {
-        renderSettings(this: CustomImageTool): MenuConfig;
+        renderSettings(this: CustomImageTool): MenuConfigItemList;
       };
     };
     // The EditorJS image package ships loose inherited typings here, so we
@@ -111,7 +110,7 @@ class CustomImage extends Image {
         },
       },
       ...settingsArray,
-    ] as unknown as MenuConfig;
+    ] as unknown as MenuConfigItemList;
   }
 
   removed() {

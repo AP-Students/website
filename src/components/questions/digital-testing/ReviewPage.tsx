@@ -37,7 +37,7 @@ export default function QuestionNavigation({
   setShowReviewPage,
   submitted,
 }: FooterProps) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
 
   return (
     <>

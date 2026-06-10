@@ -36,7 +36,7 @@ export default function Footer({
   testName,
 }: FooterProps) {
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
 
   const handleNext = () => {
     if (showReviewPage) {
