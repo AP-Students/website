@@ -1,9 +1,5 @@
 "use client";
-import dynamic from "next/dynamic";
-const ArticleCreator = dynamic(
-  () => import("@/components/article-creator/ArticleCreator"),
-  { ssr: false },
-);
+import ArticleCreator from "@/components/article-creator/ArticleCreator";
 import { useUser } from "@/components/hooks/UserContext";
 import { buttonVariants } from "@/components/ui/button";
 import { ArrowLeft, ExternalLink, UserRoundCog } from "lucide-react";
@@ -19,7 +15,7 @@ const Page = () => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const pathParts = pathname.split("/").slice(-4);
+  const pathParts = (pathname ?? "").split("/").slice(-4);
 
   useEffect(() => {
     if ((!user || user?.access === "user") && !loading) {
@@ -28,7 +24,7 @@ const Page = () => {
   }, [user, loading, router]);
 
   return (
-    <div className="flex grow flex-col px-10 pt-10 xl:px-20">
+      <div className="flex grow flex-col px-10 pt-10 xl:px-20">
       <div className="mb-4 flex items-center justify-between gap-2">
         <Link
           className={cn(buttonVariants({ variant: "outline" }), "w-min")}

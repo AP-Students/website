@@ -24,6 +24,15 @@ interface Props {
   setUnsavedChanges?: (unchangedChanges: boolean) => void;
 }
 
+function isStorageObjectNotFoundError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "storage/object-not-found"
+  );
+}
+
 // Utility to store a file in IndexedDB with a unique key for each instance
 function storeFileInIndexedDB(name: string, file: File) {
   const dbRequest = indexedDB.open("mediaFilesDB", 3);
@@ -440,6 +449,10 @@ export default function AdvancedTextbox({
       if (!storageRef) return;
       await deleteObject(storageRef);
     } catch (error) {
+      if (isStorageObjectNotFoundError(error)) {
+        return;
+      }
+
       console.error(`Error deleting file ${fileKey} from storage:`, error);
       return;
     }

@@ -1,6 +1,8 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { getUser } from "./users";
 import type { User } from "@/types/user";
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 
 interface UserContextType {
   user: User | null;
@@ -26,20 +28,25 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       setLoading(true);
       setError(null);
       const fetchedUser = await getUser();
-      if (fetchedUser) {
-        setUser(fetchedUser);
-      }
+      setUser(fetchedUser);
       setLoading(false);
     } catch (err) {
+      setUser(null);
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, () => {
+      void fetchUser();
+    });
+
     fetchUser().catch((error) => {
       console.error("Error fetching user:", error);
       setLoading(false);
     });
+
+    return () => unsubscribe();
   }, []);
 
   const updateUser = async () => {
