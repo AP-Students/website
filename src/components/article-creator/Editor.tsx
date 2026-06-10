@@ -1,10 +1,5 @@
 import React, { memo, useEffect, useRef, useState } from "react";
-import {
-  type EditorConfig,
-  type MenuConfig,
-  type ToolConstructable,
-  type OutputData,
-} from "@editorjs/editorjs";
+import {EditorConfig, MenuConfig, ToolConstructable, OutputData} from "@editorjs/editorjs";
 import useEditor from "hooks/useEditor";
 
 import Header from "@editorjs/header";
