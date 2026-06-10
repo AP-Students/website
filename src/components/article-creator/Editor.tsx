@@ -3,7 +3,6 @@ import {
   type EditorConfig,
   type OutputData,
 } from "@editorjs/editorjs";
-import type { MenuConfig, ToolConstructable } from "@editorjs/editorjs";
 import useEditor from "hooks/useEditor";
 
 import Header from "@editorjs/header";
@@ -39,6 +38,16 @@ interface EditorImageData {
   withBackground?: boolean;
   stretched?: boolean;
 }
+
+type MenuConfig = Array<{
+  name: string;
+  icon: string;
+  title: string;
+  onActivate?: () => void;
+  toggle?: boolean;
+}>;
+
+type ToolConstructable = any;
 
 type CustomImageTool = {
   _data: EditorImageData;

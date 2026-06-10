@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 
 // If you want this to take effect on your local app, you have to go to firebase -> auth -> templates -> edit -> customize action url -> "http://localhost:<port>/auth/action"
 export default function ActionPage() {
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams() ?? new URLSearchParams();
   const mode = searchParams.get("mode");
 
   const code = searchParams.get("oobCode");

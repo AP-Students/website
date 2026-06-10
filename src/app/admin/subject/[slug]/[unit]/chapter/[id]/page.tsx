@@ -14,6 +14,7 @@ const Page = () => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const query = searchParams ?? new URLSearchParams();
 
   const pathParts = (pathname ?? "").split("/").slice(-4);
 
@@ -38,15 +39,15 @@ const Page = () => {
             href={`/subject/${pathParts[0]}`}
             className="flex justify-center gap-1"
           >
-            <b>{decodeURIComponent(searchParams.get("subject") ?? "")}</b> Unit{" "}
-            {decodeURIComponent(searchParams.get("unitIndex") ?? "")}
+            <b>{decodeURIComponent(query.get("subject") ?? "")}</b> Unit{" "}
+            {decodeURIComponent(query.get("unitIndex") ?? "")}
             <ExternalLink />
           </Link>
           <Link
-            href={`/subject/${pathParts[0]}/unit-${decodeURIComponent(searchParams.get("unitIndex") ?? "")}-${pathParts[1]}/chapter/${pathParts[3]}/view`}
+            href={`/subject/${pathParts[0]}/unit-${decodeURIComponent(query.get("unitIndex") ?? "")}-${pathParts[1]}/chapter/${pathParts[3]}/view`}
             className="flex justify-center gap-1"
           >
-            {decodeURIComponent(searchParams.get("chapter") ?? "")}
+            {decodeURIComponent(query.get("chapter") ?? "")}
             <ExternalLink />
           </Link>
         </h1>
