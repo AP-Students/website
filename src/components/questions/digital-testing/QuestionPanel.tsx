@@ -99,7 +99,7 @@ export default function QuestionPanel({
   return (
     <div className="relative">
       <div className="my-4 text-lg">
-        <RenderContent content={questionInstance.question} origin="question" />
+        <RenderContent content={questionInstance.question} />
       </div>
 
       <div className="grid gap-4">
@@ -145,7 +145,7 @@ export default function QuestionPanel({
                       isStrikedThrough && "opacity-50",
                     )}
                   >
-                    <RenderContent content={option.value} origin="option" />
+                    <RenderContent content={option.value} />
                   </span>
 
                   {!submitted && showEliminationTools && (
@@ -181,7 +181,7 @@ export default function QuestionPanel({
         {submitted && (
           <div className="rounded-lg border bg-gray-100 p-3">
             <h3 className="mb-2 text-lg font-semibold">Explanation:</h3>
-            <RenderContent content={questionInstance.explanation} origin="explanation" />
+            <RenderContent content={questionInstance.explanation} />
           </div>
         )}
       </div>

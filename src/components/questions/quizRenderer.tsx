@@ -85,7 +85,7 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
             : "Answers revealed")}
       </div>
       <div className="markdown text-xl text-foreground">
-        <RenderContent content={questionInstance.question} origin="question" />
+        <RenderContent content={questionInstance.question} />
       </div>
 
       {isFrq ? (
@@ -111,18 +111,19 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
             <button
               key={option.id}
               className={`rounded-md border px-2 text-left shadow transition-colors
-            ${showResults
-                  ? isAnswerCorrect(option.id)
-                    ? answers[currentQuestionIndex]?.includes(option.id)
-                      ? "border-green-700 bg-green-300"
-                      : "border-green-700 bg-green-100"
-                    : answers[currentQuestionIndex]?.includes(option.id)
-                      ? "border-red-700 bg-red-300"
-                      : "border-gray-300 bg-white"
+            ${
+              showResults
+                ? isAnswerCorrect(option.id)
+                  ? answers[currentQuestionIndex]?.includes(option.id)
+                    ? "border-green-700 bg-green-300"
+                    : "border-green-700 bg-green-100"
                   : answers[currentQuestionIndex]?.includes(option.id)
-                    ? "border-blue-500 bg-blue-100"
+                    ? "border-red-700 bg-red-300"
                     : "border-gray-300 bg-white"
-                }
+                : answers[currentQuestionIndex]?.includes(option.id)
+                  ? "border-blue-500 bg-blue-100"
+                  : "border-gray-300 bg-white"
+            }
             `}
               onClick={() => handleSelectOption(option.id)}
               disabled={showResults}
@@ -149,7 +150,7 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
       {showResults && !isFrq && questionInstance.explanation.value && (
         <div className="mt-4 rounded-md border border-primary bg-white p-3">
           <strong>Explanation:</strong>
-          <RenderContent content={questionInstance.explanation} origin="explanation" />
+          <RenderContent content={questionInstance.explanation} />
         </div>
       )}
 

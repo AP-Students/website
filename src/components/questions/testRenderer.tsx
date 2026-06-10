@@ -153,7 +153,6 @@ export default function DigitalTestingPage({
                 >
                   <RenderContent
                     content={questions[currentQuestionIndex]!.content}
-                    origin="content"
                   />
                 </Highlighter>
               </div>
