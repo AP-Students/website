@@ -365,11 +365,9 @@ export default function AdvancedTextbox({
 
       // Update the file URL in the state and questions
       setUploadedFiles((prevFiles) => {
-        const updated = prevFiles.map((f) =>
-          f.key === fileKey ? { ...f, url: downloadURL } : f
+        return prevFiles.map((f) =>
+          f.key === fileKey ? { ...f, url: downloadURL } : f,
         );
-        updateQuestionsWithFiles(updated);
-        return updated;
       });
     } catch (err) {
       console.error(`Failed to upload file ${file.name}:`, err);
@@ -377,11 +375,16 @@ export default function AdvancedTextbox({
         ...prev,
         [fileKey]: {
           status: "error",
-          error: err instanceof Error ? err.message : "Upload failed",
-        },
+        error: err instanceof Error ? err.message : "Upload failed",
+      },
       }));
     }
   };
+
+  useEffect(() => {
+    updateQuestionsWithFiles(uploadedFiles);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uploadedFiles]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const fileList = e.target.files ?? [];
