@@ -1,8 +1,8 @@
 import React, { memo, useEffect, useRef, useState } from "react";
 import {
   type EditorConfig,
-  type ToolConstructable,
   type OutputData,
+  type ToolConstructable,
 } from "@editorjs/editorjs";
 import useEditor from "hooks/useEditor";
 
@@ -40,13 +40,86 @@ interface EditorImageData {
   stretched?: boolean;
 }
 
+type MenuConfigItemList = Array<{
+  name: string;
+  icon: string;
+  title: string;
+  onActivate?: () => void;
+  toggle?: boolean;
+}>;
+
+type CustomImageTool = {
+  _data: EditorImageData;
+  api: {
+    blocks: {
+      getBlockIndex(blockId: string): number;
+      delete(index?: number): void;
+    };
+  };
+  block: {
+    id: string;
+  };
+  renderSettings(): MenuConfigItemList;
+};
+
+const pendingStorageDeletes = new Set<string>();
+
+function isStorageObjectNotFoundError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "storage/object-not-found"
+  );
+}
+
 // https://github.com/editor-js/image/issues/54#issuecomment-1546833098
 // https://github.com/editor-js/image/issues/27
 class CustomImage extends Image {
+  renderSettings(): MenuConfigItemList {
+    const typedTool = this as unknown as CustomImageTool;
+    const baseImageTool = Image as unknown as {
+      prototype: {
+        renderSettings(this: CustomImageTool): MenuConfigItemList;
+      };
+    };
+    // The EditorJS image package ships loose inherited typings here, so we
+    // constrain the call at the boundary instead of widening the rest of the file.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
+    const settings = baseImageTool.prototype.renderSettings.call(typedTool);
+    const settingsArray = (Array.isArray(settings) ? settings : [settings]) as unknown[];
+
+    return [
+      {
+        name: "deleteImage",
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`,
+        title: "Delete image",
+        onActivate: () => {
+          const { file } = typedTool._data;
+          const blockIndex = typedTool.api.blocks.getBlockIndex(typedTool.block.id);
+
+          if (blockIndex === -1) {
+            return;
+          }
+
+          if (file.storageRefFullPath) {
+            pendingStorageDeletes.add(file.storageRefFullPath);
+          }
+
+          typedTool.api.blocks.delete(blockIndex);
+        },
+      },
+      ...settingsArray,
+    ] as unknown as MenuConfigItemList;
+  }
+
   removed() {
     const { file } = this._data as EditorImageData;
 
     if (!file.storageRefFullPath) return;
+    if (!pendingStorageDeletes.has(file.storageRefFullPath)) return;
+
+    pendingStorageDeletes.delete(file.storageRefFullPath);
 
     const storage = getStorage();
     const storageRef = ref(storage, file.storageRefFullPath);
@@ -55,10 +128,14 @@ class CustomImage extends Image {
         console.log("Deleted " + file.storageRefFullPath);
       })
       .catch((error) => {
-        console.log(error);
-        alert(
-          "Failed to delete image from Firebase Storage: notify FiveHive Website Team.\n" +
-            String(error),
+        if (isStorageObjectNotFoundError(error)) {
+          return;
+        }
+
+        console.error(
+          "Failed to delete image from Firebase Storage:",
+          file.storageRefFullPath,
+          error,
         );
       });
   }

@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 import { Blocker } from "@/app/admin/subject/navigation-block";
 
 const Page = () => {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
 
   const { user } = useUser();
   const instanceId = pathname.split("/").slice(-4).join("_");

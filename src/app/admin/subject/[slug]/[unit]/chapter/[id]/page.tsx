@@ -1,9 +1,5 @@
 "use client";
-import dynamic from "next/dynamic";
-const ArticleCreator = dynamic(
-  () => import("@/components/article-creator/ArticleCreator"),
-  { ssr: false },
-);
+import ArticleCreator from "@/components/article-creator/ArticleCreator";
 import { useUser } from "@/components/hooks/UserContext";
 import { buttonVariants } from "@/components/ui/button";
 import { ArrowLeft, ExternalLink, UserRoundCog } from "lucide-react";
@@ -18,8 +14,9 @@ const Page = () => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const query = searchParams ?? new URLSearchParams();
 
-  const pathParts = pathname.split("/").slice(-4);
+  const pathParts = (pathname ?? "").split("/").slice(-4);
 
   useEffect(() => {
     if ((!user || user?.access === "user") && !loading) {
@@ -28,7 +25,7 @@ const Page = () => {
   }, [user, loading, router]);
 
   return (
-    <div className="flex grow flex-col px-10 pt-10 xl:px-20">
+      <div className="flex grow flex-col px-10 pt-10 xl:px-20">
       <div className="mb-4 flex items-center justify-between gap-2">
         <Link
           className={cn(buttonVariants({ variant: "outline" }), "w-min")}
@@ -42,15 +39,15 @@ const Page = () => {
             href={`/subject/${pathParts[0]}`}
             className="flex justify-center gap-1"
           >
-            <b>{decodeURIComponent(searchParams.get("subject") ?? "")}</b> Unit{" "}
-            {decodeURIComponent(searchParams.get("unitIndex") ?? "")}
+            <b>{decodeURIComponent(query.get("subject") ?? "")}</b> Unit{" "}
+            {decodeURIComponent(query.get("unitIndex") ?? "")}
             <ExternalLink />
           </Link>
           <Link
-            href={`/subject/${pathParts[0]}/unit-${decodeURIComponent(searchParams.get("unitIndex") ?? "")}-${pathParts[1]}/chapter/${pathParts[3]}/view`}
+            href={`/subject/${pathParts[0]}/unit-${decodeURIComponent(query.get("unitIndex") ?? "")}-${pathParts[1]}/chapter/${pathParts[3]}/view`}
             className="flex justify-center gap-1"
           >
-            {decodeURIComponent(searchParams.get("chapter") ?? "")}
+            {decodeURIComponent(query.get("chapter") ?? "")}
             <ExternalLink />
           </Link>
         </h1>

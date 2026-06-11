@@ -21,7 +21,7 @@ const Header: React.FC<HeaderProps> = ({
   submitted,
   directions,
 }) => {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const [showTimer, setShowTimer] = useState(true);
   const [remainingTime, setRemainingTime] = useState(timeRemaining);
   const [showDirections, setShowDirections] = useState(true);
