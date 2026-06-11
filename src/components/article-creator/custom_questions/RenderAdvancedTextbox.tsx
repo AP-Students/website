@@ -15,6 +15,12 @@ interface FileWrapper {
   file: File;
 }
 
+const isImageFileKey = (key: string) =>
+  key.startsWith("image/") || key.startsWith("image-");
+
+const isAudioFileKey = (key: string) =>
+  key.startsWith("audio/") || key.startsWith("audio-");
+
 // Utility to retrieve a file from IndexedDB based on unique ID
 export function getFileFromIndexedDB(
   name: string,
@@ -100,7 +106,7 @@ const FileRenderer: React.FC<{ file: QuestionFile }> = ({ file }) => {
 
   if (!objectUrl) return null;
 
-  if (file.key.startsWith("image/")) {
+  if (isImageFileKey(file.key)) {
     return (
       <div className="my-2 w-full flex justify-center">
         <img
@@ -113,7 +119,7 @@ const FileRenderer: React.FC<{ file: QuestionFile }> = ({ file }) => {
     );
   }
 
-  if (file.key.startsWith("audio/")) {
+  if (isAudioFileKey(file.key)) {
     return (
       <div className="my-2">
         <audio controls className="w-full max-w-md">
@@ -206,8 +212,8 @@ export function RenderContent({ content, origin }: Props) {
 
   // Filter out files that were already rendered inline
   const remainingFiles = sortedFiles.filter((file) => !renderedInlineKeys.has(file.key));
-  const remainingImages = remainingFiles.filter((file) => file.key.startsWith("image/"));
-  const remainingAudio = remainingFiles.filter((file) => file.key.startsWith("audio/"));
+  const remainingImages = remainingFiles.filter((file) => isImageFileKey(file.key));
+  const remainingAudio = remainingFiles.filter((file) => isAudioFileKey(file.key));
 
   return (
     <div className="custom-katex my-2 whitespace-pre-wrap">
