@@ -81,6 +81,22 @@ function deleteFileFromIndexedDB(name: string) {
   });
 }
 
+function areFilesEqual(a: QuestionFile[], b: QuestionFile[]) {
+  if (a.length !== b.length) return false;
+
+  return a.every((file, index) => {
+    const other = b[index];
+    return (
+      !!other &&
+      file.key === other.key &&
+      file.url === other.url &&
+      file.name === other.name &&
+      file.alt === other.alt &&
+      file.order === other.order
+    );
+  });
+}
+
 // Helper component to display visual thumbnails/previews of files in editing mode
 const ThumbnailPreview: React.FC<{ file: QuestionFile }> = ({ file }) => {
   const [src, setSrc] = useState<string | null>(null);
@@ -156,21 +172,31 @@ export default function AdvancedTextbox({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sync state when loaded
-  useEffect(() => {
-    if (origin === "option" && oIndex !== undefined) {
-      if (questionInstance!.options[oIndex]?.value?.value) {
-        setCurrentText(questionInstance!.options[oIndex].value.value);
-      }
-      setUploadedFiles(questionInstance!.options[oIndex]?.value?.files ?? []);
-    } else if (
-      origin === "question" ||
-      origin === "explanation" ||
-      origin === "content"
-    ) {
-      if (questionInstance![origin]?.value) {
-        setCurrentText(questionInstance![origin].value);
-      }
-      setUploadedFiles(questionInstance![origin]?.files ?? []);
+    useEffect(() => {
+    const nextText =
+      origin === "option" && oIndex !== undefined
+        ? questionInstance!.options[oIndex]?.value?.value ?? ""
+        : origin === "question" ||
+            origin === "explanation" ||
+            origin === "content"
+          ? questionInstance![origin]?.value ?? ""
+          : "";
+
+    const nextFiles =
+      origin === "option" && oIndex !== undefined
+        ? questionInstance!.options[oIndex]?.value?.files ?? []
+        : origin === "question" ||
+            origin === "explanation" ||
+            origin === "content"
+          ? questionInstance![origin]?.files ?? []
+          : [];
+
+    if (currentText !== nextText) {
+      setCurrentText(nextText);
+    }
+
+    if (!areFilesEqual(uploadedFiles, nextFiles)) {
+      setUploadedFiles(nextFiles);
     }
   }, [questionInstance, oIndex, origin]);
 
@@ -365,9 +391,11 @@ export default function AdvancedTextbox({
 
       // Update the file URL in the state and questions
       setUploadedFiles((prevFiles) => {
-        return prevFiles.map((f) =>
+        const updated = prevFiles.map((f) =>
           f.key === fileKey ? { ...f, url: downloadURL } : f,
         );
+        updateQuestionsWithFiles(updated);
+        return updated;
       });
     } catch (err) {
       console.error(`Failed to upload file ${file.name}:`, err);
@@ -381,10 +409,6 @@ export default function AdvancedTextbox({
     }
   };
 
-  useEffect(() => {
-    updateQuestionsWithFiles(uploadedFiles);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [uploadedFiles]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const fileList = e.target.files ?? [];
