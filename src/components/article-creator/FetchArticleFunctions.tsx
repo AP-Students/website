@@ -37,7 +37,11 @@ export const processQuestions = async (
       ...question.options.flatMap((option) => option.value.files || []),
     ];
 
-    allFiles.forEach((file) => allFileKeys.add(file.key));
+    allFiles.forEach((file) => {
+      if (!file.url?.startsWith("http")) {
+        allFileKeys.add(file.key);
+      }
+    });
   });
 
   // Read all files from IndexedDB

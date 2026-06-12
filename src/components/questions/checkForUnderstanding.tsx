@@ -62,7 +62,7 @@ const CheckForUnderstanding: React.FC<Props> = ({ questionInstance }) => {
   return (
     <div className="max-w-6xl rounded-lg border border-primary bg-primary-foreground p-4">
       <div className="markdown text-xl text-foreground">
-        <RenderContent content={questionInstance.question} />
+        <RenderContent content={questionInstance.question} origin="question" />
       </div>
 
       {isFrq ? (
@@ -131,7 +131,7 @@ const CheckForUnderstanding: React.FC<Props> = ({ questionInstance }) => {
           {!isFrq && questionInstance.explanation.value && (
             <div className="mt-4 rounded-md border border-primary bg-white p-3">
               <strong>Explanation:</strong>
-              <RenderContent content={questionInstance.explanation} />
+              <RenderContent content={questionInstance.explanation} origin="explanation" />
             </div>
           )}
           <button
