@@ -4,6 +4,7 @@ import clsx from "clsx";
 import "@/styles/strikeThrough.css";
 import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
 import { Check, X } from "lucide-react";
+import { isQuestionCorrect } from "./ReviewPage";
 
 interface QuestionPanelProps {
   showEliminationTools: boolean;
@@ -115,11 +116,11 @@ export default function QuestionPanel({
                   isStrikedThrough && "striked-through",
                   submitted &&
                     selectedAnswers.includes(option.id) &&
-                    questionInstance.answers.includes(`${index + 1}`) &&
+                    isQuestionCorrect(questionInstance, [option.id]) &&
                     "border-green-500 bg-green-200",
                   submitted &&
                     selectedAnswers.includes(option.id) &&
-                    !questionInstance.answers.includes(`${index + 1}`) &&
+                    !isQuestionCorrect(questionInstance, [option.id]) &&
                     "border-red-500 bg-red-200",
                 )}
               >
@@ -168,7 +169,7 @@ export default function QuestionPanel({
                   )}
 
                   {submitted &&
-                    (questionInstance.answers.includes(`${index + 1}`) ? (
+                    (isQuestionCorrect(questionInstance, [option.id]) ? (
                       <Check className="ml-auto stroke-green-500 stroke-[3px]" />
                     ) : (
                       <X className="ml-auto stroke-red-500 stroke-[3px]" />

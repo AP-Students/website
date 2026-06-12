@@ -18,13 +18,46 @@ export function isQuestionCorrect(
   question: QuestionFormat,
   selected: string[],
 ) {
+  const toCanonicalOptionId = (value: string) => {
+    const trimmedValue = value.trim();
+
+    const directOption = question.options.find(
+      (option) => option.id === trimmedValue,
+    );
+    if (directOption) return directOption.id;
+
+    const parsed = Number.parseInt(trimmedValue, 10);
+    const leftover = trimmedValue.slice(String(parsed).length);
+
+    // parseInt("1abc", 10) returns 1; ensure the whole token is numeric (e.g. "1" or " 01 ").
+    if (
+      Number.isInteger(parsed) &&
+      leftover.trim() === "" &&
+      question.options[parsed - 1]
+    ) {
+      return question.options[parsed - 1].id;
+    }
+
+    return trimmedValue;
+  };
+
+  const normalizedSelected = new Set(selected.map(toCanonicalOptionId));
+  const normalizedAnswers = new Set(
+    question.answers.map((answer) => toCanonicalOptionId(answer)),
+  );
+
   if (question.type === "mcq") {
-    return question.answers.includes(selected[0]!);
+    for (const answer of normalizedAnswers) {
+      if (normalizedSelected.has(answer)) return true;
+    }
+
+    return false;
   }
 
-  if (selected.length !== question.answers.length) return false;
-  for (const answer of question.answers) {
-    if (!selected.includes(answer)) return false;
+  if (normalizedSelected.size !== normalizedAnswers.size) return false;
+
+  for (const answer of normalizedAnswers) {
+    if (!normalizedSelected.has(answer)) return false;
   }
 
   return true;

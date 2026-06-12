@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Bookmark, Check, X } from "lucide-react";
 import Header from "./digital-testing/Header";
 import QuestionPanel from "./digital-testing/QuestionPanel";
@@ -11,7 +11,11 @@ import Highlighter, { type Highlight } from "./digital-testing/Highlighter";
 import ReviewPage, { isQuestionCorrect } from "./digital-testing/ReviewPage";
 import clsx from "clsx";
 import { cn } from "@/lib/utils";
+import { usePathname, useRouter } from "next/navigation";
+import TestCompletionPage from "./digital-testing/TestCompletionPage";
+import { useUser } from "@/components/hooks/UserContext";
 import "katex/dist/katex.min.css";
+import { getTestParentPath } from "./digital-testing/pathUtils";
 
 interface Props {
   inputQuestions: QuestionFormat[];
@@ -31,7 +35,7 @@ const initialQuestions: QuestionFormat[] = [
       { id: "3", value: { value: "Rome", files: [] } },
       { id: "4", value: { value: "Berlin", files: [] } },
     ],
-    answers: ["Paris"],
+    answers: ["1"],
     explanation: { value: "Paris is the capital city of France.", files: [] },
     content: {
       value:
@@ -50,7 +54,7 @@ const initialQuestions: QuestionFormat[] = [
       { id: "3", value: { value: "Osaka", files: [] } },
       { id: "4", value: { value: "Hiroshima", files: [] } },
     ],
-    answers: ["Tokyo"],
+    answers: ["1"],
     explanation: { value: "Tokyo is the capital city of Japan.", files: [] },
     content: {
       value:
@@ -69,6 +73,10 @@ export default function DigitalTestingPage({
   directions,
   testName,
 }: Props) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { user } = useUser();
+
   const [questions, setQuestions] = useState<QuestionFormat[]>(
     inputQuestions || initialQuestions,
   );
@@ -78,12 +86,31 @@ export default function DigitalTestingPage({
   >({});
 
   const [contentHighlights, setContentHighlights] = useState<Highlight[][]>(
-    initialQuestions.map(() => []),
+    (inputQuestions || initialQuestions).map(() => []),
   );
 
   const [showEliminationTools, setShowEliminationTools] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [showReviewPage, setShowReviewPage] = useState(false);
+  const [showCompletionPage, setShowCompletionPage] = useState(false);
+
+  const score = useMemo(() => {
+    return questions.reduce((acc, question, index) => {
+      const answers = selectedAnswers[index] ?? [];
+      return acc + (isQuestionCorrect(question, answers) ? 1 : 0);
+    }, 0);
+  }, [questions, selectedAnswers]);
+
+  const handleReviewAnswers = () => {
+    setShowCompletionPage(false);
+    setShowReviewPage(true);
+    setSubmitted(true);
+    setCurrentQuestionIndex(0);
+  };
+
+  const handleContinueAfterCompletion = () => {
+    router.push(getTestParentPath(pathname));
+  };
 
   useEffect(() => {
     setQuestions(inputQuestions);
@@ -98,13 +125,12 @@ export default function DigitalTestingPage({
 
   const toggleBookmark = () => {
     const updatedQuestions = [...questions];
-    if (updatedQuestions[currentQuestionIndex]) {
-      updatedQuestions[currentQuestionIndex] = {
-        ...updatedQuestions[currentQuestionIndex],
-        bookmarked: !updatedQuestions[currentQuestionIndex].bookmarked,
-      };
-      setQuestions(updatedQuestions);
-    }
+    if (!updatedQuestions[currentQuestionIndex]) return;
+
+    updatedQuestions[currentQuestionIndex] = {
+      ...updatedQuestions[currentQuestionIndex],
+      bookmarked: !updatedQuestions[currentQuestionIndex].bookmarked,
+    };
     setQuestions(updatedQuestions);
   };
 
@@ -122,7 +148,7 @@ export default function DigitalTestingPage({
 
   return (
     <div className="flex flex-col">
-      {!adminMode && (
+      {!adminMode && !showCompletionPage && (
         <Header
           setSubmitted={setSubmitted}
           submitted={submitted}
@@ -130,7 +156,20 @@ export default function DigitalTestingPage({
           directions={directions}
         />
       )}
-      {showReviewPage ? (
+      {showCompletionPage ? (
+        <div className="pt-8">
+          <TestCompletionPage
+            onContinue={handleContinueAfterCompletion}
+            onReviewAnswers={handleReviewAnswers}
+            testName={testName}
+            score={score}
+            totalQuestions={questions.length}
+            username={user?.displayName}
+            questions={questions}
+            selectedAnswers={selectedAnswers}
+          />
+        </div>
+      ) : showReviewPage ? (
         <ReviewPage
           goToQuestion={setCurrentQuestionIndex}
           currentQuestionIndex={currentQuestionIndex}
@@ -261,19 +300,22 @@ export default function DigitalTestingPage({
           </div>
         </div>
       )}
-      <Footer
-        goToQuestion={setCurrentQuestionIndex}
-        currentQuestionIndex={currentQuestionIndex}
-        setCurrentQuestionIndex={setCurrentQuestionIndex}
-        questions={questions}
-        selectedAnswers={selectedAnswers}
-        setShowReviewPage={setShowReviewPage}
-        showReviewPage={showReviewPage}
-        setSubmitted={setSubmitted}
-        submitted={submitted}
-        adminMode={adminMode}
-        testName={testName}
-      />
+      {!showCompletionPage && (
+        <Footer
+          goToQuestion={setCurrentQuestionIndex}
+          currentQuestionIndex={currentQuestionIndex}
+          setCurrentQuestionIndex={setCurrentQuestionIndex}
+          questions={questions}
+          selectedAnswers={selectedAnswers}
+          setShowReviewPage={setShowReviewPage}
+          showReviewPage={showReviewPage}
+          setSubmitted={setSubmitted}
+          submitted={submitted}
+          adminMode={adminMode}
+          testName={testName}
+          setShowCompletionPage={setShowCompletionPage}
+        />
+      )}
     </div>
   );
 }
