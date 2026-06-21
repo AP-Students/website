@@ -134,14 +134,14 @@ const customParsers: Record<
     const rows = content.map((row, index) => {
       if (withHeadings && index === 0) {
         return `<tr class="divide-x-[1px]">${row.reduce(
-          (acc, cell) => acc + `<th>${cell}</th>`,
+          (acc, cell) => acc + `<th>${parseLatex(cell)}</th>`,
           "",
         )}</tr>`;
       }
 
       // For other rows, use <td> tags
       return `<tr class="divide-x-[1px]">${row.reduce(
-        (acc, cell) => acc + `<td>${cell}</td>`,
+        (acc, cell) => acc + `<td>${parseLatex(cell)}</td>`,
         "",
       )}</tr>`;
     });
