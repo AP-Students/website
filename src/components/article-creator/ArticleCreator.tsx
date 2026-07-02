@@ -97,7 +97,7 @@ function ArticleCreator({ className }: { className?: string }) {
     version: "2.30.2",
   });
 
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const pathParts = pathname.split("/").slice(-4);
   const subject = pathParts[0]!;
   const unit = pathParts[1]!;

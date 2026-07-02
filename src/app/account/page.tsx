@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import "@/styles/globals.css";
 import React, { useEffect, useState, type FormEvent } from "react";

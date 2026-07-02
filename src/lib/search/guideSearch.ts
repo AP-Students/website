@@ -345,8 +345,10 @@ export const loadGuideSearchItems = async (
     const subjectsSnapshot = await getDocs(collection(db, "subjects"));
 
     const itemsBySubject = await Promise.all(
-      subjectsSnapshot.docs.map(async (subjectDoc) => {
-        const subjectData = subjectDoc.data() as Subject;
+      subjectsSnapshot.docs
+        .filter((subjectDoc) => subjectDoc.id !== "porting")
+        .map(async (subjectDoc) => {
+          const subjectData = subjectDoc.data() as Subject;
         try {
           return await mapSubjectToSearchItems(subjectDoc.id, subjectData);
         } catch (error) {

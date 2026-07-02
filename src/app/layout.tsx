@@ -1,4 +1,5 @@
 import "@/styles/globals.css";
+import { type Metadata } from "next";
 import { Figtree } from "next/font/google";
 import RootLayoutClient from "./RootLayoutClient";
 import { Toaster } from "@/components/ui/sonner";
@@ -8,9 +9,51 @@ const figtree = Figtree({
   variable: "--font-figtree",
 });
 
-export const metadata = {
-  title: "FiveHive",
-  description: "By AP students. For AP students.",
+export const metadata: Metadata = {
+  metadataBase: new URL("https://www.fivehive.org"),
+  title: {
+    default: "FiveHive — Free AP Study Guides, Notes & Practice",
+    template: "%s | FiveHive",
+  },
+  description:
+    "Free AP study guides, unit notes, and practice questions written by AP students who scored 5s. Covering AP Biology, Chemistry, Calculus, US History, and more.",
+  keywords: [
+    "AP study guides",
+    "AP notes",
+    "AP exam prep",
+    "AP practice questions",
+    "free AP resources",
+    "AP review",
+  ],
+  applicationName: "FiveHive",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: "FiveHive",
+    title: "FiveHive — Free AP Study Guides, Notes & Practice",
+    description:
+      "Free AP study guides, unit notes, and practice questions written by AP students. By AP students. For AP students.",
+    url: "https://www.fivehive.org",
+    images: [{ url: "/logo.png", width: 1200, height: 630, alt: "FiveHive" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "FiveHive — Free AP Study Guides, Notes & Practice",
+    description:
+      "Free AP study guides, notes, and practice written by AP students.",
+    images: ["/logo.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 

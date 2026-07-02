@@ -89,3 +89,10 @@
 .img.img-center {
   @apply mx-auto;
 }
+
+/* SVGs often ship without intrinsic width/height (viewBox only) and would
+   otherwise render at the 300x150 replaced-element default; give them a
+   definite, responsive width. */
+.img.img-svg {
+  @apply h-auto w-full max-w-[480px];
+}

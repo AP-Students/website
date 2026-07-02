@@ -20,6 +20,7 @@ import { cn, formatSlug } from "@/lib/utils";
 import short from "short-uuid";
 import type { Subject, Unit } from "@/types/firestore";
 import UnitComponent from "./_components/unit";
+import { DEFAULT_PORTING_SUBJECT } from "@/lib/apPortingDefaults";
 
 const translator = short(short.constants.flickrBase58);
 
@@ -29,7 +30,7 @@ function generateShortId() {
   return timestamp + randomPart;
 }
 
-const apClasses = apClassesData.apClasses;
+const apClasses = [...apClassesData.apClasses, "AP Porting"];
 
 // Default empty subject structure
 const emptyData: Subject = {
@@ -68,6 +69,7 @@ export default function Page({ params }: { params: { slug: string } }) {
   const { user, error, setError, setLoading } = useUser();
   const [subjectTitle, setSubjectTitle] = useState<string>("");
   const [units, setUnits] = useState<Unit[]>([]);
+  const [resetting, setResetting] = useState<boolean>(false);
 
   const [subjectLoading, setSubjectLoading] = useState<boolean>(true);
   const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
@@ -171,6 +173,85 @@ export default function Page({ params }: { params: { slug: string } }) {
    * This function will force delete anything in the db that isnt in the local to keep db clean
    * If you dont want this, use the commented out handleSave.
    ****************************************************/
+
+  const handleReset = async () => {
+    if (!confirm("Are you sure you want to reset the AP Porting course? This will restore all articles, MCQs, and structure to their default values and delete any custom changes you made.")) {
+      return;
+    }
+    setResetting(true);
+    try {
+      // 1. Fetch and delete existing structure/articles/tests under /subjects/porting
+      const unitsCollectionRef = collection(db, "subjects", "porting", "units");
+      const unitsSnap = await getDocs(unitsCollectionRef);
+
+      const batch = writeBatch(db);
+
+      for (const unitDoc of unitsSnap.docs) {
+        const chaptersCollectionRef = collection(db, "subjects", "porting", "units", unitDoc.id, "chapters");
+        const chaptersSnap = await getDocs(chaptersCollectionRef);
+        chaptersSnap.forEach((chapterDoc) => {
+          batch.delete(chapterDoc.ref);
+        });
+
+        const testsCollectionRef = collection(db, "subjects", "porting", "units", unitDoc.id, "tests");
+        const testsSnap = await getDocs(testsCollectionRef);
+        testsSnap.forEach((testDoc) => {
+          batch.delete(testDoc.ref);
+        });
+
+        batch.delete(unitDoc.ref);
+      }
+
+      batch.delete(doc(db, "subjects", "porting"));
+      await batch.commit();
+
+      // 2. Write defaults
+      const writeBatchObj = writeBatch(db);
+      writeBatchObj.set(doc(db, "subjects", "porting"), {
+        title: DEFAULT_PORTING_SUBJECT.title,
+        units: DEFAULT_PORTING_SUBJECT.units,
+      });
+
+      for (const unit of DEFAULT_PORTING_SUBJECT.units) {
+        const unitRef = doc(db, "subjects", "porting", "units", unit.id);
+        writeBatchObj.set(unitRef, unit);
+
+        for (const chapter of unit.chapters) {
+          const chapterRef = doc(db, "subjects", "porting", "units", unit.id, "chapters", chapter.id);
+          writeBatchObj.set(chapterRef, {
+            id: chapter.id,
+            createdAt: new Date(),
+            author: "System Default",
+            title: `${unit.id}/chapter/${chapter.id}`,
+            isPublic: chapter.isPublic ?? true,
+          });
+        }
+
+        if (unit.tests) {
+          for (const test of unit.tests) {
+            const testRef = doc(db, "subjects", "porting", "units", unit.id, "tests", test.id);
+            writeBatchObj.set(testRef, {
+              ...test,
+              instanceId: `porting_${unit.id}_test_${test.id}`,
+            });
+          }
+        }
+      }
+
+      await writeBatchObj.commit();
+
+      setSubjectTitle(DEFAULT_PORTING_SUBJECT.title);
+      setUnits(DEFAULT_PORTING_SUBJECT.units);
+      setUnsavedChanges(false);
+
+      alert("AP Porting course reset successfully.");
+    } catch (error) {
+      console.error("Error resetting subject:", error);
+      alert("Error resetting subject. Check console for details.");
+    } finally {
+      setResetting(false);
+    }
+  };
 
   // Replaces save
   const handleSave = async () => {
@@ -353,17 +434,28 @@ export default function Page({ params }: { params: { slug: string } }) {
               <ArrowLeft className="mr-2" />
               Return to Admin Dashboard
             </Link>
-            {(!subjectLoading || unsavedChanges) && (
-              <Button
-                className={cn(
-                  "bg-blue-500 hover:bg-blue-600",
-                  unsavedChanges && "animate-pulse",
-                )}
-                onClick={handleSave}
-              >
-                <Save className="mr-2" /> Save Changes
-              </Button>
-            )}
+            <div className="flex gap-2">
+              {params.slug === "porting" && (
+                <Button
+                  className="bg-red-500 hover:bg-red-600 text-white"
+                  onClick={handleReset}
+                  disabled={resetting}
+                >
+                  {resetting ? "Resetting..." : "Reset Course"}
+                </Button>
+              )}
+              {(!subjectLoading || unsavedChanges) && (
+                <Button
+                  className={cn(
+                    "bg-blue-500 hover:bg-blue-600",
+                    unsavedChanges && "animate-pulse",
+                  )}
+                  onClick={handleSave}
+                >
+                  <Save className="mr-2" /> Save Changes
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Subject Title */}

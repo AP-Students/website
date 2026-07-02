@@ -1,3 +1,4 @@
+"use client";
 import { BookOpen, Check, ChevronsRight, History, Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
 

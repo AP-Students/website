@@ -1,0 +1,15 @@
+# FiveHive
+
+> Free AP (Advanced Placement) study resources — study guides, unit notes, and practice questions — written by AP students who scored 5s, for AP students. By AP students. For AP students.
+
+FiveHive helps high school students prepare for College Board AP exams. Content is organized by subject, then by unit, then by chapter, covering courses such as AP Biology, AP Chemistry, AP Calculus, AP US History, and more.
+
+## Key pages
+- [Subject library](https://www.fivehive.org/library): Browse all AP subjects covered on FiveHive.
+- [Study guides](https://www.fivehive.org/guides): Exam study guides and review materials.
+- [Apply to contribute](https://www.fivehive.org/apply): Join the FiveHive team of student contributors.
+
+## Notes
+- Subject study guides live at /subject/{subject-slug} and chapters at /subject/{subject-slug}/{unit}/chapter/{id}/{title}.
+- Content is free and written/reviewed by AP students.
+- See https://www.fivehive.org/sitemap.xml for the full list of indexable pages.

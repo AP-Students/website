@@ -1,4 +1,6 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import Navbar from "@/components/global/navbar";
 import Footer from "@/components/global/footer";
 import type { User } from "@/types/user";
@@ -10,12 +12,11 @@ import { useUser } from "../../components/hooks/UserContext";
 import Link from "next/link";
 import { cn, formatSlug } from "@/lib/utils";
 import { Ban, ClipboardPen, PencilRuler, ShieldUser, X } from "lucide-react";
-import AdminImport from "@/components/admin/AdminImport";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 
-const apClasses = apClassesData.apClasses;
+const apClasses = [...apClassesData.apClasses, "AP Porting"];
 
 const Page = () => {
   const { user } = useUser();
@@ -44,11 +45,16 @@ const Page = () => {
         {user.access === "admin" && (
           <>
             <AdminPanel user={user} />
-            <h2 className="mt-6 text-2xl font-bold">Validate Editor JSON</h2>
-            <AdminImport />
           </>
         )}
 
+
+        <Link href="/admin/feedback" className="hover:text-yellow-600">
+          <Button className="w-full">
+            Check Feedback & Bug Reports
+          </Button>
+        </Link>
+        <br></br>
         <SelectCourse />
       </div>
 
@@ -121,11 +127,9 @@ function AdminPanel({ user }: { user: User }) {
 
   const filteredUsers = users.filter(
     (user) =>
-      user.displayName
-        .toLowerCase()
-        .includes(searchTermUsers.toLowerCase().trim()) ||
-      user.email.toLowerCase().includes(searchTermUsers.toLowerCase().trim()) ||
-      user.access.toLowerCase().includes(searchTermUsers.toLowerCase().trim()),
+      user.displayName?.toLowerCase().includes(searchTermUsers.toLowerCase().trim()) ||
+      user.email?.toLowerCase().includes(searchTermUsers.toLowerCase().trim()) ||
+      user.access?.toLowerCase().includes(searchTermUsers.toLowerCase().trim()),
   );
 
   return (

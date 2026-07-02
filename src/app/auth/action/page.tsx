@@ -1,16 +1,19 @@
-'use client';
+"use client";
 
 import PasswordResetPage from "@/components/auth/ResetPassword";
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 // If you want this to take effect on your local app, you have to go to firebase -> auth -> templates -> edit -> customize action url -> "http://localhost:<port>/auth/action"
-export default function ActionPage() {
-  const searchParams = useSearchParams();
+function ActionPageContent() {
+  const searchParams = useSearchParams() ?? new URLSearchParams();
   const mode = searchParams.get("mode");
 
   const code = searchParams.get("oobCode");
   if (!code) {
-    alert("Need an oobCode to access this page. If you don't know what that means just leave the page");
+    alert(
+      "Need an oobCode to access this page. If you don't know what that means just leave the page",
+    );
     return;
   }
 
@@ -24,4 +27,12 @@ export default function ActionPage() {
         "This mode is not supported please reach out to the development team",
       );
   }
+}
+
+export default function ActionPage() {
+  return (
+    <Suspense>
+      <ActionPageContent />
+    </Suspense>
+  );
 }

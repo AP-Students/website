@@ -14,7 +14,7 @@ type Props = {
 };
 
 const TableOfContents = ({ title, subject }: Props) => {
-  const router = usePathname();
+  const pathname = usePathname() ?? "";
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -51,7 +51,7 @@ const TableOfContents = ({ title, subject }: Props) => {
         {subject.units.map((unit, unitIndex) => (
           <div key={unitIndex}>
             <Link
-              href={`${router.split("/").slice(0, 3).join("/")}#${unit.title}`}
+              href={`${pathname.split("/").slice(0, 3).join("/")}#${unit.title}`}
               key={unit.title}
               className={cn(
                 "flex items-center gap-3 text-base font-medium opacity-50 transition-all hover:text-primary/70 hover:opacity-100",

@@ -37,7 +37,7 @@ const SearchBar = ({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const startedRef = useRef(false);
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const listboxId = useId();
 
   const canPreview = isPreviewUser(user?.access);

@@ -23,6 +23,12 @@ const Page = ({ params }: { params: { slug: string } }) => {
   useEffect(() => {
     const fetchSubject = async () => {
       try {
+        const isAuthorized = user && (user.access === "admin" || user.access === "member" || user.access === "grader");
+        if (params.slug === "porting" && !isAuthorized) {
+          setError("Subject not found. That's probably us, not you.");
+          setLoading(false);
+          return;
+        }
         const docRef = doc(db, "subjects", params.slug);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {

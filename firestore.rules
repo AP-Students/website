@@ -99,5 +99,12 @@ service cloud.firestore {
     match /profiles/{userId} {
       allow read, write: if isAuthenticated() && request.auth.uid == userId;
     }
+
+    match /feedback/{feedbackId} {
+      allow read: if isMemberOrAdmin;
+      allow list: if isMemberOrAdmin;
+      allow get: if isMemberOrAdmin();
+      allow update, delete: if isMemberOrAdmin();
+    }
   }
 }

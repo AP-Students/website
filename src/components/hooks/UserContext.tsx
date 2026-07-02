@@ -1,6 +1,8 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { getUser } from "./users";
 import type { User } from "@/types/user";
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 
 interface UserContextType {
   user: User | null;
@@ -26,42 +28,35 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       setLoading(true);
       setError(null);
       const fetchedUser = await getUser();
-      if (fetchedUser) {
-        setUser(fetchedUser);
-      }
+      setUser(fetchedUser);
       setLoading(false);
     } catch (err) {
+      setUser(null);
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, () => {
+      void fetchUser();
+    });
+
     fetchUser().catch((error) => {
       console.error("Error fetching user:", error);
       setLoading(false);
     });
+
+    return () => unsubscribe();
   }, []);
 
   const updateUser = async () => {
     await fetchUser();
   };
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center text-3xl">
-        Loading...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex min-h-screen items-center justify-center text-3xl">
-        {error}
-      </div>
-    );
-  }
-
+  // Always render children: this provider wraps the whole app, so gating on the
+  // client-only `loading`/`error` state (which is `loading === true` during SSR)
+  // strips every page's content and JSON-LD out of the static HTML. Consumers
+  // read `loading`/`user` from context and handle their own pending/auth state.
   return (
     <UserContext.Provider
       value={{ user, loading, error, setError, setLoading, updateUser }}

@@ -6,6 +6,7 @@ import type { QuestionFormat } from "@/types/questions";
 import { type OutputData } from "@editorjs/editorjs";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getFileFromIndexedDB } from "./custom_questions/RenderAdvancedTextbox";
+import { resolveUploadContentType } from "@/lib/utils";
 
 export interface ImageData {
   caption: string;
@@ -37,7 +38,11 @@ export const processQuestions = async (
       ...question.options.flatMap((option) => option.value.files || []),
     ];
 
-    allFiles.forEach((file) => allFileKeys.add(file.key));
+    allFiles.forEach((file) => {
+      if (!file.url?.startsWith("http")) {
+        allFileKeys.add(file.key);
+      }
+    });
   });
 
   // Read all files from IndexedDB
@@ -63,7 +68,12 @@ export const processQuestions = async (
   await Promise.all(
     Array.from(fileKeyToFile.entries()).map(async ([fileKey, file]) => {
       const storageRef = ref(storage, fileKey);
-      const snapshot = await uploadBytes(storageRef, file);
+      const contentType = resolveUploadContentType(file);
+      const snapshot = await uploadBytes(
+        storageRef,
+        file,
+        contentType ? { contentType } : undefined,
+      );
       const downloadURL = await getDownloadURL(snapshot.ref);
       fileKeyToDownloadURL.set(fileKey, downloadURL);
     }),

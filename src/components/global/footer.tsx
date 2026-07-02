@@ -17,7 +17,7 @@ const links = [
   },
   {
     title: "Feedback",
-    url: "https://forms.gle/1J1VWe9rEMp3kfC78",
+    url: "/feedback",
   },
 ];
 

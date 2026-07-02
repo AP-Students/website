@@ -2,7 +2,11 @@ export interface QuestionFile {
   key: string;
   url?: string;
   name: string;
+  id?: string;
+  alt?: string;
+  order?: number;
 }
+
 
 export interface QuestionInput {
   value: string;

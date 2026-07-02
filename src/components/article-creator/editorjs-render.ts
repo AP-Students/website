@@ -1,21 +1,21 @@
 import type { OutputData } from "@editorjs/editorjs";
 import type { BlockData, Config } from "editorjs-parser";
 import edjsParser from "editorjs-parser";
+import { decode } from "html-entities";
 import katex from "katex";
 import "katex/contrib/mhchem";
 import hljs from "highlight.js";
 import "@/styles/highlightjs.css";
-import { useEffect, useRef } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { QuestionsOutput } from "./custom_questions/QuestionInstance";
 import type { QuestionFormat } from "@/types/questions";
 import "@/styles/katexStyling.css";
 import styles from "./Renderer.module.css";
 
+// DOM-free entity decoder so this module can run during server rendering.
+// Previously this used `document.createElement("textarea")`, which kept the
+// whole renderer client-only. `html-entities` decodes named + numeric entities
+// without a DOM.
 export function decodeEntities(str: string): string {
-  const txt = document.createElement("textarea");
-  txt.innerHTML = str;
-  return txt.value;
+  return decode(str);
 }
 
 export const katexMacros = {
@@ -250,115 +250,14 @@ const customParsers: Record<
   },
 };
 
-const rootMap = new Map<Element, Root>();
-
-const Renderer = (props: { content: OutputData }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const dataFetched = useRef<boolean>(false);
-  const instanceIdsLoaded = useRef<Set<string>>(new Set());
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = props.content.blocks;
-
-        // Process data.blocks only once
-        data.forEach((block) => {
-          if (block.type === "questionsAddCard") {
-            // block.data is a <string, any> and since its part of editorjs, im not changing the type.
-            // As long as editorjs doesnt depricate in a way that affects this, then this should be fine
-            /* eslint-disable-next-line */
-            const instanceId = block.data.instanceId as string;
-            const storageKey = `questions_${instanceId}`;
-
-            // Check if this instanceId has already been processed
-            if (!instanceIdsLoaded.current.has(instanceId)) {
-              /* eslint-disable */
-              const questionsFromDb: QuestionFormat[] =
-                block.data.questions.map(
-                  /* eslint-enable */
-                  (questionInstance: QuestionFormat) => ({
-                    ...questionInstance,
-                    questionInstance: questionInstance.question || {
-                      value: "",
-                    },
-                    options: questionInstance.options.map((option) => ({
-                      ...option,
-                      value: option.value || { value: "" },
-                    })),
-                    answers: questionInstance.answers || [],
-                    explanation: questionInstance.explanation || { value: "" },
-                  }),
-                );
-
-              // Update local storage (Will be used line XXX)
-              localStorage.setItem(storageKey, JSON.stringify(questionsFromDb));
-
-              // Trigger a manual event to notify listeners that localStorage was updated
-              const event = new Event("questionsUpdated");
-              window.dispatchEvent(event);
-
-              // Mark this instanceId as loaded
-              instanceIdsLoaded.current.add(instanceId);
-            }
-          }
-        });
-
-        // Set dataFetched to true after processing all blocks
-        dataFetched.current = true;
-      } catch (error) {
-        console.error("Error fetching questions from Firestore:", error);
-      }
-
-      // Proceed to render the components
-      if (containerRef.current) {
-        props.content.blocks.forEach((block) => {
-          /* eslint-disable */ // InstanceOf doesnt seem to work so Im just using this as a substitute
-          if (block.type === "questionsAddCard") {
-            const instanceId = block.data.instanceId;
-            const placeholder = containerRef.current!.querySelector(
-              `.questions-block-${instanceId}`,
-            );
-
-            if (placeholder) {
-              let root = rootMap.get(placeholder);
-
-              // If no root exists for this placeholder, create one and store it
-              if (!root) {
-                root = createRoot(placeholder);
-                rootMap.set(placeholder, root);
-              }
-
-              // Render the component
-              root.render(
-                <QuestionsOutput instanceId={instanceId.toString()} />,
-              );
-            }
-          }
-          /* eslint-enable */
-        });
-      }
-    };
-
-    // Call the fetchData function
-    fetchData().catch((error) => {
-      console.error("Error fetching data:", error);
-    });
-  }, [props.content]);
-
-  if (!props.content) return null;
-
+/**
+ * Parses EditorJS `OutputData` into an HTML string. Pure and DOM-free, so it runs
+ * both server-side (public chapter SSR) and client-side (gated chapters via
+ * `Renderer`). Question cards render as empty `.questions-block-<id>` placeholders
+ * that `QuestionsHydrator` mounts interactive components into on the client.
+ */
+export function renderEditorJsToHtml(content: OutputData): string {
   const parser = new edjsParser(undefined, customParsers);
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-  const markup = parser.parse(props.content);
-
-  return (
-    <article
-      ref={containerRef}
-      className="prose before:prose-code:content-none after:prose-code:content-none"
-      dangerouslySetInnerHTML={{ __html: markup }}
-    ></article>
-  );
-};
-
-export default Renderer;
+  return parser.parse(content);
+}
