@@ -1,10 +1,10 @@
 "use client"
 
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
+import { initializeApp } from "firebase/app";
+import { connectAuthEmulator, getAuth } from "firebase/auth";
+import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
 import { env } from "@/env.js";
 
 const firebaseConfig = {
@@ -18,8 +18,12 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+
 const db = getFirestore(app);
+connectFirestoreEmulator(db, "127.0.0.1", 8080);
+
 const auth = getAuth(app);
+connectAuthEmulator(auth, "http://127.0.0.1:9099");
 const storage = getStorage(app);
 
 export { db, auth, storage };
