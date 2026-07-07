@@ -20,10 +20,26 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 const db = getFirestore(app);
-connectFirestoreEmulator(db, "127.0.0.1", 8080);
+
+if (
+  process.env.NODE_ENV === "development" &&
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1")
+) {
+  connectFirestoreEmulator(db, "127.0.0.1", 8080);
+}
 
 const auth = getAuth(app);
-connectAuthEmulator(auth, "http://127.0.0.1:9099");
+
+if (
+  process.env.NODE_ENV === "development" &&
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1")
+) {
+  connectAuthEmulator(auth, "http://127.0.0.1:9099");
+}
 const storage = getStorage(app);
 
 export { db, auth, storage };
