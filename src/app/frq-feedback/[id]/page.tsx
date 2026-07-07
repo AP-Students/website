@@ -5,16 +5,13 @@ import FRQFeedbackRenderer from "@/components/frq/feedbackRenderer";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
+import usePathname from "@/components/client/pathname";
 
 type FeedbackStatus = "loading" | "found" | "not-found";
-type PageStuff = {
-  params: {
-    id: string;
-  };
-};
 
-const Page = (props: PageStuff) => {
-  const frqId = props.params.id;
+const Page = () => {
+  const pathname = usePathname() ?? "";
+  const frqId = pathname.split("/").at(-1) ?? "";
   const [status, setStatus] = useState<FeedbackStatus>("loading");
 
   useEffect(() => {

@@ -1,13 +1,12 @@
-
-
-
 interface Props {
-    feedbackFound: boolean;
+   feedbackFound: boolean;
 }
 
 export default function FRQFeedbackRenderer({ feedbackFound }: Props) {
-    if (feedbackFound) {
-        return <p>Success.</p>;
-    }    
-    return <p>Failed.</p>
-}
+   if (feedbackFound) {
+     return <p>Success.</p>;
+   }
+   return <p>Failed.</p>;
+ }
+
+
