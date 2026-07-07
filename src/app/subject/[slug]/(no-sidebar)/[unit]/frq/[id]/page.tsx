@@ -21,6 +21,10 @@ const Page = () => {
 
   useEffect(() => {
     const fetchFRQ = async () => {
+      setLoading(true);
+      setError(null);
+      setFrq(null);
+
       try {
         const docRef = doc(
           db,
