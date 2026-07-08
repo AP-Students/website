@@ -1,10 +1,10 @@
 "use client"
 
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
-import { initializeApp } from "firebase/app";
-import { connectAuthEmulator, getAuth } from "firebase/auth";
-import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
 import { env } from "@/env.js";
 
 const firebaseConfig = {
@@ -17,26 +17,10 @@ const firebaseConfig = {
   measurementId: env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
- const app = initializeApp(firebaseConfig);
- const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+const storage = getStorage(app);
 
- if (
-   process.env.NODE_ENV === "development" &&
-   typeof window !== "undefined" &&
-   (window.location.hostname === "localhost" ||
-     window.location.hostname === "127.0.0.1")
- ) {
-   connectFirestoreEmulator(db, "127.0.0.1", 8080);
- }
- const auth = getAuth(app);
-
- if (
-   process.env.NODE_ENV === "development" &&
-   typeof window !== "undefined" &&
-   (window.location.hostname === "localhost" ||
-     window.location.hostname === "127.0.0.1")
- ) {
-   connectAuthEmulator(auth, "http://127.0.0.1:9099");
- }
- const storage = getStorage(app);
- export { db, auth, storage };
+export { db, auth, storage };
+export default app;
