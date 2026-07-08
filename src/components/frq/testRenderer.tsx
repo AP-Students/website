@@ -1,3 +1,5 @@
+"use client";
+
 type FRQTestRendererProps = {
   frq: Record<string, unknown> | null;
   loading?: boolean;
