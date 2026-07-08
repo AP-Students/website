@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 const Page = () => {
   const pathname = usePathname();
 
-  const basePath = pathname.split("/").slice(-4).join("_");
+  const basePath = pathname.split("/").filter(Boolean).slice(-4).join("_");
 
   const subject = basePath.split("_")[0]!;
   const unitId = basePath.split("_")[1]?.split("-").at(-1);
