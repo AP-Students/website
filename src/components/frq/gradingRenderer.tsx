@@ -5,7 +5,6 @@ type FRQGradingRendererProps = {
 };
 
 const FRQGradingRenderer = ({ frq }: FRQGradingRendererProps) => {
-  console.log("Renderer received frq:", frq);
   if (!frq) {
     return <div>FRQ not found.</div>;
   }

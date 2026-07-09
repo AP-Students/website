@@ -12,8 +12,6 @@ const Page = () => {
     const fetchFrqs = async () => {
       const collectionRef = collection(db, "ungraded-frqs");
       const snapshot = await getDocs(collectionRef);
-      console.log("FRQ docs:", snapshot.docs.map((doc) => doc.id));
-
       setFrqIds(snapshot.docs.map((doc) => doc.id));
     };
 
