@@ -13,7 +13,7 @@ type PageProps = {
 };
 
 const Page = ({ params }: PageProps) => {
-  const [frq, setFrq] = useState<FRQSubmission | null>();
+  const [frq, setFrq] = useState<FRQSubmission | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
