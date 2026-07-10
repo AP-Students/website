@@ -16,6 +16,12 @@ const lance: TeamMember = {
 
 const teamLeads: TeamMember[] = [
   {
+    id: 57,
+    name: "Stealth",
+    position: "FiveHive Lead",
+    image: "/team/stealth.webp",
+  },
+  {
     id: 13,
     name: "Reading",
     position: "FiveHive Lead",
@@ -97,6 +103,8 @@ const subTeamLeads: TeamMember[] = [
     position: "RST Co-Lead, Lecture Sub-Team Lead",
     image: "/team/dukechapel - Henry H.jpg",
   },
+  { id: 34, name: "Silas Lovett", position: "Website Team Co-Lead", image: "/team/lermonade.webp" }
+
 ];
 
 const members: TeamMember[] = [
@@ -185,7 +193,6 @@ const members: TeamMember[] = [
   // Removed: Zoe Xue (retired, not in server)
   // Removed: pineappled juice (retired, not in server)
 
-  { id: 34, name: "Silas Lovett", position: "Website Team Co-Lead", image: "/team/pfp - Silas Lovett.png" },
   {
     id: 35,
     name: "Hector Wang",
@@ -258,6 +265,12 @@ const members: TeamMember[] = [
     name: "SWalexcorporation",
     position: "Lecture Sub-Team Member, Materials Sub-Team Member",
     image: "/team/IMG_1432 - Alex Saravia.jpeg",
+  },
+  {
+    id: 58,
+    name: "Venkata",
+    position: "Website Team Member, Materials Sub-Team member",
+    image: "/team/venkata.jpg",
   },
 
   // Removed: Orin Overmiller (retired)
