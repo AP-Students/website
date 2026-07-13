@@ -125,6 +125,104 @@ export async function updatePhotoURL(
   }
 }
 
+const MAX_PROFILE_IMAGE_SIZE = 256;
+
+const readFileAsDataUrl = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+      } else {
+        reject(new Error("Unable to read the selected image."));
+      }
+    };
+    reader.onerror = () => {
+      reject(new Error("Unable to read the selected image."));
+    };
+    reader.readAsDataURL(file);
+  });
+
+const resizeImageToDataUrl = async (file: File): Promise<string> => {
+  const sourceUrl = URL.createObjectURL(file);
+
+  try {
+    const image = new Image();
+    const imageLoaded = new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () =>
+        reject(new Error("Unable to process the selected image."));
+    });
+
+    image.src = sourceUrl;
+    await imageLoaded;
+
+    const scale = Math.min(
+      1,
+      MAX_PROFILE_IMAGE_SIZE / Math.max(image.width, image.height),
+    );
+    const width = Math.max(1, Math.round(image.width * scale));
+    const height = Math.max(1, Math.round(image.height * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      return await readFileAsDataUrl(file);
+    }
+
+    context.drawImage(image, 0, 0, width, height);
+
+    try {
+      return canvas.toDataURL("image/webp", 0.9);
+    } catch {
+      return canvas.toDataURL("image/jpeg", 0.9);
+    }
+  } finally {
+    URL.revokeObjectURL(sourceUrl);
+  }
+};
+
+/**
+ * Converts a profile image to a compact base64 data URL and persists it.
+ * @param uid - The user's unique identifier.
+ * @param file - The image file selected by the user.
+ * @returns The stored image data URL.
+ */
+export async function uploadProfilePhoto(
+  uid: string,
+  file: File,
+): Promise<string> {
+  if (!uid) {
+    throw new Error("User ID is required.");
+  }
+
+  if (!file) {
+    throw new Error("An image file is required.");
+  }
+
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Please select an image file.");
+  }
+
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error("No user is currently authenticated.");
+  }
+
+  try {
+    const photoURL = await resizeImageToDataUrl(file);
+    await updateProfile(user, { photoURL });
+    await updateDoc(doc(db, "users", uid), { photoURL });
+
+    return photoURL;
+  } catch (error: unknown) {
+    throw mapAuthError(error);
+  }
+}
+
 /**
  * Deletes the user's account from Firebase Authentication and Firestore.
  * Requires reauthentication.

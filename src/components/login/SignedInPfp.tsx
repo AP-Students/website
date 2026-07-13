@@ -5,7 +5,6 @@ import React, { useState } from "react";
 import { auth } from "@/lib/firebase";
 import Link from "next/link";
 import { useUser } from "../hooks/UserContext";
-import Image from "next/image";
 import { buttonVariants } from "../ui/button";
 import { cn } from "@/lib/utils";
 
@@ -26,12 +25,13 @@ const SignedInPfp = ({ mobile }: { mobile?: boolean }) => {
         <span>{user.displayName}</span>
         <div onClick={toggleDropdown} className="relative cursor-pointer">
           {user.photoURL ? (
-            <Image
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
               src={user.photoURL}
               alt={user.displayName || user.email}
               width={40}
               height={40}
-              style={{ width: "40px", borderRadius: "50%" }}
+              className="rounded-full object-cover"
             />
           ) : (
             <div
