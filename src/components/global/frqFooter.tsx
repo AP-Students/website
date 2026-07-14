@@ -11,14 +11,7 @@ interface FooterProps {
   onJumpToFrq: (index: number) => void;
 }
 
-export default function Footer({
-  testName,
-  currentFrqIndex,
-  totalFrqs,
-  onPrevious,
-  onNext,
-  onJumpToFrq,
-}: FooterProps) {
+export default function Footer({testName, currentFrqIndex, totalFrqs, onPrevious, onNext, onJumpToFrq,}: FooterProps) {
   return (
     <footer className="fixed bottom-0 left-0 z-50 flex h-14 w-full items-center justify-between border-t-2 border-gray-300 bg-white px-8">
       <p className="font-semibold">{testName}</p>
