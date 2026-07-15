@@ -2,21 +2,26 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import "@/styles/globals.css";
-import React, { useEffect, useState, type FormEvent } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/login/submitButton";
 import { clearUserCache, getUser } from "@/components/hooks/users";
 import type { User } from "@/types/user";
 import {
   updateDisplayName,
-  updatePhotoURL,
   updatePassword,
   deleteAccount,
+  uploadProfilePhoto,
 } from "@/lib/manageUser";
 import ReauthenticateModal from "@/components/auth/ReauthenticateModal";
-import Image from "next/image";
 import { useUser } from "@/components/hooks/UserContext";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Upload, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 
 interface ManagementForm extends HTMLFormElement {
@@ -38,12 +43,16 @@ export default function UserManagementPage() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
   const [reauthModalOpen, setReauthModalOpen] = useState<boolean>(false);
   const [reauthAction, setReauthAction] = useState<
     "email" | "password" | "delete" | null
   >(null);
 
   const [tempPassword, setTempPassword] = useState<string>("");
+  const photoObjectUrlRef = useRef<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     async function fetchUser() {
@@ -58,6 +67,12 @@ export default function UserManagementPage() {
       }
     }
     void fetchUser();
+
+    return () => {
+      if (photoObjectUrlRef.current) {
+        URL.revokeObjectURL(photoObjectUrlRef.current);
+      }
+    };
   }, []);
 
   const handleUpdateDisplayName = async (event: FormEvent<ManagementForm>) => {
@@ -115,28 +130,64 @@ export default function UserManagementPage() {
     }
   };
 
-  const handleUpdatePhotoURL = async (event: FormEvent<ManagementForm>) => {
+  const handlePhotoFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setErrorMessage("");
+
+    const file = event.currentTarget.files?.[0] ?? null;
+    setPhotoFile(file);
+
+    if (photoObjectUrlRef.current) {
+      URL.revokeObjectURL(photoObjectUrlRef.current);
+      photoObjectUrlRef.current = null;
+    }
+
+    if (!file) {
+      setPhotoPreview(user?.photoURL ?? "");
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    photoObjectUrlRef.current = objectUrl;
+    setPhotoPreview(objectUrl);
+  };
+
+  const handleUploadPhoto = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrorMessage("");
 
-    const photoURL = event.currentTarget.photoURL.value.trim();
     if (!user) return;
-    if (photoURL === user.photoURL) return;
+    if (!photoFile) {
+      setErrorMessage("Please choose an image first.");
+      return;
+    }
 
+    setPhotoUploading(true);
     try {
-      await updatePhotoURL(user.uid, photoURL);
+      const photoURL = await uploadProfilePhoto(user.uid, photoFile);
       setUser((prevUser) => (prevUser ? { ...prevUser, photoURL } : prevUser));
       setPhotoPreview(photoURL);
+      setPhotoFile(null);
+
+      if (photoObjectUrlRef.current) {
+        URL.revokeObjectURL(photoObjectUrlRef.current);
+        photoObjectUrlRef.current = null;
+      }
+
+      if (photoInputRef.current) {
+        photoInputRef.current.value = "";
+      }
 
       clearUserCache();
       await updateUser();
-      toast.success("Photo URL updated successfully.");
+      toast.success("Profile picture updated successfully.");
     } catch (error: unknown) {
       if (error instanceof Error) {
         setErrorMessage(error.message);
       } else {
         setErrorMessage("An unknown error occurred.");
       }
+    } finally {
+      setPhotoUploading(false);
     }
   };
 
@@ -183,6 +234,8 @@ export default function UserManagementPage() {
       setReauthModalOpen(true);
     }
   }, [reauthAction]);
+
+  const currentPhoto = photoPreview ?? user?.photoURL ?? "";
 
   if (loading) {
     return <div className="text-center text-lg">Loading user data...</div>;
@@ -263,34 +316,63 @@ export default function UserManagementPage() {
             </form>
           )}
 
-          {/* Photo URL */}
-          {/* <form
-            className="flex flex-col space-y-2"
-            onSubmit={handleUpdatePhotoURL}
+          {/* Profile Photo Upload */}
+          <form
+            className="flex flex-col space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4"
+            onSubmit={handleUploadPhoto}
           >
-            <label className="text-sm font-semibold text-gray-600">
-              Profile Picture URL
-            </label>
-            {photoPreview && (
-              <Image
-                src={photoPreview}
-                width={96}
-                height={96}
-                alt="Profile Preview"
-                className="rounded-full"
-              />
-            )}
-            <input
-              type="url"
-              name="photoURL"
-              defaultValue={user.photoURL}
-              className="rounded-md border border-gray-300 px-3 py-2"
-              required
-            />
-            <Button className="self-end text-sm font-semibold" type="submit">
-              Save
+            <div>
+              <label className="text-sm font-semibold text-gray-600">
+                Profile Picture
+              </label>
+              <p className="mt-1 text-sm text-gray-500">
+                Upload a square image for the cleanest profile preview.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-white ring-1 ring-gray-200">
+                {currentPhoto ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={currentPhoto}
+                    alt="Profile preview"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <ImageIcon className="h-8 w-8 text-gray-300" />
+                )}
+              </div>
+
+              <div className="flex-1">
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoFileChange}
+                  className="block w-full cursor-pointer rounded-md border border-dashed border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 file:mr-4 file:rounded file:border-0 file:bg-yellow-50 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-yellow-700 hover:file:bg-yellow-100"
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  PNG, JPG, or WEBP works best.
+                </p>
+              </div>
+            </div>
+
+            <Button
+              className="self-end text-sm font-semibold"
+              type="submit"
+              disabled={photoUploading || !photoFile}
+            >
+              {photoUploading ? (
+                "Uploading..."
+              ) : (
+                <>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Photo
+                </>
+              )}
             </Button>
-          </form> */}
+          </form>
 
           {/* Delete Account */}
           <div className="mt-8">
