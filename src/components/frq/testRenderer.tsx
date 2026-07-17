@@ -3,6 +3,7 @@
 import ResponseInput, {
   type ResponseInputType,
 } from "@/components/frq/responseInput";
+import FRQFooter from "@/components/frq/FRQFooter";
 
 import {
   Bookmark,
@@ -97,6 +98,8 @@ const [timeRemaining, setTimeRemaining] = useState(
 const [timerHidden, setTimerHidden] = useState(false);
 const [showTimeUpPopup, setShowTimeUpPopup] = useState(false);
 const [showReviewPage, setShowReviewPage] = useState(false);
+const [showSubmissionModal, setShowSubmissionModal] =
+  useState(false);
 
 useEffect(() => {
   const timer = window.setInterval(() => {
@@ -197,11 +200,157 @@ const formattedTime = `${Math.floor(timeRemaining / 3600)}:${String(
     </div>
   </div>
 ) : null;
+const downloadResponsesAsPdf = () => {
+  const printWindow = window.open(
+    "",
+    "_blank",
+    "width=900,height=700",
+  );
+
+  if (!printWindow) {
+    window.alert(
+      "The browser blocked the PDF window. Allow pop-ups and try again.",
+    );
+    return;
+  }
+
+  const getPlainText = (html: string) => {
+    const documentParser = new DOMParser();
+    const parsedDocument = documentParser.parseFromString(
+      html,
+      "text/html",
+    );
+
+    return parsedDocument.body.textContent?.trim() || "No response";
+  };
+
+  const responseSections = questions
+    .map((question, index) => {
+      const responseText = getPlainText(responses[index] ?? "");
+
+      return `
+        <section class="response">
+          <h2>FRQ ${index + 1}: ${question.title}</h2>
+          <p>${responseText}</p>
+        </section>
+      `;
+    })
+    .join("");
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>FRQ Responses</title>
+        <style>
+          body {
+            margin: 40px;
+            color: #111;
+            font-family: Georgia, "Times New Roman", serif;
+          }
+
+          h1 {
+            margin-bottom: 32px;
+            text-align: center;
+          }
+
+          .response {
+            margin-bottom: 32px;
+            page-break-inside: avoid;
+          }
+
+          .response h2 {
+            border-bottom: 1px solid #999;
+            padding-bottom: 8px;
+            font-size: 18px;
+          }
+
+          .response p {
+            white-space: pre-wrap;
+            line-height: 1.6;
+          }
+        </style>
+      </head>
+
+      <body>
+        <h1>AP Human Geography FRQ Responses</h1>
+        ${responseSections}
+      </body>
+    </html>
+  `);
+
+  printWindow.document.close();
+  printWindow.focus();
+
+  window.setTimeout(() => {
+    printWindow.print();
+  }, 250);
+};
+
+const submissionModal = showSubmissionModal ? (
+  <div
+    className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="submission-title"
+  >
+    <div className="relative w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
+      <button
+        type="button"
+        aria-label="Close submission popup"
+        className="absolute right-4 top-3 text-2xl text-gray-500 hover:text-black"
+        onClick={() => setShowSubmissionModal(false)}
+      >
+        ×
+      </button>
+
+      <h2 id="submission-title" className="text-2xl font-bold">
+        Submit Your Test
+      </h2>
+
+      <p className="mt-3 text-sm text-gray-600">
+        Download a copy of your responses or submit them for grading.
+      </p>
+
+      <div className="mt-6 flex flex-col gap-3">
+        <button
+          type="button"
+          className="rounded border border-blue-700 px-5 py-3 font-semibold text-blue-700"
+          onClick={downloadResponsesAsPdf}
+        >
+          Download Responses as PDF
+        </button>
+
+        <button
+          type="button"
+          className="rounded bg-blue-700 px-5 py-3 font-semibold text-white"
+          onClick={() => {
+            setShowSubmissionModal(false);
+            window.alert(
+              "Submission for grading will be connected to the backend later.",
+            );
+          }}
+        >
+          Submit for Grading
+        </button>
+
+        <button
+          type="button"
+          className="rounded px-5 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100"
+          onClick={() => setShowSubmissionModal(false)}
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+) : null;
 
   if (showReviewPage) {
   return (
     <main className="min-h-screen bg-gray-50 px-6 py-12 text-black">
       {timeUpModal}
+      {submissionModal}
       <div className="mx-auto max-w-5xl">
         <h1 className="text-center text-4xl font-normal">
           Check Your Work
@@ -291,11 +440,7 @@ const formattedTime = `${Math.floor(timeRemaining / 3600)}:${String(
             <button
               type="button"
               className="rounded-full bg-blue-700 px-6 py-3 font-semibold text-white"
-              onClick={() => {
-                window.alert(
-                  "Final submission will be connected later.",
-                );
-              }}
+              onClick={() => setShowSubmissionModal(true)}
             >
               Submit Test
             </button>
@@ -509,106 +654,21 @@ const formattedTime = `${Math.floor(timeRemaining / 3600)}:${String(
           </section>
         </div>
 
-        <footer className="relative flex items-center justify-between px-6 py-3">
-          <div
-  aria-hidden="true"
-  className="absolute left-0 top-0 h-[2px] w-full"
-  style={{
-    backgroundImage:
-      "repeating-linear-gradient(to right, #111 0 20px, transparent 20px 24px)",
+      <FRQFooter
+  testName="AP Human Geography Practice Exam 1"
+  currentFrqIndex={currentFRQIndex}
+  totalFrqs={questions.length}
+  onPrevious={() => {
+    setCurrentFRQIndex((currentIndex) =>
+      Math.max(currentIndex - 1, 0),
+    );
+  }}
+  onNext={handleNext}
+  onJumpToFrq={(index) => {
+    setCurrentFRQIndex(index);
+    setShowReviewPage(false);
   }}
 />
-          <p className="text-sm font-bold">AP Human Geography Practice Exam 1</p>
-
-          <button
-            className="rounded bg-black px-4 py-2 text-sm font-bold text-white"
-            onClick={() => setShowQuestionNavigation((isOpen) => !isOpen)}
-          >
-            {questionLabel}
-          </button>
-
-          {showQuestionNavigation && (
-  <div className="absolute bottom-14 left-1/2 z-30 w-[280px] -translate-x-1/2 rounded-md border border-gray-300 bg-white p-4 shadow-xl">
-    <div className="mb-3 flex items-center justify-between">
-      <p className="text-sm font-bold">Navigate FRQs</p>
-
-      <button
-        type="button"
-        aria-label="Close FRQ navigation"
-        className="text-lg leading-none text-gray-500 hover:text-black"
-        onClick={() => setShowQuestionNavigation(false)}
-      >
-        ×
-      </button>
-    </div>
-
-    <div className="grid grid-cols-3 gap-3">
-      {questions.map((question, questionIndex) => {
-        const isCurrent = questionIndex === currentFRQIndex;
-        const isMarked =
-          markedForReview[questionIndex] ?? false;
-
-        return (
-          <button
-            key={question.title}
-            type="button"
-            aria-current={isCurrent ? "page" : undefined}
-            className={`relative h-12 rounded-sm border text-sm font-semibold transition ${
-              isCurrent
-                ? "border-blue-700 bg-blue-700 text-white"
-                : "border-gray-300 bg-white text-black hover:border-blue-600"
-            }`}
-            onClick={() => {
-              setCurrentFRQIndex(questionIndex);
-              setShowQuestionNavigation(false);
-            }}
-          >
-            {questionIndex + 1}
-
-            {isMarked && (
-              <span
-                aria-label="Marked for review"
-                className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-600"
-              />
-            )}
-          </button>
-        );
-      })}
-    </div>
-
-    <div className="mt-4 flex items-center gap-4 border-t border-gray-200 pt-3 text-xs text-gray-600">
-      <span className="flex items-center gap-1.5">
-        <span className="h-3 w-3 bg-blue-700" />
-        Current
-      </span>
-
-      <span className="flex items-center gap-1.5">
-        <span className="h-2 w-2 rounded-full bg-red-600" />
-        Marked
-      </span>
-    </div>
-
-    <div className="absolute -bottom-2 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 border-b border-r border-gray-300 bg-white" />
-  </div>
-)}
-
-          <div className="flex gap-3">
-            <button
-              className="flex items-center gap-1 rounded-full bg-[#294ad1] px-5 py-2 text-sm font-bold text-white hover:bg-[#2a47bb]"
-              onClick={handlePrevious}
-            >
-              <ChevronLeft size={16} />
-              Back
-            </button>
-            <button
-              className="flex items-center gap-1 rounded-full bg-[#294ad1] px-5 py-2 text-sm font-bold text-white hover:bg-[#2a47bb]"
-              onClick={handleNext}
-            >
-              Next
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </footer>
       </section>
     </main>
   );
