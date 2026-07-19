@@ -1,25 +1,21 @@
-
-
-
 "use client";
 
-import { useState, useEffect } from "react";
 import type { GradingCriterion } from "./types";
 
-
-
-export default function RubricCriteriaRow({criterion, points, onPointsChange}: {criterion: GradingCriterion, points: number, onPointsChange: (points:number)=>void;}) {
-  const [earnedPoints, setEarnedPoints] = useState(points);
-  useEffect(()=> {
-    setEarnedPoints(points);}, [points]
-  );
-  const updatePoints = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+export default function RubricCriteriaRow({
+  criterion,
+  points,
+  onPointsChange,
+}: {
+  criterion: GradingCriterion;
+  points: number;
+  onPointsChange: (points: number) => void;
+}) {
+  const updatePoints = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newPoints = Number(event.target.value);
-  const boundedPoints = Math.min(Math.max(newPoints, 0), criterion.points);
-  setEarnedPoints(boundedPoints);
-  onPointsChange(boundedPoints)};
+    const boundedPoints = Math.min(Math.max(newPoints, 0), criterion.points);
+    onPointsChange(boundedPoints);
+  };
   return (
     <div className="mb-2 flex items-center gap-3">
       <p className="flex-1 rounded-md border border-gray-300 px-3 py-1">
@@ -31,9 +27,9 @@ export default function RubricCriteriaRow({criterion, points, onPointsChange}: {
           type="number"
           min={0}
           max={criterion.points}
-          value={earnedPoints}
+          value={points}
           onChange={updatePoints}
-          className="w-10 rounded border border-gray-300 text-center text-2xl font-semibold"
+          className="w-10 border-0 bg-transparent p-0 text-center text-2xl font-semibold outline-none focus:ring-0"
         />
 
         <span className="text-base">/{criterion.points}</span>

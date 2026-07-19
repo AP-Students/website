@@ -1,9 +1,14 @@
 import { LogOut } from "lucide-react";
 
-
-export default function Header({ earnedPoints, totalPoints }: {earnedPoints: number; totalPoints: number;}) {
+export default function Header({
+  earnedPoints,
+  totalPoints,
+}: {
+  earnedPoints: number;
+  totalPoints: number;
+}) {
   return (
-    <header className="fixed left-0 top-0 z-50 flex h-16 w-full items-center justify-center border-b-2 border-gray-300 bg-white px-8">
+    <header className="fixed left-0 top-0 z-50 flex h-16 w-full items-center justify-center border-b-2 border-dashed border-gray-500 bg-white px-8">
       <p className="font-semibold">
         {earnedPoints}/{totalPoints} Points Earned
       </p>

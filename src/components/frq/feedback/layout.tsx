@@ -2,10 +2,7 @@ import Header from "./header";
 import Footer from "./footer";
 import LeftSide from "./leftSide";
 import QuestionFeedback from "./rightSide";
-import type {
-  FRQFeedbackDocument,
-  FRQQuestion,
-} from "./types";
+import type { FRQFeedbackDocument, FRQQuestion } from "./types";
 
 interface LayoutProps {
   feedbackData: FRQFeedbackDocument;
@@ -15,7 +12,11 @@ interface LayoutProps {
   onNext: () => void;
   onJumpToFrq: (index: number) => void;
   onFeedbackChange: (questionId: string, feedback: string) => void;
-  onPointsChange: (questionId: string, criterionId: string, points: number)=> void;
+  onPointsChange: (
+    questionId: string,
+    criterionId: string,
+    points: number,
+  ) => void;
 }
 
 export default function Layout({
@@ -28,17 +29,15 @@ export default function Layout({
   onFeedbackChange,
   onPointsChange,
 }: LayoutProps) {
-  const earnedPoints =
-    feedbackData.feedback.questions.reduce(
-      (feedbackTotal, partFeedback) =>
-        feedbackTotal +
-        partFeedback.gradingCriteria.reduce(
-          (partTotal, criterionScore) =>
-            partTotal + criterionScore.points,
-          0,
-        ),
-      0,
-    );
+  const earnedPoints = feedbackData.feedback.questions.reduce(
+    (feedbackTotal, partFeedback) =>
+      feedbackTotal +
+      partFeedback.gradingCriteria.reduce(
+        (partTotal, criterionScore) => partTotal + criterionScore.points,
+        0,
+      ),
+    0,
+  );
 
   const totalPoints = feedbackData.frqs.reduce(
     (frqTotal, frq) =>
@@ -47,8 +46,7 @@ export default function Layout({
         (partTotal, part) =>
           partTotal +
           part.gradingCriteria.reduce(
-            (criterionTotal, criterion) =>
-              criterionTotal + criterion.points,
+            (criterionTotal, criterion) => criterionTotal + criterion.points,
             0,
           ),
         0,
@@ -58,13 +56,10 @@ export default function Layout({
 
   return (
     <div className="min-h-screen bg-white text-black">
-      <Header
-        earnedPoints={earnedPoints}
-        totalPoints={totalPoints}
-      />
+      <Header earnedPoints={earnedPoints} totalPoints={totalPoints} />
 
-      <main className="grid h-screen grid-cols-2 pt-16 pb-14">
-        <div className="border-r-2 border-gray-400">
+      <main className="grid h-screen grid-cols-2 pb-14 pt-16">
+        <div className="border-r-2 border-gray-500">
           <LeftSide description={currentFrq.description} />
         </div>
 

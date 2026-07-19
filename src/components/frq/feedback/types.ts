@@ -5,13 +5,11 @@ export interface RubricScore {
   points: number;
 }
 
-
 export interface FRQPartFeedback {
   questionId: string;
   feedback: string;
   gradingCriteria: RubricScore[];
 }
-
 
 export interface FRQFeedback {
   id: string;
@@ -25,7 +23,6 @@ export interface ResponseAnswer {
   value: string;
 }
 
-
 export interface FRQResponse {
   id: string;
   userId: string;
@@ -33,13 +30,11 @@ export interface FRQResponse {
   answers: ResponseAnswer[];
 }
 
-
 export interface GradingCriterion {
   id: string;
   text: string;
   points: number;
 }
-
 
 export interface FRQPart {
   id: string;
@@ -50,7 +45,6 @@ export interface FRQPart {
   gradingCriteria: GradingCriterion[];
 }
 
-
 export interface FRQQuestion {
   id: string;
   name: string;
@@ -58,7 +52,6 @@ export interface FRQQuestion {
   isVisible: boolean;
   questions: FRQPart[];
 }
-
 
 export interface FRQFeedbackDocument {
   name: string;

@@ -2,19 +2,29 @@
 
 import { useEffect, useState } from "react";
 import FeedbackSection from "./dropdownContent";
-import type {
-  FRQFeedbackDocument,
-  FRQQuestion,
-} from "./types";
+import type { FRQFeedbackDocument, FRQQuestion } from "./types";
 
-
-export default function QuestionFeedback({frq, feedbackData, onFeedbackChange, onPointsChange}: {frq: FRQQuestion, feedbackData: FRQFeedbackDocument, onFeedbackChange:(questionId: string, feedback:string,)=> void; onPointsChange: (questionId:string, criterionId: string, points: number)=> void;}) {
-  const [openParts, setOpenParts] = useState<string[]>(frq.questions[0] ? [frq.questions[0].id] : [],);
+export default function QuestionFeedback({
+  frq,
+  feedbackData,
+  onFeedbackChange,
+  onPointsChange,
+}: {
+  frq: FRQQuestion;
+  feedbackData: FRQFeedbackDocument;
+  onFeedbackChange: (questionId: string, feedback: string) => void;
+  onPointsChange: (
+    questionId: string,
+    criterionId: string,
+    points: number,
+  ) => void;
+}) {
+  const [openParts, setOpenParts] = useState<string[]>(
+    frq.questions[0] ? [frq.questions[0].id] : [],
+  );
 
   useEffect(() => {
-    setOpenParts(
-      frq.questions[0] ? [frq.questions[0].id] : [],
-    );
+    setOpenParts(frq.questions[0] ? [frq.questions[0].id] : []);
   }, [frq]);
 
   const togglePart = (partId: string) => {
@@ -25,10 +35,12 @@ export default function QuestionFeedback({frq, feedbackData, onFeedbackChange, o
     );
   };
 
-  const closeAll = () => {setOpenParts([]);};
+  const closeAll = () => {
+    setOpenParts([]);
+  };
 
   return (
-    <section className="h-full overflow-y-auto px-16 py-10">
+    <section className="h-full overflow-y-auto px-16 py-8">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-bold">
           {frq.name} | {frq.questions.length} Questions
@@ -49,10 +61,9 @@ export default function QuestionFeedback({frq, feedbackData, onFeedbackChange, o
             (item) => item.questionId === part.id,
           );
 
-          const partFeedback =
-            feedbackData.feedback.questions.find(
-              (item) => item.questionId === part.id,
-            );
+          const partFeedback = feedbackData.feedback.questions.find(
+            (item) => item.questionId === part.id,
+          );
 
           return (
             <FeedbackSection
@@ -63,15 +74,13 @@ export default function QuestionFeedback({frq, feedbackData, onFeedbackChange, o
               partFeedback={partFeedback}
               isOpen={openParts.includes(part.id)}
               onToggle={() => togglePart(part.id)}
-              onFeedbackChange={(feedback)=> onFeedbackChange(part.id, feedback)}
-              onPointsChange={(criterionId, points) =>
-                onPointsChange(
-                  part.id,
-                  criterionId,
-                  points,
-                )
+              onFeedbackChange={(feedback) =>
+                onFeedbackChange(part.id, feedback)
               }
-              />
+              onPointsChange={(criterionId, points) =>
+                onPointsChange(part.id, criterionId, points)
+              }
+            />
           );
         })}
       </div>
