@@ -45,9 +45,7 @@ const Page = () => {
 
   return (
   <div className="px-8 py-12">
-    <FRQFeedbackRenderer 
-      feedbackFound={status === "found"} 
-    />
+    <FRQFeedbackRenderer />
   </div>
   );
 };
