@@ -436,6 +436,11 @@ export default function TeamHive() {
     const el = containerRef.current;
     if (!el) return;
 
+    // Set an initial value to avoid a first-paint flash at scale=1 on narrow viewports.
+    setContainerWidth(el.getBoundingClientRect().width);
+
+    if (typeof ResizeObserver === "undefined") return;
+
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (entry) setContainerWidth(entry.contentRect.width);
