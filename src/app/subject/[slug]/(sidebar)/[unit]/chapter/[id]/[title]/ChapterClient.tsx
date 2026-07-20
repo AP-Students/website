@@ -26,13 +26,15 @@ const ChapterClient = ({
 
   useEffect(() => {
     if (subject && content) {
-      const unitIndex = Number(params.unit.split("-")[1]) - 1;
+      const unitNum = Number(params.unit.split("-")[1]);
+      const unitIndex = subject.hasUnit0 ? unitNum : unitNum - 1;
       const chapterIndex = subject.units[unitIndex]!.chapters.findIndex(
         (ch) => ch.id === params.id,
       );
       const chapter = subject.units[unitIndex]!.chapters[chapterIndex];
+      const displayUnit = subject.hasUnit0 ? unitIndex : unitIndex + 1;
 
-      document.title = `FiveHive - ${subject.title} ${unitIndex + 1}.${chapterIndex + 1} - ${chapter?.title}`;
+      document.title = `FiveHive - ${subject.title} ${displayUnit}.${chapterIndex + 1} - ${chapter?.title}`;
     }
   }, [subject, content, params.unit, params.id]);
 
@@ -64,7 +66,8 @@ const ChapterClient = ({
   }
 
   if (subject && content) {
-    const unitIndex = Number(params.unit.split("-")[1]) - 1;
+    const unitNum = Number(params.unit.split("-")[1]);
+    const unitIndex = subject.hasUnit0 ? unitNum : unitNum - 1;
     const chapterIndex = subject.units[unitIndex]!.chapters.findIndex(
       (ch) => ch.id === params.id,
     );
@@ -85,6 +88,7 @@ const ChapterClient = ({
         chapterTitle={chapter.title}
         chapterId={params.id}
         author={content.author}
+        hasUnit0={subject.hasUnit0}
       >
         <Renderer content={content.data} />
       </ChapterScaffold>

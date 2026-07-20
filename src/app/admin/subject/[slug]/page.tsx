@@ -69,6 +69,7 @@ export default function Page({ params }: { params: { slug: string } }) {
   const { user, error, setError, setLoading } = useUser();
   const [subjectTitle, setSubjectTitle] = useState<string>("");
   const [units, setUnits] = useState<Unit[]>([]);
+  const [hasUnit0, setHasUnit0] = useState<boolean>(false);
   const [resetting, setResetting] = useState<boolean>(false);
 
   const [subjectLoading, setSubjectLoading] = useState<boolean>(true);
@@ -88,6 +89,7 @@ export default function Page({ params }: { params: { slug: string } }) {
             const fetched = docSnap.data() as Subject;
             setSubjectTitle(fetched.title);
             setUnits(fetched.units || []);
+            setHasUnit0(fetched.hasUnit0 ?? false);
           } else {
             // Subject not found -> create new with default template
             // Also try to fill in subject title from `apClasses` if found
@@ -259,6 +261,7 @@ export default function Page({ params }: { params: { slug: string } }) {
     const subjectToSave: Subject = {
       title: subjectTitle,
       units: units,
+      hasUnit0: hasUnit0,
     };
 
     try {
@@ -463,21 +466,37 @@ export default function Page({ params }: { params: { slug: string } }) {
             {subjectTitle || "Untitled Subject"}
           </h1>
 
+          {/* hasUnit0 Toggle */}
+          <label className="mb-4 flex items-center gap-2 text-sm font-medium">
+            <input
+              id="has-unit0"
+              type="checkbox"
+              checked={hasUnit0}
+              onChange={(e) => {
+                setHasUnit0(e.target.checked);
+                setUnsavedChanges(true);
+              }}
+              className="h-4 w-4"
+            />
+            This subject has a Unit 0 (foundational unit numbered starting from 0)
+          </label>
+
           {/* Render each Unit */}
           <div className="my-4 space-y-4">
             {units.map((unit, index) => (
-              <UnitComponent
-                key={unit.id}
-                unit={unit}
-                index={index}
-                subjectTitle={subjectTitle}
-                onChange={handleUnitChange}
-                onDelete={handleDeleteUnit}
-                onMoveUp={handleMoveUnitUp}
-                onMoveDown={handleMoveUnitDown}
-                subjectSlug={params.slug}
-              />
-            ))}
+            <UnitComponent
+              key={unit.id}
+              unit={unit}
+              index={index}
+              subjectTitle={subjectTitle}
+              onChange={handleUnitChange}
+              onDelete={handleDeleteUnit}
+              onMoveUp={handleMoveUnitUp}
+              onMoveDown={handleMoveUnitDown}
+              subjectSlug={params.slug}
+              hasUnit0={hasUnit0}
+            />
+          ))}
           </div>
 
           {/* Add new Unit */}

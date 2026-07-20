@@ -32,7 +32,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
 
     subject.units.forEach((unit, unitIndex) => {
-      const unitSegment = `unit-${unitIndex + 1}-${unit.id}`;
+      const uNum = subject.hasUnit0 ? unitIndex : unitIndex + 1;
+      const unitSegment = `unit-${uNum}-${unit.id}`;
       for (const chapter of unit.chapters ?? []) {
         // Only list publicly readable chapters — gated content can't be
         // crawled or cited anyway, and listing it invites thin-page penalties.

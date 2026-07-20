@@ -57,7 +57,13 @@ const SubjectSidebar = (props: Props) => {
           type="multiple"
           // defaultValue={props.subject.units.map((unit) => unit.title)}
         >
-          {props.subject.units.map((unit, unitIndex) => (
+          {props.subject.units.map((unit, unitIndex) => {
+            // uNum is the display number shown in the UI and used in URLs.
+            // When hasUnit0 is true the first array element (index 0) maps to
+            // "Unit 0", so the display number equals the array index directly.
+            // Otherwise display numbers start at 1 (classic behaviour).
+            const uNum = props.subject.hasUnit0 ? unitIndex : unitIndex + 1;
+            return (
             <AccordionItem
               className="border-none"
               value={unit.title}
@@ -82,10 +88,10 @@ const SubjectSidebar = (props: Props) => {
                         !props.preview && !chapter.isPublic ? -1 : undefined
                       }
                       key={chapterIndex}
-                      href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${unitIndex + 1}-${unit.id}/chapter/${chapter.id}/${formatSlug(chapter.title)}`}
+                      href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${uNum}-${unit.id}/chapter/${chapter.id}/${formatSlug(chapter.title)}`}
                     >
                       <div className="flex size-6 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-[.75rem] text-white">
-                        {unitIndex + 1}.{chapterIndex + 1}
+                        {uNum}.{chapterIndex + 1}
                       </div>
                       <span className="text-balance leading-tight group-hover:underline">
                         {chapter.title}
@@ -112,7 +118,7 @@ const SubjectSidebar = (props: Props) => {
                       tabIndex={
                         !props.preview && !test.isPublic ? -1 : undefined
                       }
-                      href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`}
+                      href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${uNum}-${unit.id}/test/${test.id}`}
                       key={test.id}
                     >
                       {test.isPublic ? (
@@ -124,7 +130,7 @@ const SubjectSidebar = (props: Props) => {
                         {test.name
                           ? test.name
                           : // unit.tests cuz typescript doesn't recognize I checked for unit.tests already
-                            `Unit ${unitIndex + 1} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
+                            `Unit ${uNum} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
                       </span>
                       <p
                         className={cn(
@@ -139,7 +145,8 @@ const SubjectSidebar = (props: Props) => {
                 </div>
               </AccordionContent>
             </AccordionItem>
-          ))}
+            );
+          })}
         </Accordion>
       </div>
     </div>
