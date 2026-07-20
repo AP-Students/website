@@ -1,10 +1,11 @@
-import { auth, db } from "@/lib/firebase";
+import { auth, db, storage } from "@/lib/firebase";
 import {
   updateProfile,
   deleteUser,
   updatePassword as firebaseUpdatePassword,
 } from "firebase/auth";
 import { doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 /**
  * Maps Firebase Auth errors to user-friendly messages.
@@ -120,6 +121,54 @@ export async function updatePhotoURL(
     await updateProfile(user, { photoURL });
     const userDocRef = doc(db, "users", uid);
     await updateDoc(userDocRef, { photoURL });
+  } catch (error: unknown) {
+    throw mapAuthError(error);
+  }
+}
+
+/**
+ * Uploads a profile image to Firebase Storage and persists the resulting URL.
+ * @param uid - The user's unique identifier.
+ * @param file - The image file selected by the user.
+ * @returns The uploaded image URL.
+ */
+export async function uploadProfilePhoto(
+  uid: string,
+  file: File,
+): Promise<string> {
+  if (!uid) {
+    throw new Error("User ID is required.");
+  }
+
+  if (!file) {
+    throw new Error("An image file is required.");
+  }
+
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Please select an image file.");
+  }
+
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error("No user is currently authenticated.");
+  }
+
+  try {
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, "-");
+    const imageRef = ref(
+      storage,
+      `profilePictures/${uid}/${Date.now()}-${safeName}`,
+    );
+
+    const snapshot = await uploadBytes(imageRef, file, {
+      contentType: file.type,
+    });
+    const photoURL = await getDownloadURL(snapshot.ref);
+
+    await updateProfile(user, { photoURL });
+    await updateDoc(doc(db, "users", uid), { photoURL });
+
+    return photoURL;
   } catch (error: unknown) {
     throw mapAuthError(error);
   }
