@@ -335,12 +335,12 @@ const submissionModal = showSubmissionModal ? (
         </button>
 
         <button
-          type="button"
-          className="rounded px-5 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100"
-          onClick={() => setShowSubmissionModal(false)}
-        >
-          Close
-        </button>
+  type="button"
+  className="rounded border border-black px-5 py-3 font-semibold text-black hover:bg-gray-100"
+  onClick={() => setShowSubmissionModal(false)}
+>
+  Close
+</button>
       </div>
     </div>
   </div>
@@ -356,13 +356,10 @@ const submissionModal = showSubmissionModal ? (
           Check Your Work
         </h1>
 
-        <div className="mx-auto mt-10 max-w-3xl text-lg leading-8">
-          <p>Review your responses before submitting your test.</p>
-
-          <p className="mt-2">
-            Select an FRQ number to return to that question.
-          </p>
-        </div>
+        <div className="mx-auto mt-6 max-w-2xl space-y-0.5 text-center text-base leading-5">
+  <p>Review your responses before submitting your test.</p>
+  <p>Select an FRQ number to return to that question.</p>
+</div>
 
         <section className="mt-8 rounded-xl bg-white p-8 shadow-lg">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-300 pb-5">
@@ -387,7 +384,7 @@ const submissionModal = showSubmissionModal ? (
             </div>
           </div>
 
-          <div className="mt-8 grid grid-cols-3 gap-6 sm:grid-cols-5">
+          <div className="mt-8 flex flex-wrap items-center justify-start gap-10 py-6 pl-6">
             {questions.map((question, index) => {
               const response = responses[index] ?? "";
 
@@ -404,7 +401,7 @@ const submissionModal = showSubmissionModal ? (
                 <button
                   key={question.title}
                   type="button"
-                  className={`relative mx-auto flex h-14 w-14 items-center justify-center text-xl font-bold ${
+                  className={`relative flex h-14 w-14 items-center justify-center text-xl font-bold ${
                     isAnswered
                       ? "bg-blue-700 text-white"
                       : "border-2 border-dashed border-gray-500 bg-white text-black"
@@ -452,9 +449,9 @@ const submissionModal = showSubmissionModal ? (
 }
 
   return (
-    <main className="min-h-screen bg-white p-4 text-black">
+    <main className="min-h-screen w-full bg-white text-black">
       {timeUpModal}
-      <section className="mx-auto flex min-h-[calc(100vh-2rem)] max-w-7xl flex-col border-4 border-black">
+      <section className="flex min-h-screen w-full flex-col border-4 border-black">
         <header className="relative flex items-start justify-between px-6 py-3">
           <div>
             <p className="text-sm font-bold">Section I</p>
@@ -462,9 +459,9 @@ const submissionModal = showSubmissionModal ? (
           </div>
 
           <div className="text-center">
-  <p className="font-mono text-lg font-bold">
-    {timerHidden ? "--:--:--" : formattedTime}
-  </p>
+  <p className="font-sans text-lg font-bold">
+  {formattedTime}
+</p>
 
   <button
     type="button"
@@ -586,7 +583,7 @@ const submissionModal = showSubmissionModal ? (
     </button>
   </div>
 
-  <div className="flex h-1 gap-1">
+  <div className="flex h-1 w-full gap-1">
     <div className="flex-1 bg-blue-600" />
     <div className="flex-1 bg-red-300" />
     <div className="flex-1 bg-green-300" />
@@ -605,12 +602,12 @@ const submissionModal = showSubmissionModal ? (
   </div>
 </div>
 
-            <p className="mb-4 text-sm">
+            <p className="mb-4 font-sans text-sm">
               The <strong>{currentFRQ.title}</strong> can be used to theorize
               changes in a country&apos;s total population over time.
             </p>
 
-            <ol className="mb-6 list-[upper-alpha] space-y-2 pl-6 text-sm leading-relaxed">
+            <ol className="mb-6 list-[upper-alpha] space-y-2 pl-6 font-sans text-sm leading-relaxed">
               <li>
                 Identify the stage of the model that this country is most likely
                 in.
@@ -637,7 +634,7 @@ const submissionModal = showSubmissionModal ? (
               </li>
             </ol>
 
-            <div className="rounded border border-gray-300 p-4">
+            <div className="w-full max-w-[50rem]">
               <ResponseInput
   type={currentFRQ.responseType}
   ariaLabel={`Response for FRQ ${currentFRQIndex + 1}`}
