@@ -78,12 +78,7 @@ const subTeamLeads: TeamMember[] = [
     position: "Team Co-Lead, RST Team Lead",
     image: "/team/IMG_3498 - Pierre-Louis Nguyen.jpg",
   },
-  {
-    id: 27,
-    name: "A Ashraf",
-    position: "Data Analysis Sub-Team Lead, APSS Admin",
-    image: "/team/ChatGPT Image Sep 13, 2025, 09_54_35 PM - Ahmed Ashraf.png",
-  },
+  //Both chatty and omer have boomer roles so removed A Ashraf
   {
     id: 28,
     name: "mmbcsmen",
