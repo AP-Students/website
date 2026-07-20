@@ -86,9 +86,11 @@ const buildChapterPath = (input: {
   unitId: string;
   chapterId: string;
   chapterTitle: string;
+  hasUnit0?: boolean;
 }) => {
-  const { subjectSlug, unitIndex, unitId, chapterId, chapterTitle } = input;
-  const unitSegment = `unit-${unitIndex + 1}-${unitId}`;
+  const { subjectSlug, unitIndex, unitId, chapterId, chapterTitle, hasUnit0 } = input;
+  const uNum = hasUnit0 ? unitIndex : unitIndex + 1;
+  const unitSegment = `unit-${uNum}-${unitId}`;
 
   return `/subject/${subjectSlug}/${unitSegment}/chapter/${chapterId}/${formatSlug(chapterTitle)}`;
 };
@@ -237,6 +239,7 @@ const mapSubjectToSearchItems = (
               unitId: unit.id,
               chapterId: chapter.id,
               chapterTitle: chapter.title,
+              hasUnit0: subject.hasUnit0,
             }),
             normalizedSearchableText: buildNormalizedSearchableText({
               subjectTitle: subject.title,

@@ -14,9 +14,13 @@ type Props = {
   pathname: string;
   unitIndex: number;
   preview: boolean;
+  hasUnit0?: boolean;
 };
 
-const UnitAccordion = ({ unit, pathname, unitIndex, preview }: Props) => {
+const UnitAccordion = ({ unit, pathname, unitIndex, preview, hasUnit0 }: Props) => {
+  // uNum: display number used in URLs and badges.
+  // 0-indexed when hasUnit0 is true (first array element = Unit 0).
+  const uNum = hasUnit0 ? unitIndex : unitIndex + 1;
   return (
     <AccordionItem
       className="mb-3 border-none"
@@ -37,11 +41,11 @@ const UnitAccordion = ({ unit, pathname, unitIndex, preview }: Props) => {
           chapter.isPublic ? (
             <Link
               className="group flex items-center gap-x-2 font-semibold last:mb-0"
-              href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/chapter/${chapter.id}/${formatSlug(chapter.title)}`}
+              href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${uNum}-${unit.id}/chapter/${chapter.id}/${formatSlug(chapter.title)}`}
               key={chapterIndex}
             >
               <div className="flex size-8 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-base text-white">
-                {unitIndex + 1}.{chapterIndex + 1}
+                {uNum}.{chapterIndex + 1}
               </div>
 
               <div className="text-balance text-base font-medium group-hover:underline sm:text-lg">
@@ -54,7 +58,7 @@ const UnitAccordion = ({ unit, pathname, unitIndex, preview }: Props) => {
               key={chapterIndex}
             >
               <div className="flex size-8 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-base text-white opacity-70">
-                {unitIndex + 1}.{chapterIndex + 1}
+                {uNum}.{chapterIndex + 1}
               </div>
 
               <div className="text-balance text-base font-medium opacity-70 group-hover:underline sm:text-lg">
@@ -63,7 +67,7 @@ const UnitAccordion = ({ unit, pathname, unitIndex, preview }: Props) => {
               <Link
                 href={
                   preview
-                    ? `${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/chapter/${chapter.id}/${formatSlug(chapter.title)}`
+                    ? `${pathname.split("/").slice(0, 4).join("/")}/unit-${uNum}-${unit.id}/chapter/${chapter.id}/${formatSlug(chapter.title)}`
                     : "/apply"
                 }
                 className="ml-auto w-20 shrink-0 text-nowrap rounded-full border border-gray-400 px-2 py-0.5 text-center text-gray-600 transition-colors group-hover:border-primary group-hover:text-black sm:w-36 sm:py-0"
@@ -83,14 +87,14 @@ const UnitAccordion = ({ unit, pathname, unitIndex, preview }: Props) => {
           test.isPublic ? (
             <Link
               className="flex items-center gap-x-2 font-semibold last:mb-0 hover:underline"
-              href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`}
+              href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${uNum}-${unit.id}/test/${test.id}`}
               key={test.id}
             >
               <BookOpenCheck className="size-8" />
               {test.name
                 ? test.name
                 : // unit.tests cuz typescript doesn't recognize I checked for unit.tests already
-                  `Unit ${unitIndex + 1} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
+                  `Unit ${uNum} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
             </Link>
           ) : (
             <div
@@ -102,12 +106,12 @@ const UnitAccordion = ({ unit, pathname, unitIndex, preview }: Props) => {
                 {test.name
                   ? test.name
                   : // unit.tests cuz typescript doesn't recognize I checked for unit.tests already
-                    `Unit ${unitIndex + 1} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
+                    `Unit ${uNum} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
               </span>
               <a
                 href={
                   preview
-                    ? `${pathname.split("/").slice(0, 4).join("/")}/unit-${unitIndex + 1}-${unit.id}/test/${test.id}`
+                    ? `${pathname.split("/").slice(0, 4).join("/")}/unit-${uNum}-${unit.id}/test/${test.id}`
                     : "/apply"
                 }
                 className="ml-auto w-20 shrink-0 text-nowrap rounded-full border border-gray-400 px-2 py-0.5 text-center text-gray-600 transition-colors group-hover:border-primary group-hover:text-black sm:w-36 sm:py-0"
