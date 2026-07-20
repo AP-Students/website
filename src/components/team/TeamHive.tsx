@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import TeamMemberHex from "./TeamMemberHex";
 import type { TeamMember } from "@/types/team";
 
@@ -49,7 +49,8 @@ const teamLeads: TeamMember[] = [
     id: 4,
     name: "Ashay Sarda",
     position: "Website Team Colead",
-    image: "/team/4526954c591bc1f55f65cfb8499decf7 - Ashay Sarda - Turtle Walkers.png",
+    image:
+      "/team/4526954c591bc1f55f65cfb8499decf7 - Ashay Sarda - Turtle Walkers.png",
   },
   {
     id: 7,
@@ -189,6 +190,12 @@ const members: TeamMember[] = [
   // Removed: pineappled juice (retired, not in server)
 
   {
+    id: 34,
+    name: "Silas Lovett",
+    position: "Website Team Co-Lead",
+    image: "/team/pfp - Silas Lovett.png",
+  },
+  {
     id: 35,
     name: "Hector Wang",
     position: "Lecture Sub-Team Member, Materials Sub-Team Member",
@@ -206,43 +213,100 @@ const members: TeamMember[] = [
     position: "Survey Sub-Team Member, Data Analysis Sub-Team Member",
     image: "/team/mqaxPFP - Max.jpg",
   },
-  { id: 38, name: "Econ Guy", position: "Lecture Sub-Team Member", image: "/team/ucsdpride - Israel Cube.jpg" },
+  {
+    id: 38,
+    name: "Econ Guy",
+    position: "Lecture Sub-Team Member",
+    image: "/team/ucsdpride - Israel Cube.jpg",
+  },
 
   // Removed: MG8mer (retired)
-  { id: 40, name: "assassin3552", position: "Materials Sub-Team Member (Temporarily Dormant)", image: "/team/48 - Polaris Li.jpg" },
+  {
+    id: 40,
+    name: "assassin3552",
+    position: "Materials Sub-Team Member (Temporarily Dormant)",
+    image: "/team/48 - Polaris Li.jpg",
+  },
   {
     id: 41,
     name: "Tanay B",
     position: "Lecture Sub-Team Member, Materials Sub-Team Member",
     image: "/team/IMG_0810 - Tanay Bollam.jpeg",
   },
-  { id: 42, name: "blitzal", position: "Materials Sub-Team Member (Dishonorably Relieved)", image: "/team/blitzalpfp - Kate Damico.jpg" },
+  {
+    id: 42,
+    name: "blitzal",
+    position: "Materials Sub-Team Member (Dishonorably Relieved)",
+    image: "/team/blitzalpfp - Kate Damico.jpg",
+  },
   {
     id: 43,
     name: "Sripaadh Jayashree Kuppusamy",
-    position: "FAQ Doc Sub-Team Member, Lecture Sub-Team Member, Materials Sub-Team Member",
-    image: "/team/52e94b8f-71c0-40c6-87b3-51299c73b852 - Sripaadh Jayashree Kuppusamy.JPG",
+    position:
+      "FAQ Doc Sub-Team Member, Lecture Sub-Team Member, Materials Sub-Team Member",
+    image:
+      "/team/52e94b8f-71c0-40c6-87b3-51299c73b852 - Sripaadh Jayashree Kuppusamy.JPG",
   },
-  { id: 44, name: "suri", position: "Survey Sub-Team Member", image: "/team/IMG_3641 - Suri Sanchez.jpeg" },
-  { id: 45, name: "Jacob", position: "Materials Sub-Team Member", image: "/team/J - Hystix.jpg" },
+  {
+    id: 44,
+    name: "suri",
+    position: "Survey Sub-Team Member",
+    image: "/team/IMG_3641 - Suri Sanchez.jpeg",
+  },
+  {
+    id: 45,
+    name: "Jacob",
+    position: "Materials Sub-Team Member",
+    image: "/team/J - Hystix.jpg",
+  },
   {
     id: 46,
     name: "Jasmine Gadot",
     position: "Lecture Sub-Team Member, Materials Sub-Team Member",
     image: "/team/IMG_2093 - Jasmine Gadot.jpeg",
   },
-  { id: 47, name: "Elvis Peng", position: "Materials Sub-Team Member", image: "/team/OMEGA - Elvis Peng(1).png" },
-  { id: 48, name: "Jackson D.", position: "Lecture Sub-Team Member", image: "/team/IMG_3156 - Jackson D..webp" },
-  { id: 49, name: "braden_is", position: "Lecture Sub-Team Member", image: "/team/IMG_2502 - Sigma Make.jpeg" },
+  {
+    id: 47,
+    name: "Elvis Peng",
+    position: "Materials Sub-Team Member",
+    image: "/team/OMEGA - Elvis Peng(1).png",
+  },
+  {
+    id: 48,
+    name: "Jackson D.",
+    position: "Lecture Sub-Team Member",
+    image: "/team/IMG_3156 - Jackson D..webp",
+  },
+  {
+    id: 49,
+    name: "braden_is",
+    position: "Lecture Sub-Team Member",
+    image: "/team/IMG_2502 - Sigma Make.jpeg",
+  },
   {
     id: 50,
     name: "Ian Joo",
     position: "Data Analysis Sub-Team Member, Outreach Sub-Team Member",
     image: "/team/IMG-20250901-WA0013 - Ian Joo.jpg",
   },
-  { id: 51, name: "user_exists", position: "Materials Sub-Team Member", image: "/team/c95747eb1048ca82305685580ae28cf8 - Nikolas Dyer.png" },
-  { id: 52, name: "Akshaj D", position: "Data Analysis Sub-Team Member", image: "/team/Profile Picture - Akshaj Donthi.jpg" },
-  { id: 53, name: "irunwithscizors", position: "Lecture Sub-Team Member", image: "/team/acnh-tuna-header - Logan Li.jpg" },
+  {
+    id: 51,
+    name: "user_exists",
+    position: "Materials Sub-Team Member",
+    image: "/team/c95747eb1048ca82305685580ae28cf8 - Nikolas Dyer.png",
+  },
+  {
+    id: 52,
+    name: "Akshaj D",
+    position: "Data Analysis Sub-Team Member",
+    image: "/team/Profile Picture - Akshaj Donthi.jpg",
+  },
+  {
+    id: 53,
+    name: "irunwithscizors",
+    position: "Lecture Sub-Team Member",
+    image: "/team/acnh-tuna-header - Logan Li.jpg",
+  },
   {
     id: 54,
     name: "dkim19375",
@@ -252,7 +316,8 @@ const members: TeamMember[] = [
   {
     id: 55,
     name: "Sarah H.",
-    position: "Survey Sub-Team Member, Data Analysis Sub-Team Member, FAQ Doc Sub-Team Member",
+    position:
+      "Survey Sub-Team Member, Data Analysis Sub-Team Member, FAQ Doc Sub-Team Member",
     image: "/team/default_pfp - Sarah H..jpg",
   },
   {
@@ -294,7 +359,13 @@ function axialDistance(a: { q: number; r: number }) {
   return Math.max(Math.abs(x), Math.abs(y), Math.abs(z));
 }
 
-function toPixel(q: number, r: number, size: number, originX: number, originY: number) {
+function toPixel(
+  q: number,
+  r: number,
+  size: number,
+  originX: number,
+  originY: number,
+) {
   const x = size * Math.sqrt(3) * (q + r / 2) + originX;
   const y = size * (3 / 2) * r + originY;
   return { x, y };
@@ -367,40 +438,94 @@ export default function TeamHive() {
     };
   }, [placements, hexSize]);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState<number | null>(null);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    // Set an initial value to avoid a first-paint flash at scale=1 on narrow viewports.
+    setContainerWidth(el.getBoundingClientRect().width);
+
+    if (typeof ResizeObserver === "undefined") return;
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) setContainerWidth(entry.contentRect.width);
+    });
+    observer.observe(el);
+
+    return () => observer.disconnect();
+  }, []);
+
+  const unscaledWidth = Math.max(paddedBounds.width, 980);
+  const scale =
+    containerWidth && containerWidth > 0
+      ? Math.min(1, containerWidth / unscaledWidth)
+      : 1;
+
   return (
-    <div className="relative mx-auto w-full max-w-[1280px] overflow-x-hidden pb-4">
+    <div
+      ref={containerRef}
+      className="relative mx-auto w-full max-w-[1280px] overflow-x-hidden pb-4"
+    >
       <div
         className="relative mx-auto"
         style={{
-          width: `${Math.max(paddedBounds.width, 980)}px`,
-          height: `${paddedBounds.height}px`,
+          width: `${unscaledWidth}px`,
+          height: `${paddedBounds.height * scale}px`,
         }}
       >
-        {placements.map((placement) => {
-          return (
-            <div
-              key={placement.key}
-              style={{
-                position: "absolute",
-                left: placement.left - paddedBounds.minLeft + (paddedBounds.padding ?? 0),
-                top: placement.top - paddedBounds.minTop + (paddedBounds.padding ?? 0),
-                width: hexSize,
-                height: hexSize,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                filter: "drop-shadow(0 10px 22px rgba(0,0,0,0.18))",
-                transform: "translateZ(0)",
-                willChange: "transform",
-              }}
-            >
-              {/* Ensure the hit area matches the positioned wrapper */}
-              <div style={{ width: "100%", height: "100%", position: "relative" }}>
-                <TeamMemberHex member={placement.member} />
+        <div
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: 0,
+            width: `${unscaledWidth}px`,
+            height: `${paddedBounds.height}px`,
+            transform: `translateX(-50%) scale(${scale})`,
+            transformOrigin: "top center",
+          }}
+        >
+          {placements.map((placement) => {
+            return (
+              <div
+                key={placement.key}
+                style={{
+                  position: "absolute",
+                  left:
+                    placement.left -
+                    paddedBounds.minLeft +
+                    (paddedBounds.padding ?? 0),
+                  top:
+                    placement.top -
+                    paddedBounds.minTop +
+                    (paddedBounds.padding ?? 0),
+                  width: hexSize,
+                  height: hexSize,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  filter: "drop-shadow(0 10px 22px rgba(0,0,0,0.18))",
+                  transform: "translateZ(0)",
+                  willChange: "transform",
+                }}
+              >
+                {/* Ensure the hit area matches the positioned wrapper */}
+                <div
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    position: "relative",
+                  }}
+                >
+                  <TeamMemberHex member={placement.member} />
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );
