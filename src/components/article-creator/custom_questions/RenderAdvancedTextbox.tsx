@@ -4,7 +4,7 @@ import type { QuestionFile, QuestionInput } from "@/types/questions";
 import "../../../styles/katexStyling.css";
 import { decodeEntities, katexMacros } from "../Renderer";
 
-import { cn, isSvgFileName } from "@/lib/utils";
+import { cn, isSvgFileName, parseSvgIntrinsicSize } from "@/lib/utils";
 
 interface Props {
   content: QuestionInput;
@@ -75,6 +75,10 @@ export function getFileFromIndexedDB(
 
 const FileRenderer: React.FC<{ file: QuestionFile }> = ({ file }) => {
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
+  const [svgSize, setSvgSize] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
 
   useEffect(() => {
     let url: string | null = null;
@@ -104,13 +108,34 @@ const FileRenderer: React.FC<{ file: QuestionFile }> = ({ file }) => {
     };
   }, [file]);
 
+  const isSvg = isSvgFileName(file.name) || file.key.startsWith("image-svg");
+
+  // SVGs typically only declare a viewBox (no width/height), so <img> has no
+  // intrinsic size to fall back on and can collapse to the browser's 300x150
+  // replaced-element default. Fetch the raw markup and derive the aspect
+  // ratio so SVGs scale the same way PNG/JPG do instead of a fixed width.
+  useEffect(() => {
+    setSvgSize(null);
+    if (!objectUrl || !isSvg) return;
+
+    let cancelled = false;
+    fetch(objectUrl)
+      .then((res) => res.text())
+      .then((markup) => {
+        if (!cancelled) setSvgSize(parseSvgIntrinsicSize(markup));
+      })
+      .catch((error) => {
+        console.error("Error reading SVG dimensions:", error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [objectUrl, isSvg]);
+
   if (!objectUrl) return null;
 
   if (isImageFileKey(file.key)) {
-    // SVGs frequently omit intrinsic dimensions (viewBox only), which makes them
-    // collapse or overflow under width/height auto. Give them a definite,
-    // responsive width instead.
-    const isSvg = isSvgFileName(file.name) || file.key.startsWith("image-svg");
     return (
       <div className="my-2 flex w-full justify-center">
         <img
@@ -119,10 +144,15 @@ const FileRenderer: React.FC<{ file: QuestionFile }> = ({ file }) => {
           loading="lazy"
           className={cn(
             "rounded-md object-contain shadow-sm transition-shadow duration-200 hover:shadow-md",
-            isSvg
+            isSvg && !svgSize
               ? "h-auto w-full max-w-[450px]"
               : "h-auto max-h-[450px] w-auto max-w-full",
           )}
+          style={
+            isSvg && svgSize
+              ? { aspectRatio: `${svgSize.width} / ${svgSize.height}` }
+              : undefined
+          }
         />
       </div>
     );
