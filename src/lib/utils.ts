@@ -40,9 +40,10 @@ export function resolveUploadContentType(file: File): string | undefined {
 export function parseSvgIntrinsicSize(
   svgMarkup: string,
 ): { width: number; height: number } | null {
-  const viewBoxMatch = /viewBox\s*=\s*["']\s*[-\d.]+\s+[-\d.]+\s+([\d.]+)\s+([\d.]+)\s*["']/i.exec(
-    svgMarkup,
-  );
+  const viewBoxMatch =
+    /viewBox\s*=\s*["']\s*[-\d.]+\s+[-\d.]+\s+([\d.]+)\s+([\d.]+)\s*["']/i.exec(
+      svgMarkup,
+    );
   if (viewBoxMatch?.[1] && viewBoxMatch[2]) {
     const width = parseFloat(viewBoxMatch[1]);
     const height = parseFloat(viewBoxMatch[2]);
