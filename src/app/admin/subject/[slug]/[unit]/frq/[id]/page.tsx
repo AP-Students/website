@@ -9,14 +9,19 @@ import { useEffect, useState } from "react";
 const Page = () => {
   const pathname = usePathname() ?? "";
 
-  const instanceId = pathname.split("/").slice(-4).join("_");
-  const subject = instanceId.split("_")[0]!;
-  const unitId = instanceId.split("_")[1]!;
-  const frqId = instanceId.split("_")[3]!;
+  const pathParts = pathname.split("/").slice(-4);
+  const subject = pathParts[0] ?? "";
+  const unitId = pathParts[1] ?? "";
+  const frqId = pathParts[3] ?? "";
 
   const [frqFound, setFrqFound] = useState<boolean | null>(null);
 
   useEffect(() => {
+    if (!subject || !unitId || !frqId) {
+      setFrqFound(false);
+      return;
+    }
+
     (async () => {
       const docRef = doc(
         db,
