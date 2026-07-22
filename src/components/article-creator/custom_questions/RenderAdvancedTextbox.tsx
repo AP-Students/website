@@ -118,18 +118,24 @@ const FileRenderer: React.FC<{ file: QuestionFile }> = ({ file }) => {
     setSvgSize(null);
     if (!objectUrl || !isSvg) return;
 
-    let cancelled = false;
-    fetch(objectUrl)
-      .then((res) => res.text())
+    const controller = new AbortController();
+
+    fetch(objectUrl, { signal: controller.signal })
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.text();
+      })
       .then((markup) => {
-        if (!cancelled) setSvgSize(parseSvgIntrinsicSize(markup));
+        if (!controller.signal.aborted)
+          setSvgSize(parseSvgIntrinsicSize(markup));
       })
       .catch((error) => {
+        if (controller.signal.aborted) return;
         console.error("Error reading SVG dimensions:", error);
       });
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [objectUrl, isSvg]);
 
