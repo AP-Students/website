@@ -93,6 +93,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
                 key={unitIndex}
                 pathname={pathname}
                 preview={user?.access === "member" || user?.access === "admin"}
+                hasUnit0={subject.hasUnit0}
               />
             ))}
           </Accordion>

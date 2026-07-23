@@ -16,6 +16,12 @@ const lance: TeamMember = {
 
 const teamLeads: TeamMember[] = [
   {
+    id: 57,
+    name: "Stealth",
+    position: "FiveHive Lead",
+    image: "/team/stealth.webp",
+  },
+  {
     id: 13,
     name: "Reading",
     position: "FiveHive Lead",
@@ -73,12 +79,7 @@ const subTeamLeads: TeamMember[] = [
     position: "Team Co-Lead, RST Team Lead",
     image: "/team/IMG_3498 - Pierre-Louis Nguyen.jpg",
   },
-  {
-    id: 27,
-    name: "A Ashraf",
-    position: "Data Analysis Sub-Team Lead, APSS Admin",
-    image: "/team/ChatGPT Image Sep 13, 2025, 09_54_35 PM - Ahmed Ashraf.png",
-  },
+  //Both chatty and omer have boomer roles so removed A Ashraf
   {
     id: 28,
     name: "mmbcsmen",
@@ -98,6 +99,8 @@ const subTeamLeads: TeamMember[] = [
     position: "RST Co-Lead, Lecture Sub-Team Lead",
     image: "/team/dukechapel - Henry H.jpg",
   },
+  { id: 34, name: "Silas Lovett", position: "Website Team Co-Lead", image: "/team/lermonade.webp" }
+
 ];
 
 const members: TeamMember[] = [
@@ -322,6 +325,12 @@ const members: TeamMember[] = [
     name: "SWalexcorporation",
     position: "Lecture Sub-Team Member, Materials Sub-Team Member",
     image: "/team/IMG_1432 - Alex Saravia.jpeg",
+  },
+  {
+    id: 58,
+    name: "Venkata",
+    position: "Website Team Member, Materials Sub-Team member",
+    image: "/team/venkata.jpg",
   },
 
   // Removed: Orin Overmiller (retired)

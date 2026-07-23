@@ -20,7 +20,8 @@ type PageParams = { slug: string; unit: string; id: string; title: string };
  */
 export default async function Page({ params }: { params: PageParams }) {
   const subject = await getSubject(params.slug);
-  const unitIndex = Number(params.unit.split("-")[1]) - 1;
+  const unitNum = Number(params.unit.split("-")[1]);
+  const unitIndex = subject?.hasUnit0 ? unitNum : unitNum - 1;
   const unit = subject?.units[unitIndex];
   const chapterIndex =
     unit?.chapters.findIndex((ch) => ch.id === params.id) ?? -1;
@@ -49,6 +50,7 @@ export default async function Page({ params }: { params: PageParams }) {
       chapterTitle={chapter.title}
       chapterId={params.id}
       author={content.author}
+      hasUnit0={subject.hasUnit0}
     >
       <ChapterArticle data={content.data} />
     </ChapterScaffold>

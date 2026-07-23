@@ -24,6 +24,7 @@ export default function ChapterScaffold({
   chapterId,
   author,
   children,
+  hasUnit0,
 }: {
   subjectTitle: string;
   units: Unit[];
@@ -34,6 +35,7 @@ export default function ChapterScaffold({
   chapterId: string;
   author: string;
   children: React.ReactNode;
+  hasUnit0?: boolean;
 }) {
   return (
     <div className="relative flex grow flex-col">
@@ -46,7 +48,7 @@ export default function ChapterScaffold({
           />
 
           <h1 className="my-2 text-balance text-center text-5xl font-extrabold">
-            {unitIndex + 1}.{chapterIndex + 1} - {chapterTitle}
+            {hasUnit0 ? unitIndex : unitIndex + 1}.{chapterIndex + 1} - {chapterTitle}
           </h1>
           <p>{author}</p>
           <div className="my-4">
@@ -63,12 +65,14 @@ export default function ChapterScaffold({
             units={units}
             unitIndex={unitIndex}
             chapterIndex={chapterIndex}
+            hasUnit0={hasUnit0}
           />
           <NextArticle
             subjectTitle={subjectTitle}
             units={units}
             unitIndex={unitIndex}
             chapterIndex={chapterIndex}
+            hasUnit0={hasUnit0}
           />
         </div>
       </div>
@@ -83,11 +87,13 @@ function PreviousArticle({
   units,
   unitIndex,
   chapterIndex,
+  hasUnit0,
 }: {
   subjectTitle: string;
   units: Unit[];
   unitIndex: number;
   chapterIndex: number;
+  hasUnit0?: boolean;
 }) {
   let unit = units[unitIndex];
   let newUnitIndex = unitIndex;
@@ -106,10 +112,11 @@ function PreviousArticle({
   if (!unit) return null;
 
   const subjectSlug = formatSlug(subjectTitle.replace(/AP /g, ""));
+  const uNum = hasUnit0 ? newUnitIndex : newUnitIndex + 1;
 
   return (
     <Link
-      href={`/subject/${subjectSlug}/unit-${newUnitIndex + 1}-${unit.id}/chapter/${unit.chapters[newChapterIndex]?.id}/${formatSlug(unit.chapters[newChapterIndex]?.title ?? "")}`}
+      href={`/subject/${subjectSlug}/unit-${uNum}-${unit.id}/chapter/${unit.chapters[newChapterIndex]?.id}/${formatSlug(unit.chapters[newChapterIndex]?.title ?? "")}`}
       className={cn(buttonVariants({ variant: "outline" }), "gap-2")}
     >
       <ArrowLeft />
@@ -123,11 +130,13 @@ function NextArticle({
   units,
   unitIndex,
   chapterIndex,
+  hasUnit0,
 }: {
   subjectTitle: string;
   units: Unit[];
   unitIndex: number;
   chapterIndex: number;
+  hasUnit0?: boolean;
 }) {
   let unit = units[unitIndex];
   let newUnitIndex = unitIndex;
@@ -147,10 +156,11 @@ function NextArticle({
   if (!unit) return null;
 
   const subjectSlug = formatSlug(subjectTitle.replace(/AP /g, ""));
+  const uNum = hasUnit0 ? newUnitIndex : newUnitIndex + 1;
 
   return (
     <Link
-      href={`/subject/${subjectSlug}/unit-${newUnitIndex + 1}-${unit.id}/chapter/${unit.chapters[newChapterIndex]?.id}/${formatSlug(unit.chapters[newChapterIndex]?.title ?? "")}`}
+      href={`/subject/${subjectSlug}/unit-${uNum}-${unit.id}/chapter/${unit.chapters[newChapterIndex]?.id}/${formatSlug(unit.chapters[newChapterIndex]?.title ?? "")}`}
       className={cn(buttonVariants({ variant: "outline" }), "ml-auto gap-2")}
     >
       Next Chapter

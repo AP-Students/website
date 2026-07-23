@@ -4,6 +4,7 @@ import type { QuestionFormat } from "./questions";
 export type Subject = {
   title: string;
   units: Unit[];
+  hasUnit0?: boolean;
 };
 
 export type Unit = {
