@@ -16,12 +16,15 @@ import {
 } from "lucide-react";
 import { useEffect, useRef } from "react";
 
+import DOMPurify from "dompurify";
 type FRQResponseEditorProps = {
   value: string;
   onChange: (value: string) => void;
   ariaLabel: string;
 };
 
+// AdvancedTextbox is for authoring QuestionFormat fields and supports file uploads.
+// Student responses use this separate sanitized editor because uploads are not allowed.
 const FRQResponseEditor = ({
   value,
   onChange,
@@ -30,25 +33,46 @@ const FRQResponseEditor = ({
   const editorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (
-      editorRef.current &&
-      editorRef.current.innerHTML !== value
-    ) {
-      editorRef.current.innerHTML = value;
-    }
-  }, [value]);
+  const editor = editorRef.current;
+
+  if (!editor) {
+    return;
+  }
+
+  const sanitizedValue = DOMPurify.sanitize(value);
+
+  if (editor.innerHTML !== sanitizedValue) {
+    editor.innerHTML = sanitizedValue;
+  }
+}, [value]);
+
+  const updateResponse = () => {
+  const editor = editorRef.current;
+
+  if (!editor) {
+    return;
+  }
+
+  const sanitizedValue = DOMPurify.sanitize(editor.innerHTML);
+
+  if (editor.innerHTML !== sanitizedValue) {
+    editor.innerHTML = sanitizedValue;
+  }
+
+  onChange(sanitizedValue);
+};
 
   const runCommand = (command: string) => {
     editorRef.current?.focus();
     document.execCommand(command);
 
-    onChange(editorRef.current?.innerHTML ?? "");
+    updateResponse();
   };
 
 const insertText = (text: string) => {
   editorRef.current?.focus();
   document.execCommand("insertText", false, text);
-  onChange(editorRef.current?.innerHTML ?? "");
+  updateResponse();
 };
 
 const pasteFromClipboard = async () => {
@@ -221,18 +245,21 @@ const pasteFromClipboard = async () => {
 </div>
 
       <div
-        ref={editorRef}
-        role="textbox"
-        aria-label={ariaLabel}
-        aria-multiline="true"
-        contentEditable
-        suppressContentEditableWarning
-        className="min-h-56 p-3 text-sm leading-relaxed outline-none"
-        onInput={(event) => {
-          onChange(event.currentTarget.innerHTML);
-        }}
-      />
-    </div>
+  ref={editorRef}
+  role="textbox"
+  aria-label={ariaLabel}
+  aria-multiline="true"
+  contentEditable
+  suppressContentEditableWarning
+  className="min-h-56 p-3 text-sm leading-relaxed outline-none"
+  onInput={() => updateResponse()}
+  onPaste={(event) => {
+    event.preventDefault();
+    insertText(event.clipboardData.getData("text/plain"));
+  }}
+>
+</div>
+      </div>
   );
 };
 

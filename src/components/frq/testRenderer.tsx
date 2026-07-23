@@ -4,6 +4,7 @@ import ResponseInput, {
   type ResponseInputType,
 } from "@/components/frq/responseInput";
 import FRQFooter from "@/components/frq/FRQFooter";
+import type { QuestionInput } from "@/types/questions";
 
 import {
   Bookmark,
@@ -19,10 +20,7 @@ type FRQTestRendererProps = {
   error?: string | null;
 };
 
-type MockAdvancedTextValue = {
-  value: string;
-  files: never[];
-};
+type MockAdvancedTextValue = QuestionInput;
 
 type MockFRQ = {
   title: string;
@@ -215,8 +213,7 @@ const downloadResponsesAsPdf = () => {
   }
 
   const getPlainText = (html: string) => {
-    const documentParser = new DOMParser();
-    const parsedDocument = documentParser.parseFromString(
+    const parsedDocument = new DOMParser().parseFromString(
       html,
       "text/html",
     );
@@ -224,68 +221,70 @@ const downloadResponsesAsPdf = () => {
     return parsedDocument.body.textContent?.trim() || "No response";
   };
 
-  const responseSections = questions
-    .map((question, index) => {
-      const responseText = getPlainText(responses[index] ?? "");
+  const printDocument = printWindow.document;
 
-      return `
-        <section class="response">
-          <h2>FRQ ${index + 1}: ${question.title}</h2>
-          <p>${responseText}</p>
-        </section>
-      `;
-    })
-    .join("");
+  printDocument.title = "FRQ Responses";
+  printDocument.head.replaceChildren();
+  printDocument.body.replaceChildren();
 
-  printWindow.document.write(`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>FRQ Responses</title>
-        <style>
-          body {
-            margin: 40px;
-            color: #111;
-            font-family: Georgia, "Times New Roman", serif;
-          }
+  const styleElement = printDocument.createElement("style");
 
-          h1 {
-            margin-bottom: 32px;
-            text-align: center;
-          }
+  styleElement.textContent = `
+    body {
+      margin: 40px;
+      color: #111;
+      font-family: Georgia, "Times New Roman", serif;
+    }
 
-          .response {
-            margin-bottom: 32px;
-            page-break-inside: avoid;
-          }
+    h1 {
+      margin-bottom: 32px;
+      text-align: center;
+    }
 
-          .response h2 {
-            border-bottom: 1px solid #999;
-            padding-bottom: 8px;
-            font-size: 18px;
-          }
+    .response {
+      margin-bottom: 32px;
+      page-break-inside: avoid;
+    }
 
-          .response p {
-            white-space: pre-wrap;
-            line-height: 1.6;
-          }
-        </style>
-      </head>
+    .response h2 {
+      border-bottom: 1px solid #999;
+      padding-bottom: 8px;
+      font-size: 18px;
+    }
 
-      <body>
-        <h1>AP Human Geography FRQ Responses</h1>
-        ${responseSections}
-      </body>
-    </html>
-  `);
+    .response p {
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+  `;
 
-  printWindow.document.close();
+  printDocument.head.appendChild(styleElement);
+
+  const pageTitle = printDocument.createElement("h1");
+  pageTitle.textContent = "AP Human Geography FRQ Responses";
+  printDocument.body.appendChild(pageTitle);
+
+  questions.forEach((question, index) => {
+    const section = printDocument.createElement("section");
+    section.className = "response";
+
+    const heading = printDocument.createElement("h2");
+    heading.textContent = `FRQ ${index + 1}: ${question.title}`;
+
+    const responseText = printDocument.createElement("p");
+    responseText.textContent = getPlainText(responses[index] ?? "");
+
+    section.append(heading, responseText);
+    printDocument.body.appendChild(section);
+  });
+
   printWindow.focus();
 
   window.setTimeout(() => {
     printWindow.print();
   }, 250);
 };
+
 
 const submissionModal = showSubmissionModal ? (
   <div
