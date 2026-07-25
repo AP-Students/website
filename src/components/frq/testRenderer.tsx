@@ -1,18 +1,9 @@
 "use client";
 
-import ResponseInput, {
-  type ResponseInputType,
-} from "@/components/frq/responseInput";
+import FRQResponseEditor from "@/components/frq/responseEditor";
 import FRQFooter from "@/components/frq/FRQFooter";
-import type { QuestionInput } from "@/types/questions";
-
-import {
-  Bookmark,
-  ChevronLeft,
-  ChevronRight,
-  LogOut,
-} from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Bookmark, LogOut } from "lucide-react";
+import { useEffect, useState } from "react";
 
 type FRQTestRendererProps = {
   frq: Record<string, unknown> | null;
@@ -20,59 +11,14 @@ type FRQTestRendererProps = {
   error?: string | null;
 };
 
-type MockAdvancedTextValue = QuestionInput;
-
 type MockFRQ = {
   title: string;
-  description: MockAdvancedTextValue;
-  question: MockAdvancedTextValue;
-  explanation: MockAdvancedTextValue;
-  options: never[];
-  responseType: ResponseInputType;
 };
 
-const makeTextValue = (value: string): MockAdvancedTextValue => ({
-  value,
-  files: [],
-});
-
 const mockFRQs: MockFRQ[] = [
-  {
-    title: "Demographic Transition Model",
-    description: makeTextValue(
-      "Use the population pyramid and demographic transition model shown below to answer the questions.",
-    ),
-    question: makeTextValue(
-      "Respond to parts A, B, C, D, E, F, and G. Refer to the population pyramid and the demographic transition model in your response.",
-    ),
-    explanation: makeTextValue(""),
-    options: [],
-    responseType: "rich-text",
-  },
-  {
-    title: "Urban Land Use",
-    description: makeTextValue(
-      "Study the urban model and explain how land use changes across different parts of a city.",
-    ),
-    question: makeTextValue(
-      "Respond to parts A, B, and C. Identify one pattern, explain one cause, and describe one effect.",
-    ),
-    explanation: makeTextValue(""),
-    options: [],
-    responseType: "rich-text",
-  },
-  {
-    title: "Agricultural Regions",
-    description: makeTextValue(
-      "Use the map and information provided to analyze agricultural production patterns.",
-    ),
-    question: makeTextValue(
-      "Respond to parts A, B, C, and D. Describe one region, explain one economic factor, and connect it to development.",
-    ),
-    explanation: makeTextValue(""),
-    options: [],
-    responseType: "rich-text",
-  },
+  { title: "Demographic Transition Model" },
+  { title: "Urban Land Use" },
+  { title: "Agricultural Regions" },
 ];
 
 const FRQTestRenderer = ({
@@ -81,8 +27,7 @@ const FRQTestRenderer = ({
   error = null,
 }: FRQTestRendererProps) => {
   const [currentFRQIndex, setCurrentFRQIndex] = useState(0);
-  const [showQuestionNavigation, setShowQuestionNavigation] = useState(false);
-  const [questions] = useState<MockFRQ[]>(mockFRQs);
+  const questions = mockFRQs;
   const [responses, setResponses] = useState<string[]>(
   mockFRQs.map(() => ""),
 );
@@ -123,17 +68,6 @@ const formattedTime = `${Math.floor(timeRemaining / 3600)}:${String(
 
   const currentFRQ = questions[currentFRQIndex];
   const hasBackendData = Boolean(frq);
-
-  const questionLabel = useMemo(
-    () => `Question ${currentFRQIndex + 1} of ${questions.length}`,
-    [currentFRQIndex, questions.length],
-  );
-
-  const handlePrevious = () => {
-    setCurrentFRQIndex((currentIndex) =>
-      currentIndex === 0 ? questions.length - 1 : currentIndex - 1,
-    );
-  };
 
   const handleNext = () => {
   if (currentFRQIndex === questions.length - 1) {
@@ -614,9 +548,7 @@ const submissionModal = showSubmissionModal ? (
               <li>
                 Explain one social cause of the transition between two stages.
               </li>
-              <li>
-                Define the term post-industrial society.
-              </li>
+              <li>Define the term post-industrial society.</li>
               <li>
                 Explain one change in the birth rate or death rate shown in the
                 model.
@@ -628,14 +560,13 @@ const submissionModal = showSubmissionModal ? (
                 Explain one factor that may contribute to a country&apos;s aging
                 population.
               </li>
-              <li>
-                Explain how migration may influence population trends.
-              </li>
+              <li>Explain how migration may influence population trends.</li>
             </ol>
 
+
+
             <div className="w-full max-w-[50rem]">
-              <ResponseInput
-  type={currentFRQ.responseType}
+              <FRQResponseEditor
   ariaLabel={`Response for FRQ ${currentFRQIndex + 1}`}
   value={responses[currentFRQIndex] ?? ""}
   onChange={(newResponse) => {
