@@ -3,6 +3,7 @@
 import FRQResponseEditor from "@/components/frq/responseEditor";
 import FRQFooter from "@/components/frq/FRQFooter";
 import { Bookmark, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 type FRQTestRendererProps = {
@@ -26,6 +27,7 @@ const FRQTestRenderer = ({
   loading = false,
   error = null,
 }: FRQTestRendererProps) => {
+  const router = useRouter();
   const [currentFRQIndex, setCurrentFRQIndex] = useState(0);
   const questions = mockFRQs;
   const [responses, setResponses] = useState<string[]>(
@@ -393,7 +395,7 @@ const submissionModal = showSubmissionModal ? (
 
           <div className="text-center">
   <p className="font-sans text-lg font-bold">
-  {formattedTime}
+  {timerHidden ? "" : formattedTime}
 </p>
 
   <button
@@ -405,7 +407,11 @@ const submissionModal = showSubmissionModal ? (
   </button>
 </div>
 
-          <button className="flex items-center gap-2 text-sm font-bold text-red-500">
+          <button
+  type="button"
+  className="flex items-center gap-2 text-sm font-bold text-red-500"
+  onClick={() => router.back()}
+>
   <LogOut size={16} />
   Exit Test
 </button>
