@@ -24,6 +24,12 @@ service cloud.firestore {
       return isAuthenticated() && (accessLevel == "admin" || accessLevel == "member" || accessLevel == "grader");
     }
 
+    function isGraderOrAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.access == "admin" ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.access == "grader");
+    }
+
     // Allow read/write access to users for their own user data
     match /users/{userId} {
       allow read: if isAuthenticated() && request.auth.uid == userId;
@@ -62,6 +68,41 @@ service cloud.firestore {
 
     match /{somePath=**}/frqResponses/{frqResponse} {
       allow read: if isGraderOrMemberOrAdmin();
+    }
+
+    // Digital testing FRQs deliberately use separate stores. Templates are
+    // published prompts, the queue contains only ungraded responses, and a
+    // grading result is kept separately for the student's dashboard.
+    match /frqTemplates/{templateId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /gradableFrqSubmissions/{submissionId} {
+      allow get, list: if isGraderOrAdmin() ||
+        (isAuthenticated() && resource.data.studentId == request.auth.uid);
+      allow create: if isAuthenticated()
+        && request.resource.data.keys().hasOnly(['templateId', 'studentId', 'responses', 'submittedAt'])
+        && request.resource.data.templateId is string
+        && request.resource.data.studentId == request.auth.uid
+        && request.resource.data.responses is list
+        && exists(/databases/$(database)/documents/frqTemplates/$(request.resource.data.templateId));
+      allow delete: if isGraderOrAdmin();
+    }
+
+    match /gradedFrqSubmissions/{resultId} {
+      allow get, list: if isGraderOrAdmin() ||
+        (isAuthenticated() && resource.data.studentId == request.auth.uid);
+      allow create: if isGraderOrAdmin()
+        && request.resource.data.keys().hasOnly(['sourceSubmissionId', 'templateId', 'studentId', 'responses', 'submittedAt', 'score', 'feedback', 'graderId', 'gradedAt'])
+        && request.resource.data.sourceSubmissionId is string
+        && request.resource.data.templateId is string
+        && request.resource.data.studentId is string
+        && request.resource.data.responses is list
+        && request.resource.data.score is string
+        && request.resource.data.feedback is string
+        && request.resource.data.graderId == request.auth.uid;
+      allow update, delete: if isGraderOrAdmin();
     }
     
     // Admins can read/write all user documents

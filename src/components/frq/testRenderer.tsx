@@ -5,6 +5,9 @@ import FRQFooter from "@/components/frq/FRQFooter";
 import { Bookmark, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useUser } from "@/components/hooks/UserContext";
 
 type FRQTestRendererProps = {
   frq: Record<string, unknown> | null;
@@ -28,8 +31,13 @@ const FRQTestRenderer = ({
   error = null,
 }: FRQTestRendererProps) => {
   const router = useRouter();
+  const { user } = useUser();
+  const [submitting, setSubmitting] = useState(false);
   const [currentFRQIndex, setCurrentFRQIndex] = useState(0);
-  const questions = mockFRQs;
+  const templateQuestions = Array.isArray(frq?.questions)
+    ? (frq.questions as MockFRQ[])
+    : mockFRQs;
+  const questions = templateQuestions.length > 0 ? templateQuestions : mockFRQs;
   const [responses, setResponses] = useState<string[]>(
   mockFRQs.map(() => ""),
 );
@@ -221,6 +229,32 @@ const downloadResponsesAsPdf = () => {
   }, 250);
 };
 
+const submitForGrading = async () => {
+  const templateId = typeof frq?.id === "string" ? frq.id : null;
+
+  if (!user || !templateId) {
+    window.alert("Please sign in before submitting this FRQ for grading.");
+    return;
+  }
+
+  setSubmitting(true);
+  try {
+    await addDoc(collection(db, "gradableFrqSubmissions"), {
+      templateId,
+      studentId: user.uid,
+      responses,
+      submittedAt: serverTimestamp(),
+    });
+    setShowSubmissionModal(false);
+    window.alert("Your FRQ was submitted for grading.");
+  } catch (submissionError) {
+    console.error("Error submitting FRQ for grading:", submissionError);
+    window.alert("We could not submit your FRQ. Please try again.");
+  } finally {
+    setSubmitting(false);
+  }
+};
+
 
 const submissionModal = showSubmissionModal ? (
   <div
@@ -259,14 +293,10 @@ const submissionModal = showSubmissionModal ? (
         <button
           type="button"
           className="rounded bg-blue-700 px-5 py-3 font-semibold text-white"
-          onClick={() => {
-            setShowSubmissionModal(false);
-            window.alert(
-              "Submission for grading will be connected to the backend later.",
-            );
-          }}
+          onClick={() => void submitForGrading()}
+          disabled={submitting}
         >
-          Submit for Grading
+          {submitting ? "Submitting..." : "Submit for Grading"}
         </button>
 
         <button

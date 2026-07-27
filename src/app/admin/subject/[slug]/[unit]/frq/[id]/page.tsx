@@ -23,15 +23,7 @@ const Page = () => {
     }
 
     (async () => {
-      const docRef = doc(
-        db,
-        "subjects",
-        subject,
-        "units",
-        unitId,
-        "frqs",
-        frqId,
-      );
+      const docRef = doc(db, "frqTemplates", frqId);
 
       const docSnap = await getDoc(docRef);
       setFrqFound(docSnap.exists());

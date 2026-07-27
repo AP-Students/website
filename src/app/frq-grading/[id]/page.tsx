@@ -2,7 +2,7 @@
 
 import FRQGradingRenderer from "@/components/frq/gradingRenderer";
 import { db } from "@/lib/firebase";
-import type { FRQSubmission } from "@/types/frq";
+import type { GradableFRQSubmission } from "@/types/frq";
 import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
@@ -13,19 +13,19 @@ type PageProps = {
 };
 
 const Page = ({ params }: PageProps) => {
-  const [frq, setFrq] = useState<FRQSubmission | null>(null);
+  const [frq, setFrq] = useState<GradableFRQSubmission | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchFrq = async () => {
       try {
-        const docRef = doc(db, "ungraded-frqs", params.id);
+        const docRef = doc(db, "gradableFrqSubmissions", params.id);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
           setFrq({
             id: docSnap.id,
-            ...(docSnap.data() as FRQSubmission),
+            ...(docSnap.data() as GradableFRQSubmission),
           });
         } else {
           setFrq(null);

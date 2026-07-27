@@ -17,7 +17,7 @@ const Page = () => {
     const fetchFeedback = async () => {
       setStatus("loading");
       try {
-        const docRef = doc(db, "frq-feedback", frqId);
+        const docRef = doc(db, "gradedFrqSubmissions", frqId);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
