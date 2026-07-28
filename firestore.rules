@@ -85,7 +85,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['templateId', 'studentId', 'responses', 'submittedAt'])
         && request.resource.data.templateId is string
         && request.resource.data.studentId == request.auth.uid
-        && request.resource.data.responses is list
+        && request.resource.data.responses is map
         && exists(/databases/$(database)/documents/frqTemplates/$(request.resource.data.templateId));
       allow delete: if isGraderOrAdmin();
     }
@@ -98,7 +98,7 @@ service cloud.firestore {
         && request.resource.data.sourceSubmissionId is string
         && request.resource.data.templateId is string
         && request.resource.data.studentId is string
-        && request.resource.data.responses is list
+        && request.resource.data.responses is map
         && request.resource.data.score is string
         && request.resource.data.feedback is string
         && request.resource.data.graderId == request.auth.uid;

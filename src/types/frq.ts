@@ -7,9 +7,16 @@ export interface FRQTemplate {
   unitId?: string;
   title?: string;
   directions?: string;
-  questions?: Array<{ title?: string; prompt?: string }>;
+  questions?: FRQTemplateQuestion[];
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
+}
+
+export interface FRQTemplateQuestion {
+  /** Stable template-local identifier; never derived from display order. */
+  id: string;
+  title: string;
+  prompt?: string;
 }
 
 /** A completed digital-test response awaiting staff grading. */
@@ -17,7 +24,8 @@ export interface GradableFRQSubmission {
   id?: string;
   templateId: string;
   studentId: string;
-  responses: string[];
+  /** Responses are keyed by a stable FRQTemplateQuestion.id. */
+  responses: Record<string, string>;
   submittedAt: Timestamp;
 }
 

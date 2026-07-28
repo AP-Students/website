@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { collection, doc, serverTimestamp, writeBatch } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  serverTimestamp,
+  writeBatch,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useUser } from "@/components/hooks/UserContext";
 import type { GradableFRQSubmission } from "@/types/frq";
@@ -55,7 +60,9 @@ const FRQGradingRenderer = ({ frq }: FRQGradingRendererProps) => {
     <div className="mx-auto max-w-2xl space-y-4 p-6">
       <h1 className="text-2xl font-bold">Grade FRQ submission</h1>
       <pre className="whitespace-pre-wrap rounded border bg-gray-50 p-4">
-        {frq.responses.join("\n\n")}
+        {Object.entries(frq.responses)
+          .map(([questionId, response]) => `${questionId}:\n${response}`)
+          .join("\n\n")}
       </pre>
       <label className="block">
         <span className="font-semibold">Score</span>
