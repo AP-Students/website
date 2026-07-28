@@ -42,7 +42,7 @@ const FRQTestRenderer = ({
   const { user } = useUser();
   const [submitting, setSubmitting] = useState(false);
   const [currentFRQIndex, setCurrentFRQIndex] = useState(0);
-  const templateQuestions = useMemo(
+  const templateQuestions = useMemo<FRQQuestion[] | null>(
     () => (Array.isArray(frq?.questions) ? frq.questions : null),
     [frq],
   );
@@ -52,7 +52,7 @@ const FRQTestRenderer = ({
       !templateQuestions.every(isTemplateQuestion));
   const questions = hasInvalidTemplateQuestions
     ? emptyQuestions
-    : ((templateQuestions as FRQQuestion[] | null) ?? mockFRQs);
+    : (templateQuestions ?? mockFRQs);
   const [responses, setResponses] = useState<Record<string, string>>({});
 
   useEffect(() => {
