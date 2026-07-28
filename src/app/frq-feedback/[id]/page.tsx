@@ -17,7 +17,11 @@ const Page = () => {
     const fetchFeedback = async () => {
       setStatus("loading");
       try {
-        const docRef = doc(db, "gradedFrqSubmissions", frqId);
+        const docRef = doc(
+          db, 
+          "frq-feedback", 
+          frqId
+        );
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
@@ -25,10 +29,10 @@ const Page = () => {
         } else {
           setStatus("not-found");
         }
-      } catch (error: unknown) {
-        console.error("Error fetching FRQ feedback:", error);
-        setStatus("not-found");
-      }
+        } catch (error: unknown) {
+          console.error("Error fetching FRQ feedback:", error);
+          setStatus("not-found");
+        }
     };
 
     void fetchFeedback();
@@ -39,9 +43,11 @@ const Page = () => {
   }
 
   return (
-    <div>
-      <FRQFeedbackRenderer />
-    </div>
+  <div className="px-8 py-12">
+    <FRQFeedbackRenderer 
+      feedbackFound={status === "found"} 
+    />
+  </div>
   );
 };
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { db } from "@/lib/firebase";
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
@@ -17,8 +18,21 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useUser } from "@/components/hooks/UserContext";
-import { db } from "@/lib/firebase";
-import type { GradableFRQSubmission } from "@/types/frq";
+import Link from "next/link";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  LogOut,
+} from "lucide-react";
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import type { FRQSubmission, GradableFRQSubmission } from "@/types/frq";
 
 type FRQGradingRendererProps = {
   frq: GradableFRQSubmission | null;
@@ -251,6 +265,17 @@ function GraderResponsePanel({
         {frqTitle} | Question A | Grader Response
       </h2>
       <QuestionHeader label="A" points="3/6 Points" expanded />
+      <QuestionHeader label="A" points="3/6 Points" expanded />
+    </section>
+  );
+}
+}: GraderResponsePanelProps) {
+  return (
+    <section className="px-10 py-8">
+      <h2 className="mb-5 text-base font-semibold">
+        {frqTitle} | Question A | Grader Response
+      </h2>
+      <QuestionHeader label="A" points="3/6 Points" expanded />
       <div className="space-y-1">
         {RUBRIC_ITEMS.map((item) => (
           <RubricRow key={item.description} item={item} />
@@ -288,7 +313,11 @@ function GraderResponsePanel({
   );
 }
 
-function RubricRow({ item }: { item: RubricItem }) {
+type RubricRowProps = {
+  item: RubricItem;
+};
+
+function RubricRow({ item }: RubricRowProps) {
   return (
     <div className="flex min-h-9 items-center gap-2">
       <div className="min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm">
@@ -324,52 +353,72 @@ function StudentResponsePanel({
         <h2 className="text-base font-semibold">
           {frqTitle} | {questionCount} Questions
         </h2>
+
         <button
           type="button"
-          onClick={onShowPromptChange}
           className="rounded-md bg-black px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
         >
-          {showPrompt ? "Hide Prompt" : "Show Prompt"}
+          Show Prompt
         </button>
       </div>
+
       <QuestionHeader label="A" expanded />
-      {showPrompt && (
-        <div className="mb-5 text-sm leading-6 text-gray-900">
-          <p className="mb-4">
-            The demographic transition model can be used to theorize changes in
-            a country&apos;s total population over time.
-          </p>
-          <p className="mb-3 font-medium">
-            Respond to parts A, B, C, D, E, F, and G.
-          </p>
-          <ol className="space-y-2">
-            <li>
-              <strong>A.</strong> Referring to Figure 1, identify the stage of
-              the Demographic Transition Model that this country is most likely
-              in.
-            </li>
-            <li>
-              <strong>B.</strong> Explain one social cause of the transition
-              between Stage 2 and Stage 3.
-            </li>
-            <li>
-              <strong>C.</strong> Define the term pro-natalist policy.
-            </li>
-            <li>
-              <strong>D.</strong> Explain the change in cause of death between
-              Stage 3 and Stage 4.
-            </li>
-          </ol>
-        </div>
-      )}
-      <div className="min-h-[260px] rounded-md border border-gray-400 p-4 text-sm leading-6">
-        {Object.entries(responses).map(([questionId, response]) => (
-          <div key={questionId} className="mb-4 last:mb-0">
-            <p className="font-semibold">{questionId}</p>
-            <p className="whitespace-pre-wrap">{response || "No response."}</p>
-          </div>
-        ))}
+
+      <div className="mb-5 text-sm leading-6 text-gray-900">
+        <p className="mb-4">
+          The demographic transition model can be used to theorize
+          changes in a country&apos;s total population over time.
+        </p>
+
+        <p className="mb-3 font-medium">
+          Respond to parts A, B, C, D, E, F, and G.
+        </p>
+
+        <ol className="space-y-2">
+          <li>
+            <strong>A.</strong> Referring to Figure 1, identify the
+            stage of the Demographic Transition Model that this country
+            is most likely in.
+          </li>
+
+          <li>
+            <strong>B.</strong> Explain one social cause of the
+            transition between Stage 2 and Stage 3.
+          </li>
+
+          <li>
+            <strong>C.</strong> Define the term pro-natalist policy.
+          </li>
+
+          <li>
+            <strong>D.</strong> Explain the change in cause of death
+            between Stage 3 and Stage 4.
+          </li>
+        </ol>
       </div>
+
+      <div className="min-h-[260px] rounded-md border border-gray-400 p-4 text-sm leading-6">
+        <p className="mb-4">
+          This is temporary student response content used to match the
+          grading-page mockup. The actual FRQ response will be loaded
+          in a future work item.
+        </p>
+
+        <p className="mb-4">
+          The student response area will use the advanced textbox
+          renderer after its required properties are confirmed.
+        </p>
+
+        <p>
+          Navigating through the footer changes the displayed FRQ title
+          and question count.
+        </p>
+
+        {/*
+          Replace this temporary content with RenderAdvancedTextbox.
+        */}
+      </div>
+
       <QuestionHeader label="B" />
       <QuestionHeader label="C" />
     </section>
@@ -403,6 +452,18 @@ function QuestionHeader({
   );
 }
 
+type GradingFooterProps = {
+  currentFrqIndex: number;
+  totalFrqs: number;
+  isFirstFrq: boolean;
+  isLastFrq: boolean;
+  isNavigationOpen: boolean;
+  onNavigationOpenChange: (open: boolean) => void;
+  onPrevious: () => void;
+  onNext: () => void;
+  onJumpToFrq: (index: number) => void;
+};
+
 function GradingFooter({
   currentFrqIndex,
   totalFrqs,
@@ -413,20 +474,13 @@ function GradingFooter({
   onPrevious,
   onNext,
   onJumpToFrq,
-}: {
-  currentFrqIndex: number;
-  totalFrqs: number;
-  isFirstFrq: boolean;
-  isLastFrq: boolean;
-  isNavigationOpen: boolean;
-  onNavigationOpenChange: (open: boolean) => void;
-  onPrevious: () => void;
-  onNext: () => void;
-  onJumpToFrq: (index: number) => void;
-}) {
+}: GradingFooterProps) {
   return (
     <footer className="fixed bottom-0 left-0 z-50 flex h-14 w-full items-center justify-between border-t-2 border-gray-300 bg-white px-8">
-      <p className="font-semibold">AP Human Geography Practice FRQ</p>
+      <p className="font-semibold">
+        AP Human Geography Practice FRQ
+      </p>
+
       <div className="absolute left-1/2 flex -translate-x-1/2 items-center gap-2">
         <FooterIconButton
           label="Previous FRQ"
@@ -452,7 +506,11 @@ function GradingFooter({
                   key={index}
                   type="button"
                   onClick={() => onJumpToFrq(index)}
-                  className={`rounded-md px-3 py-2 text-left text-sm transition-colors ${index === currentFrqIndex ? "bg-[#294ad1] font-bold text-white" : "bg-gray-100 hover:bg-gray-200"}`}
+                  className={`rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                    index === currentFrqIndex
+                      ? "bg-[#294ad1] font-bold text-white"
+                      : "bg-gray-100 hover:bg-gray-200"
+                  }`}
                 >
                   FRQ {index + 1}
                 </button>
@@ -480,17 +538,19 @@ function GradingFooter({
   );
 }
 
+type FooterIconButtonProps = {
+  label: string;
+  disabled: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+};
+
 function FooterIconButton({
   label,
   disabled,
   onClick,
   children,
-}: {
-  label: string;
-  disabled: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
+}: FooterIconButtonProps) {
   return (
     <button
       type="button"
