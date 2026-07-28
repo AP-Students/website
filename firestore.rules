@@ -25,9 +25,9 @@ service cloud.firestore {
     }
 
     function isGraderOrAdmin() {
+      let accessLevel = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.access;
       return isAuthenticated() &&
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.access == "admin" ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.access == "grader");
+        (accessLevel == "admin" || accessLevel == "grader");
     }
 
     // Allow read/write access to users for their own user data
