@@ -20,9 +20,7 @@ src/lib/AddAdminRoles
 
 # firebase emulator
 .firebaserc
-firebase.json
 firebase-debug.log
-firestore.indexes.json
 firestore-debug.log
 storage.rules
 firebase-storage.rules
