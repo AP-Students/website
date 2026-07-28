@@ -1,12 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  collection,
-  doc,
-  serverTimestamp,
-  writeBatch,
-} from "firebase/firestore";
+import { doc, runTransaction, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useUser } from "@/components/hooks/UserContext";
 import type { GradableFRQSubmission } from "@/types/frq";
@@ -30,27 +25,44 @@ const FRQGradingRenderer = ({ frq }: FRQGradingRendererProps) => {
 
     setSaving(true);
     try {
-      const batch = writeBatch(db);
-      const resultRef = doc(collection(db, "gradedFrqSubmissions"));
+      // The submission ID is the grade ID. A transaction makes the queue item
+      // a one-time claim: concurrent graders cannot create competing grades.
+      const resultRef = doc(db, "gradedFrqSubmissions", frq.id);
       const queueRef = doc(db, "gradableFrqSubmissions", frq.id);
 
-      batch.set(resultRef, {
-        sourceSubmissionId: frq.id,
-        templateId: frq.templateId,
-        studentId: frq.studentId,
-        responses: frq.responses,
-        submittedAt: frq.submittedAt,
-        score: score.trim(),
-        feedback: feedback.trim(),
-        graderId: user.uid,
-        gradedAt: serverTimestamp(),
+      await runTransaction(db, async (transaction) => {
+        const [queueSnapshot, resultSnapshot] = await Promise.all([
+          transaction.get(queueRef),
+          transaction.get(resultRef),
+        ]);
+
+        if (!queueSnapshot.exists() || resultSnapshot.exists()) {
+          throw new Error("This submission has already been graded.");
+        }
+
+        const queuedSubmission = queueSnapshot.data() as GradableFRQSubmission;
+        transaction.set(resultRef, {
+          sourceSubmissionId: frq.id,
+          templateId: queuedSubmission.templateId,
+          studentId: queuedSubmission.studentId,
+          responses: queuedSubmission.responses,
+          submittedAt: queuedSubmission.submittedAt,
+          score: score.trim(),
+          feedback: feedback.trim(),
+          graderId: user.uid,
+          gradedAt: serverTimestamp(),
+        });
+        transaction.delete(queueRef);
       });
-      batch.delete(queueRef);
-      await batch.commit();
       window.alert("Grade and feedback saved.");
     } catch (error) {
       console.error("Error saving FRQ grade:", error);
-      window.alert("Unable to save the grade. Please try again.");
+      window.alert(
+        error instanceof Error &&
+          error.message === "This submission has already been graded."
+          ? "This submission was just graded by someone else. Refresh the queue."
+          : "Unable to save the grade. Please try again.",
+      );
     } finally {
       setSaving(false);
     }

@@ -94,6 +94,7 @@ service cloud.firestore {
       allow get, list: if isGraderOrAdmin() ||
         (isAuthenticated() && resource.data.studentId == request.auth.uid);
       allow create: if isGraderOrAdmin()
+        && resultId == request.resource.data.sourceSubmissionId
         && request.resource.data.keys().hasOnly(['sourceSubmissionId', 'templateId', 'studentId', 'responses', 'submittedAt', 'score', 'feedback', 'graderId', 'gradedAt'])
         && request.resource.data.sourceSubmissionId is string
         && request.resource.data.templateId is string
