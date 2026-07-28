@@ -35,6 +35,7 @@ interface UnitComponentProps {
   onMoveDown: (index: number) => void;
   subjectSlug: string;
   subjectTitle: string;
+  hasUnit0?: boolean;
 }
 
 /**
@@ -50,6 +51,7 @@ function UnitComponent({
   onMoveDown,
   subjectSlug,
   subjectTitle,
+  hasUnit0,
 }: UnitComponentProps) {
   const [expanded, setExpanded] = useState<boolean>(false);
 
@@ -369,6 +371,7 @@ function UnitComponent({
                 setChapterVisibility={setChapterVisibility}
                 moveChapterUp={moveChapterUp}
                 moveChapterDown={moveChapterDown}
+                hasUnit0={hasUnit0}
               />
             ))}
           </div>

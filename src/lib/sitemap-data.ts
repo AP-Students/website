@@ -69,6 +69,7 @@ export interface SitemapSubject {
   slug: string;
   title: string;
   units: SitemapUnit[];
+  hasUnit0?: boolean;
 }
 
 /**
@@ -92,6 +93,7 @@ export async function getAllSubjects(): Promise<SitemapSubject[]> {
         units: (Array.isArray(fields.units)
           ? fields.units
           : []) as SitemapUnit[],
+        hasUnit0: typeof fields.hasUnit0 === "boolean" ? fields.hasUnit0 : false,
       };
     });
   } catch {
@@ -112,6 +114,7 @@ export async function getSubject(slug: string): Promise<SitemapSubject | null> {
       slug,
       title: typeof fields.title === "string" ? fields.title : slug,
       units: (Array.isArray(fields.units) ? fields.units : []) as SitemapUnit[],
+      hasUnit0: typeof fields.hasUnit0 === "boolean" ? fields.hasUnit0 : false,
     };
   } catch {
     return null;

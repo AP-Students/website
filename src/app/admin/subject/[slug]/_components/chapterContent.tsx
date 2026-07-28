@@ -19,6 +19,7 @@ interface ChapterComponentProps {
   setChapterVisibility: (chapterId: string, isPublic: boolean) => void;
   moveChapterUp: (chapterId: string) => void;
   moveChapterDown: (chapterId: string) => void;
+  hasUnit0?: boolean;
 }
 
 /**
@@ -36,6 +37,7 @@ function ChapterComponent({
   setChapterVisibility,
   moveChapterUp,
   moveChapterDown,
+  hasUnit0,
 }: ChapterComponentProps) {
   const [editing, setEditing] = useState<boolean>(false);
   const [localTitle, setLocalTitle] = useState<string>(chapter.title);
@@ -81,7 +83,7 @@ function ChapterComponent({
 
       <Link
         className="whitespace-nowrap rounded-full border border-input bg-background px-4 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
-        href={`/admin/subject/${subjectSlug}/${unitId}/chapter/${chapter.id}?subject=${subjectTitle}&unitIndex=${unitIndex + 1}&chapter=${chapter.title}`}
+        href={`/admin/subject/${subjectSlug}/${unitId}/chapter/${chapter.id}?subject=${subjectTitle}&unitIndex=${hasUnit0 ? unitIndex : unitIndex + 1}&chapter=${chapter.title}`}
       >
         Edit Chapter {index + 1}
       </Link>

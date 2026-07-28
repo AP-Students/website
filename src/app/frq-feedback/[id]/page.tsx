@@ -1,4 +1,3 @@
-
 "use client";
 
 import FRQFeedbackRenderer from "@/components/frq/feedbackRenderer";
