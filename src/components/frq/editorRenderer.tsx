@@ -1,15 +1,718 @@
+"use client";
+
+import AdvancedTextbox from "@/components/article-creator/custom_questions/AdvancedTextbox";
+import FRQEditorFooter from "@/components/frq/editorFooter";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import type { QuestionFormat, QuestionInput } from "@/types/questions";
+import { Clock3, Eye, Info, Plus, Save, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+
+type QuestionStatus = "public" | "legacy";
+type InputType = "text" | "equation";
+type BatchVisibility = "public" | "private";
+
+interface GradingCriterion {
+  id: string;
+  description: string;
+  points: number;
+}
+
+interface EditorQuestion {
+  id: string;
+  questionData: QuestionFormat;
+  status: QuestionStatus;
+  inputType: InputType;
+  criteria: GradingCriterion[];
+}
+
+interface EditorFRQ {
+  id: string;
+  title: string;
+  description: QuestionInput;
+  questions: EditorQuestion[];
+}
+
 interface FRQEditorRendererProps {
   frqFound: boolean;
 }
 
-const FRQEditorRenderer = ({
-  frqFound,
-}: FRQEditorRendererProps) => {
+const createQuestionInput = (value = ""): QuestionInput => ({
+  value,
+  files: [],
+});
+
+/**
+ * Unique, immutable ID built from the current time plus a short random suffix,
+ * per the FRQ system spec. The random half is what makes it collision-safe:
+ * a timestamp alone repeats when several IDs are minted in the same
+ * millisecond.
+ */
+const makeId = (prefix: string) =>
+  `${prefix}-${Date.now().toString(36)}-${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
+
+/**
+ * A question's point value is the sum of its grading criteria. Criteria are the
+ * single source of truth so the editor can never disagree with what the grading
+ * page will actually award.
+ */
+const getQuestionPoints = (question: EditorQuestion) =>
+  question.criteria.reduce((total, criterion) => total + criterion.points, 0);
+
+const formatPoints = (points: number) =>
+  `${points} ${points === 1 ? "point" : "points"}`;
+
+const createDescriptionQuestion = (
+  description: QuestionInput,
+): QuestionFormat => ({
+  question: {
+    value: description.value,
+    files: [...description.files],
+  },
+  type: "frq",
+  options: [],
+  answers: [],
+  explanation: createQuestionInput(),
+  content: createQuestionInput(),
+  topic: "",
+});
+
+const createEditorQuestion = (
+  id: string,
+  prompt: string,
+  points: number,
+): EditorQuestion => ({
+  id,
+  status: "public",
+  inputType: "text",
+  criteria: [
+    {
+      id: `${id}-criterion-1`,
+      description: "",
+      points,
+    },
+  ],
+  questionData: {
+    question: createQuestionInput(prompt),
+    type: "frq",
+    options: [],
+    answers: [],
+    explanation: createQuestionInput(),
+    content: createQuestionInput(),
+    topic: "",
+  },
+});
+
+/**
+ * AP-style subquestion label: 1a, 1b, 1c. Past 26 questions it rolls over to
+ * two letters (1aa, 1ab) rather than walking off the end of the alphabet into
+ * punctuation, which is what a bare String.fromCharCode(97 + index) would do.
+ */
+const getSubquestionLabel = (frqIndex: number, questionIndex: number) => {
+  let label = "";
+  let remaining = questionIndex;
+
+  do {
+    label = String.fromCharCode(97 + (remaining % 26)) + label;
+    remaining = Math.floor(remaining / 26) - 1;
+  } while (remaining >= 0);
+
+  return `${frqIndex + 1}${label}`;
+};
+
+const mockFRQs: EditorFRQ[] = [
+  {
+    id: "frq-1",
+    title: "FRQ 1",
+    description: createQuestionInput(
+      "Read the source material carefully. Then answer all parts of the question using evidence from the source.",
+    ),
+    questions: [
+      createEditorQuestion(
+        "frq-1-a",
+        "Identify one claim made in the source.",
+        1,
+      ),
+      createEditorQuestion(
+        "frq-1-b",
+        "Explain how evidence from the source supports that claim.",
+        2,
+      ),
+      createEditorQuestion(
+        "frq-1-c",
+        "Evaluate one limitation of the source's argument.",
+        2,
+      ),
+    ],
+  },
+  {
+    id: "frq-2",
+    title: "FRQ 2",
+    description: createQuestionInput(
+      "Examine the provided information and respond to each part of the question.",
+    ),
+    questions: [
+      createEditorQuestion(
+        "frq-2-a",
+        "Describe the main process shown in the provided material.",
+        1,
+      ),
+      createEditorQuestion(
+        "frq-2-b",
+        "Explain one relationship between two parts of the process.",
+        2,
+      ),
+      createEditorQuestion(
+        "frq-2-c",
+        "Use evidence from the material to justify your response.",
+        2,
+      ),
+    ],
+  },
+  {
+    id: "frq-3",
+    title: "FRQ 3",
+    description: createQuestionInput(
+      "Use the information provided to develop and support a defensible response.",
+    ),
+    questions: [
+      createEditorQuestion(
+        "frq-3-a",
+        "State a defensible conclusion based on the information provided.",
+        1,
+      ),
+      createEditorQuestion(
+        "frq-3-b",
+        "Support your conclusion with two relevant pieces of evidence.",
+        2,
+      ),
+      createEditorQuestion(
+        "frq-3-c",
+        "Explain how one piece of evidence could be interpreted differently.",
+        2,
+      ),
+    ],
+  },
+];
+
+const FRQEditorRenderer = ({ frqFound }: FRQEditorRendererProps) => {
+  const [frqs, setFrqs] = useState<EditorFRQ[]>(mockFRQs);
+  const [currentFrqIndex, setCurrentFrqIndex] = useState(0);
+  const [batchName, setBatchName] = useState("FRQ Batch");
+  const [batchVisibility, setBatchVisibility] =
+    useState<BatchVisibility>("public");
+  const [timeLimitMinutes, setTimeLimitMinutes] = useState(90);
+
+  const goToPreviousFrq = () => {
+    setCurrentFrqIndex((index) => Math.max(index - 1, 0));
+  };
+
+  const goToNextFrq = () => {
+    setCurrentFrqIndex((index) => Math.min(index + 1, frqs.length - 1));
+  };
+
+  const updateCurrentFrq = (updater: (frq: EditorFRQ) => EditorFRQ) => {
+    setFrqs((currentFrqs) =>
+      currentFrqs.map((frq, index) =>
+        index === currentFrqIndex ? updater(frq) : frq,
+      ),
+    );
+  };
+
+  const updateQuestion = (
+    questionId: string,
+    updater: (question: EditorQuestion) => EditorQuestion,
+  ) => {
+    updateCurrentFrq((frq) => ({
+      ...frq,
+      questions: frq.questions.map((question) =>
+        question.id === questionId ? updater(question) : question,
+      ),
+    }));
+  };
+
+  const addCriterion = (questionId: string) => {
+    updateQuestion(questionId, (question) => ({
+      ...question,
+      criteria: [
+        ...question.criteria,
+        {
+          id: makeId("criterion"),
+          description: "",
+          points: 1,
+        },
+      ],
+    }));
+  };
+
+  const updateCriterion = (
+    questionId: string,
+    criterionId: string,
+    changes: Partial<Pick<GradingCriterion, "description" | "points">>,
+  ) => {
+    updateQuestion(questionId, (question) => ({
+      ...question,
+      criteria: question.criteria.map((criterion) =>
+        criterion.id === criterionId ? { ...criterion, ...changes } : criterion,
+      ),
+    }));
+  };
+
+  const deleteCriterion = (questionId: string, criterionId: string) => {
+    updateQuestion(questionId, (question) => ({
+      ...question,
+      criteria: question.criteria.filter(
+        (criterion) => criterion.id !== criterionId,
+      ),
+    }));
+  };
+
+  const currentFrq = frqs[currentFrqIndex];
+
+  // Read through to the fields the memos actually depend on. AdvancedTextbox
+  // treats its `questions[qIndex]` entry as a stable reference, so these must
+  // keep their identity across unrelated re-renders instead of being rebuilt
+  // fresh every time the parent renders. Both memos sit above the early returns
+  // so the hooks stay unconditional.
+  const currentDescription = currentFrq?.description;
+  const currentQuestions = currentFrq?.questions;
+
+  const descriptionQuestions = useMemo(
+    () =>
+      currentDescription ? [createDescriptionQuestion(currentDescription)] : [],
+    [currentDescription],
+  );
+
+  const questionFormats = useMemo(
+    () => currentQuestions?.map((question) => question.questionData) ?? [],
+    [currentQuestions],
+  );
+
+  if (!frqFound || !currentFrq) {
+    return <div>Failed to load FRQ.</div>;
+  }
+
   return (
-    <div>
-      {frqFound
-        ? "FRQ loaded successfully."
-        : "Failed to load FRQ."}
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="fixed inset-x-0 top-0 z-50 grid h-16 grid-cols-3 items-center border-b bg-background px-5 shadow-sm">
+        <div>
+          <Button
+            type="button"
+            variant="outline"
+            disabled
+            title="Preview is not implemented yet"
+          >
+            <Eye className="mr-2 size-4" />
+            Preview
+          </Button>
+        </div>
+
+        <div className="flex items-center justify-center gap-2">
+          <Clock3 className="size-4 text-muted-foreground" />
+          <label htmlFor="frq-time-limit" className="text-sm font-medium">
+            Time limit
+          </label>
+          <Input
+            id="frq-time-limit"
+            type="number"
+            min={1}
+            value={timeLimitMinutes}
+            onChange={(event) =>
+              setTimeLimitMinutes(Math.max(1, Number(event.target.value) || 1))
+            }
+            className="h-9 w-20"
+          />
+          <span className="text-sm text-muted-foreground">minutes</span>
+        </div>
+
+        <div className="justify-self-end">
+          <Button
+            type="button"
+            disabled
+            title="Saving to Firestore is not implemented yet"
+          >
+            <Save className="mr-2 size-4" />
+            Save Changes
+          </Button>
+        </div>
+      </header>
+
+      <main className="fixed inset-x-0 bottom-20 top-16 overflow-hidden bg-muted/20">
+        <div className="grid h-full grid-cols-1 overflow-y-auto lg:grid-cols-2 lg:overflow-hidden">
+          <section className="min-h-0 overflow-y-auto border-b p-6 lg:border-b-0 lg:border-r">
+            <div className="mb-6">
+              <p className="text-sm font-medium text-muted-foreground">
+                FRQ {currentFrqIndex + 1} of {frqs.length}
+              </p>
+
+              <label
+                htmlFor="frq-title"
+                className="mt-4 block text-sm font-medium"
+              >
+                FRQ title
+              </label>
+              <Input
+                id="frq-title"
+                value={currentFrq.title}
+                onChange={(event) =>
+                  updateCurrentFrq((frq) => ({
+                    ...frq,
+                    title: event.target.value,
+                  }))
+                }
+                className="mt-2 max-w-md text-base font-semibold"
+              />
+            </div>
+
+            <div>
+              <h1 className="text-xl font-semibold">FRQ Description</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Add the source material and directions students need for this
+                FRQ.
+              </p>
+
+              <div className="mt-4">
+                <AdvancedTextbox
+                  key={`${currentFrq.id}-description`}
+                  questions={descriptionQuestions}
+                  setQuestions={(updatedQuestions) => {
+                    const updatedDescription = updatedQuestions[0]?.question;
+
+                    if (!updatedDescription) {
+                      return;
+                    }
+
+                    updateCurrentFrq((frq) => ({
+                      ...frq,
+                      description: updatedDescription,
+                    }));
+                  }}
+                  origin="question"
+                  qIndex={0}
+                  placeholder="Enter the FRQ description here."
+                />
+              </div>
+            </div>
+          </section>
+
+          <section className="min-h-0 overflow-y-auto p-6">
+            <div className="mb-5 flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold">Questions</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {currentFrq.questions.length} questions in this FRQ
+                </p>
+              </div>
+
+              <Button
+                type="button"
+                disabled
+                title="Adding questions is not implemented yet"
+              >
+                <Plus className="mr-2 size-4" />
+                Add Question
+              </Button>
+            </div>
+
+            <Accordion
+              key={currentFrq.id}
+              type="multiple"
+              defaultValue={currentFrq.questions.map((question) => question.id)}
+              className="space-y-4"
+            >
+              {currentFrq.questions.map((question, questionIndex) => (
+                <AccordionItem
+                  key={question.id}
+                  value={question.id}
+                  className="rounded-lg border bg-background px-4 shadow-sm"
+                >
+                  <AccordionTrigger
+                    variant="secondary"
+                    className="mr-0 py-4 hover:no-underline"
+                  >
+                    <div className="flex flex-1 items-center justify-between pr-3">
+                      <span className="flex items-center gap-2">
+                        <span className="font-semibold">
+                          {getSubquestionLabel(currentFrqIndex, questionIndex)}
+                        </span>
+
+                        {question.status === "legacy" && (
+                          <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            Legacy
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-sm font-normal text-muted-foreground">
+                        {formatPoints(getQuestionPoints(question))}
+                      </span>
+                    </div>
+                  </AccordionTrigger>
+
+                  {/* ui/accordion.tsx hardcodes opacity-70 on the content root
+                      and routes className to an inner div, so there is no
+                      class-based override. Without this the editor's inputs all
+                      render washed out. Remove once accordion.tsx exposes it. */}
+                  <AccordionContent
+                    style={{ opacity: 1 }}
+                    className="space-y-5 pb-5 text-foreground"
+                  >
+                    <div>
+                      <label className="text-sm font-medium">
+                        Question prompt
+                      </label>
+                      <div className="mt-2">
+                        <AdvancedTextbox
+                          questions={questionFormats}
+                          // AdvancedTextbox hands back the whole array, but only
+                          // this question's entry is ours to write. An in-flight
+                          // file upload resolves against the array it captured
+                          // when the upload started, so copying every index back
+                          // would let a slow upload overwrite edits made to the
+                          // sibling questions in the meantime.
+                          setQuestions={(updatedQuestions) =>
+                            updateQuestion(question.id, (currentQuestion) => ({
+                              ...currentQuestion,
+                              questionData:
+                                updatedQuestions[questionIndex] ??
+                                currentQuestion.questionData,
+                            }))
+                          }
+                          origin="question"
+                          qIndex={questionIndex}
+                          placeholder="Enter the question prompt here."
+                        />
+                      </div>
+                    </div>
+
+                    {/* No question-level points field: the total is derived from
+                        the grading criteria below, which is what the grader
+                        actually awards against. */}
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="text-sm font-medium">
+                          Input type
+                        </label>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="mt-2 w-full justify-between"
+                            >
+                              {question.inputType === "text"
+                                ? "Text"
+                                : "Equation"}
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start">
+                            <DropdownMenuRadioGroup
+                              value={question.inputType}
+                              onValueChange={(value) => {
+                                if (value !== "text" && value !== "equation") {
+                                  return;
+                                }
+
+                                updateQuestion(
+                                  question.id,
+                                  (currentQuestion) => ({
+                                    ...currentQuestion,
+                                    inputType: value,
+                                  }),
+                                );
+                              }}
+                            >
+                              <DropdownMenuRadioItem value="text">
+                                Text
+                              </DropdownMenuRadioItem>
+                              <DropdownMenuRadioItem value="equation">
+                                Equation
+                              </DropdownMenuRadioItem>
+                            </DropdownMenuRadioGroup>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium">Status</label>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="mt-2 w-full justify-between"
+                            >
+                              {question.status === "public"
+                                ? "Public"
+                                : "Legacy"}
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start">
+                            <DropdownMenuRadioGroup
+                              value={question.status}
+                              onValueChange={(value) => {
+                                if (value !== "public" && value !== "legacy") {
+                                  return;
+                                }
+
+                                updateQuestion(
+                                  question.id,
+                                  (currentQuestion) => ({
+                                    ...currentQuestion,
+                                    status: value,
+                                  }),
+                                );
+                              }}
+                            >
+                              <DropdownMenuRadioItem value="public">
+                                Public
+                              </DropdownMenuRadioItem>
+                              <DropdownMenuRadioItem value="legacy">
+                                Legacy
+                              </DropdownMenuRadioItem>
+                            </DropdownMenuRadioGroup>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 border-t pt-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => addCriterion(question.id)}
+                      >
+                        <Plus className="mr-2 size-4" />
+                        Add Criteria
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled
+                        title="Question information is not implemented yet"
+                        aria-label="Question information"
+                        className="px-3"
+                      >
+                        <Info className="size-4" />
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled
+                        title="Saved questions cannot be deleted"
+                        className="ml-auto text-destructive"
+                      >
+                        <Trash2 className="mr-2 size-4" />
+                        Delete Question
+                      </Button>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-semibold">
+                        Grading Criteria
+                      </h3>
+
+                      {question.criteria.length === 0 ? (
+                        <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                          No grading criteria have been added.
+                        </p>
+                      ) : (
+                        question.criteria.map((criterion, criterionIndex) => (
+                          <div
+                            key={criterion.id}
+                            className="grid gap-3 rounded-md border bg-muted/20 p-4 md:grid-cols-[minmax(0,1fr)_7rem_auto]"
+                          >
+                            <div>
+                              <label className="text-sm font-medium">
+                                Criterion {criterionIndex + 1}
+                              </label>
+                              <Textarea
+                                value={criterion.description}
+                                onChange={(event) =>
+                                  updateCriterion(question.id, criterion.id, {
+                                    description: event.target.value,
+                                  })
+                                }
+                                placeholder="Describe what earns these points."
+                                className="mt-2 min-h-24"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="text-sm font-medium">
+                                Points
+                              </label>
+                              <Input
+                                type="number"
+                                min={0}
+                                step={1}
+                                value={criterion.points}
+                                onChange={(event) =>
+                                  updateCriterion(question.id, criterion.id, {
+                                    points: Math.max(
+                                      0,
+                                      Number(event.target.value) || 0,
+                                    ),
+                                  })
+                                }
+                                className="mt-2"
+                              />
+                            </div>
+
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() =>
+                                deleteCriterion(question.id, criterion.id)
+                              }
+                              title="Delete criterion"
+                              aria-label={`Delete criterion ${
+                                criterionIndex + 1
+                              }`}
+                              className="mt-7 size-10 p-0 text-destructive"
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </section>
+        </div>
+      </main>
+
+      <FRQEditorFooter
+        frqs={frqs}
+        currentFrqIndex={currentFrqIndex}
+        batchName={batchName}
+        batchVisibility={batchVisibility}
+        onBatchNameChange={setBatchName}
+        onBatchVisibilityChange={setBatchVisibility}
+        onSelectFrq={setCurrentFrqIndex}
+        onPrevious={goToPreviousFrq}
+        onNext={goToNextFrq}
+      />
     </div>
   );
 };
