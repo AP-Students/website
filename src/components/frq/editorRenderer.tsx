@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { QuestionFormat, QuestionInput } from "@/types/questions";
 import { Clock3, Eye, Info, Plus, Save, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 type QuestionStatus = "public" | "legacy";
 type InputType = "text" | "equation";
@@ -35,7 +35,6 @@ interface GradingCriterion {
 interface EditorQuestion {
   id: string;
   questionData: QuestionFormat;
-  points: number;
   status: QuestionStatus;
   inputType: InputType;
   criteria: GradingCriterion[];
@@ -56,6 +55,28 @@ const createQuestionInput = (value = ""): QuestionInput => ({
   value,
   files: [],
 });
+
+/**
+ * Unique, immutable ID built from the current time plus a short random suffix,
+ * per the FRQ system spec. The random half is what makes it collision-safe:
+ * a timestamp alone repeats when several IDs are minted in the same
+ * millisecond.
+ */
+const makeId = (prefix: string) =>
+  `${prefix}-${Date.now().toString(36)}-${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
+
+/**
+ * A question's point value is the sum of its grading criteria. Criteria are the
+ * single source of truth so the editor can never disagree with what the grading
+ * page will actually award.
+ */
+const getQuestionPoints = (question: EditorQuestion) =>
+  question.criteria.reduce((total, criterion) => total + criterion.points, 0);
+
+const formatPoints = (points: number) =>
+  `${points} ${points === 1 ? "point" : "points"}`;
 
 const createDescriptionQuestion = (
   description: QuestionInput,
@@ -78,7 +99,6 @@ const createEditorQuestion = (
   points: number,
 ): EditorQuestion => ({
   id,
-  points,
   status: "public",
   inputType: "text",
   criteria: [
@@ -99,8 +119,22 @@ const createEditorQuestion = (
   },
 });
 
-const getSubquestionLabel = (frqIndex: number, questionIndex: number) =>
-  `${frqIndex + 1}${String.fromCharCode(97 + questionIndex)}`;
+/**
+ * AP-style subquestion label: 1a, 1b, 1c. Past 26 questions it rolls over to
+ * two letters (1aa, 1ab) rather than walking off the end of the alphabet into
+ * punctuation, which is what a bare String.fromCharCode(97 + index) would do.
+ */
+const getSubquestionLabel = (frqIndex: number, questionIndex: number) => {
+  let label = "";
+  let remaining = questionIndex;
+
+  do {
+    label = String.fromCharCode(97 + (remaining % 26)) + label;
+    remaining = Math.floor(remaining / 26) - 1;
+  } while (remaining >= 0);
+
+  return `${frqIndex + 1}${label}`;
+};
 
 const mockFRQs: EditorFRQ[] = [
   {
@@ -219,7 +253,7 @@ const FRQEditorRenderer = ({ frqFound }: FRQEditorRendererProps) => {
       criteria: [
         ...question.criteria,
         {
-          id: `${questionId}-criterion-${Date.now()}`,
+          id: makeId("criterion"),
           description: "",
           points: 1,
         },
@@ -249,29 +283,41 @@ const FRQEditorRenderer = ({ frqFound }: FRQEditorRendererProps) => {
     }));
   };
 
-  if (!frqFound) {
-    return <div>Failed to load FRQ.</div>;
-  }
-
   const currentFrq = frqs[currentFrqIndex];
 
-  if (!currentFrq) {
+  // Read through to the fields the memos actually depend on. AdvancedTextbox
+  // treats its `questions[qIndex]` entry as a stable reference, so these must
+  // keep their identity across unrelated re-renders instead of being rebuilt
+  // fresh every time the parent renders. Both memos sit above the early returns
+  // so the hooks stay unconditional.
+  const currentDescription = currentFrq?.description;
+  const currentQuestions = currentFrq?.questions;
+
+  const descriptionQuestions = useMemo(
+    () =>
+      currentDescription ? [createDescriptionQuestion(currentDescription)] : [],
+    [currentDescription],
+  );
+
+  const questionFormats = useMemo(
+    () => currentQuestions?.map((question) => question.questionData) ?? [],
+    [currentQuestions],
+  );
+
+  if (!frqFound || !currentFrq) {
     return <div>Failed to load FRQ.</div>;
   }
-
-  const descriptionQuestions = [
-    createDescriptionQuestion(currentFrq.description),
-  ];
-
-  const questionFormats = currentFrq.questions.map(
-    (question) => question.questionData,
-  );
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="fixed inset-x-0 top-0 z-50 grid h-16 grid-cols-3 items-center border-b bg-background px-5 shadow-sm">
         <div>
-          <Button type="button" variant="outline">
+          <Button
+            type="button"
+            variant="outline"
+            disabled
+            title="Preview is not implemented yet"
+          >
             <Eye className="mr-2 size-4" />
             Preview
           </Button>
@@ -296,7 +342,11 @@ const FRQEditorRenderer = ({ frqFound }: FRQEditorRendererProps) => {
         </div>
 
         <div className="justify-self-end">
-          <Button type="button">
+          <Button
+            type="button"
+            disabled
+            title="Saving to Firestore is not implemented yet"
+          >
             <Save className="mr-2 size-4" />
             Save Changes
           </Button>
@@ -370,7 +420,11 @@ const FRQEditorRenderer = ({ frqFound }: FRQEditorRendererProps) => {
                 </p>
               </div>
 
-              <Button type="button">
+              <Button
+                type="button"
+                disabled
+                title="Adding questions is not implemented yet"
+              >
                 <Plus className="mr-2 size-4" />
                 Add Question
               </Button>
@@ -393,19 +447,27 @@ const FRQEditorRenderer = ({ frqFound }: FRQEditorRendererProps) => {
                     className="mr-0 py-4 hover:no-underline"
                   >
                     <div className="flex flex-1 items-center justify-between pr-3">
-                      <span className="font-semibold">
-                        {getSubquestionLabel(
-                          currentFrqIndex,
-                          questionIndex,
+                      <span className="flex items-center gap-2">
+                        <span className="font-semibold">
+                          {getSubquestionLabel(currentFrqIndex, questionIndex)}
+                        </span>
+
+                        {question.status === "legacy" && (
+                          <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            Legacy
+                          </span>
                         )}
                       </span>
                       <span className="text-sm font-normal text-muted-foreground">
-                        {question.points}{" "}
-                        {question.points === 1 ? "point" : "points"}
+                        {formatPoints(getQuestionPoints(question))}
                       </span>
                     </div>
                   </AccordionTrigger>
 
+                  {/* ui/accordion.tsx hardcodes opacity-70 on the content root
+                      and routes className to an inner div, so there is no
+                      class-based override. Without this the editor's inputs all
+                      render washed out. Remove once accordion.tsx exposes it. */}
                   <AccordionContent
                     style={{ opacity: 1 }}
                     className="space-y-5 pb-5 text-foreground"
@@ -417,19 +479,20 @@ const FRQEditorRenderer = ({ frqFound }: FRQEditorRendererProps) => {
                       <div className="mt-2">
                         <AdvancedTextbox
                           questions={questionFormats}
-                          setQuestions={(updatedQuestions) => {
-                            updateCurrentFrq((frq) => ({
-                              ...frq,
-                              questions: frq.questions.map(
-                                (frqQuestion, index) => ({
-                                  ...frqQuestion,
-                                  questionData:
-                                    updatedQuestions[index] ??
-                                    frqQuestion.questionData,
-                                }),
-                              ),
-                            }));
-                          }}
+                          // AdvancedTextbox hands back the whole array, but only
+                          // this question's entry is ours to write. An in-flight
+                          // file upload resolves against the array it captured
+                          // when the upload started, so copying every index back
+                          // would let a slow upload overwrite edits made to the
+                          // sibling questions in the meantime.
+                          setQuestions={(updatedQuestions) =>
+                            updateQuestion(question.id, (currentQuestion) => ({
+                              ...currentQuestion,
+                              questionData:
+                                updatedQuestions[questionIndex] ??
+                                currentQuestion.questionData,
+                            }))
+                          }
                           origin="question"
                           qIndex={questionIndex}
                           placeholder="Enter the question prompt here."
@@ -437,27 +500,10 @@ const FRQEditorRenderer = ({ frqFound }: FRQEditorRendererProps) => {
                       </div>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                      <div>
-                        <label className="text-sm font-medium">Points</label>
-                        <Input
-                          type="number"
-                          min={0}
-                          step={1}
-                          value={question.points}
-                          onChange={(event) =>
-                            updateQuestion(question.id, (currentQuestion) => ({
-                              ...currentQuestion,
-                              points: Math.max(
-                                0,
-                                Number(event.target.value) || 0,
-                              ),
-                            }))
-                          }
-                          className="mt-2"
-                        />
-                      </div>
-
+                    {/* No question-level points field: the total is derived from
+                        the grading criteria below, which is what the grader
+                        actually awards against. */}
+                    <div className="grid gap-4 sm:grid-cols-2">
                       <div>
                         <label className="text-sm font-medium">
                           Input type
@@ -558,7 +604,8 @@ const FRQEditorRenderer = ({ frqFound }: FRQEditorRendererProps) => {
                       <Button
                         type="button"
                         variant="outline"
-                        title="Question information"
+                        disabled
+                        title="Question information is not implemented yet"
                         aria-label="Question information"
                         className="px-3"
                       >
