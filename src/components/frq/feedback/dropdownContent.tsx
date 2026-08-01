@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronRight, Clock3 } from "lucide-react";
+import { ChevronDown, ChevronRight} from "lucide-react";
 
 import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
 import { Textarea } from "@/components/ui/textarea";
@@ -54,16 +54,9 @@ export default function FeedbackSection({
         </span>
 
         <div className="flex flex-1 items-center justify-between px-3 py-2">
-          <div className="flex items-center gap-2 font-bold">
-            <span>Question {questionNumber}</span>
-            <span>|</span>
-            <span>{pointsPossible} Points</span>
-            <span>|</span>
-
-            <span className="flex items-center gap-1">
-              <Clock3 className="size-4" />
-              Legacy
-            </span>
+          <div className="flex items-center gap-2 font-bold"><span>Question {questionNumber}</span>
+          <span>|</span>
+          <span>{pointsPossible} Points</span>
           </div>
 
           <div className="flex items-center gap-3">

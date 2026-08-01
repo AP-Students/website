@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import FeedbackSection from "./dropdownContent";
 import type { FRQFeedbackDocument, FRQQuestion } from "./types";
-import { Clock3 } from "lucide-react";
 
 export default function QuestionFeedback({
   frq,
@@ -48,11 +47,6 @@ export default function QuestionFeedback({
   <span>|</span>
   <span>{frq.questions.length} Questions</span>
   <span>|</span>
-
-  <span className="flex items-center gap-1">
-    <Clock3 className="size-5" />
-    Legacy
-  </span>
 </h1>
 
         <button

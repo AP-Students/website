@@ -36,7 +36,7 @@ useEffect(() => {
 
   const fetchUngradedFrqCount = async () => {
     try {
-      const collectionRef = collection(db, "ungraded-frqs");
+      const collectionRef = collection(db, "gradableFrqSubmissions");
       const snapshot = await getDocs(collectionRef);
 
       setUngradedFrqCount(snapshot.size);
