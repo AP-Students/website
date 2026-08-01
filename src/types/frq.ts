@@ -3,11 +3,12 @@ import type { Timestamp } from "firebase/firestore";
 /** An admin-authored prompt used by the digital FRQ testing experience. */
 export interface FRQTemplate {
   id?: string;
-  subject?: string;
-  unitId?: string;
-  title?: string;
-  directions?: string;
-  questions?: FRQTemplateQuestion[];
+  subject: string;
+  unitId: string;
+  title: string;
+  directions: string;
+  questions: FRQTemplateQuestion[];
+  isPublic?: boolean;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
