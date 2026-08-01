@@ -15,6 +15,7 @@ import {
   processTable,
   revertTableObjectToArray,
 } from "./FetchArticleFunctions";
+import { sanitizeAlignment } from "./alignment";
 import { Blocker } from "@/app/admin/subject/navigation-block";
 import { Button } from "@/components/ui/button";
 import { usePathname } from "next/navigation";
@@ -171,6 +172,15 @@ function ArticleCreator({ className }: { className?: string }) {
         data.blocks.map(async (block) => {
           // because of .type, its inferable that block.data is of an questions, so you can assert .data.questions as QuestionFormat[]
           /* eslint-disable */
+          if (block.tunes && "alignment" in block.tunes) {
+            const alignment = sanitizeAlignment(block.tunes.alignment);
+            if (alignment && alignment !== "left") {
+              block.tunes.alignment = alignment;
+            } else {
+              delete block.tunes.alignment;
+            }
+          }
+
           if (block.type === "questionsAddCard") {
             const updatedQuestions = await processQuestions(
               block.data.questions as QuestionFormat[],

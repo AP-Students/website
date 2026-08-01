@@ -9,6 +9,10 @@ import "@/styles/highlightjs.css";
 import type { QuestionFormat } from "@/types/questions";
 import "@/styles/katexStyling.css";
 import styles from "./Renderer.module.css";
+import { sanitizeAlignment } from "./alignment";
+
+// Tool names the "alignment" BlockTune is registered on (see Editor.tsx).
+const ALIGNABLE_TYPES = new Set(["paragraph", "header", "list"]);
 
 // DOM-free entity decoder so this module can run during server rendering.
 // Previously this used `document.createElement("textarea")`, which kept the
@@ -117,7 +121,10 @@ const customParsers: Record<
       caption: string;
       text: string;
     };
-    return `<blockquote>
+    // Quote's own native settings only ever offer left/center (see
+    // @editorjs/quote's renderSettings), so only "center" needs a style.
+    const style = alignment === "center" ? ' style="text-align:center"' : "";
+    return `<blockquote${style}>
       <p class="mb-3">${text}</p>
       <cite>${caption}</cite>
     </blockquote>`;
@@ -258,6 +265,20 @@ const customParsers: Record<
  */
 export function renderEditorJsToHtml(content: OutputData): string {
   const parser = new edjsParser(undefined, customParsers);
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-  return parser.parse(content);
+
+  return content.blocks
+    .map((block) => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      const blockMarkup = parser.parseBlock(block);
+      if (blockMarkup instanceof Error) return "";
+
+      const alignment = ALIGNABLE_TYPES.has(block.type)
+        ? sanitizeAlignment(block.tunes?.alignment)
+        : undefined;
+
+      return alignment && alignment !== "left"
+        ? `<div style="text-align:${alignment}">${blockMarkup}</div>`
+        : blockMarkup;
+    })
+    .join("");
 }

@@ -11,6 +11,10 @@ import { QuestionsOutput } from "./custom_questions/QuestionInstance";
 import type { QuestionFormat } from "@/types/questions";
 import "@/styles/katexStyling.css";
 import styles from "./Renderer.module.css";
+import { sanitizeAlignment } from "./alignment";
+
+// Tool names the "alignment" BlockTune is registered on (see Editor.tsx).
+const ALIGNABLE_TYPES = new Set(["paragraph", "header", "list"]);
 
 export function decodeEntities(str: string): string {
   const txt = document.createElement("textarea");
@@ -117,7 +121,10 @@ const customParsers: Record<
       caption: string;
       text: string;
     };
-    return `<blockquote>
+    // Quote's own native settings only ever offer left/center (see
+    // @editorjs/quote's renderSettings), so only "center" needs a style.
+    const style = alignment === "center" ? ' style="text-align:center"' : "";
+    return `<blockquote${style}>
       <p class="mb-3">${text}</p>
       <cite>${caption}</cite>
     </blockquote>`;
@@ -349,8 +356,21 @@ const Renderer = (props: { content: OutputData }) => {
   if (!props.content) return null;
 
   const parser = new edjsParser(undefined, customParsers);
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-  const markup = parser.parse(props.content);
+  const markup = props.content.blocks
+    .map((block) => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      const blockMarkup = parser.parseBlock(block);
+      if (blockMarkup instanceof Error) return "";
+
+      const alignment = ALIGNABLE_TYPES.has(block.type)
+        ? sanitizeAlignment(block.tunes?.alignment)
+        : undefined;
+
+      return alignment && alignment !== "left"
+        ? `<div style="text-align:${alignment}">${blockMarkup}</div>`
+        : blockMarkup;
+    })
+    .join("");
 
   return (
     <article
