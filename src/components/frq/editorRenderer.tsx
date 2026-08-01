@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { QuestionFormat, QuestionInput } from "@/types/questions";
 import { Clock3, Eye, Info, Plus, Save, Trash2 } from "lucide-react";
+import type { FRQTemplate } from "@/types/frq";
 import { useMemo, useState } from "react";
 
 type QuestionStatus = "public" | "legacy";
@@ -49,6 +50,7 @@ interface EditorFRQ {
 
 interface FRQEditorRendererProps {
   frqFound: boolean;
+  frqTemplate: FRQTemplate | null;
 }
 
 const createQuestionInput = (value = ""): QuestionInput => ({
@@ -93,32 +95,6 @@ const createDescriptionQuestion = (
   topic: "",
 });
 
-const createEditorQuestion = (
-  id: string,
-  prompt: string,
-  points: number,
-): EditorQuestion => ({
-  id,
-  status: "public",
-  inputType: "text",
-  criteria: [
-    {
-      id: `${id}-criterion-1`,
-      description: "",
-      points,
-    },
-  ],
-  questionData: {
-    question: createQuestionInput(prompt),
-    type: "frq",
-    options: [],
-    answers: [],
-    explanation: createQuestionInput(),
-    content: createQuestionInput(),
-    topic: "",
-  },
-});
-
 /**
  * AP-style subquestion label: 1a, 1b, 1c. Past 26 questions it rolls over to
  * two letters (1aa, 1ab) rather than walking off the end of the alphabet into
@@ -136,83 +112,22 @@ const getSubquestionLabel = (frqIndex: number, questionIndex: number) => {
   return `${frqIndex + 1}${label}`;
 };
 
-const mockFRQs: EditorFRQ[] = [
-  {
-    id: "frq-1",
-    title: "FRQ 1",
-    description: createQuestionInput(
-      "Read the source material carefully. Then answer all parts of the question using evidence from the source.",
-    ),
-    questions: [
-      createEditorQuestion(
-        "frq-1-a",
-        "Identify one claim made in the source.",
-        1,
-      ),
-      createEditorQuestion(
-        "frq-1-b",
-        "Explain how evidence from the source supports that claim.",
-        2,
-      ),
-      createEditorQuestion(
-        "frq-1-c",
-        "Evaluate one limitation of the source's argument.",
-        2,
-      ),
-    ],
-  },
-  {
-    id: "frq-2",
-    title: "FRQ 2",
-    description: createQuestionInput(
-      "Examine the provided information and respond to each part of the question.",
-    ),
-    questions: [
-      createEditorQuestion(
-        "frq-2-a",
-        "Describe the main process shown in the provided material.",
-        1,
-      ),
-      createEditorQuestion(
-        "frq-2-b",
-        "Explain one relationship between two parts of the process.",
-        2,
-      ),
-      createEditorQuestion(
-        "frq-2-c",
-        "Use evidence from the material to justify your response.",
-        2,
-      ),
-    ],
-  },
-  {
-    id: "frq-3",
-    title: "FRQ 3",
-    description: createQuestionInput(
-      "Use the information provided to develop and support a defensible response.",
-    ),
-    questions: [
-      createEditorQuestion(
-        "frq-3-a",
-        "State a defensible conclusion based on the information provided.",
-        1,
-      ),
-      createEditorQuestion(
-        "frq-3-b",
-        "Support your conclusion with two relevant pieces of evidence.",
-        2,
-      ),
-      createEditorQuestion(
-        "frq-3-c",
-        "Explain how one piece of evidence could be interpreted differently.",
-        2,
-      ),
-    ],
-  },
-];
+const createEditorFrqFromTemplate = (
+  template: FRQTemplate,
+): EditorFRQ => ({
+  id: template.id ?? makeId("frq"),
+  title: template.title?.trim() || "Untitled FRQ",
+  description: createQuestionInput(template.directions ?? ""),
+  questions: [],
+});
 
-const FRQEditorRenderer = ({ frqFound }: FRQEditorRendererProps) => {
-  const [frqs, setFrqs] = useState<EditorFRQ[]>(mockFRQs);
+const FRQEditorRenderer = ({
+  frqFound,
+  frqTemplate,
+}: FRQEditorRendererProps) => {
+  const [frqs, setFrqs] = useState<EditorFRQ[]>(() =>
+    frqTemplate ? [createEditorFrqFromTemplate(frqTemplate)] : [],
+  );
   const [currentFrqIndex, setCurrentFrqIndex] = useState(0);
   const [batchName, setBatchName] = useState("FRQ Batch");
   const [batchVisibility, setBatchVisibility] =

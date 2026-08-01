@@ -5,11 +5,18 @@ import { Link } from "@/app/admin/subject/link";
 import { ArrowLeft, Save, Plus } from "lucide-react";
 import { useUser } from "@/components/hooks/UserContext";
 import { db } from "@/lib/firebase";
+import type { FRQTemplate } from "@/types/frq";
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
+  query,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  where,
   writeBatch,
 } from "firebase/firestore";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -69,6 +76,7 @@ export default function Page({ params }: { params: { slug: string } }) {
   const { user, error, setError, setLoading } = useUser();
   const [subjectTitle, setSubjectTitle] = useState<string>("");
   const [units, setUnits] = useState<Unit[]>([]);
+  const [frqTemplates, setFrqTemplates] = useState<FRQTemplate[]>([]);
   const [hasUnit0, setHasUnit0] = useState<boolean>(false);
   const [resetting, setResetting] = useState<boolean>(false);
 
@@ -84,6 +92,20 @@ export default function Page({ params }: { params: { slug: string } }) {
         if (user && (user.access === "admin" || user.access === "member")) {
           const docRef = doc(db, "subjects", params.slug);
           const docSnap = await getDoc(docRef);
+          const frqQuery = query(
+            collection(db, "frqTemplates"),
+            where("subject", "==", params.slug),
+          );
+          
+          const frqSnapshot = await getDocs(frqQuery);
+          
+          const loadedFrqs: FRQTemplate[] = frqSnapshot.docs.map((frqDoc) => ({
+            id: frqDoc.id,
+            ...(frqDoc.data() as Omit<FRQTemplate, "id">),
+          }));
+          
+          setFrqTemplates(loadedFrqs);
+
           if (docSnap.exists()) {
             // We have an existing subject
             const fetched = docSnap.data() as Subject;
@@ -169,7 +191,121 @@ export default function Page({ params }: { params: { slug: string } }) {
     setUnits((prev) => prev.map((u) => (u.id === unitId ? updatedUnit : u)));
     setUnsavedChanges(true);
   };
+  
+  /****************************************************
+   *                   FRQ ACTIONS
+   ****************************************************/
+  
+  const handleAddFrq = async (unitId: string, title: string) => {
+    const trimmedTitle = title.trim();
+  
+    if (!trimmedTitle) {
+      return;
+    }
+  
+    const frqId = generateShortId();
+  
+    const newFrq: FRQTemplate = {
+      id: frqId,
+      subject: params.slug,
+      unitId,
+      title: trimmedTitle,
+      directions: "",
+      questions: [],
+      isPublic: false,
+    };
+  
+    try {
+      await setDoc(doc(db, "frqTemplates", frqId), {
+        subject: newFrq.subject,
+        unitId: newFrq.unitId,
+        title: newFrq.title,
+        directions: newFrq.directions,
+        questions: newFrq.questions,
+        isPublic: newFrq.isPublic,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+  
+      setFrqTemplates((currentFrqs) => [...currentFrqs, newFrq]);
+      setUnsavedChanges(true);
+    } catch {
+      alert("Unable to add the FRQ. Please try again.");
+    }
+  };
+  
+  const handleRenameFrq = async (frqId: string, title: string) => {
+    const trimmedTitle = title.trim();
+  
+    if (!trimmedTitle) {
+      return;
+    }
+  
+    try {
+      await updateDoc(doc(db, "frqTemplates", frqId), {
+        title: trimmedTitle,
+        updatedAt: serverTimestamp(),
+      });
+  
+      setFrqTemplates((currentFrqs) =>
+        currentFrqs.map((frq) =>
+          frq.id === frqId ? { ...frq, title: trimmedTitle } : frq,
+        ),
+      );
 
+      setUnsavedChanges(true);
+
+    } catch {
+      alert("Unable to rename the FRQ. Please try again.");
+    }
+  };
+  
+  const handleFrqVisibilityChange = async (
+    frqId: string,
+    isPublic: boolean,
+  ) => {
+    try {
+      await updateDoc(doc(db, "frqTemplates", frqId), {
+        isPublic,
+        updatedAt: serverTimestamp(),
+      });
+  
+      setFrqTemplates((currentFrqs) =>
+        currentFrqs.map((frq) =>
+          frq.id === frqId ? { ...frq, isPublic } : frq,
+        ),
+      );
+
+      setUnsavedChanges(true);
+
+    } catch {
+      alert("Unable to update the FRQ visibility. Please try again.");
+    }
+  };
+  
+  const handleDeleteFrq = async (frqId: string) => {
+    const confirmed = window.confirm(
+      "Delete this FRQ? This action cannot be undone.",
+    );
+  
+    if (!confirmed) {
+      return;
+    }
+  
+    try {
+      await deleteDoc(doc(db, "frqTemplates", frqId));
+  
+      setFrqTemplates((currentFrqs) =>
+        currentFrqs.filter((frq) => frq.id !== frqId),
+      );
+
+      setUnsavedChanges(true);
+      
+    } catch {
+      alert("Unable to delete the FRQ. Please try again.");
+    }
+  };
+  
   /****************************************************
    *                   SAVE ACTION
    * This function will force delete anything in the db that isnt in the local to keep db clean
@@ -483,7 +619,7 @@ export default function Page({ params }: { params: { slug: string } }) {
 
           {/* Render each Unit */}
           <div className="my-4 space-y-4">
-            {units.map((unit, index) => (
+          {units.map((unit, index) => (
             <UnitComponent
               key={unit.id}
               unit={unit}
@@ -495,6 +631,13 @@ export default function Page({ params }: { params: { slug: string } }) {
               onMoveDown={handleMoveUnitDown}
               subjectSlug={params.slug}
               hasUnit0={hasUnit0}
+              frqTemplates={frqTemplates.filter(
+                (frq) => frq.unitId === unit.id,
+              )}
+              onFrqAdd={handleAddFrq}
+              onFrqRename={handleRenameFrq}
+              onFrqVisibilityChange={handleFrqVisibilityChange}
+              onFrqDelete={handleDeleteFrq}
             />
           ))}
           </div>
