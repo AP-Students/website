@@ -3,18 +3,13 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 
 interface FeedbackDetailsClientProps {
   slug: string;
-  config: {
-    gitHubAccessToken: string;
-    gitHubRepoOwner: string;
-    gitHubRepoName: string;
-  };
 }
 
 function parseMarkdown(text: string): string {
@@ -43,7 +38,7 @@ interface FeedbackItem {
   featureContextUrl?: string;
 }
 
-export default function FeedbackDetailsClient({ slug, config }: FeedbackDetailsClientProps) {
+export default function FeedbackDetailsClient({ slug }: FeedbackDetailsClientProps) {
   const router = useRouter();
   const [bug, setBug] = useState<FeedbackItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,63 +70,28 @@ export default function FeedbackDetailsClient({ slug, config }: FeedbackDetailsC
 
   const handleCreateGitHubIssue = async () => {
     if (!bug) return;
-    if (!config.gitHubAccessToken || !config.gitHubRepoOwner || !config.gitHubRepoName) {
-      alert("GitHub integration is not fully configured. Please check your server environment variables.");
-      return;
-    }
 
     setIsCreatingIssue(true);
 
     try {
-      const owner = config.gitHubRepoOwner;
-      const repo = config.gitHubRepoName;
-      const url = `https://api.github.com/repos/${owner}/${repo}/issues`;
-
-      const imgMarkdown = bug.attachedImage && bug.attachedImage.startsWith('http') ? `\n\n[Attached Image](${bug.attachedImage})` : '';
-
-      let issueBody = `### Feedback Context\n\n- **Type:** ${bug.type}\n- **Contact Email:** ${bug.email ?? 'anonymous'}\n`;
-      if (bug.bugUrl && bug.bugUrl !== 'N/A') {
-        issueBody += `- **Context URL:** ${bug.bugUrl}\n`;
-      }
-      if (bug.type === 'bug') {
-        issueBody += `- **Category:** ${bug.bugType ?? 'N/A'}\n`;
-        issueBody += `\n### Detailed Description & Steps to Reproduce\n\n${bug.message}\n${imgMarkdown}`;
-      } else if (bug.type === 'feature') {
-        issueBody += `\n### Feature Request Details\n`;
-        if (bug.featureProblem) issueBody += `- **Problem:** ${bug.featureProblem}\n`;
-        if (bug.featureAlternatives) issueBody += `- **Alternatives Considered:** ${bug.featureAlternatives}\n`;
-        if (bug.featureSolution) issueBody += `- **Proposed Solution:** ${bug.featureSolution}\n`;
-        issueBody += `\n### Additional Description\n\n${bug.message}\n${imgMarkdown}`;
-      } else {
-        issueBody += `\n### Description\n\n${bug.message}${imgMarkdown}`;
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) {
+        throw new Error('You must be signed in to do this.');
       }
 
-      const title = bug.title && bug.title.trim().length > 0 ? bug.title : `${bug.type === 'bug' ? 'Bug' : 'Feature'}: ${bug.bugType || ''}`;
-      const payload = {
-        title,
-        body: issueBody.trim(),
-        labels: [bug.type === 'bug' ? 'bug' : 'enhancement'],
-      };
-      console.log('Creating GitHub issue with payload:', payload);
-      const response = await fetch(url, {
+      const response = await fetch('/api/feedback/create-issue', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${config.gitHubAccessToken}`,
-          'Accept': 'application/vnd.github.v3+json',
+          'Authorization': `Bearer ${idToken}`,
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ feedbackId: slug }),
       });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({})) as any;
-        const detailed = errorData.errors?.map((e: any) => `${e.resource || ''} ${e.field || ''} ${e.code || ''}`).join(', ');
-        const msg = errorData.message ?? `GitHub API responded with status ${response.status}`;
-        throw new Error(detailed ? `${msg}: ${detailed}` : msg);
-      }
 
-      // Update Firestore document resolution status to resolved
-      const docRef = doc(db, 'feedback', slug);
-      await setDoc(docRef, { isResolved: true }, { merge: true });
+      const result = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) {
+        throw new Error(result.error ?? `Request failed with status ${response.status}`);
+      }
 
       alert("GitHub Issue created successfully!");
       setSubmitted(true);
