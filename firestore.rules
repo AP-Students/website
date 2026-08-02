@@ -101,8 +101,10 @@ service cloud.firestore {
     }
 
     match /feedback/{feedbackId} {
-      allow read: if isMemberOrAdmin;
-      allow list: if isMemberOrAdmin;
+      // Anyone may submit feedback, including unauthenticated visitors.
+      allow create: if true;
+      allow read: if isMemberOrAdmin();
+      allow list: if isMemberOrAdmin();
       allow get: if isMemberOrAdmin();
       allow update, delete: if isMemberOrAdmin();
     }
