@@ -56,7 +56,7 @@ const teamLeads: TeamMember[] = [
     id: 7,
     name: "River Antonov",
     position: "Science Co-lead, bio crew, material & lecture",
-    image: "/team/frtshit - River Antonov",
+    image: "/team/IMG_7929 - River Antonov.jpeg",
   },
   {
     id: 12,
@@ -139,7 +139,7 @@ const members: TeamMember[] = [
     id: 8,
     name: "Aryan Ojha",
     position: "FAQ Doc Sub-Team Member",
-    image: "/team/Stark  _ Frieren_ Beyond Journey's End - Aryan Ojha.jpeg",
+    image: "/team/Stark  _ Frieren_ Beyond Journey_s End - Aryan Ojha.jpeg",
   },
   {
     id: 9,
@@ -183,7 +183,7 @@ const members: TeamMember[] = [
     id: 18,
     name: "Ansh Desai",
     position: "FAQ Doc Sub-Team Member, Materials Sub-Team Member",
-    image: "/team/Photo for FiveHive - Ansh Desai.jpg",
+    image: "/team/IRL Photo for FiveHive - Ansh Desai.jpg",
   },
 
   // Removed: Zoe Xue (retired, not in server)
