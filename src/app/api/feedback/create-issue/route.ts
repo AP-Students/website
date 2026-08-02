@@ -106,9 +106,11 @@ export async function POST(req: NextRequest) {
 
   if (!issueRes.ok) {
     const errorData = (await issueRes.json().catch(() => ({}))) as { message?: string };
+    // 500, not 502/503/504: those "gateway" statuses get their response body replaced
+    // by intermediary infrastructure (e.g. Cloudflare's own error page), hiding this message.
     return NextResponse.json(
       { error: errorData.message ?? `GitHub API responded with status ${issueRes.status}` },
-      { status: 502 },
+      { status: 500 },
     );
   }
 
