@@ -40,13 +40,34 @@ export default function FeedbackPage() {
     const trimmedTitle = title.trim();
     const trimmedMessage = message.trim();
     const trimmedBugUrl = bugUrl.trim();
+    const trimmedEmail = email.trim();
+    const trimmedFeatureProblem = featureProblem.trim();
+    const trimmedFeatureAlternatives = featureAlternatives.trim();
+    const trimmedFeatureSolution = featureSolution.trim();
+    const trimmedFeatureContextUrl = featureContextUrl.trim();
 
-    if (!trimmedTitle || !trimmedMessage) {
+    if (!trimmedTitle || (type === 'general' && !trimmedMessage)) {
       setStatus('error');
       return;
     }
 
     if (type === 'bug' && !trimmedBugUrl) {
+      setStatus('error');
+      return;
+    }
+
+    if (type !== 'general' && !trimmedEmail) {
+      setStatus('error');
+      return;
+    }
+
+    if (
+      type === 'feature' &&
+      (!trimmedFeatureContextUrl ||
+        !trimmedFeatureProblem ||
+        !trimmedFeatureAlternatives ||
+        !trimmedFeatureSolution)
+    ) {
       setStatus('error');
       return;
     }
@@ -73,9 +94,16 @@ export default function FeedbackPage() {
       // Build the base payload
       const feedbackPayload: NewFeedback = {
         type,
-        message: trimmedMessage,
+        // Keep a useful message for existing admin views even though
+        // structured feedback no longer displays a separate message field.
+        message:
+          type === 'bug'
+            ? `Bug report for ${trimmedBugUrl}`
+            : type === 'feature'
+              ? trimmedFeatureSolution
+              : trimmedMessage,
         title: trimmedTitle,
-        email: email || 'anonymous',
+        email: trimmedEmail || 'anonymous',
         createdAt: serverTimestamp() as Timestamp,
       };
 
@@ -86,10 +114,10 @@ export default function FeedbackPage() {
       }
       // Add feature request specific fields
       if (type === 'feature') {
-        feedbackPayload.featureProblem = featureProblem;
-        feedbackPayload.featureAlternatives = featureAlternatives;
-        feedbackPayload.featureSolution = featureSolution;
-        feedbackPayload.featureContextUrl = featureContextUrl;
+        feedbackPayload.featureProblem = trimmedFeatureProblem;
+        feedbackPayload.featureAlternatives = trimmedFeatureAlternatives;
+        feedbackPayload.featureSolution = trimmedFeatureSolution;
+        feedbackPayload.featureContextUrl = trimmedFeatureContextUrl;
       }
 
       // If an image was attached, upload it to Firebase Storage first
@@ -243,6 +271,7 @@ export default function FeedbackPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Context URL</label>
               <input
                 type="text"
+                required
                 placeholder="https://example.com/..."
                 value={featureContextUrl}
                 onChange={e => setFeatureContextUrl(e.target.value)}
@@ -253,6 +282,7 @@ export default function FeedbackPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Is your feature request related to a problem? Please describe.</label>
               <textarea
                 rows={3}
+                required
                 value={featureProblem}
                 onChange={e => setFeatureProblem(e.target.value)}
                 className="w-full p-2 border rounded-md bg-gray-50 text-gray-900"
@@ -262,6 +292,7 @@ export default function FeedbackPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Describe alternatives you've considered</label>
               <textarea
                 rows={3}
+                required
                 value={featureAlternatives}
                 onChange={e => setFeatureAlternatives(e.target.value)}
                 className="w-full p-2 border rounded-md bg-gray-50 text-gray-900"
@@ -271,6 +302,7 @@ export default function FeedbackPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Describe the solution you'd like (rich text)</label>
               <textarea
                 rows={4}
+                required
                 value={featureSolution}
                 onChange={e => setFeatureSolution(e.target.value)}
                 className="w-full p-2 border rounded-md bg-gray-50 text-gray-900"
@@ -292,9 +324,12 @@ export default function FeedbackPage() {
         {/* ------------------------------------------------------------- */}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Your Email (Optional)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Your Email {type === 'general' ? '(Optional)' : '*'}
+          </label>
           <input
             type="email"
+            required={type !== 'general'}
             placeholder="apstudent@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -302,24 +337,19 @@ export default function FeedbackPage() {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {type === 'bug' ? 'Please describe the issue in detail. *' : 'Message *'}
-          </label>
-          {type === 'bug' && (
-            <p className="text-xs text-gray-500 mb-1">
-              Please include any relevant information, such as factual errors, punctuation errors, broken links, formatting issues, appearance bugs, ... Most importantly, please provide detailed steps on how to reproduce this bug.
-            </p>
-          )}
-          <textarea
-            required
-            rows={4}
-            placeholder={type === 'bug' ? "Steps to reproduce / description..." : "This could be anything about improving the website or even FiveHive in general! We appreciate any feedback you can give."}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            className="w-full p-2 border rounded-md bg-gray-50 text-gray-900"
-          />
-        </div>
+        {type === 'general' && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Message *</label>
+            <textarea
+              required
+              rows={4}
+              placeholder="This could be anything about improving the website or even FiveHive in general! We appreciate any feedback you can give."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="w-full p-2 border rounded-md bg-gray-50 text-gray-900"
+            />
+          </div>
+        )}
 
         <button
           type="submit"
