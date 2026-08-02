@@ -8,7 +8,6 @@ import { db } from "@/lib/firebase";
 import type { FRQTemplate } from "@/types/frq";
 import {
   collection,
-  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -282,30 +281,7 @@ export default function Page({ params }: { params: { slug: string } }) {
       alert("Unable to update the FRQ visibility. Please try again.");
     }
   };
-  
-  const handleDeleteFrq = async (frqId: string) => {
-    const confirmed = window.confirm(
-      "Delete this FRQ? This action cannot be undone.",
-    );
-  
-    if (!confirmed) {
-      return;
-    }
-  
-    try {
-      await deleteDoc(doc(db, "frqTemplates", frqId));
-  
-      setFrqTemplates((currentFrqs) =>
-        currentFrqs.filter((frq) => frq.id !== frqId),
-      );
 
-      setUnsavedChanges(true);
-      
-    } catch {
-      alert("Unable to delete the FRQ. Please try again.");
-    }
-  };
-  
   /****************************************************
    *                   SAVE ACTION
    * This function will force delete anything in the db that isnt in the local to keep db clean
@@ -637,7 +613,6 @@ export default function Page({ params }: { params: { slug: string } }) {
               onFrqAdd={handleAddFrq}
               onFrqRename={handleRenameFrq}
               onFrqVisibilityChange={handleFrqVisibilityChange}
-              onFrqDelete={handleDeleteFrq}
             />
           ))}
           </div>

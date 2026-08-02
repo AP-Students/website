@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Link } from "../../link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,6 @@ type UnitFrqsProps = {
   frqs: FRQTemplate[];
   onFrqAdd: (title: string) => void;
   onFrqUpdate: (frqId: string, title: string) => void;
-  onFrqDelete: (frqId: string) => void;
   onFrqVisibilityChange: (frqId: string, isPublic: boolean) => void;
 };
 
@@ -23,7 +22,6 @@ function UnitFrqs({
   frqs,
   onFrqAdd,
   onFrqUpdate,
-  onFrqDelete,
   onFrqVisibilityChange,
 }: UnitFrqsProps) {
   const [newFrqTitle, setNewFrqTitle] = useState("");
@@ -86,16 +84,7 @@ function UnitFrqs({
             >
               {frq.title || "Untitled FRQ"}
             </p>
-
-            <Button
-              type="button"
-              className="ml-auto mr-1 aspect-square rounded-md p-0"
-              variant="destructive"
-              onClick={() => onFrqDelete(frq.id!)}
-            >
-              <Trash2 />
-            </Button>
-          </div>
+            </div>
         );
       })}
 
