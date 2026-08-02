@@ -57,9 +57,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'This feedback item is already resolved' }, { status: 400 });
   }
 
-  const gitHubAccessToken = env.GITHUB_TOKEN;
-  const gitHubRepoOwner = env.GITHUB_OWNER;
-  const gitHubRepoName = env.GITHUB_REPO;
+  const gitHubAccessToken = env.GITHUB_ACCESS_TOKEN;
+  const gitHubRepoOwner = env.GITHUB_REPO_OWNER;
+  const gitHubRepoName = env.GITHUB_REPO_NAME;
 
   if (!gitHubAccessToken || !gitHubRepoOwner || !gitHubRepoName) {
     return NextResponse.json({ error: 'GitHub integration is not configured on the server' }, { status: 500 });

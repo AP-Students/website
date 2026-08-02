@@ -4,9 +4,9 @@ import { z } from "zod";
 export const env = createEnv({
   // Client-side Firebase variables
   server: {
-    GITHUB_TOKEN: z.string().optional(),
-    GITHUB_OWNER: z.string().optional(),
-    GITHUB_REPO: z.string().optional(),
+    GITHUB_ACCESS_TOKEN: z.string().optional(),
+    GITHUB_REPO_OWNER: z.string().optional(),
+    GITHUB_REPO_NAME: z.string().optional(),
   },
 
   client: {
@@ -21,9 +21,9 @@ export const env = createEnv({
 
   // Runtime environment variables
   runtimeEnv: {
-    GITHUB_TOKEN: process.env.GITHUB_TOKEN,
-    GITHUB_OWNER: process.env.GITHUB_OWNER,
-    GITHUB_REPO: process.env.GITHUB_REPO,
+    GITHUB_ACCESS_TOKEN: process.env.GITHUB_ACCESS_TOKEN,
+    GITHUB_REPO_OWNER: process.env.GITHUB_REPO_OWNER,
+    GITHUB_REPO_NAME: process.env.GITHUB_REPO_NAME,
     NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN:
       process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
