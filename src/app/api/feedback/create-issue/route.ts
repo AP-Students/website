@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { env } from '@/env.js';
 
-const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+const PROJECT_ID = env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
 interface FirestoreValue {
   stringValue?: string;
@@ -29,14 +30,13 @@ export async function POST(req: NextRequest) {
 
   const body = (await req.json().catch(() => null)) as { feedbackId?: string } | null;
   const feedbackId = body?.feedbackId;
-  if (!feedbackId) {
-    return NextResponse.json({ error: 'Missing feedbackId' }, { status: 400 });
+  if (!feedbackId || typeof feedbackId !== 'string' || feedbackId.includes('/')) {
+    return NextResponse.json({ error: 'Invalid feedbackId' }, { status: 400 });
   }
 
   // Firestore's REST API enforces the same security rules as the client SDK when
   // given a user's ID token, so a successful read here proves isMemberOrAdmin().
-  const firestoreDocUrl = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/feedback/${feedbackId}`;
-
+  const firestoreDocUrl = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/feedback/${encodeURIComponent(feedbackId)}`;
   const docRes = await fetch(firestoreDocUrl, {
     headers: { Authorization: `Bearer ${idToken}` },
   });
@@ -57,9 +57,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'This feedback item is already resolved' }, { status: 400 });
   }
 
-  const gitHubAccessToken = process.env.GITHUB_ACCESS_TOKEN;
-  const gitHubRepoOwner = process.env.GITHUB_REPO_OWNER;
-  const gitHubRepoName = process.env.GITHUB_REPO_NAME;
+  const gitHubAccessToken = env.GITHUB_TOKEN;
+  const gitHubRepoOwner = env.GITHUB_OWNER;
+  const gitHubRepoName = env.GITHUB_REPO;
 
   if (!gitHubAccessToken || !gitHubRepoOwner || !gitHubRepoName) {
     return NextResponse.json({ error: 'GitHub integration is not configured on the server' }, { status: 500 });
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
   const issue = (await issueRes.json()) as { html_url: string; number: number };
 
   // Same isMemberOrAdmin() rule already covers update, so this reuses the verified idToken.
-  await fetch(`${firestoreDocUrl}?updateMask.fieldPaths=isResolved`, {
+  const patchRes = await fetch(`${firestoreDocUrl}?updateMask.fieldPaths=isResolved`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
@@ -123,6 +123,14 @@ export async function POST(req: NextRequest) {
     },
     body: JSON.stringify({ fields: { isResolved: { booleanValue: true } } }),
   });
+
+  if (!patchRes.ok) {
+    return NextResponse.json({
+      issueUrl: issue.html_url,
+      issueNumber: issue.number,
+      warning: `GitHub issue created, but failed to mark feedback as resolved (status ${patchRes.status})`,
+    });
+  }
 
   return NextResponse.json({ issueUrl: issue.html_url, issueNumber: issue.number });
 }
