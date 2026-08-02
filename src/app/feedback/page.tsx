@@ -46,7 +46,7 @@ export default function FeedbackPage() {
     const trimmedFeatureSolution = featureSolution.trim();
     const trimmedFeatureContextUrl = featureContextUrl.trim();
 
-    if (!trimmedTitle || (type === 'general' && !trimmedMessage)) {
+    if (!trimmedTitle || (type !== 'feature' && !trimmedMessage)) {
       setStatus('error');
       return;
     }
@@ -94,14 +94,7 @@ export default function FeedbackPage() {
       // Build the base payload
       const feedbackPayload: NewFeedback = {
         type,
-        // Keep a useful message for existing admin views even though
-        // structured feedback no longer displays a separate message field.
-        message:
-          type === 'bug'
-            ? `Bug report for ${trimmedBugUrl}`
-            : type === 'feature'
-              ? trimmedFeatureSolution
-              : trimmedMessage,
+        message: type === 'feature' ? trimmedFeatureSolution : trimmedMessage,
         title: trimmedTitle,
         email: trimmedEmail || 'anonymous',
         createdAt: serverTimestamp() as Timestamp,
@@ -337,13 +330,20 @@ export default function FeedbackPage() {
           />
         </div>
 
-        {type === 'general' && (
+        {type !== 'feature' && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Message *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {type === 'bug' ? 'Please describe the issue in detail. *' : 'Message *'}
+            </label>
+            {type === 'bug' && (
+              <p className="text-xs text-gray-500 mb-1">
+                Please include any relevant information, such as factual errors, punctuation errors, broken links, formatting issues, appearance bugs, ... Most importantly, please provide detailed steps on how to reproduce this bug.
+              </p>
+            )}
             <textarea
               required
               rows={4}
-              placeholder="This could be anything about improving the website or even FiveHive in general! We appreciate any feedback you can give."
+              placeholder={type === 'bug' ? "Steps to reproduce / description..." : "This could be anything about improving the website or even FiveHive in general! We appreciate any feedback you can give."}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               className="w-full p-2 border rounded-md bg-gray-50 text-gray-900"
