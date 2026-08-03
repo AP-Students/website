@@ -1,8 +1,8 @@
 "use client";
 
 import { memo, useState } from "react";
-import { Plus } from "lucide-react";
 import { Link } from "../../link";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { FRQTemplate } from "@/types/frq";
@@ -84,7 +84,7 @@ function UnitFrqs({
             >
               {frq.title || "Untitled FRQ"}
             </p>
-            </div>
+          </div>
         );
       })}
 

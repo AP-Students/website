@@ -281,7 +281,6 @@ export default function Page({ params }: { params: { slug: string } }) {
       alert("Unable to update the FRQ visibility. Please try again.");
     }
   };
-
   /****************************************************
    *                   SAVE ACTION
    * This function will force delete anything in the db that isnt in the local to keep db clean
