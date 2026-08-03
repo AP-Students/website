@@ -42,9 +42,12 @@ export default function QuestionFeedback({
   return (
     <section className="h-full overflow-y-auto px-16 py-8">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-bold">
-          {frq.name} | {frq.questions.length} Questions
-        </h1>
+        <h1 className="flex items-center gap-2 text-xl font-bold">
+  <span>{frq.name}</span>
+  <span>|</span>
+  <span>{frq.questions.length} Questions</span>
+  <span>|</span>
+</h1>
 
         <button
           type="button"
@@ -68,6 +71,7 @@ export default function QuestionFeedback({
           return (
             <FeedbackSection
               key={part.id}
+              questionNumber={index + 1}
               part={part}
               label={String.fromCharCode(65 + index)}
               answer={answer}

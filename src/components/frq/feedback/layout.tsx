@@ -1,5 +1,5 @@
 import Header from "./header";
-import Footer from "./footer";
+import Footer from "@/components/frq/FRQFooter";
 import LeftSide from "./leftSide";
 import QuestionFeedback from "./rightSide";
 import type { FRQFeedbackDocument, FRQQuestion } from "./types";

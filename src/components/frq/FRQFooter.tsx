@@ -1,19 +1,8 @@
 "use client";
 
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronUp,
-  MapPin,
-  X,
-} from "lucide-react";
-import { useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import FRQDropdown from "@/components/frq/FRQDropdown";
 
 interface FooterProps {
   testName: string;
@@ -32,13 +21,6 @@ export default function Footer({
   onNext,
   onJumpToFrq,
 }: FooterProps) {
-  const [navigationOpen, setNavigationOpen] = useState(false);
-
-  const jumpToFrq = (index: number) => {
-    onJumpToFrq(index);
-    setNavigationOpen(false);
-  };
-
   return (
     <footer className="fixed bottom-0 left-0 z-50 flex h-14 w-full items-center justify-between border-t-2 border-gray-300 bg-white px-8">
       <p className="font-semibold">{testName}</p>
@@ -54,58 +36,12 @@ export default function Footer({
           <ChevronLeft className="size-5" />
         </button>
 
-        <Popover
-          open={navigationOpen}
-          onOpenChange={setNavigationOpen}
-        >
-          <PopoverTrigger className="flex items-center gap-1 rounded-md bg-black px-4 py-2 text-sm font-bold text-white">
-            Question {currentFrqIndex + 1} of {totalFrqs}
-            <ChevronUp className="size-4" />
-          </PopoverTrigger>
-
-          <PopoverContent className="w-[480px] p-0">
-            <div className="rounded-md bg-white">
-              <div className="relative px-8 py-5 text-center">
-                <h2 className="text-xl font-bold">
-                  {testName} Questions
-                </h2>
-
-                <button
-                  type="button"
-                  className="absolute right-5 top-5"
-                  aria-label="Close question navigation"
-                  onClick={() => setNavigationOpen(false)}
-                >
-                  <X className="size-5" />
-                </button>
-              </div>
-
-              <div className="border-t border-gray-300" />
-
-              <div className="px-8 py-8">
-                <div className="grid grid-cols-6 gap-x-5 gap-y-8">
-                  {Array.from({ length: totalFrqs }).map(
-                    (_, index) => (
-                      <button
-                        key={index}
-                        type="button"
-                        onClick={() => jumpToFrq(index)}
-                        className="relative flex size-10 items-center justify-center border-2 border-transparent bg-[#294ad1] text-base font-bold text-white"
-                        aria-label={`Go to FRQ ${index + 1}`}
-                      >
-                        {index + 1}
-
-                        {index === currentFrqIndex && (
-                          <MapPin className="absolute -top-7 size-5 fill-white stroke-black" />
-                        )}
-                      </button>
-                    ),
-                  )}
-                </div>
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
+        <FRQDropdown
+          testName={testName}
+          currentFrqIndex={currentFrqIndex}
+          totalFrqs={totalFrqs}
+          onJumpToFrq={onJumpToFrq}
+        />
 
         <button
           type="button"

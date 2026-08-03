@@ -1,14 +1,17 @@
 "use client";
 
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight} from "lucide-react";
+
 import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
+import { Textarea } from "@/components/ui/textarea";
+
 import RubricCriteriaRow from "./rubricCriteriaRow";
 import type { FRQPart, FRQPartFeedback, ResponseAnswer } from "./types";
-import { Textarea } from "@/components/ui/textarea";
 
 interface FeedbackSectionProps {
   part: FRQPart;
   label: string;
+  questionNumber: number;
   answer?: ResponseAnswer;
   partFeedback?: FRQPartFeedback;
   isOpen: boolean;
@@ -20,6 +23,7 @@ interface FeedbackSectionProps {
 export default function FeedbackSection({
   part,
   label,
+  questionNumber,
   answer,
   partFeedback,
   isOpen,
@@ -43,21 +47,30 @@ export default function FeedbackSection({
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center bg-gray-100"
+        className="flex w-full items-center bg-gray-100 text-left"
       >
-        <span className="bg-black px-3 py-2 font-bold text-white">{label}</span>
-
-        <p className="flex-1 px-3 text-left font-bold">
-          {pointsEarned}/{pointsPossible} Points
-        </p>
-
-        <span className="px-3">
-          {isOpen ? (
-            <ChevronDown className="size-5" />
-          ) : (
-            <ChevronRight className="size-5" />
-          )}
+        <span className="flex self-stretch items-center bg-black px-3 font-bold text-white">
+          {label}
         </span>
+
+        <div className="flex flex-1 items-center justify-between px-3 py-2">
+          <div className="flex items-center gap-2 font-bold"><span>Question {questionNumber}</span>
+          <span>|</span>
+          <span>{pointsPossible} Points</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-semibold">
+              {pointsEarned}/{pointsPossible} earned
+            </span>
+
+            {isOpen ? (
+              <ChevronDown className="size-5" />
+            ) : (
+              <ChevronRight className="size-5" />
+            )}
+          </div>
+        </div>
       </button>
 
       {isOpen && (
@@ -92,6 +105,7 @@ export default function FeedbackSection({
               );
             })}
           </div>
+
           <Textarea
             value={partFeedback?.feedback ?? ""}
             onChange={(event) => onFeedbackChange(event.target.value)}

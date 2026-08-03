@@ -45,7 +45,6 @@ interface UnitComponentProps {
     frqId: string,
     isPublic: boolean,
   ) => Promise<void>;
-  onFrqDelete: (frqId: string) => Promise<void>;
 }
 
 /**
@@ -66,7 +65,6 @@ function UnitComponent({
   onFrqAdd,
   onFrqRename,
   onFrqVisibilityChange,
-  onFrqDelete,
 }: UnitComponentProps) {
   const [expanded, setExpanded] = useState<boolean>(false);
 
@@ -428,7 +426,6 @@ function UnitComponent({
             frqs={frqTemplates}
             onFrqAdd={(title) => onFrqAdd(unit.id, title)}
             onFrqUpdate={onFrqRename}
-            onFrqDelete={onFrqDelete}
             onFrqVisibilityChange={onFrqVisibilityChange}
           />
         </div>
