@@ -96,3 +96,173 @@
 .img.img-svg {
   @apply h-auto w-full max-w-[480px];
 }
+
+/* image rich-text caption editor ─────────────────────────────────────────── */
+
+.caption-editor-root {
+  position: relative;
+}
+
+.caption-editor-field {
+  @apply rounded-sm border p-2 text-sm outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+  min-height: 2.5rem;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.caption-editor-field:empty::before {
+  content: attr(data-placeholder);
+  color: hsl(var(--muted-foreground));
+  pointer-events: none;
+}
+
+/* Inline formatting within the editable caption. These target the semantic
+   tags (<strong>/<em>/<u>/<mark>) that render.ts emits and convert.ts parses,
+   so styling stays in sync with whatever marks are actually persisted. */
+.caption-editor-field strong,
+figcaption strong {
+  font-weight: 700;
+}
+.caption-editor-field em,
+figcaption em {
+  font-style: italic;
+}
+.caption-editor-field u,
+figcaption u {
+  text-decoration: underline;
+}
+.caption-editor-field mark,
+figcaption mark {
+  background-color: rgba(255, 213, 79, 0.55);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+.dark .caption-editor-field mark,
+.dark figcaption mark {
+  background-color: rgba(255, 213, 79, 0.35);
+  color: inherit;
+}
+
+.caption-editor-field a,
+figcaption a {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  cursor: pointer;
+}
+figcaption a {
+  /* Published links: external link behaviour with safe attributes */
+  text-decoration-line: underline;
+  text-underline-offset: 2px;
+}
+
+/* Floating toolbar. position: fixed so the toolbar's viewport-relative
+   coordinates (computed straight from the selection's getBoundingClientRect)
+   don't need reconciling against whatever ancestor establishes the
+   containing block for `absolute` — which, for a caption nested inside the
+   article body, is essentially never the document origin. */
+.caption-toolbar {
+  position: fixed;
+  z-index: 50;
+  display: inline-flex;
+  gap: 2px;
+  padding: 4px;
+  background: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+}
+
+.caption-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  border: none;
+  transition: background-color 120ms ease;
+}
+.caption-toolbar-btn:hover {
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+.caption-toolbar-btn:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+.caption-toolbar-btn-active {
+  background: hsl(var(--primary) / 0.18);
+  color: hsl(var(--primary));
+}
+.caption-toolbar-btn-active:hover {
+  background: hsl(var(--primary) / 0.26);
+  color: hsl(var(--primary));
+}
+
+/* Link popover: also viewport-fixed, see .caption-toolbar above. */
+.caption-link-popover {
+  position: fixed;
+  z-index: 50;
+  width: 320px;
+  padding: 12px;
+  background: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: calc(100vw - 16px);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.caption-link-error {
+  font-size: 0.75rem;
+  color: hsl(var(--destructive));
+  margin: 0;
+}
+
+.caption-link-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.caption-link-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: hsl(var(--primary));
+  text-decoration: none;
+  margin-left: auto;
+}
+
+@media (max-width: 640px) {
+  .caption-toolbar {
+    max-width: calc(100vw - 16px);
+    flex-wrap: wrap;
+  }
+  .caption-link-popover {
+    width: calc(100vw - 24px);
+  }
+}
+
