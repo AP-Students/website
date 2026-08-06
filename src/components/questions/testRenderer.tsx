@@ -9,6 +9,7 @@ import type { QuestionFormat } from "@/types/questions";
 import { RenderContent } from "../../components/article-creator/custom_questions/RenderAdvancedTextbox";
 import Highlighter, { type Highlight } from "./digital-testing/Highlighter";
 import ReviewPage, { isQuestionCorrect } from "./digital-testing/ReviewPage";
+import CompletionPage from "./digital-testing/CompletionPage";
 import clsx from "clsx";
 import { cn } from "@/lib/utils";
 import "katex/dist/katex.min.css";
@@ -119,6 +120,10 @@ export default function DigitalTestingPage({
             : [...(prev[currentQuestionIndex] ?? []), optionId],
     }));
   };
+
+  if (submitted && !adminMode) {
+    return <CompletionPage />;
+  }
 
   return (
     <div className="flex flex-col">
