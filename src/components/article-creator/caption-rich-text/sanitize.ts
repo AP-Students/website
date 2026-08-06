@@ -14,7 +14,11 @@ const SCHEME_PREFIX = /^(https?:|mailto:)/i;
  * sneaking "javascript:" after a leading space or tab. Bare "//host/path"
  * links are rejected too, since browsers resolve those to an arbitrary
  * external host using the current page's scheme (open-redirect / phishing
- * risk) even though they start with what looks like a single "/".
+ * risk) even though they start with what looks like a single "/". The same
+ * applies to a leading "/\" (or any second character of "/" or "\"): the
+ * WHATWG URL parser treats "\" exactly like "/" for http(s) URLs, so
+ * "/\evil.com" resolves to "https://evil.com" in every major browser even
+ * though it isn't a "//" prefix.
  */
 export function isValidUrl(url: string): boolean {
   const trimmed = url.trim();
@@ -22,7 +26,7 @@ export function isValidUrl(url: string): boolean {
   if (/\s/.test(trimmed)) return false;
   if (DANGEROUS_PROTOCOLS.test(trimmed)) return false;
 
-  if (trimmed.startsWith("/") && !trimmed.startsWith("//")) {
+  if (trimmed.startsWith("/") && trimmed[1] !== "/" && trimmed[1] !== "\\") {
     return true;
   }
 

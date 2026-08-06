@@ -86,10 +86,6 @@ type CustomImageTool = {
 
 const pendingStorageDeletes = new Set<string>();
 
-// Map of <CustomImage instance> -> accessor for the live rich caption snapshot.
-// Used so save() can read the latest value synchronously.
-const captionHostMap = new WeakMap<object, { get: () => RichCaption }>();
-
 function isStorageObjectNotFoundError(error: unknown): boolean {
   return (
     typeof error === "object" &&
@@ -222,10 +218,6 @@ class CustomImage extends Image {
       initial: initialKnown,
       placeholder: "Enter a caption (select text to format)...",
       onChange,
-    });
-
-    captionHostMap.set(this as unknown as HTMLElement, {
-      get: () => this._richCaption,
     });
   }
 

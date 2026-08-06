@@ -40,6 +40,20 @@ const EMPTY_SELECTION: SelectionState = {
   linkMark: null,
 };
 
+// Replace an element with its children, preserving their position in the tree.
+function unwrapElement(el: Element): void {
+  const parent = el.parentNode;
+  if (!parent) return;
+  while (el.firstChild) parent.insertBefore(el.firstChild, el);
+  parent.removeChild(el);
+}
+
+// Space (in px) reserved above the selection for the floating toolbar/popover
+// before falling back to rendering below the selection instead.
+const TOOLBAR_HEIGHT = 44;
+const LINK_POPOVER_HEIGHT = 60;
+const VIEWPORT_MARGIN = 8;
+
 export function CaptionRichTextEditor({
   value,
   onChange,
@@ -169,20 +183,30 @@ export function CaptionRichTextEditor({
         sel?.addRange(selection.range);
       }
       if (command === "highlight") {
-        // execCommand("HiliteColor"/"backColor") is unreliable, so wrap the
-        // selection in <mark> manually when there's any selected text.
+        // execCommand("HiliteColor"/"backColor") is unreliable, so <mark> is
+        // applied/removed manually when there's any selected text. Toggling
+        // off unwraps any <mark> the selection touches instead of nesting a
+        // new one, so "highlight again to remove it" actually works.
         const sel = window.getSelection();
-        if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+        const root = editorRef.current;
+        if (sel && sel.rangeCount > 0 && !sel.isCollapsed && root) {
           const range = sel.getRangeAt(0);
-          const fragment = range.extractContents();
-          const mark = document.createElement("mark");
-          mark.appendChild(fragment);
-          range.insertNode(mark);
-          // Re-select what we just inserted
-          sel.removeAllRanges();
-          const newRange = document.createRange();
-          newRange.selectNodeContents(mark);
-          sel.addRange(newRange);
+          if (selection.activeMarks.has("highlight")) {
+            root.querySelectorAll("mark").forEach((mark) => {
+              if (range.intersectsNode(mark)) unwrapElement(mark);
+            });
+            sel.removeAllRanges();
+          } else {
+            const fragment = range.extractContents();
+            const mark = document.createElement("mark");
+            mark.appendChild(fragment);
+            range.insertNode(mark);
+            // Re-select what we just inserted
+            sel.removeAllRanges();
+            const newRange = document.createRange();
+            newRange.selectNodeContents(mark);
+            sel.addRange(newRange);
+          }
         }
       } else {
         document.execCommand(command);
@@ -190,7 +214,7 @@ export function CaptionRichTextEditor({
       commit();
       refreshSelectionState();
     },
-    [selection.range, commit, refreshSelectionState],
+    [selection.range, selection.activeMarks, commit, refreshSelectionState],
   );
 
   const toggleLink = useCallback(() => {
@@ -286,9 +310,17 @@ export function CaptionRichTextEditor({
   // position against a `position: absolute` ancestor that generally isn't
   // anchored to the document origin, pushing the toolbar off-screen for any
   // caption that isn't at the very top of the page.
+  //
+  // Prefer rendering above the selection, but flip below it when there isn't
+  // enough room above (e.g. the caption sits near the top of the viewport) so
+  // the toolbar/popover doesn't clamp to the viewport edge and cover the text
+  // the author just selected.
   const toolbarStyle: React.CSSProperties = selection.rect
     ? {
-        top: Math.max(8, selection.rect.top - 44),
+        top:
+          selection.rect.top - TOOLBAR_HEIGHT >= VIEWPORT_MARGIN
+            ? selection.rect.top - TOOLBAR_HEIGHT
+            : selection.rect.bottom + VIEWPORT_MARGIN,
         left: Math.min(
           window.innerWidth - 280,
           Math.max(8, selection.rect.left + selection.rect.width / 2 - 140),
@@ -298,7 +330,10 @@ export function CaptionRichTextEditor({
 
   const linkStyle: React.CSSProperties = selection.rect
     ? {
-        top: Math.max(8, selection.rect.top - 60),
+        top:
+          selection.rect.top - LINK_POPOVER_HEIGHT >= VIEWPORT_MARGIN
+            ? selection.rect.top - LINK_POPOVER_HEIGHT
+            : selection.rect.bottom + VIEWPORT_MARGIN,
         left: Math.min(
           window.innerWidth - 340,
           Math.max(8, selection.rect.left + selection.rect.width / 2 - 160),
