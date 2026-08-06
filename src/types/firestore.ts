@@ -15,6 +15,7 @@ export type Unit = {
   // Use UnitTest.id as testId
   test?: boolean;
   testId?: string;
+  frqs?: UnitFRQ[];
 };
 
 export type UnitTest = {
@@ -23,6 +24,12 @@ export type UnitTest = {
   questions: QuestionFormat[];
   time: number;
   directions: string;
+  isPublic?: boolean;
+};
+
+export type UnitFRQ = {
+  id: string;
+  title?: string;
   isPublic?: boolean;
 };
 

@@ -129,6 +129,11 @@ service cloud.firestore {
           allow read: if resource.data.isPublic == true || isMemberOrAdmin();
           allow write: if isMemberOrAdmin();
         }
+
+        match /frqs/{frq} {
+          allow read: if resource.data.isPublic == true || isMemberOrAdmin();
+          allow write: if isMemberOrAdmin();
+        }
       }
     }
     

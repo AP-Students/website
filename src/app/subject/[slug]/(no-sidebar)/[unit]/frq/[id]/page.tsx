@@ -26,9 +26,16 @@ const Page = () => {
       setFrq(null);
 
       try {
-        // FRQs are top-level templates, just as an MCQ test is fetched as one
-        // document before its questions are rendered.
-        const docRef = doc(db, "frqTemplates", frqId);
+        // FRQs are stored under their subject/unit
+        const docRef = doc(
+          db,
+          "subjects",
+          subject,
+          "units",
+          unitId!,
+          "frqs",
+          frqId,
+        );
 
         const docSnap = await getDoc(docRef);
 
