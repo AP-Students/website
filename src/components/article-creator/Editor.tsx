@@ -185,7 +185,7 @@ function openImageReplacementDialog(tool: CustomImageTool) {
     dialog.remove();
     trigger?.focus();
   });
-  confirm.addEventListener("click", async () => {
+  const replaceImage = async () => {
     if (!selectedFile) return;
 
     confirm.disabled = true;
@@ -211,6 +211,9 @@ function openImageReplacementDialog(tool: CustomImageTool) {
       input.disabled = false;
       confirm.textContent = "Replace image";
     }
+  };
+  confirm.addEventListener("click", () => {
+    void replaceImage();
   });
   dialog.showModal();
   input.focus();
