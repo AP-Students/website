@@ -31,7 +31,7 @@ import {
   uploadBytes,
 } from "firebase/storage";
 import { buttonVariants } from "../ui/button";
-import { cn, resolveUploadContentType } from "@/lib/utils";
+import { cn, isSvgFileName, resolveUploadContentType } from "@/lib/utils";
 
 interface EditorImageData {
   file: { url?: string; storageRefFullPath?: string; [key: string]: unknown };
@@ -39,6 +39,7 @@ interface EditorImageData {
   withBorder?: boolean;
   withBackground?: boolean;
   stretched?: boolean;
+  centerImage?: boolean;
 }
 
 type MenuConfigItemList = Array<{
@@ -55,6 +56,10 @@ type CustomImageTool = {
     blocks: {
       getBlockIndex(blockId: string): number;
       delete(index?: number): void;
+      update(
+        blockId: string,
+        data?: Partial<EditorImageData>,
+      ): Promise<unknown>;
     };
   };
   block: {
@@ -64,6 +69,152 @@ type CustomImageTool = {
 };
 
 const pendingStorageDeletes = new Set<string>();
+
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+
+async function uploadImageFile(file: File) {
+  if (!file.type.startsWith("image/") && !isSvgFileName(file.name)) {
+    throw new Error("Please select an image file.");
+  }
+
+  if (file.size > MAX_IMAGE_SIZE) {
+    throw new Error(`File "${file.name}" is too large.`);
+  }
+
+  const storage = getStorage();
+  const storageRef = ref(
+    storage,
+    "images/" + new Date().getTime() + "_" + file.name,
+  );
+  const contentType = resolveUploadContentType(file);
+  const snapshot = await uploadBytes(
+    storageRef,
+    file,
+    contentType ? { contentType } : undefined,
+  );
+  const downloadURL = await getDownloadURL(snapshot.ref);
+
+  return { url: downloadURL, storageRefFullPath: storageRef.fullPath };
+}
+
+function openImageReplacementDialog(tool: CustomImageTool) {
+  const currentUrl = tool._data.file.url;
+  const trigger =
+    document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+  const dialog = document.createElement("dialog");
+  dialog.setAttribute("aria-labelledby", "replace-image-title");
+  dialog.style.maxWidth = "min(42rem, calc(100vw - 2rem))";
+  dialog.style.width = "100%";
+  dialog.style.padding = "1.5rem";
+  dialog.style.borderRadius = "0.5rem";
+
+  const title = document.createElement("h2");
+  title.id = "replace-image-title";
+  title.textContent = "Replace image";
+  title.style.marginTop = "0";
+  const description = document.createElement("p");
+  description.textContent =
+    "Your caption, source, styling, and alt text will be kept. Please review the alt text for the new image.";
+
+  const previews = document.createElement("div");
+  previews.style.display = "grid";
+  previews.style.gridTemplateColumns = "repeat(auto-fit, minmax(12rem, 1fr))";
+  previews.style.gap = "1rem";
+  const makePreview = (label: string, url?: string) => {
+    const wrapper = document.createElement("div");
+    const heading = document.createElement("strong");
+    heading.textContent = label;
+    const image = document.createElement("img");
+    image.alt = label;
+    image.style.display = "block";
+    image.style.marginTop = "0.5rem";
+    image.style.maxWidth = "100%";
+    image.style.maxHeight = "15rem";
+    image.style.objectFit = "contain";
+    if (url) image.src = url;
+    wrapper.append(heading, image);
+    return { wrapper, image };
+  };
+  const currentPreview = makePreview("Current image", currentUrl);
+  const replacementPreview = makePreview("Replacement preview");
+  previews.append(currentPreview.wrapper, replacementPreview.wrapper);
+
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/*";
+  input.setAttribute("aria-label", "Choose replacement image");
+  const error = document.createElement("p");
+  error.setAttribute("role", "alert");
+  error.style.color = "#b91c1c";
+  const actions = document.createElement("div");
+  actions.style.display = "flex";
+  actions.style.justifyContent = "flex-end";
+  actions.style.gap = "0.5rem";
+  actions.style.marginTop = "1rem";
+  const cancel = document.createElement("button");
+  cancel.type = "button";
+  cancel.textContent = "Cancel";
+  const confirm = document.createElement("button");
+  confirm.type = "button";
+  confirm.textContent = "Replace image";
+  confirm.disabled = true;
+  actions.append(cancel, confirm);
+  dialog.append(title, description, previews, input, error, actions);
+  document.body.append(dialog);
+
+  let selectedFile: File | undefined;
+  let previewUrl: string | undefined;
+  const close = () => dialog.close();
+  input.addEventListener("change", () => {
+    selectedFile = input.files?.[0];
+    error.textContent = "";
+    confirm.disabled = !selectedFile;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = selectedFile ? URL.createObjectURL(selectedFile) : undefined;
+    replacementPreview.image.src = previewUrl ?? "";
+  });
+  cancel.addEventListener("click", close);
+  dialog.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    close();
+  });
+  dialog.addEventListener("close", () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    dialog.remove();
+    trigger?.focus();
+  });
+  confirm.addEventListener("click", async () => {
+    if (!selectedFile) return;
+
+    confirm.disabled = true;
+    cancel.disabled = true;
+    input.disabled = true;
+    confirm.textContent = "Uploading...";
+    try {
+      const file = await uploadImageFile(selectedFile);
+      if (tool.api.blocks.getBlockIndex(tool.block.id) === -1) {
+        close();
+        return;
+      }
+      await tool.api.blocks.update(tool.block.id, { file });
+      close();
+    } catch (uploadError) {
+      console.error("Failed to replace image:", uploadError);
+      error.textContent =
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Could not upload image. Please try again.";
+      confirm.disabled = false;
+      cancel.disabled = false;
+      input.disabled = false;
+      confirm.textContent = "Replace image";
+    }
+  });
+  dialog.showModal();
+  input.focus();
+}
 
 function isStorageObjectNotFoundError(error: unknown): boolean {
   return (
@@ -93,6 +244,13 @@ class CustomImage extends Image {
     ) as unknown[];
 
     return [
+      ...settingsArray,
+      {
+        name: "replaceImage",
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/><path d="M3 12A9 9 0 0 1 18.5 5.8L21 8"/><path d="M16 8h5V3"/></svg>`,
+        title: "Replace image",
+        onActivate: () => openImageReplacementDialog(typedTool),
+      },
       {
         name: "deleteImage",
         icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`,
@@ -114,7 +272,6 @@ class CustomImage extends Image {
           typedTool.api.blocks.delete(blockIndex);
         },
       },
-      ...settingsArray,
     ] as unknown as MenuConfigItemList;
   }
 
@@ -172,32 +329,12 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
     config: {
       uploader: {
         async uploadByFile(file: File) {
-          if (file.size > 5 * 1024 * 1024) {
-            alert(`File "${file.name}" is too large.`);
-            return { success: 0 };
-          }
-
-          const storage = getStorage();
-          const storageRef = ref(
-            storage,
-            "images/" + new Date().getTime() + "_" + file.name,
-          );
-
           try {
-            const contentType = resolveUploadContentType(file);
-            const snapshot = await uploadBytes(
-              storageRef,
-              file,
-              contentType ? { contentType } : undefined,
-            );
-            const downloadURL = await getDownloadURL(snapshot.ref);
+            const uploadedFile = await uploadImageFile(file);
 
             return {
               success: 1,
-              file: {
-                url: downloadURL,
-                storageRefFullPath: storageRef.fullPath,
-              },
+              file: uploadedFile,
             };
           } catch (err) {
             console.log(err);
