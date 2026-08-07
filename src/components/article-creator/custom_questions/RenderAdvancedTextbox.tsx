@@ -5,6 +5,7 @@ import "../../../styles/katexStyling.css";
 import { decodeEntities, katexMacros } from "../Renderer";
 
 import { cn, isSvgFileName, parseSvgIntrinsicSize } from "@/lib/utils";
+import { sanitizeQuestionRichText } from "./richText";
 
 interface Props {
   content: QuestionInput;
@@ -209,14 +210,15 @@ export function RenderContent({ content, origin }: Props) {
     return null;
   };
 
-  const tokens = decodeEntities(content.value)
+  const renderText = (text: string, keyPrefix: string): React.ReactNode[] =>
+    decodeEntities(text)
     .split(/(```[\s\S]*?```|\$@[^$]+\$|\[image:[^\]]+\])/g)
     .map((token, tokenIndex) => {
       if (token.startsWith("```") && token.endsWith("```")) {
         const codeContent = token.slice(3, -3).replace(/^\n/, "");
         return (
           <pre
-            key={`code-${tokenIndex}`}
+            key={`${keyPrefix}-code-${tokenIndex}`}
             className="my-2 max-w-full overflow-x-auto whitespace-pre-wrap rounded p-2 font-mono text-sm leading-relaxed text-black"
             style={{
               fontFamily: "'Consolas', monospace",
@@ -229,7 +231,7 @@ export function RenderContent({ content, origin }: Props) {
       } else if (token.startsWith("$@") && token.endsWith("$")) {
         return (
           <span
-            key={`latex-${tokenIndex}`}
+            key={`${keyPrefix}-latex-${tokenIndex}`}
             dangerouslySetInnerHTML={{
               __html: katex.renderToString(token.slice(2, -1), {
                 throwOnError: false,
@@ -245,7 +247,7 @@ export function RenderContent({ content, origin }: Props) {
           renderedInlineKeys.add(matchedFile.key);
           return (
             <div
-              key={`inline-img-${tokenIndex}`}
+              key={`${keyPrefix}-inline-img-${tokenIndex}`}
               className="my-4 block text-center"
             >
               <FileRenderer file={matchedFile} />
@@ -258,8 +260,33 @@ export function RenderContent({ content, origin }: Props) {
           );
         }
       }
-      return <span key={`text-${tokenIndex}`}>{token}</span>;
+      return <React.Fragment key={`${keyPrefix}-text-${tokenIndex}`}>{token}</React.Fragment>;
     });
+
+  const renderNode = (node: Node, key: string): React.ReactNode => {
+    if (node.nodeType === Node.TEXT_NODE) return renderText(node.textContent ?? "", key);
+    if (node.nodeType !== Node.ELEMENT_NODE) return null;
+    const children = Array.from(node.childNodes).map((child, index) => renderNode(child, `${key}-${index}`));
+    switch ((node as Element).tagName.toLowerCase()) {
+      case "strong": return <strong key={key}>{children}</strong>;
+      case "em": return <em key={key}>{children}</em>;
+      case "u": return <u key={key}>{children}</u>;
+      case "mark": return <mark key={key} className="rounded bg-yellow-200 px-0.5 text-gray-950">{children}</mark>;
+      case "br": return <br key={key} />;
+      case "div": return <div key={key}>{children}</div>;
+      default: return <React.Fragment key={key}>{children}</React.Fragment>;
+    }
+  };
+
+  const safeValue = sanitizeQuestionRichText(content.value);
+  const tokens: React.ReactNode[] =
+    typeof window === "undefined"
+      ? renderText(safeValue.replace(/<[^>]*>/g, ""), "text")
+      : (() => {
+          const template = document.createElement("template");
+          template.innerHTML = safeValue;
+          return Array.from(template.content.childNodes).map((node, index) => renderNode(node, `node-${index}`));
+        })();
 
   // Filter out files that were already rendered inline
   const remainingFiles = sortedFiles.filter(

@@ -4,7 +4,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import React, { useRef, useState, useEffect } from "react";
-import { Textarea } from "@/components/ui/textarea";
 import type { QuestionFile, QuestionFormat } from "@/types/questions";
 import { Paperclip, Trash, ChevronLeft, ChevronRight } from "lucide-react";
 import {
@@ -17,6 +16,7 @@ import {
 import { getUser } from "@/components/hooks/users";
 import { getFileFromIndexedDB } from "./RenderAdvancedTextbox";
 import { isSvgFileName, resolveUploadContentType } from "@/lib/utils";
+import RichTextEditor from "./RichTextEditor";
 
 interface Props {
   questions: QuestionFormat[];
@@ -177,7 +177,7 @@ export default function AdvancedTextbox({
     >
   >({});
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sync state when loaded
@@ -209,8 +209,9 @@ export default function AdvancedTextbox({
     }
   }, [questionInstance, oIndex, origin]);
 
-  // Handle keys logic
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  // Keep navigation keys inside the block editor rather than letting the host
+  // EditorJS instance handle them.
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     const key = e.key;
 
     if (
@@ -224,90 +225,7 @@ export default function AdvancedTextbox({
       e.stopPropagation();
     }
 
-    if (key === "Enter") {
-      const textarea = textareaRef.current;
-      if (!textarea) return;
-
-      const cursorPosition = textarea.selectionStart;
-      const textBeforeCursor = currentText.substring(0, cursorPosition);
-      const textAfterCursor = currentText.substring(textarea.selectionEnd);
-
-      const lastNewLineIndex = textBeforeCursor.lastIndexOf("\n");
-      const currentLine = textBeforeCursor.substring(lastNewLineIndex + 1);
-
-      const match = currentLine.match(/^\s*/);
-      const leadingWhitespace = match ? match[0] : "";
-
-      if (leadingWhitespace) {
-        e.preventDefault();
-        const newText =
-          textBeforeCursor + "\n" + leadingWhitespace + textAfterCursor;
-        updateQuestionText(newText);
-
-        setTimeout(() => {
-          if (textareaRef.current) {
-            textareaRef.current.selectionStart =
-              textareaRef.current.selectionEnd =
-                cursorPosition + 1 + leadingWhitespace.length;
-          }
-        }, 0);
-      }
-    }
-
-    if (key === "Backspace") {
-      const textarea = textareaRef.current;
-      if (!textarea) return;
-
-      const cursorPosition = textarea.selectionStart;
-      if (cursorPosition === textarea.selectionEnd && cursorPosition > 0) {
-        const textBeforeCursor = currentText.substring(0, cursorPosition);
-        const lastNewLineIndex = textBeforeCursor.lastIndexOf("\n");
-        const currentLine = textBeforeCursor.substring(lastNewLineIndex + 1);
-
-        if (currentLine.length > 0 && /^\s+$/.test(currentLine)) {
-          e.preventDefault();
-
-          const spacesToDelete = currentLine.length % 2 !== 0 ? 1 : 2;
-
-          const newText =
-            currentText.substring(0, cursorPosition - spacesToDelete) +
-            currentText.substring(cursorPosition);
-
-          updateQuestionText(newText);
-
-          setTimeout(() => {
-            if (textareaRef.current) {
-              textareaRef.current.selectionStart =
-                textareaRef.current.selectionEnd =
-                  cursorPosition - spacesToDelete;
-            }
-          }, 0);
-        }
-      }
-    }
-
-    if (key === "Tab") {
-      e.stopPropagation();
-      e.preventDefault();
-
-      const textarea = textareaRef.current;
-      if (!textarea) return;
-
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const indent = "  ";
-      const newText =
-        currentText.substring(0, start) + indent + currentText.substring(end);
-
-      updateQuestionText(newText);
-
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.selectionStart =
-            textareaRef.current.selectionEnd = start + indent.length;
-        }
-      }, 0);
-    }
+    if (key === "Tab") e.stopPropagation();
   };
 
   const updateQuestionsWithFiles = (newFiles: QuestionFile[]) => {
@@ -379,10 +297,6 @@ export default function AdvancedTextbox({
     }
 
     setQuestions(updatedQuestions);
-  };
-
-  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    updateQuestionText(e.target.value);
   };
 
   const handleUploadClick = () => {
@@ -568,35 +482,18 @@ export default function AdvancedTextbox({
   };
 
   const insertPlaceholder = (file: QuestionFile, index: number) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
     const placeholderText = `[image:${index + 1}]`;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-
-    const newText =
-      currentText.substring(0, start) +
-      placeholderText +
-      currentText.substring(end);
-
-    updateQuestionText(newText);
-
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(
-        start + placeholderText.length,
-        start + placeholderText.length,
-      );
-    }, 0);
+    editorRef.current?.focus();
+    document.execCommand("insertText", false, placeholderText);
+    if (editorRef.current) updateQuestionText(editorRef.current.innerHTML);
   };
 
   return (
     <div className="relative mb-4">
-      <Textarea
-        ref={textareaRef}
+      <RichTextEditor
+        ref={editorRef}
         value={currentText}
-        onChange={handleTextChange}
+        onChange={updateQuestionText}
         onKeyDown={handleKeyDown}
         placeholder={
           placeholder ??
