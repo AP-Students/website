@@ -143,9 +143,23 @@ service cloud.firestore {
     }
 
     match /feedback/{feedbackId} {
-      allow read: if isMemberOrAdmin;
-      allow list: if isMemberOrAdmin;
+      allow read: if isMemberOrAdmin();
+      allow list: if isMemberOrAdmin();
       allow get: if isMemberOrAdmin();
+
+      // Anyone (including anonymous visitors) can submit feedback
+      allow create: if request.resource.data.keys().hasAll(['type', 'title', 'message', 'email', 'createdAt'])
+                    && request.resource.data.keys().hasOnly(['type', 'title', 'message', 'email', 'createdAt', 'bugType', 'bugUrl', 'attachedImage', 'featureProblem', 'featureAlternatives', 'featureSolution', 'featureContextUrl'])
+                    && !('isResolved' in request.resource.data)
+                    && request.resource.data.type in ['general', 'bug', 'feature']
+                    && request.resource.data.title is string
+                    && request.resource.data.title.trim() != ''
+                    && request.resource.data.message is string
+                    && request.resource.data.message.trim() != ''
+                    && request.resource.data.email is string
+                    && request.resource.data.createdAt is timestamp
+                    && request.resource.data.createdAt <= request.time;
+
       allow update, delete: if isMemberOrAdmin();
     }
   }

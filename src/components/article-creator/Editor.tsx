@@ -20,6 +20,7 @@ import Underline from "@editorjs/underline";
 import MathTex from "editorjs-math";
 import Delimiter from "@editorjs/delimiter";
 import Alert from "editorjs-alert";
+import AlignmentTune from "./AlignmentTune";
 import { QuestionsAddCard } from "./custom_questions/QuestionsAddCard";
 import { ClipboardCopy, Upload } from "lucide-react";
 import {
@@ -150,6 +151,7 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
     class: Header as unknown as ToolConstructable,
     shortcut: "CTRL+SHIFT+H",
     inlineToolbar: true,
+    tunes: ["alignment"],
     config: {
       placeholder: "Enter a Header",
       levels: [1, 2, 3],
@@ -161,6 +163,7 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
     class: Paragraph as unknown as ToolConstructable,
     shortcut: "CTRL+SHIFT+P",
     inlineToolbar: true,
+    tunes: ["alignment"],
   },
 
   image: {
@@ -218,7 +221,12 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
     class: List as unknown as ToolConstructable,
     inlineToolbar: true,
     shortcut: "CTRL+ALT+8",
+    tunes: ["alignment"],
     config: { defaultStyle: "unordered" },
+  },
+
+  alignment: {
+    class: AlignmentTune as unknown as ToolConstructable,
   },
 
   questionsAddCard: {
