@@ -12,6 +12,12 @@ import type { QuestionFormat } from "@/types/questions";
 import "@/styles/katexStyling.css";
 import styles from "./Renderer.module.css";
 import { sanitizeAlignment } from "./alignment";
+import {
+  renderRichCaptionToHtml,
+} from "./caption-rich-text/render";
+import {
+  coerceRichCaption,
+} from "./caption-rich-text/convert";
 
 // Tool names the "alignment" BlockTune is registered on (see Editor.tsx).
 const ALIGNABLE_TYPES = new Set(["paragraph", "header", "list"]);
@@ -245,13 +251,22 @@ const customParsers: Record<
       );
     }
 
+    // Prefer richCaption for the figcaption body; fall back to plain caption.
+    const rich = (data as { richCaption?: unknown }).richCaption;
+    let captionBody = "";
+    if (Array.isArray(rich) && rich.length > 0) {
+      captionBody = renderRichCaptionToHtml(coerceRichCaption(rich));
+    } else if (typeof data.caption === "string" && data.caption.length > 0) {
+      captionBody = decodeEntities(data.caption);
+    }
+
     if (_config.image.use === "img") {
-      return `<img class="${imageConditions} ${imgClass}" src="${imageSrc}" alt="${data.caption}">`;
+      return `<img class="${imageConditions} ${imgClass}" src="${imageSrc}" alt="${data.caption ?? ""}">`;
     } else if (_config.image.use === "figure") {
       const figureClass = _config.image.figureClass ?? "";
       const figCapClass = _config.image.figCapClass ?? "";
 
-      return `<figure class="${figureClass}"><img class="${imgClass} ${imageConditions}" src="${imageSrc}" alt="${data.caption}"><figcaption class="${figCapClass}">${data.caption}</figcaption></figure>`;
+      return `<figure class="${figureClass}"><img class="${imgClass} ${imageConditions}" src="${imageSrc}" alt="${data.caption ?? ""}"><figcaption class="${figCapClass}">${captionBody}</figcaption></figure>`;
     }
     return "ERROR DISPLAYING IMAGE";
   },
