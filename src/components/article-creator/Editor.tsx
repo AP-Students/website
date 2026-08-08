@@ -32,13 +32,25 @@ import {
 } from "firebase/storage";
 import { buttonVariants } from "../ui/button";
 import { cn, resolveUploadContentType } from "@/lib/utils";
+import {
+  mountRichCaptionEditor,
+  resolveInitialRichCaption,
+  RICH_CAPTION_HOST_ATTR,
+} from "./caption-rich-text/mount";
+import type { RichCaption } from "./caption-rich-text/types";
+import {
+  serializeRichCaption,
+  richCaptionToPlainText,
+} from "./caption-rich-text/convert";
 
 interface EditorImageData {
   file: { url?: string; storageRefFullPath?: string; [key: string]: unknown };
   caption?: string;
+  richCaption?: RichCaption;
   withBorder?: boolean;
   withBackground?: boolean;
   stretched?: boolean;
+  centerImage?: boolean;
 }
 
 type MenuConfigItemList = Array<{
@@ -59,8 +71,17 @@ type CustomImageTool = {
   };
   block: {
     id: string;
+    container: HTMLElement;
+  };
+  ui: {
+    nodes: {
+      caption?: HTMLElement;
+      wrapper?: HTMLElement;
+    };
   };
   renderSettings(): MenuConfigItemList;
+  rendered?(): void;
+  save?(block: { holder: HTMLElement }): unknown;
 };
 
 const pendingStorageDeletes = new Set<string>();
@@ -77,6 +98,32 @@ function isStorageObjectNotFoundError(error: unknown): boolean {
 // https://github.com/editor-js/image/issues/54#issuecomment-1546833098
 // https://github.com/editor-js/image/issues/27
 class CustomImage extends Image {
+  /**
+   * Latest snapshot of the rich caption, kept up to date by the mounted
+   * CaptionRichTextEditor. `this._data.caption` mirrors the plain-text
+   * representation for backwards compatibility with downstream renderers.
+   */
+  private _richCaption: RichCaption = [];
+
+  // The EditorJS image tool's constructor signature is loosely typed at the
+  // boundary; the call below is safe because Image's runtime expects this
+  // shape.
+  constructor(args: Parameters<typeof Image>[0]) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    super(args);
+    // Capture any richCaption in the initial payload before the base class'
+    // `set data()` overwrites `_data.caption` with plain text.
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+    const maybeData = (args as unknown as { data?: EditorImageData }).data;
+    if (maybeData) {
+      if (maybeData.richCaption) {
+        this._richCaption = resolveInitialRichCaption(maybeData.richCaption);
+      } else if (typeof maybeData.caption === "string" && maybeData.caption) {
+        this._richCaption = resolveInitialRichCaption(maybeData.caption);
+      }
+    }
+  }
+
   renderSettings(): MenuConfigItemList {
     const typedTool = this as unknown as CustomImageTool;
     const baseImageTool = Image as unknown as {
@@ -116,6 +163,87 @@ class CustomImage extends Image {
       },
       ...settingsArray,
     ] as unknown as MenuConfigItemList;
+  }
+
+  /**
+   * Called after the EditorJS image tool renders its UI. We locate the native
+   * caption element, replace it with a host node, and mount the React
+   * CaptionRichTextEditor into it. Repeated renders are idempotent.
+   */
+  rendered(): void {
+    const initialKnown =
+      this._richCaption.length > 0
+        ? this._richCaption
+        : resolveInitialRichCaption(
+            (this as unknown as { _data: EditorImageData })._data.richCaption ??
+              (this as unknown as { _data: EditorImageData })._data.caption ??
+              "",
+          );
+
+    const typed = this as unknown as {
+      ui: {
+        nodes: {
+          caption?: HTMLElement;
+          wrapper?: HTMLElement;
+        };
+      };
+      block: { container: HTMLElement; id: string };
+    };
+
+    // EditorJS's Image tool keeps its DOM refs on `this.ui.nodes`, not
+    // `this.nodes` directly — see @editorjs/image's Ui class.
+    const holder = typed.ui?.nodes?.caption ?? null;
+    if (!holder) return;
+
+    let host = holder.querySelector<HTMLElement>(`[${RICH_CAPTION_HOST_ATTR}]`);
+    if (!host) {
+      host = document.createElement("div");
+      host.setAttribute(RICH_CAPTION_HOST_ATTR, "true");
+      const cdx = holder;
+      cdx.contentEditable = "false";
+      cdx.innerHTML = "";
+      cdx.appendChild(host);
+    }
+
+    const onChange = (next: RichCaption): void => {
+      this._richCaption = next;
+      (this as unknown as { _data: EditorImageData })._data.richCaption =
+        serializeRichCaption(next);
+      (this as unknown as { _data: EditorImageData })._data.caption =
+        richCaptionToPlainText(next);
+    };
+
+    mountRichCaptionEditor({
+      host,
+      initial: initialKnown,
+      placeholder: "Enter a caption (select text to format)...",
+      onChange,
+    });
+  }
+
+  save(): {
+    file: EditorImageData["file"];
+    caption?: string;
+    richCaption?: RichCaption;
+    withBorder?: boolean;
+    withBackground?: boolean;
+    stretched?: boolean;
+    centerImage?: boolean;
+  } {
+    // Avoid calling the parent save(); it would try to read the caption
+    // element that we've repurposed, and we already have a structured value
+    // stored on `_data`. Read from `this._data` for non-caption fields.
+    const d = (this as unknown as { _data: EditorImageData })._data;
+    const rich = this._richCaption;
+    return {
+      file: d.file,
+      caption: richCaptionToPlainText(rich),
+      richCaption: serializeRichCaption(rich),
+      withBorder: d.withBorder,
+      withBackground: d.withBackground,
+      stretched: d.stretched,
+      centerImage: d.centerImage,
+    };
   }
 
   removed() {
