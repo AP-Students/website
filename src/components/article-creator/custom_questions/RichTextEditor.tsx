@@ -134,6 +134,20 @@ const RichTextEditor = forwardRef<HTMLDivElement, Props>(function RichTextEditor
   };
 
   const applyFormat = (format: Format) => {
+    const editor = editorRef.current;
+    const offsets = getSelectionOffsets();
+    const plainText = editor?.textContent ?? "";
+    // `$@...$` is parsed into KaTeX by the learner renderer. Formatting a
+    // range that crosses one of those delimiters can cause browsers to split
+    // the token between elements, leaving it unparsable. Keep math atomic;
+    // authors can still format normal text on either side of it.
+    const touchesLatex = offsets && Array.from(plainText.matchAll(/\$@[^$]+\$/g)).some((match) => {
+      const start = match.index ?? 0;
+      const end = start + match[0].length;
+      return offsets.start < end && offsets.end > start;
+    });
+    if (touchesLatex) return;
+
     const savedSelection = selectionRef.current;
     if (savedSelection) {
       const selection = window.getSelection();
