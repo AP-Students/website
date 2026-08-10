@@ -112,17 +112,19 @@ const FRQGradingRenderer = ({ frq }: FRQGradingRendererProps) => {
         const queuedSubmission =
           queueSnapshot.data() as GradableFRQSubmission;
 
-        transaction.set(resultRef, {
-          sourceSubmissionId: frq.id,
-          templateId: queuedSubmission.templateId,
-          studentId: queuedSubmission.studentId,
-          responses: queuedSubmission.responses,
-          submittedAt: queuedSubmission.submittedAt,
-          score: `${earnedPoints}/${possiblePoints}`,
-          feedback: feedback.trim(),
-          graderId: user.uid,
-          gradedAt: serverTimestamp(),
-        });
+          transaction.set(resultRef, {
+            sourceSubmissionId: frq.id,
+            templateId: queuedSubmission.templateId,
+            subject: queuedSubmission.subject,
+            unitId: queuedSubmission.unitId,
+            studentId: queuedSubmission.studentId,
+            responses: queuedSubmission.responses,
+            submittedAt: queuedSubmission.submittedAt,
+            score: `${earnedPoints}/${possiblePoints}`,
+            feedback: feedback.trim(),
+            graderId: user.uid,
+            gradedAt: serverTimestamp(),
+          });
 
         transaction.delete(queueRef);
       });

@@ -247,8 +247,10 @@ const FRQTestRenderer = ({
 
   const submitForGrading = async () => {
     const templateId = typeof frq?.id === "string" ? frq.id : null;
+    const subject = typeof frq?.subject === "string" ? frq.subject : null;
+    const unitId = typeof frq?.unitId === "string" ? frq.unitId : null;
 
-    if (!user || !templateId) {
+    if (!user || !templateId || !subject || !unitId) {
       window.alert("Please sign in before submitting this FRQ for grading.");
       return;
     }
@@ -258,6 +260,8 @@ const FRQTestRenderer = ({
     try {
       await addDoc(getUngradedFrqsCollectionRef(), {
         templateId,
+        subject,
+        unitId,
         studentId: user.uid,
         responses,
         submittedAt: serverTimestamp(),

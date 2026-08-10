@@ -24,6 +24,8 @@ export interface FRQTemplateQuestion {
 export interface GradableFRQSubmission {
   id?: string;
   templateId: string;
+  subject: string;
+  unitId: string;
   studentId: string;
   /** Responses are keyed by a stable FRQTemplateQuestion.id. */
   responses: Record<string, string>;

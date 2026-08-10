@@ -47,6 +47,8 @@ const Page = () => {
           setFrq({
             id: docSnap.id,
             ...docSnap.data(),
+            subject,
+            unitId,
           });
         } else {
           setFrq(null);
