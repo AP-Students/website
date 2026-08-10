@@ -167,6 +167,29 @@ const RichTextEditor = forwardRef<HTMLDivElement, Props>(function RichTextEditor
 
   return (
     <div className="relative">
+      <div
+        ref={editorRef}
+        contentEditable
+        suppressContentEditableWarning
+        role="textbox"
+        aria-multiline="true"
+        data-placeholder={placeholder}
+        onInput={emitChange}
+        onKeyDown={onKeyDown}
+        onKeyUp={updateToolbar}
+        onMouseUp={updateToolbar}
+        onBlur={(event) => {
+          if (!toolbarRef.current?.contains(event.relatedTarget as Node | null)) setToolbar(null);
+        }}
+        onPaste={(event) => {
+          event.preventDefault();
+          const html = event.clipboardData.getData("text/html");
+          const text = event.clipboardData.getData("text/plain");
+          document.execCommand("insertHTML", false, sanitizeQuestionRichText(html || text));
+          emitChange();
+        }}
+        className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&:empty]:before:pointer-events-none [&:empty]:before:text-muted-foreground [&:empty]:before:content-[attr(data-placeholder)] [&_mark]:rounded [&_mark]:bg-yellow-200 [&_mark]:px-0.5 [&_mark]:text-gray-950"
+      />
       {toolbar && (
         <div
           role="toolbar"
@@ -194,29 +217,6 @@ const RichTextEditor = forwardRef<HTMLDivElement, Props>(function RichTextEditor
           })}
         </div>
       )}
-      <div
-        ref={editorRef}
-        contentEditable
-        suppressContentEditableWarning
-        role="textbox"
-        aria-multiline="true"
-        data-placeholder={placeholder}
-        onInput={emitChange}
-        onKeyDown={onKeyDown}
-        onKeyUp={updateToolbar}
-        onMouseUp={updateToolbar}
-        onBlur={(event) => {
-          if (!toolbarRef.current?.contains(event.relatedTarget as Node | null)) setToolbar(null);
-        }}
-        onPaste={(event) => {
-          event.preventDefault();
-          const html = event.clipboardData.getData("text/html");
-          const text = event.clipboardData.getData("text/plain");
-          document.execCommand("insertHTML", false, sanitizeQuestionRichText(html || text));
-          emitChange();
-        }}
-        className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&:empty]:before:pointer-events-none [&:empty]:before:text-muted-foreground [&:empty]:before:content-[attr(data-placeholder)] [&_mark]:rounded [&_mark]:bg-yellow-200 [&_mark]:px-0.5 [&_mark]:text-gray-950"
-      />
     </div>
   );
 });
