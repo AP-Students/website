@@ -7,13 +7,13 @@ import type { User } from "@/types/user";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUserManagement } from "./useUserManagement";
+import { getUngradedFrqsCollectionRef } from "@/lib/firestore/frqRefs";
 import apClassesData from "@/components/apClasses.json";
 import { useUser } from "../../components/hooks/UserContext";
 import Link from "next/link";
 import { cn, formatSlug } from "@/lib/utils";
 import { Ban, ClipboardPen, PencilRuler, ShieldUser, X } from "lucide-react";
 import {
-  collection,
   doc,
   getDocs,
   updateDoc,
@@ -36,7 +36,7 @@ useEffect(() => {
 
   const fetchUngradedFrqCount = async () => {
     try {
-      const collectionRef = collection(db, "gradableFrqSubmissions");
+      const collectionRef = getUngradedFrqsCollectionRef();
       const snapshot = await getDocs(collectionRef);
 
       setUngradedFrqCount(snapshot.size);

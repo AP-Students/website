@@ -1,13 +1,13 @@
 "use client";
 
-import FRQResponseEditor from "@/components/frq/responseEditor";
+import { useUser } from "@/components/hooks/UserContext";
 import FRQFooter from "@/components/frq/FRQFooter";
+import FRQResponseEditor from "@/components/frq/responseEditor";
+import { getUngradedFrqsCollectionRef } from "@/lib/firestore/frqRefs";
+import { addDoc, serverTimestamp } from "firebase/firestore";
 import { Bookmark, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { useUser } from "@/components/hooks/UserContext";
 
 type FRQTestRendererProps = {
   frq: Record<string, unknown> | null;
@@ -254,13 +254,15 @@ const FRQTestRenderer = ({
     }
 
     setSubmitting(true);
+
     try {
-      await addDoc(collection(db, "gradableFrqSubmissions"), {
+      await addDoc(getUngradedFrqsCollectionRef(), {
         templateId,
         studentId: user.uid,
         responses,
         submittedAt: serverTimestamp(),
       });
+
       setShowSubmissionModal(false);
       window.alert("Your FRQ was submitted for grading.");
     } catch (submissionError) {

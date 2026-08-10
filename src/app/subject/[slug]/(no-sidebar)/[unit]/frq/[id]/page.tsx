@@ -1,15 +1,19 @@
 "use client";
 
-import FRQTestRenderer from "@/components/frq/testRenderer";
 import usePathname from "@/components/client/pathname";
-import { db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import FRQTestRenderer from "@/components/frq/testRenderer";
+import { getFrqTemplateDocRef } from "@/lib/firestore/frqRefs";
+import { getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 const Page = () => {
   const pathname = usePathname();
 
-  const basePath = pathname.split("/").filter(Boolean).slice(-4).join("_");
+  const basePath = pathname
+    .split("/")
+    .filter(Boolean)
+    .slice(-4)
+    .join("_");
 
   const subject = basePath.split("_")[0]!;
   const unitId = basePath.split("_")[1]?.split("-").at(-1);
@@ -26,14 +30,14 @@ const Page = () => {
       setFrq(null);
 
       try {
-        // FRQs are stored under their subject/unit
-        const docRef = doc(
-          db,
-          "subjects",
+        if (!subject || !unitId || !frqId) {
+          setError("Invalid FRQ route.");
+          return;
+        }
+
+        const docRef = getFrqTemplateDocRef(
           subject,
-          "units",
-          unitId!,
-          "frqs",
+          unitId,
           frqId,
         );
 
@@ -55,14 +59,22 @@ const Page = () => {
       }
     };
 
-    fetchFRQ().catch((error) => {
-      console.error("Error fetching FRQ data:", error);
-      setError("Error fetching FRQ data.");
-      setLoading(false);
-    });
+    void fetchFRQ();
   }, [subject, unitId, frqId]);
 
-  return <FRQTestRenderer frq={frq} loading={loading} error={error} />;
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>{error}</div>;
+  }
+
+  if (!frq) {
+    return <div>FRQ not found.</div>;
+  }
+
+  return <FRQTestRenderer frq={frq} />;
 };
 
 export default Page;

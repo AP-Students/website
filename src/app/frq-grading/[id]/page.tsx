@@ -1,9 +1,9 @@
 "use client";
 
 import FRQGradingRenderer from "@/components/frq/gradingRenderer";
-import { db } from "@/lib/firebase";
+import { getUngradedFrqDocRef } from "@/lib/firestore/frqRefs";
 import type { GradableFRQSubmission } from "@/types/frq";
-import { doc, getDoc } from "firebase/firestore";
+import { getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 type PageProps = {
@@ -19,7 +19,7 @@ const Page = ({ params }: PageProps) => {
   useEffect(() => {
     const fetchFrq = async () => {
       try {
-        const docRef = doc(db, "gradableFrqSubmissions", params.id);
+        const docRef = getUngradedFrqDocRef(params.id);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
@@ -45,7 +45,7 @@ const Page = ({ params }: PageProps) => {
     return <div>Loading...</div>;
   }
 
-  return <FRQGradingRenderer frq={frq ?? null} />;
+  return <FRQGradingRenderer frq={frq} />;
 };
 
 export default Page;
