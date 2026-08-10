@@ -242,7 +242,12 @@ class CustomImage extends Image {
       withBorder: d.withBorder,
       withBackground: d.withBackground,
       stretched: d.stretched,
-      centerImage: d.centerImage,
+      // `centerImage` is a custom action, not one of @editorjs/image's built-in
+      // tunes, so the base tool never initializes it — it stays `undefined`
+      // until the author toggles "Center image" at least once. Firestore's
+      // setDoc() rejects any field with a literal `undefined` value, so this
+      // must be coerced to a boolean before saving.
+      centerImage: d.centerImage ?? false,
     };
   }
 
