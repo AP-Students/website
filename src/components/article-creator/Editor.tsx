@@ -31,7 +31,7 @@ import {
   uploadBytes,
 } from "firebase/storage";
 import { buttonVariants } from "../ui/button";
-import { cn, resolveUploadContentType } from "@/lib/utils";
+import { cn, isSvgFileName, resolveUploadContentType } from "@/lib/utils";
 import {
   mountRichCaptionEditor,
   resolveInitialRichCaption,
