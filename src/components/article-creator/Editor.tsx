@@ -46,6 +46,7 @@ import {
 interface EditorImageData {
   file: { url?: string; storageRefFullPath?: string; [key: string]: unknown };
   caption?: string;
+  altText?: string;
   richCaption?: RichCaption;
   withBorder?: boolean;
   withBackground?: boolean;
@@ -165,6 +166,30 @@ function openImageReplacementDialog(tool: CustomImageTool) {
   input.type = "file";
   input.accept = "image/*";
   input.setAttribute("aria-label", "Choose replacement image");
+  const altLabel = document.createElement("label");
+  altLabel.htmlFor = "replacement-image-alt-text";
+  altLabel.textContent = "Alt text";
+  altLabel.style.display = "block";
+  altLabel.style.marginTop = "1rem";
+  const altText = document.createElement("textarea");
+  altText.id = "replacement-image-alt-text";
+  altText.rows = 3;
+  altText.value = tool._data.altText ?? "";
+  altText.placeholder = "Describe the image for people who cannot see it";
+  altText.style.boxSizing = "border-box";
+  altText.style.width = "100%";
+  const altTextWarning = document.createElement("p");
+  altTextWarning.setAttribute("role", "status");
+  altTextWarning.style.color = "#92400e";
+  altTextWarning.style.marginBottom = "0";
+  const updateAltTextWarning = () => {
+    altTextWarning.textContent =
+      altText.value.trim().length < 10
+        ? "Add a more descriptive alt text before publishing, unless this image is decorative."
+        : "";
+  };
+  updateAltTextWarning();
+  altText.addEventListener("input", updateAltTextWarning);
   const error = document.createElement("p");
   error.setAttribute("role", "alert");
   error.style.color = "#b91c1c";
@@ -181,7 +206,17 @@ function openImageReplacementDialog(tool: CustomImageTool) {
   confirm.textContent = "Replace image";
   confirm.disabled = true;
   actions.append(cancel, confirm);
-  dialog.append(title, description, previews, input, error, actions);
+  dialog.append(
+    title,
+    description,
+    previews,
+    input,
+    altLabel,
+    altText,
+    altTextWarning,
+    error,
+    actions,
+  );
   document.body.append(dialog);
 
   let selectedFile: File | undefined;
@@ -218,7 +253,10 @@ function openImageReplacementDialog(tool: CustomImageTool) {
         close();
         return;
       }
-      await tool.api.blocks.update(tool.block.id, { file });
+      await tool.api.blocks.update(tool.block.id, {
+        file,
+        altText: altText.value.trim(),
+      });
       close();
     } catch (uploadError) {
       console.error("Failed to replace image:", uploadError);
@@ -383,6 +421,7 @@ class CustomImage extends Image {
   save(): {
     file: EditorImageData["file"];
     caption?: string;
+    altText?: string;
     richCaption?: RichCaption;
     withBorder?: boolean;
     withBackground?: boolean;
@@ -397,6 +436,7 @@ class CustomImage extends Image {
     return {
       file: d.file,
       caption: richCaptionToPlainText(rich),
+      altText: d.altText,
       richCaption: serializeRichCaption(rich),
       withBorder: d.withBorder,
       withBackground: d.withBackground,
