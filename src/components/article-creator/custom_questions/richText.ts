@@ -29,7 +29,18 @@ export function sanitizeQuestionRichText(value: string): string {
   // those to the semantic mark element before storing the value.
   template.content.querySelectorAll("span").forEach((node) => {
     const style = node.getAttribute("style") ?? "";
-    if (/background(-color)?\s*:\s*(?!transparent)/i.test(style)) {
+    const backgroundValue = style.match(
+      /background(?:-color)?\s*:\s*([^;]+)/i,
+    )?.[1];
+    // Chromium commonly serializes `hiliteColor: transparent` as rgba(0, 0,
+    // 0, 0). Treat both forms as removal, rather than converting them back
+    // into a mark on every editor update.
+    const isTransparentBackground =
+      !backgroundValue ||
+      /transparent|rgba?\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0\s*\)/i.test(
+        backgroundValue,
+      );
+    if (backgroundValue && !isTransparentBackground) {
       const mark = document.createElement("mark");
       mark.innerHTML = node.innerHTML;
       node.replaceWith(mark);
