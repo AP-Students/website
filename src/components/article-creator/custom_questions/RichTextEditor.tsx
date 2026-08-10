@@ -37,6 +37,52 @@ const RichTextEditor = forwardRef<HTMLDivElement, Props>(function RichTextEditor
     if (editor && editor.innerHTML !== clean) editor.innerHTML = clean;
   }, [value]);
 
+  const getSelectionOffsets = () => {
+    const editor = editorRef.current;
+    const selection = window.getSelection();
+    if (!editor || !selection?.rangeCount || !editor.contains(selection.anchorNode)) return null;
+
+    const range = selection.getRangeAt(0);
+    const before = range.cloneRange();
+    before.selectNodeContents(editor);
+    before.setEnd(range.startContainer, range.startOffset);
+    return { start: before.toString().length, end: before.toString().length + range.toString().length };
+  };
+
+  const restoreSelectionOffsets = (offsets: { start: number; end: number } | null) => {
+    const editor = editorRef.current;
+    if (!editor || !offsets) return;
+
+    const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
+    const range = document.createRange();
+    let position = 0;
+    let startSet = false;
+    let node = walker.nextNode();
+    while (node) {
+      const length = node.textContent?.length ?? 0;
+      if (!startSet && offsets.start <= position + length) {
+        range.setStart(node, Math.max(0, offsets.start - position));
+        startSet = true;
+      }
+      if (startSet && offsets.end <= position + length) {
+        range.setEnd(node, Math.max(0, offsets.end - position));
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+        return;
+      }
+      position += length;
+      node = walker.nextNode();
+    }
+
+    // The selection was at the very end of an empty or newly-normalized field.
+    range.selectNodeContents(editor);
+    range.collapse(false);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  };
+
   const updateToolbar = useCallback(() => {
     const editor = editorRef.current;
     const selection = window.getSelection();
@@ -76,7 +122,15 @@ const RichTextEditor = forwardRef<HTMLDivElement, Props>(function RichTextEditor
   }, [updateToolbar]);
 
   const emitChange = () => {
-    if (editorRef.current) onChange(sanitizeQuestionRichText(editorRef.current.innerHTML));
+    const editor = editorRef.current;
+    if (!editor) return;
+    const offsets = getSelectionOffsets();
+    const clean = sanitizeQuestionRichText(editor.innerHTML);
+    if (editor.innerHTML !== clean) {
+      editor.innerHTML = clean;
+      restoreSelectionOffsets(offsets);
+    }
+    onChange(clean);
   };
 
   const applyFormat = (format: Format) => {
