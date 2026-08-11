@@ -322,8 +322,17 @@ class CustomImage extends Image {
     }
   }
 
-  render() {
-    const wrapper = super.render();
+  render(): HTMLElement {
+    const baseImageTool = Image as unknown as {
+      prototype: {
+        render(this: CustomImageTool): HTMLElement;
+      };
+    };
+    // The Image package's inherited render type is `any`; constrain it at the
+    // boundary before calling it so the custom tool remains type-safe.
+    const wrapper = baseImageTool.prototype.render.call(
+      this as unknown as CustomImageTool,
+    );
 
     // `blocks.update()` replaces this tool's DOM without dispatching the
     // rendered lifecycle hook. Mount on every render as well so replacing an
