@@ -468,7 +468,7 @@ class CustomImage extends Image {
       withBorder: d.withBorder,
       withBackground: d.withBackground,
       stretched: d.stretched,
-      centerImage: d.centerImage,
+      centerImage: d.centerImage ?? false,
     };
   }
 
