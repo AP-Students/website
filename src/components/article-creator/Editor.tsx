@@ -307,12 +307,30 @@ class CustomImage extends Image {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     const maybeData = (args as unknown as { data?: EditorImageData }).data;
     if (maybeData) {
+      // The base Image tool retains only its known fields when it initializes
+      // `_data`. Restore our additional persisted fields so a routine editor
+      // save does not silently discard them.
+      const data = (this as unknown as { _data: EditorImageData })._data;
+      data.altText = maybeData.altText;
+      data.richCaption = maybeData.richCaption;
+
       if (maybeData.richCaption) {
         this._richCaption = resolveInitialRichCaption(maybeData.richCaption);
       } else if (typeof maybeData.caption === "string" && maybeData.caption) {
         this._richCaption = resolveInitialRichCaption(maybeData.caption);
       }
     }
+  }
+
+  render() {
+    const wrapper = super.render();
+
+    // `blocks.update()` replaces this tool's DOM without dispatching the
+    // rendered lifecycle hook. Mount on every render as well so replacing an
+    // image never leaves the caption as an unmanaged native contenteditable.
+    queueMicrotask(() => this.rendered());
+
+    return wrapper;
   }
 
   renderSettings(): MenuConfigItemList {
@@ -436,7 +454,7 @@ class CustomImage extends Image {
     return {
       file: d.file,
       caption: richCaptionToPlainText(rich),
-      altText: d.altText,
+      ...(d.altText === undefined ? {} : { altText: d.altText }),
       richCaption: serializeRichCaption(rich),
       withBorder: d.withBorder,
       withBackground: d.withBackground,
