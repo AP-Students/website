@@ -72,31 +72,30 @@ useEffect(() => {
         {user.access === "admin" && (
           <>
             <AdminPanel user={user} />
+
+            <div className="mb-4 flex flex-col gap-4 rounded-lg border-4 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-wide opacity-70">
+                  Ungraded FRQs
+                </p>
+
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold">
+                    {ungradedFrqCount ?? "—"}
+                  </span>
+
+                  <span className="text-sm opacity-70">currently ungraded</span>
+                </div>
+              </div>
+
+              <Link href="/frq-grading">
+                <Button className="w-full sm:w-auto">
+                  Open FRQ Grading List
+                </Button>
+              </Link>
+            </div>
           </>
         )}
-        {user.access === "admin" && (
-<div className="flex flex-col gap-4 rounded-lg border-4 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-    <div>
-      <p className="text-sm font-semibold uppercase tracking-wide opacity-70">
-        Ungraded FRQs
-      </p>
-
-      <div className="flex items-baseline gap-2">
-        <span className="text-3xl font-bold">
-          {ungradedFrqCount ?? "—"}
-        </span>
-
-        <span className="text-sm opacity-70">currently ungraded</span>
-      </div>
-    </div>
-
-    <Link href="/frq-grading">
-      <Button className="w-full sm:w-auto">
-        Open FRQ Grading List
-      </Button>
-    </Link>
-  </div>
-)}
 
         <Link href="/admin/feedback" className="hover:text-yellow-600">
           <Button className="w-full">
