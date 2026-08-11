@@ -121,16 +121,23 @@ const RichTextEditor = forwardRef<HTMLDivElement, Props>(function RichTextEditor
     };
   }, [updateToolbar]);
 
-  const emitChange = () => {
+  const emitChange = (selectionOffsets = getSelectionOffsets()) => {
     const editor = editorRef.current;
     if (!editor) return;
-    const offsets = getSelectionOffsets();
     const clean = sanitizeQuestionRichText(editor.innerHTML);
     if (editor.innerHTML !== clean) {
       editor.innerHTML = clean;
-      restoreSelectionOffsets(offsets);
     }
+    restoreSelectionOffsets(selectionOffsets);
     onChange(clean);
+  };
+
+  const removeHighlightFromSelection = (range: Range) => {
+    const selectedContent = range.extractContents();
+    selectedContent.querySelectorAll("mark").forEach((mark) => {
+      mark.replaceWith(...Array.from(mark.childNodes));
+    });
+    range.insertNode(selectedContent);
   };
 
   const applyFormat = (format: Format) => {
@@ -154,11 +161,17 @@ const RichTextEditor = forwardRef<HTMLDivElement, Props>(function RichTextEditor
       selection?.removeAllRanges();
       selection?.addRange(savedSelection);
     }
+    if (format === "highlight" && active.highlight && savedSelection) {
+      removeHighlightFromSelection(savedSelection);
+      emitChange(offsets);
+      requestAnimationFrame(updateToolbar);
+      return;
+    }
     const config = formatConfig[format];
     document.execCommand(
       config.command,
       false,
-      format === "highlight" ? (active.highlight ? "transparent" : "#fef08a") : undefined,
+      format === "highlight" ? "#fef08a" : undefined,
     );
     emitChange();
     editorRef.current?.focus();
@@ -174,7 +187,7 @@ const RichTextEditor = forwardRef<HTMLDivElement, Props>(function RichTextEditor
         role="textbox"
         aria-multiline="true"
         data-placeholder={placeholder}
-        onInput={emitChange}
+        onInput={() => emitChange()}
         onKeyDown={onKeyDown}
         onKeyUp={updateToolbar}
         onMouseUp={updateToolbar}
