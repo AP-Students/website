@@ -155,7 +155,11 @@ const RichTextEditor = forwardRef<HTMLDivElement, Props>(function RichTextEditor
     });
     if (touchesLatex) return;
 
-    const savedSelection = selectionRef.current;
+    const browserSelection = window.getSelection();
+    const savedSelection =
+      browserSelection?.rangeCount && editor?.contains(browserSelection.anchorNode)
+        ? browserSelection.getRangeAt(0).cloneRange()
+        : selectionRef.current;
     if (savedSelection) {
       const selection = window.getSelection();
       selection?.removeAllRanges();
@@ -178,6 +182,27 @@ const RichTextEditor = forwardRef<HTMLDivElement, Props>(function RichTextEditor
     requestAnimationFrame(updateToolbar);
   };
 
+  const handleEditorKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    onKeyDown?.(event);
+    if (event.defaultPrevented || (!event.ctrlKey && !event.metaKey)) return;
+
+    const key = event.key.toLowerCase();
+    const shortcutFormat =
+      key === "b"
+        ? "bold"
+        : key === "i"
+          ? "italic"
+          : key === "u"
+            ? "underline"
+            : key === "h" && event.shiftKey
+              ? "highlight"
+              : null;
+    if (!shortcutFormat) return;
+
+    event.preventDefault();
+    applyFormat(shortcutFormat);
+  };
+
   return (
     <div className="relative">
       <div
@@ -188,7 +213,7 @@ const RichTextEditor = forwardRef<HTMLDivElement, Props>(function RichTextEditor
         aria-multiline="true"
         data-placeholder={placeholder}
         onInput={() => emitChange()}
-        onKeyDown={onKeyDown}
+        onKeyDown={handleEditorKeyDown}
         onKeyUp={updateToolbar}
         onMouseUp={updateToolbar}
         onBlur={(event) => {
