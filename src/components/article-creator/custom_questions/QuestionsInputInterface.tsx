@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import AdvancedTextbox from "./AdvancedTextbox";
 import { Input } from "@/components/ui/input";
+import { richTextToPlainText } from "./richText";
 
 interface Props {
   questions: QuestionFormat[];
@@ -233,7 +234,7 @@ const QuestionsInputInterface: React.FC<Props> = ({
             >
               <span className="shrink-0 font-bold">Question {qIndex + 1}</span>
               <span className="overflow-hidden text-ellipsis text-nowrap opacity-75">
-                {questionInstance.question.value}
+                {richTextToPlainText(questionInstance.question.value)}
               </span>
               <span className="shrink-0">
                 {collapsed[qIndex] ? <ChevronDown /> : <ChevronUp />}
