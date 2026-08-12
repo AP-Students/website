@@ -313,6 +313,7 @@ class CustomImage extends Image {
       const data = (this as unknown as { _data: EditorImageData })._data;
       data.altText = maybeData.altText;
       data.richCaption = maybeData.richCaption;
+      data.centerImage = maybeData.centerImage;
 
       if (maybeData.richCaption) {
         this._richCaption = resolveInitialRichCaption(maybeData.richCaption);
