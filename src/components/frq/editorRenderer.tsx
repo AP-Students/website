@@ -17,10 +17,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import type { QuestionFormat, QuestionInput } from "@/types/questions";
 import { Clock3, Eye, Info, Plus, Save, Trash2 } from "lucide-react";
-import type { FRQTemplate } from "@/types/frq";
+import type { FRQTemplate, FRQTemplateQuestion } from "@/types/frq";
 import { useMemo, useState } from "react";
 
 type QuestionStatus = "public" | "legacy";
@@ -48,6 +53,35 @@ interface EditorFRQ {
   questions: EditorQuestion[];
 }
 
+interface PracticeGradingCriterion {
+  id: string;
+  text: string;
+  points: number;
+}
+
+interface PracticeQuestion {
+  id: string;
+  isVisible?: boolean;
+  prompt?: QuestionInput;
+  answerType?: InputType;
+  gradingCriteria?: PracticeGradingCriterion[];
+}
+
+interface PracticeFrq {
+  id: string;
+  name: string;
+  description?: QuestionInput;
+  questions?: PracticeQuestion[];
+}
+
+type CompatibleFrqTemplate = FRQTemplate & {
+  name?: string;
+  isVisible?: boolean;
+  timeLimit?: number;
+  timeLimitMinutes?: number;
+  frqs?: PracticeFrq[];
+};
+
 interface FRQEditorRendererProps {
   frqFound: boolean;
   frqTemplate: FRQTemplate | null;
@@ -56,6 +90,14 @@ interface FRQEditorRendererProps {
 const createQuestionInput = (value = ""): QuestionInput => ({
   value,
   files: [],
+});
+
+const cloneQuestionInput = (
+  input: QuestionInput | undefined,
+  fallbackValue = "",
+): QuestionInput => ({
+  value: input?.value ?? fallbackValue,
+  files: input ? [...input.files] : [],
 });
 
 /**
@@ -95,6 +137,59 @@ const createDescriptionQuestion = (
   topic: "",
 });
 
+const createQuestionData = (
+  question = createQuestionInput(),
+): QuestionFormat => ({
+  question,
+  type: "frq",
+  options: [],
+  answers: [],
+  explanation: createQuestionInput(),
+  content: createQuestionInput(),
+  topic: "",
+});
+
+const createEditorQuestion = (): EditorQuestion => ({
+  id: makeId("question"),
+  questionData: createQuestionData(),
+  status: "public",
+  inputType: "text",
+  criteria: [],
+});
+
+const createEditorQuestionFromTemplate = (
+  templateQuestion: FRQTemplateQuestion,
+): EditorQuestion => {
+  const trimmedPrompt = templateQuestion.prompt?.trim();
+  const prompt =
+    trimmedPrompt && trimmedPrompt.length > 0
+      ? trimmedPrompt
+      : templateQuestion.title;
+
+  return {
+    id: templateQuestion.id,
+    questionData: createQuestionData(createQuestionInput(prompt)),
+    status: "public",
+    inputType: "text",
+    criteria: [],
+  };
+};
+
+const createEditorQuestionFromPracticeData = (
+  question: PracticeQuestion,
+): EditorQuestion => ({
+  id: question.id,
+  questionData: createQuestionData(cloneQuestionInput(question.prompt)),
+  status: question.isVisible === false ? "legacy" : "public",
+  inputType: question.answerType === "equation" ? "equation" : "text",
+  criteria:
+    question.gradingCriteria?.map((criterion) => ({
+      id: criterion.id,
+      description: criterion.text,
+      points: Math.max(0, criterion.points),
+    })) ?? [],
+});
+
 /**
  * AP-style subquestion label: 1a, 1b, 1c. Past 26 questions it rolls over to
  * two letters (1aa, 1ab) rather than walking off the end of the alphabet into
@@ -112,27 +207,101 @@ const getSubquestionLabel = (frqIndex: number, questionIndex: number) => {
   return `${frqIndex + 1}${label}`;
 };
 
-const createEditorFrqFromTemplate = (
-  template: FRQTemplate,
-): EditorFRQ => ({
-  id: template.id ?? makeId("frq"),
-  title: template.title?.trim() || "Untitled FRQ",
-  description: createQuestionInput(template.directions ?? ""),
+const createEditorFrqFromTemplate = (template: FRQTemplate): EditorFRQ => {
+  const trimmedTitle = template.title.trim();
+
+  return {
+    id: template.id ?? makeId("frq"),
+    title: trimmedTitle.length > 0 ? trimmedTitle : "Untitled FRQ",
+    description: createQuestionInput(template.directions ?? ""),
+    questions: template.questions.map(createEditorQuestionFromTemplate),
+  };
+};
+
+const createEditorFrqFromPracticeData = (frq: PracticeFrq): EditorFRQ => ({
+  id: frq.id,
+  title: frq.name.trim().length > 0 ? frq.name.trim() : "Untitled FRQ",
+  description: cloneQuestionInput(frq.description),
+  questions: frq.questions?.map(createEditorQuestionFromPracticeData) ?? [],
+});
+
+const createBlankEditorFrq = (position: number): EditorFRQ => ({
+  id: makeId("frq"),
+  title: `FRQ ${position}`,
+  description: createQuestionInput(),
   questions: [],
 });
+
+const createEditorFrqsFromTemplate = (template: FRQTemplate): EditorFRQ[] => {
+  const compatibleTemplate = template as CompatibleFrqTemplate;
+
+  if (compatibleTemplate.frqs && compatibleTemplate.frqs.length > 0) {
+    return compatibleTemplate.frqs.map(createEditorFrqFromPracticeData);
+  }
+
+  return [createEditorFrqFromTemplate(template)];
+};
+
+const getBatchName = (template: FRQTemplate | null) => {
+  if (!template) {
+    return "Untitled FRQ";
+  }
+
+  const compatibleTemplate = template as CompatibleFrqTemplate;
+  const practiceName = compatibleTemplate.name?.trim();
+
+  if (practiceName && practiceName.length > 0) {
+    return practiceName;
+  }
+
+  const templateTitle = template.title.trim();
+
+  return templateTitle.length > 0 ? templateTitle : "Untitled FRQ";
+};
+
+const getBatchVisibility = (template: FRQTemplate | null): BatchVisibility => {
+  if (!template) {
+    return "private";
+  }
+
+  const compatibleTemplate = template as CompatibleFrqTemplate;
+  const isVisible =
+    typeof compatibleTemplate.isVisible === "boolean"
+      ? compatibleTemplate.isVisible
+      : template.isPublic === true;
+
+  return isVisible ? "public" : "private";
+};
+
+const getInitialTimeLimit = (template: FRQTemplate | null) => {
+  if (!template) {
+    return 90;
+  }
+
+  const compatibleTemplate = template as CompatibleFrqTemplate;
+  const configuredLimit =
+    compatibleTemplate.timeLimitMinutes ?? compatibleTemplate.timeLimit;
+
+  return typeof configuredLimit === "number" &&
+    Number.isFinite(configuredLimit) &&
+    configuredLimit >= 1
+    ? Math.floor(configuredLimit)
+    : 90;
+};
 
 const FRQEditorRenderer = ({
   frqFound,
   frqTemplate,
 }: FRQEditorRendererProps) => {
   const [frqs, setFrqs] = useState<EditorFRQ[]>(() =>
-    frqTemplate ? [createEditorFrqFromTemplate(frqTemplate)] : [],
+    frqTemplate ? createEditorFrqsFromTemplate(frqTemplate) : [],
   );
   const [currentFrqIndex, setCurrentFrqIndex] = useState(0);
-  const [batchName, setBatchName] = useState("FRQ Batch");
-  const [batchVisibility, setBatchVisibility] =
-    useState<BatchVisibility>("public");
-  const [timeLimitMinutes, setTimeLimitMinutes] = useState(90);
+  const batchName = getBatchName(frqTemplate);
+  const batchVisibility = getBatchVisibility(frqTemplate);
+  const [timeLimitMinutes, setTimeLimitMinutes] = useState(() =>
+    getInitialTimeLimit(frqTemplate),
+  );
 
   const goToPreviousFrq = () => {
     setCurrentFrqIndex((index) => Math.max(index - 1, 0));
@@ -150,6 +319,33 @@ const FRQEditorRenderer = ({
     );
   };
 
+  const createFrq = () => {
+    const newFrq = createBlankEditorFrq(frqs.length + 1);
+
+    setFrqs((currentFrqs) => [...currentFrqs, newFrq]);
+    setCurrentFrqIndex(frqs.length);
+  };
+
+  const deleteCurrentFrq = () => {
+    if (frqs.length <= 1) {
+      return;
+    }
+
+    const remainingFrqs = frqs.filter(
+      (_frq, index) => index !== currentFrqIndex,
+    );
+
+    setFrqs(remainingFrqs);
+    setCurrentFrqIndex(Math.min(currentFrqIndex, remainingFrqs.length - 1));
+  };
+
+  const addQuestion = () => {
+    updateCurrentFrq((frq) => ({
+      ...frq,
+      questions: [...frq.questions, createEditorQuestion()],
+    }));
+  };
+
   const updateQuestion = (
     questionId: string,
     updater: (question: EditorQuestion) => EditorQuestion,
@@ -159,6 +355,13 @@ const FRQEditorRenderer = ({
       questions: frq.questions.map((question) =>
         question.id === questionId ? updater(question) : question,
       ),
+    }));
+  };
+
+  const deleteQuestion = (questionId: string) => {
+    updateCurrentFrq((frq) => ({
+      ...frq,
+      questions: frq.questions.filter((question) => question.id !== questionId),
     }));
   };
 
@@ -337,8 +540,8 @@ const FRQEditorRenderer = ({
 
               <Button
                 type="button"
-                disabled
-                title="Adding questions is not implemented yet"
+                onClick={addQuestion}
+                title="Add a question to this FRQ"
               >
                 <Plus className="mr-2 size-4" />
                 Add Question
@@ -516,22 +719,30 @@ const FRQEditorRenderer = ({
                         Add Criteria
                       </Button>
 
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled
-                        title="Question information is not implemented yet"
-                        aria-label="Question information"
-                        className="px-3"
-                      >
-                        <Info className="size-4" />
-                      </Button>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            aria-label="Question information"
+                            className="px-3"
+                          >
+                            <Info className="size-4" />
+                          </Button>
+                        </PopoverTrigger>
+
+                        <PopoverContent align="start" className="w-72 text-sm">
+                          A question&apos;s point total is calculated from its
+                          grading criteria. Set its response type and status
+                          above.
+                        </PopoverContent>
+                      </Popover>
 
                       <Button
                         type="button"
                         variant="outline"
-                        disabled
-                        title="Saved questions cannot be deleted"
+                        onClick={() => deleteQuestion(question.id)}
+                        title="Delete this question"
                         className="ml-auto text-destructive"
                       >
                         <Trash2 className="mr-2 size-4" />
@@ -622,8 +833,8 @@ const FRQEditorRenderer = ({
         currentFrqIndex={currentFrqIndex}
         batchName={batchName}
         batchVisibility={batchVisibility}
-        onBatchNameChange={setBatchName}
-        onBatchVisibilityChange={setBatchVisibility}
+        onCreateFrq={createFrq}
+        onDeleteFrq={deleteCurrentFrq}
         onSelectFrq={setCurrentFrqIndex}
         onPrevious={goToPreviousFrq}
         onNext={goToNextFrq}

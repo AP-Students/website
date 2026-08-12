@@ -2,14 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -29,8 +21,8 @@ interface FRQEditorFooterProps {
   currentFrqIndex: number;
   batchName: string;
   batchVisibility: BatchVisibility;
-  onBatchNameChange: (name: string) => void;
-  onBatchVisibilityChange: (visibility: BatchVisibility) => void;
+  onCreateFrq: () => void;
+  onDeleteFrq: () => void;
   onSelectFrq: (index: number) => void;
   onPrevious: () => void;
   onNext: () => void;
@@ -41,8 +33,8 @@ const FRQEditorFooter = ({
   currentFrqIndex,
   batchName,
   batchVisibility,
-  onBatchNameChange,
-  onBatchVisibilityChange,
+  onCreateFrq,
+  onDeleteFrq,
   onSelectFrq,
   onPrevious,
   onNext,
@@ -58,48 +50,28 @@ const FRQEditorFooter = ({
 
   return (
     <footer className="fixed bottom-0 left-0 z-50 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 border-t-2 border-gray-300 bg-background px-4 py-2.5 text-foreground">
-      <div className="flex min-w-0 items-center gap-2">
-        <Input
-          aria-label="FRQ batch name"
-          value={batchName}
-          onChange={(event) => onBatchNameChange(event.target.value)}
-          className="h-9 max-w-48 font-medium"
-        />
+      <div className="flex min-w-0 items-center gap-4">
+        <p className="truncate font-medium" title={batchName}>
+          {batchName}
+        </p>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button type="button" variant="outline" className="capitalize">
-              {batchVisibility}
-            </Button>
-          </DropdownMenuTrigger>
-
-          <DropdownMenuContent align="start">
-            <DropdownMenuRadioGroup
-              value={batchVisibility}
-              onValueChange={(value) => {
-                if (value === "public" || value === "private") {
-                  onBatchVisibilityChange(value);
-                }
-              }}
-            >
-              <DropdownMenuRadioItem value="public">
-                Public
-              </DropdownMenuRadioItem>
-
-              <DropdownMenuRadioItem value="private">
-                Private
-              </DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <p className="shrink-0 text-sm text-muted-foreground">
+          Visibility:{" "}
+          <span className="capitalize text-foreground">{batchVisibility}</span>
+        </p>
       </div>
 
       <div className="flex items-center justify-center gap-2">
         <Button
           type="button"
           variant="outline"
-          disabled
-          title="Saved FRQs cannot be deleted"
+          onClick={onDeleteFrq}
+          disabled={frqs.length <= 1}
+          title={
+            frqs.length <= 1
+              ? "An FRQ batch must contain at least one FRQ"
+              : "Delete the current FRQ"
+          }
         >
           <Trash2 className="mr-2 size-4" />
           Delete FRQ
@@ -149,8 +121,8 @@ const FRQEditorFooter = ({
         <Button
           type="button"
           variant="outline"
-          disabled
-          title="Creating FRQs is not implemented yet"
+          onClick={onCreateFrq}
+          title="Create an FRQ"
         >
           <Plus className="mr-2 size-4" />
           Create FRQ
