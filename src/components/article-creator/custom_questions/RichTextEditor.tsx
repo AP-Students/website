@@ -20,6 +20,17 @@ const formatConfig: Record<Format, { label: string; command: string }> = {
   highlight: { label: "Highlight", command: "hiliteColor" },
 };
 
+/**
+ * Every `mark` the range touches, even partially. Containment is not enough:
+ * when the selection sits inside a single highlight that `mark` is the range's
+ * common ancestor rather than a node within it, so range extraction never sees
+ * it and the highlight cannot be removed.
+ */
+const marksInRange = (editor: HTMLElement | null, range: Range) =>
+  Array.from(editor?.querySelectorAll("mark") ?? []).filter((mark) =>
+    range.intersectsNode(mark),
+  );
+
 const RichTextEditor = forwardRef<HTMLDivElement, Props>(function RichTextEditor({ value, onChange, placeholder, onKeyDown }, forwardedRef) {
   const editorRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -98,14 +109,14 @@ const RichTextEditor = forwardRef<HTMLDivElement, Props>(function RichTextEditor
       top: rect.top >= toolbarHeight + 8 ? rect.top - toolbarHeight - 8 : rect.bottom + 8,
       left: Math.min(Math.max(8, rect.left), Math.max(8, window.innerWidth - toolbarWidth - 8)),
     });
-    const anchorElement = selection.anchorNode?.nodeType === Node.ELEMENT_NODE
-      ? (selection.anchorNode as Element)
-      : selection.anchorNode?.parentElement;
     setActive({
       bold: document.queryCommandState("bold"),
       italic: document.queryCommandState("italic"),
       underline: document.queryCommandState("underline"),
-      highlight: Boolean(anchorElement?.closest("mark")),
+      // Derived from the whole range rather than the anchor: `anchorNode` is the
+      // end of a backwards selection, so an anchor test made the reported state
+      // depend on which way the user dragged.
+      highlight: marksInRange(editor, selection.getRangeAt(0)).length > 0,
     });
   }, []);
 
@@ -121,23 +132,30 @@ const RichTextEditor = forwardRef<HTMLDivElement, Props>(function RichTextEditor
     };
   }, [updateToolbar]);
 
-  const emitChange = (selectionOffsets = getSelectionOffsets()) => {
+  // Restoring the caret is only correct when sanitizing actually replaced
+  // innerHTML, which is what destroys the selection. Doing it on every input
+  // collapses a caret sitting on a freshly created empty line back onto the
+  // previous one, because a `<br>` contributes no characters to the offset
+  // model. `explicitOffsets` is for callers that rewrote the DOM themselves.
+  const emitChange = (explicitOffsets?: { start: number; end: number } | null) => {
     const editor = editorRef.current;
     if (!editor) return;
+    // Read before the rewrite below: overwriting innerHTML drops the selection.
+    const offsets = explicitOffsets ?? getSelectionOffsets();
     const clean = sanitizeQuestionRichText(editor.innerHTML);
     if (editor.innerHTML !== clean) {
       editor.innerHTML = clean;
+      restoreSelectionOffsets(offsets);
+    } else if (explicitOffsets) {
+      restoreSelectionOffsets(explicitOffsets);
     }
-    restoreSelectionOffsets(selectionOffsets);
     onChange(clean);
   };
 
   const removeHighlightFromSelection = (range: Range) => {
-    const selectedContent = range.extractContents();
-    selectedContent.querySelectorAll("mark").forEach((mark) => {
-      mark.replaceWith(...Array.from(mark.childNodes));
-    });
-    range.insertNode(selectedContent);
+    marksInRange(editorRef.current, range).forEach((mark) =>
+      mark.replaceWith(...Array.from(mark.childNodes)),
+    );
   };
 
   const applyFormat = (format: Format) => {
@@ -165,9 +183,17 @@ const RichTextEditor = forwardRef<HTMLDivElement, Props>(function RichTextEditor
       selection?.removeAllRanges();
       selection?.addRange(savedSelection);
     }
-    if (format === "highlight" && active.highlight && savedSelection) {
+    // Tested against the live range, not `active`: that state is refreshed on a
+    // rAF and can lag the selection that is about to be formatted, which made
+    // the removal branch unreachable for the selections that most need it.
+    if (
+      format === "highlight" &&
+      savedSelection &&
+      marksInRange(editor, savedSelection).length > 0
+    ) {
       removeHighlightFromSelection(savedSelection);
       emitChange(offsets);
+      editorRef.current?.focus();
       requestAnimationFrame(updateToolbar);
       return;
     }
