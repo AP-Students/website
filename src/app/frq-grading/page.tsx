@@ -1,49 +1,364 @@
 "use client";
 
+import Navbar from "@/components/global/navbar";
+import Footer from "@/components/global/footer";
 import Link from "next/link";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { deleteDoc, collection, doc, getDoc, getCountFromServer, getDocs, limit, orderBy, query, startAfter, type DocumentData, type QueryDocumentSnapshot } from "firebase/firestore";
+import { useCallback, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import type {FRQTemplate, GradableFRQSubmission, } from "@/types/frq"
+import { Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog"
+
+type UngradedFrqRow = GradableFRQSubmission & {
+  id: string;
+  frqTitle: string;
+  subject: string;
+  unitId: string;
+};
+const PAGE_SIZE = 60;
+
+type PageCursor =
+  QueryDocumentSnapshot<DocumentData> | null;
 
 const Page = () => {
-  const [frqIds, setFrqIds] = useState<string[] | null>(null);
+  const [frqs, setFrqs] = useState<UngradedFrqRow[] | null>(null);
 
-  useEffect(() => {
-    const fetchFrqs = async () => {
-      const collectionRef = collection(db, "gradableFrqSubmissions");
-      const snapshot = await getDocs(
-        query(collectionRef, orderBy("submittedAt", "desc")),
+  const [frqToDelete, setFrqToDelete] = useState<UngradedFrqRow | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const [totalCount, setTotalCount] = useState<number | null>(
+  null,
+);
+
+  const [pageIndex, setPageIndex] = useState(0);
+
+  const [pageCursors, setPageCursors] = useState<PageCursor[]>([
+    null,
+  ]);
+
+  const [pageEndCursor, setPageEndCursor] =
+    useState<PageCursor>(null);
+
+  const [hasNextPage, setHasNextPage] = useState(false);
+
+  const [isPageLoading, setIsPageLoading] = useState(false);
+
+
+    const fetchFrqs = useCallback(async (cursor: PageCursor) => {
+      setIsPageLoading(true);
+      try {
+        const collectionRef = collection(
+          db,
+          "gradableFrqSubmissions",
+        );
+
+      const pageQuery = cursor
+        ? query(
+            collectionRef,
+            orderBy("submittedAt", "desc"),
+            startAfter(cursor),
+            limit(PAGE_SIZE + 1),
+          )
+        : query(
+            collectionRef,
+            orderBy("submittedAt", "desc"),
+            limit(PAGE_SIZE + 1),
+          );
+
+      const snapshot = await getDocs(pageQuery);
+      const pageDocuments = snapshot.docs.slice(0, PAGE_SIZE);
+
+      setHasNextPage(snapshot.docs.length > PAGE_SIZE);
+      setPageEndCursor(pageDocuments.at(-1) ?? null);
+
+      const rows = await Promise.all(  
+        pageDocuments.map(async (submissionDoc) => {
+          const submissionData =
+            submissionDoc.data() as GradableFRQSubmission;
+          const templateSnapshot = await getDoc(
+            doc(db, "frqTemplates", submissionData.templateId),
+          );
+          const templateData = templateSnapshot.exists()
+          ? (templateSnapshot.data() as FRQTemplate)
+          : null;
+          return {
+            ...submissionData,
+            id: submissionDoc.id,
+            frqTitle: templateData?.title ?? "Unknown FRQ",
+            subject: templateData?.subject ?? "Unknown subject",
+            unitId: templateData?.unitId ?? "Unknown unit",
+          };
+        }),
       );
-      setFrqIds(snapshot.docs.map((doc) => doc.id));
-    };
-
-    fetchFrqs().catch((error) => {
+      setFrqs(rows);
+      } catch (error) {
       console.error("Error fetching ungraded FRQs:", error);
-      setFrqIds([]);
-    });
-  }, []);
+      setFrqs([]);
+    } finally {
+      setIsPageLoading(false);
+    }
+    }, []);
 
-  if (frqIds === null) {
+
+    useEffect(() => {
+      const initializePage = async () => {
+        const countSnapshot = await getCountFromServer(
+          collection(db, "gradableFrqSubmissions"),
+        );
+
+        setTotalCount(countSnapshot.data().count);
+        await fetchFrqs(null);
+      };
+
+      initializePage().catch((error) => {
+        console.error(
+          "Error initializing ungraded FRQs:",
+          error,
+        );
+        setFrqs([]);
+      });
+    }, [fetchFrqs]);
+
+
+const handleNextPage = async () => {
+  if (
+    !hasNextPage ||
+    !pageEndCursor ||
+    isPageLoading
+  ) {
+    return;
+  }
+
+  const nextPageIndex = pageIndex + 1;
+
+  setPageCursors((currentCursors) => {
+    const updatedCursors = [...currentCursors];
+    updatedCursors[nextPageIndex] = pageEndCursor;
+    return updatedCursors;
+  });
+
+  setPageIndex(nextPageIndex);
+  await fetchFrqs(pageEndCursor);
+};
+
+const handlePreviousPage = async () => {
+  if (pageIndex === 0 || isPageLoading) {
+    return;
+  }
+
+  const previousPageIndex = pageIndex - 1;
+  const previousPageCursor =
+    pageCursors[previousPageIndex] ?? null;
+
+  setPageIndex(previousPageIndex);
+  await fetchFrqs(previousPageCursor);
+};
+
+
+  const handleDelete = async () => {
+    if (!frqToDelete) return;
+
+    setIsDeleting(true);
+
+    try {
+      await deleteDoc(
+        doc(db, "gradableFrqSubmissions", frqToDelete.id));
+
+      setFrqs((currentFrqs) =>
+        currentFrqs
+          ? currentFrqs.filter(
+              (frq) => frq.id !== frqToDelete.id,
+            )
+          : currentFrqs,
+      );
+
+      setFrqToDelete(null);
+      setTotalCount((currentCount) =>
+        currentCount === null
+          ? null
+          : Math.max(currentCount - 1, 0),
+      );
+      
+    } catch (error) {
+      console.error("Error deleting ungraded FRQ:",
+        error,
+      );
+
+      window.alert(
+        "Unable to delete this FRQ. Please try again.",
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  if (frqs === null) {
     return <div>Loading...</div>;
   }
 
   return (
-    <div>
-      <h1>Ungraded FRQs</h1>
+  <div className="flex min-h-screen flex-col">
+      <Navbar />
+    <main className="mx-auto mt-12 w-full max-w-6xl flex-1 px-8 pb-8">
 
-      {frqIds.length === 0 ? (
-        <p>No ungraded FRQs found.</p>
+
+        <div className="flex items-end justify-between gap-6">
+          <h1 className="text-balance text-left text-5xl font-extrabold lg:text-6xl">
+            Ungraded FRQs
+          </h1>
+
+          <p className="shrink-0 text-4xl font-bold tabular-nums lg:text-5xl">
+            ({totalCount?.toLocaleString() ?? "—"})
+          </p>
+        </div>
+
+      {frqs.length === 0 ? (
+        <div className="mt-8 rounded-md border border-yellow-400 bg-yellow-50 p-4">
+          <p>No ungraded FRQs found.</p>
+        </div>
       ) : (
-        <ul>
-          {frqIds.map((id) => (
-            <li key={id}>
-              <Link href={`/frq-grading/${id}`}>{id}</Link>
-            </li>
-          ))}
-        </ul>
+        <div className="mt-8 overflow-hidden rounded-md border border-gray-300 shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-gray-100 text-sm font-semibold">
+                <tr>
+                  <th className="px-4 py-3">FRQ</th>
+                  <th className="px-4 py-3">Submission ID</th>
+                  <th className="px-4 py-3">Test Taker</th>
+                  <th className="px-4 py-3">Submitted</th>
+                  <th className="px-4 py-3 text-center">Responses</th>
+                  <th className="px-4 py-3 text-center">Actions</th>
+
+                </tr>
+              </thead>
+
+              <tbody className="divide-y">
+                {frqs.map((frq) => (
+              <tr
+                key={frq.id}
+                className="transition-colors hover:bg-gray-50"
+              >
+              <td className="px-4 py-3">
+                <p className="font-semibold">{frq.frqTitle}</p>
+
+                <p className="mt-1 font-mono text-xs text-gray-500">
+                  FRQ ID: {frq.templateId}
+                </p>
+
+                <p className="mt-1 text-xs text-gray-500">
+                  {frq.subject} · {frq.unitId}
+                </p>
+              </td>
+                <td className="px-4 py-3 font-mono text-sm">
+                  {frq.id}
+                </td>
+                <td className="px-4 py-3 font-mono text-sm">
+                  {frq.studentId}
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 text-sm">
+                  {frq.submittedAt.toDate().toLocaleString()}
+                </td>
+                <td className="px-4 py-3 text-center">
+                  {Object.keys(frq.responses).length}
+                </td>
+
+
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-center gap-2">
+                    <Button asChild>
+                      <Link href={`/frq-grading/${frq.id}`}>Grade</Link>
+                    </Button>
+                    <button type="button" aria-label={`Delete submission ${frq.id}`}
+                    title="Delete submission"
+                    onClick={() => setFrqToDelete(frq)}
+                    className="inline-flex size-10 items-center justify-center rounded-full text-red-600 transition-colors hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2"
+                    >
+                      <Trash2 aria-hidden="true" className="size-5"/>
+                    </button>
+                    </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
-    </div>
-  );
+
+      <div className="mt-6 flex items-center justify-center gap-4">
+        <button
+          type="button"
+          aria-label="Previous page"
+          title="Previous page"
+          disabled={pageIndex === 0 || isPageLoading}
+          onClick={() => void handlePreviousPage()}
+          className="inline-flex size-10 items-center justify-center rounded-full bg-primary text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <ChevronLeft aria-hidden="true" className="size-5" />
+        </button>
+
+        <p className="min-w-20 text-center font-semibold tabular-nums">
+          Page {pageIndex + 1}
+        </p>
+
+        <button
+          type="button"
+          aria-label="Next page"
+          title="Next page"
+          disabled={!hasNextPage || isPageLoading}
+          onClick={() => void handleNextPage()}
+          className="inline-flex size-10 items-center justify-center rounded-full bg-primary text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <ChevronRight aria-hidden="true" className="size-5" />
+        </button>
+      </div>
+    </main>
+
+    <Dialog
+      open={frqToDelete !== null}
+      onOpenChange={(open) => {
+        if (!open && !isDeleting) {
+          setFrqToDelete(null);
+        }
+      }}
+    >
+      <DialogContent className="max-w-md rounded-lg border-gray-300 shadow-lg">
+        <DialogHeader>
+          <DialogTitle>Are you sure?</DialogTitle>
+
+          <DialogDescription>
+            This will permanently delete the ungraded submission
+            {frqToDelete ? ` "${frqToDelete.frqTitle}" from ${frqToDelete.studentId}` : ""}. This action cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isDeleting}
+            onClick={() => setFrqToDelete(null)}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            type="button"
+            variant="destructive"
+            disabled={isDeleting}
+            onClick={() => void handleDelete()}
+          >
+            {isDeleting ? "Deleting..." : "Delete"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <Footer className="w-full"/>
+  </div>
+);
 };
 
 export default Page;
