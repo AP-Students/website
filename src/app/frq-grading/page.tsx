@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { db } from "@/lib/firebase";
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
+import { getUngradedFrqsCollectionRef } from "@/lib/firestore/frqRefs";
+import { getDocs, orderBy, query } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 const Page = () => {
@@ -10,8 +10,8 @@ const Page = () => {
 
   useEffect(() => {
     const fetchFrqs = async () => {
-      const collectionRef = collection(db, "gradableFrqSubmissions");
-      const snapshot = await getDocs(
+      const collectionRef = getUngradedFrqsCollectionRef();
+            const snapshot = await getDocs(
         query(collectionRef, orderBy("submittedAt", "desc")),
       );
       setFrqIds(snapshot.docs.map((doc) => doc.id));

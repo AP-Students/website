@@ -10,13 +10,17 @@ import {
   ChevronUp,
   LogOut,
 } from "lucide-react";
-import { doc, runTransaction, serverTimestamp } from "firebase/firestore";
-
+import { runTransaction, serverTimestamp } from "firebase/firestore";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  getGradedFrqDocRef,
+  getUngradedFrqDocRef,
+} from "@/lib/firestore/frqRefs";
+
 import { useUser } from "@/components/hooks/UserContext";
 import type { GradableFRQSubmission } from "@/types/frq";
 
@@ -83,17 +87,17 @@ const FRQGradingRenderer = ({ frq }: FRQGradingRendererProps) => {
     (total, item) => total + item.possiblePoints,
     0,
   );
-
   const submitGradeReport = async () => {
     if (!frq.id || !user || !feedback.trim()) return;
 
     setIsSubmitting(true);
+
     try {
       // Use the submission ID as the result ID and atomically claim the queue
       // item. Firestore retries concurrent transactions, so only one grader
       // can successfully issue a report for a submission.
-      const queueRef = doc(db, "gradableFrqSubmissions", frq.id);
-      const resultRef = doc(db, "gradedFrqSubmissions", frq.id);
+      const queueRef = getUngradedFrqDocRef(frq.id);
+      const resultRef = getGradedFrqDocRef(frq.id);
 
       await runTransaction(db, async (transaction) => {
         const [queueSnapshot, resultSnapshot] = await Promise.all([
@@ -105,24 +109,30 @@ const FRQGradingRenderer = ({ frq }: FRQGradingRendererProps) => {
           throw new Error("This submission has already been graded.");
         }
 
-        const queuedSubmission = queueSnapshot.data() as GradableFRQSubmission;
-        transaction.set(resultRef, {
-          sourceSubmissionId: frq.id,
-          templateId: queuedSubmission.templateId,
-          studentId: queuedSubmission.studentId,
-          responses: queuedSubmission.responses,
-          submittedAt: queuedSubmission.submittedAt,
-          score: `${earnedPoints}/${possiblePoints}`,
-          feedback: feedback.trim(),
-          graderId: user.uid,
-          gradedAt: serverTimestamp(),
-        });
+        const queuedSubmission =
+          queueSnapshot.data() as GradableFRQSubmission;
+
+          transaction.set(resultRef, {
+            sourceSubmissionId: frq.id,
+            templateId: queuedSubmission.templateId,
+            subject: queuedSubmission.subject,
+            unitId: queuedSubmission.unitId,
+            studentId: queuedSubmission.studentId,
+            responses: queuedSubmission.responses,
+            submittedAt: queuedSubmission.submittedAt,
+            score: `${earnedPoints}/${possiblePoints}`,
+            feedback: feedback.trim(),
+            graderId: user.uid,
+            gradedAt: serverTimestamp(),
+          });
+
         transaction.delete(queueRef);
       });
 
       window.alert("Grade report submitted.");
     } catch (error) {
       console.error("Error submitting FRQ grade:", error);
+
       window.alert(
         error instanceof Error &&
           error.message === "This submission has already been graded."

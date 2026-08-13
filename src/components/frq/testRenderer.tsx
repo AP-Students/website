@@ -1,13 +1,13 @@
 "use client";
 
-import FRQResponseEditor from "@/components/frq/responseEditor";
+import { useUser } from "@/components/hooks/UserContext";
 import FRQFooter from "@/components/frq/FRQFooter";
+import FRQResponseEditor from "@/components/frq/responseEditor";
+import { getUngradedFrqsCollectionRef } from "@/lib/firestore/frqRefs";
+import { addDoc, serverTimestamp } from "firebase/firestore";
 import { Bookmark, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { useUser } from "@/components/hooks/UserContext";
 
 type FRQTestRendererProps = {
   frq: Record<string, unknown> | null;
@@ -247,20 +247,26 @@ const FRQTestRenderer = ({
 
   const submitForGrading = async () => {
     const templateId = typeof frq?.id === "string" ? frq.id : null;
+    const subject = typeof frq?.subject === "string" ? frq.subject : null;
+    const unitId = typeof frq?.unitId === "string" ? frq.unitId : null;
 
-    if (!user || !templateId) {
+    if (!user || !templateId || !subject || !unitId) {
       window.alert("Please sign in before submitting this FRQ for grading.");
       return;
     }
 
     setSubmitting(true);
+
     try {
-      await addDoc(collection(db, "gradableFrqSubmissions"), {
+      await addDoc(getUngradedFrqsCollectionRef(), {
         templateId,
+        subject,
+        unitId,
         studentId: user.uid,
         responses,
         submittedAt: serverTimestamp(),
       });
+
       setShowSubmissionModal(false);
       window.alert("Your FRQ was submitted for grading.");
     } catch (submissionError) {
