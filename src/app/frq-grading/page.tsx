@@ -1,51 +1,49 @@
 "use client";
 
-import FRQGradingRenderer from "@/components/frq/gradingRenderer";
-import { getUngradedFrqDocRef } from "@/lib/firestore/frqRefs";
-import type { GradableFRQSubmission } from "@/types/frq";
-import { getDoc } from "firebase/firestore";
+import Link from "next/link";
+import { getUngradedFrqsCollectionRef } from "@/lib/firestore/frqRefs";
+import { getDocs, orderBy, query } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
-type PageProps = {
-  params: {
-    id: string;
-  };
-};
-
-const Page = ({ params }: PageProps) => {
-  const [frq, setFrq] = useState<GradableFRQSubmission | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+const Page = () => {
+  const [frqIds, setFrqIds] = useState<string[] | null>(null);
 
   useEffect(() => {
-    const fetchFrq = async () => {
-      try {
-        const docRef = getUngradedFrqDocRef(params.id);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          setFrq({
-            id: docSnap.id,
-            ...(docSnap.data() as GradableFRQSubmission),
-          });
-        } else {
-          setFrq(null);
-        }
-      } catch (error) {
-        console.error("Error fetching FRQ:", error);
-        setFrq(null);
-      } finally {
-        setIsLoading(false);
-      }
+    const fetchFrqs = async () => {
+      const collectionRef = getUngradedFrqsCollectionRef();
+            const snapshot = await getDocs(
+        query(collectionRef, orderBy("submittedAt", "desc")),
+      );
+      setFrqIds(snapshot.docs.map((doc) => doc.id));
     };
 
-    void fetchFrq();
-  }, [params.id]);
+    fetchFrqs().catch((error) => {
+      console.error("Error fetching ungraded FRQs:", error);
+      setFrqIds([]);
+    });
+  }, []);
 
-  if (isLoading) {
+  if (frqIds === null) {
     return <div>Loading...</div>;
   }
 
-  return <FRQGradingRenderer frq={frq} />;
+  return (
+    <div>
+      <h1>Ungraded FRQs</h1>
+
+      {frqIds.length === 0 ? (
+        <p>No ungraded FRQs found.</p>
+      ) : (
+        <ul>
+          {frqIds.map((id) => (
+            <li key={id}>
+              <Link href={`/frq-grading/${id}`}>{id}</Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 };
 
 export default Page;
