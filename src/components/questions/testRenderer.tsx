@@ -85,10 +85,16 @@ export default function DigitalTestingPage({
   const [showEliminationTools, setShowEliminationTools] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [showReviewPage, setShowReviewPage] = useState(false);
+  const [showCompletionPage, setShowCompletionPage] = useState(false);
 
   useEffect(() => {
     setQuestions(inputQuestions);
   }, [inputQuestions]);
+
+  const handleSetSubmitted = (value: boolean) => {
+    setSubmitted(value);
+    if (value && !adminMode) setShowCompletionPage(true);
+  };
 
   // Track highlights for all --- uses index as key to corrospond to question, and array to hold highlights (might need to move to Highlighter file)
   const handleContentHighlights = (newHighlights: Highlight[]) => {
@@ -121,19 +127,26 @@ export default function DigitalTestingPage({
     }));
   };
 
-  if (submitted && !adminMode) {
-    return <CompletionPage />;
+  if (showCompletionPage && !adminMode) {
+    return (
+      <CompletionPage
+        onContinue={() => {
+          setShowCompletionPage(false);
+          setShowReviewPage(true);
+        }}
+      />
+    );
   }
 
   return (
     <div className="flex flex-col">
       {!adminMode && (
-        <Header
-          setSubmitted={setSubmitted}
-          submitted={submitted}
-          timeRemaining={time * 60}
-          directions={directions}
-        />
+          <Header
+            setSubmitted={handleSetSubmitted}
+            submitted={submitted}
+            timeRemaining={time * 60}
+            directions={directions}
+          />
       )}
       {showReviewPage ? (
         <ReviewPage
@@ -274,7 +287,7 @@ export default function DigitalTestingPage({
         selectedAnswers={selectedAnswers}
         setShowReviewPage={setShowReviewPage}
         showReviewPage={showReviewPage}
-        setSubmitted={setSubmitted}
+        setSubmitted={handleSetSubmitted}
         submitted={submitted}
         adminMode={adminMode}
         testName={testName}
