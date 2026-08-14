@@ -2,7 +2,6 @@
 
 import { ConfettiExplosion } from "react-confetti-explosion";
 import Image from "next/image";
-import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const congratulationsMessages = [
@@ -13,9 +12,11 @@ const congratulationsMessages = [
   "You crushed it!",
 ];
 
-export default function CompletionPage() {
-  const router = useRouter();
-  const pathname = usePathname() ?? "";
+interface CompletionPageProps {
+  onContinue: () => void;
+}
+
+export default function CompletionPage({ onContinue }: CompletionPageProps) {
   const [message, setMessage] = useState(congratulationsMessages[0]);
 
   useEffect(() => {
@@ -25,10 +26,6 @@ export default function CompletionPage() {
       ] ?? congratulationsMessages[0],
     );
   }, []);
-
-  const handleContinue = () => {
-    router.push(pathname.split("/").slice(0, 3).join("/"));
-  };
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f7f8fc] px-5 py-10 text-center">
@@ -58,7 +55,7 @@ export default function CompletionPage() {
         />
         <button
           type="button"
-          onClick={handleContinue}
+          onClick={onContinue}
           className="w-full max-w-xs rounded-full bg-[#294ad1] px-8 py-3 text-lg font-bold text-white shadow-sm transition-colors hover:bg-[#203da9] focus:outline-none focus:ring-4 focus:ring-[#294ad1]/30"
         >
           Continue
