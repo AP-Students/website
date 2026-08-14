@@ -132,13 +132,13 @@ export default function Footer({
           className="ml-3 rounded-full bg-[#294ad1] px-6 py-2 font-bold text-white hover:bg-[#2a47bb]"
           onClick={handleNext}
         >
-          {currentQuestionIndex === questions.length - 1
-            ? showReviewPage
-              ? submitted
-                ? "Exit"
-                : "Submit"
-              : "Review"
-            : "Next"}
+          {showReviewPage
+            ? submitted
+              ? "Exit"
+              : "Submit"
+            : currentQuestionIndex === questions.length - 1
+              ? "Review"
+              : "Next"}
         </button>
       </div>
     </footer>

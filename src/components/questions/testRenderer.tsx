@@ -92,6 +92,10 @@ export default function DigitalTestingPage({
   }, [inputQuestions]);
 
   const handleSetSubmitted = (value: boolean) => {
+    // Header unmounts while the completion page is up, so continuing on to the
+    // results remounts it with a fresh countdown. Ignore repeat submits so that
+    // restarted timer can't drag the user back to the completion page.
+    if (value && submitted) return;
     setSubmitted(value);
     if (value && !adminMode) setShowCompletionPage(true);
   };
@@ -141,12 +145,12 @@ export default function DigitalTestingPage({
   return (
     <div className="flex flex-col">
       {!adminMode && (
-          <Header
-            setSubmitted={handleSetSubmitted}
-            submitted={submitted}
-            timeRemaining={time * 60}
-            directions={directions}
-          />
+        <Header
+          setSubmitted={handleSetSubmitted}
+          submitted={submitted}
+          timeRemaining={time * 60}
+          directions={directions}
+        />
       )}
       {showReviewPage ? (
         <ReviewPage
