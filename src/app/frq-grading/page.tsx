@@ -4,19 +4,24 @@ import Navbar from "@/components/global/navbar";
 import Footer from "@/components/global/footer";
 import Link from "next/link";
 import { db } from "@/lib/firebase";
-import { deleteDoc, collection, doc, getDoc, getCountFromServer, getDocs, limit, orderBy, query, startAfter, type DocumentData, type QueryDocumentSnapshot } from "firebase/firestore";
+import { deleteDoc, collection, doc, getDoc, getCountFromServer, getDocs, limit, orderBy, query, startAfter, type DocumentData, type QueryDocumentSnapshot, Timestamp } from "firebase/firestore";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import type {FRQTemplate, GradableFRQSubmission, } from "@/types/frq"
 import { Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog"
 
-type UngradedFrqRow = GradableFRQSubmission & {
+type UngradedFrqRow = {
   id: string;
+  templateId: string;
+  studentId: string;
+  submittedAt: Timestamp | null;
+  responses: Record<string, string>;
   frqTitle: string;
   subject: string;
   unitId: string;
+  isMalformed: boolean;
 };
+
 const PAGE_SIZE = 60;
 
 type PageCursor =
@@ -75,20 +80,91 @@ const Page = () => {
 
       const rows = await Promise.all(  
         pageDocuments.map(async (submissionDoc) => {
-          const submissionData =
-            submissionDoc.data() as GradableFRQSubmission;
-          const templateSnapshot = await getDoc(
-            doc(db, "frqTemplates", submissionData.templateId),
-          );
-          const templateData = templateSnapshot.exists()
-          ? (templateSnapshot.data() as FRQTemplate)
-          : null;
+          const rawData = submissionDoc.data();
+
+          const templateId =
+            typeof rawData.templateId === "string" ? rawData.templateId : "";
+
+          const studentId =
+            typeof rawData.studentId === "string" ? rawData.studentId : "";
+
+          const submittedAt =
+            rawData.submittedAt instanceof Timestamp
+              ? rawData.submittedAt
+              : null;
+
+          const rawResponses: unknown = rawData.responses;
+          const hasValidResponses =
+          typeof rawResponses === "object" &&
+          rawResponses !== null &&
+          !Array.isArray(rawResponses);
+
+          const responses: Record<string, string> = hasValidResponses
+            ? Object.fromEntries(
+                Object.entries(rawResponses).filter(
+                  (entry): entry is [string, string] => typeof entry[1]=="string"
+                ),
+              )
+            : {};
+
+          let isMalformed =
+            templateId === "" ||
+            studentId === "" ||
+            submittedAt === null ||
+            !hasValidResponses;
+          
+          let frqTitle = "Unknown FRQ";
+          let subject = "Unknown subject";
+          let unitId = "Unknown unit";
+
+          if (templateId !== "") {
+            try {
+              const templateSnapshot = await getDoc(
+                doc(db, "frqTemplates", templateId),
+              );
+
+              if (templateSnapshot.exists()) {
+                const templateData = templateSnapshot.data();
+
+                if (typeof templateData.title === "string") {
+                  frqTitle = templateData.title;
+                } else {
+                  isMalformed = true;
+                }
+
+                if (typeof templateData.subject === "string") {
+                  subject = templateData.subject;
+                } else {
+                  isMalformed = true;
+                }
+
+                if (typeof templateData.unitId === "string") {
+                  unitId = templateData.unitId;
+                } else {
+                  isMalformed = true;
+                }
+              } else {
+                isMalformed = true;
+              }
+            } catch (error) {
+              console.error(
+                `Unable to load template for submission ${submissionDoc.id}:`,
+                error,
+              );
+              isMalformed = true;
+            }
+          }
+
           return {
-            ...submissionData,
             id: submissionDoc.id,
-            frqTitle: templateData?.title ?? "Unknown FRQ",
-            subject: templateData?.subject ?? "Unknown subject",
-            unitId: templateData?.unitId ?? "Unknown unit",
+            templateId: templateId || "Missing",
+            studentId: studentId || "Unknown",
+            submittedAt,
+            responses,
+            isMalformed,
+            frqTitle,
+            subject,
+            unitId
           };
         }),
       );
@@ -238,11 +314,15 @@ const handlePreviousPage = async () => {
                 {frqs.map((frq) => (
               <tr
                 key={frq.id}
-                className="transition-colors hover:bg-gray-50"
+                className={frq.isMalformed ? "bg-red-50 transition-colors hover:bg-red-100" : "transition-colors hover:bg-gray-50"}
               >
               <td className="px-4 py-3">
                 <p className="font-semibold">{frq.frqTitle}</p>
-
+                {frq.isMalformed && (
+                  <p className="mt-1 text-xs font-semibold text-red-700">
+                    Malformed submission
+                  </p>
+                )}
                 <p className="mt-1 font-mono text-xs text-gray-500">
                   FRQ ID: {frq.templateId}
                 </p>
@@ -258,7 +338,7 @@ const handlePreviousPage = async () => {
                   {frq.studentId}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-sm">
-                  {frq.submittedAt.toDate().toLocaleString()}
+                  {frq.submittedAt ? frq.submittedAt.toDate().toLocaleString() : "Unknown"}
                 </td>
                 <td className="px-4 py-3 text-center">
                   {Object.keys(frq.responses).length}
@@ -267,9 +347,15 @@ const handlePreviousPage = async () => {
 
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-2">
-                    <Button asChild>
-                      <Link href={`/frq-grading/${frq.id}`}>Grade</Link>
-                    </Button>
+                      {frq.isMalformed ? (
+                        <Button disabled title="This submission contains invalid data">
+                          Grade
+                        </Button>
+                      ) : (
+                        <Button asChild>
+                          <Link href={`/frq-grading/${frq.id}`}>Grade</Link>
+                        </Button>
+                      )}
                     <button type="button" aria-label={`Delete submission ${frq.id}`}
                     title="Delete submission"
                     onClick={() => setFrqToDelete(frq)}
