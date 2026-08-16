@@ -11,11 +11,9 @@ import {
   doc,
   getDoc,
   getDocs,
-  query,
   serverTimestamp,
   setDoc,
   updateDoc,
-  where,
   writeBatch,
 } from "firebase/firestore";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -27,6 +25,10 @@ import short from "short-uuid";
 import type { Subject, Unit } from "@/types/firestore";
 import UnitComponent from "./_components/unit";
 import { DEFAULT_PORTING_SUBJECT } from "@/lib/apPortingDefaults";
+import {
+  getFrqTemplateDocRef,
+  getFrqTemplatesCollectionRef,
+} from "@/lib/firestore/frqRefs";
 
 const translator = short(short.constants.flickrBase58);
 
@@ -86,55 +88,66 @@ export default function Page({ params }: { params: { slug: string } }) {
   const [newUnitTitle, setNewUnitTitle] = useState<string>("");
 
   useEffect(() => {
-    (async () => {
+    const fetchSubject = async () => {
       try {
-        if (user && (user.access === "admin" || user.access === "member")) {
-          const docRef = doc(db, "subjects", params.slug);
-          const docSnap = await getDoc(docRef);
-          const frqQuery = query(
-            collection(db, "frqTemplates"),
-            where("subject", "==", params.slug),
-          );
-          
-          const frqSnapshot = await getDocs(frqQuery);
-          
-          const loadedFrqs: FRQTemplate[] = frqSnapshot.docs.map((frqDoc) => ({
-            id: frqDoc.id,
-            ...(frqDoc.data() as Omit<FRQTemplate, "id">),
-          }));
-          
-          setFrqTemplates(loadedFrqs);
-
-          if (docSnap.exists()) {
-            // We have an existing subject
-            const fetched = docSnap.data() as Subject;
-            setSubjectTitle(fetched.title);
-            setUnits(fetched.units || []);
-            setHasUnit0(fetched.hasUnit0 ?? false);
-          } else {
-            // Subject not found -> create new with default template
-            // Also try to fill in subject title from `apClasses` if found
-            const foundTitle =
-              apClasses.find(
-                (apClass) =>
-                  formatSlug(apClass.replace(/AP /g, "")) === params.slug,
-              ) ?? "";
-            const newSubject = structuredClone(emptyData);
-            newSubject.title = foundTitle;
-            setSubjectTitle(newSubject.title);
-            setUnits(newSubject.units);
-          }
-          setSubjectLoading(false);
+        if (!user || (user.access !== "admin" && user.access !== "member")) {
+          return;
         }
-      } catch (err) {
-        console.error(err);
+
+        const subjectRef = doc(db, "subjects", params.slug);
+        const subjectSnapshot = await getDoc(subjectRef);
+
+        if (subjectSnapshot.exists()) {
+          const fetchedSubject = subjectSnapshot.data() as Subject;
+          const fetchedUnits = fetchedSubject.units || [];
+
+          setSubjectTitle(fetchedSubject.title);
+          setUnits(fetchedUnits);
+          setHasUnit0(fetchedSubject.hasUnit0 ?? false);
+
+          const frqSnapshots = await Promise.all(
+            fetchedUnits.map(async (unit) => {
+              const snapshot = await getDocs(
+                getFrqTemplatesCollectionRef(params.slug, unit.id),
+              );
+
+              return snapshot.docs.map(
+                (frqDoc): FRQTemplate => ({
+                  id: frqDoc.id,
+                  ...(frqDoc.data() as Omit<FRQTemplate, "id">),
+                  subject: params.slug,
+                  unitId: unit.id,
+                }),
+              );
+            }),
+          );
+
+          setFrqTemplates(frqSnapshots.flat());
+        } else {
+          const foundTitle =
+            apClasses.find(
+              (apClass) =>
+                formatSlug(apClass.replace(/AP /g, "")) === params.slug,
+            ) ?? "";
+
+          const newSubject = structuredClone(emptyData);
+          newSubject.title = foundTitle;
+
+          setSubjectTitle(newSubject.title);
+          setUnits(newSubject.units);
+          setFrqTemplates([]);
+        }
+
+        setSubjectLoading(false);
+      } catch (error) {
+        console.error(error);
         setError("Failed to fetch subject data.");
       } finally {
         setLoading(false);
       }
-    })().catch((err) => {
-      console.error("Error fetching subject:", err);
-    });
+    };
+
+    void fetchSubject();
   }, [user, params.slug, setError, setLoading]);
 
   /****************************************************
@@ -190,32 +203,37 @@ export default function Page({ params }: { params: { slug: string } }) {
     setUnits((prev) => prev.map((u) => (u.id === unitId ? updatedUnit : u)));
     setUnsavedChanges(true);
   };
-  
+
   /****************************************************
-   *                   FRQ ACTIONS
-   ****************************************************/
-  
-  const handleAddFrq = async (unitId: string, title: string) => {
-    const trimmedTitle = title.trim();
-  
-    if (!trimmedTitle) {
-      return;
-    }
-  
-    const frqId = generateShortId();
-  
-    const newFrq: FRQTemplate = {
-      id: frqId,
-      subject: params.slug,
-      unitId,
-      title: trimmedTitle,
-      directions: "",
-      questions: [],
-      isPublic: false,
-    };
-  
-    try {
-      await setDoc(doc(db, "frqTemplates", frqId), {
+ *                   FRQ ACTIONS
+ ****************************************************/
+
+const handleAddFrq = async (
+  unitId: string,
+  title: string,
+): Promise<void> => {
+  const trimmedTitle = title.trim();
+
+  if (!trimmedTitle) {
+    return;
+  }
+
+  const frqId = generateShortId();
+
+  const newFrq: FRQTemplate = {
+    id: frqId,
+    subject: params.slug,
+    unitId,
+    title: trimmedTitle,
+    directions: "",
+    questions: [],
+    isPublic: false,
+  };
+
+  try {
+    await setDoc(
+      getFrqTemplateDocRef(params.slug, unitId, frqId),
+      {
         subject: newFrq.subject,
         unitId: newFrq.unitId,
         title: newFrq.title,
@@ -224,63 +242,93 @@ export default function Page({ params }: { params: { slug: string } }) {
         isPublic: newFrq.isPublic,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      });
-  
-      setFrqTemplates((currentFrqs) => [...currentFrqs, newFrq]);
-      setUnsavedChanges(true);
-    } catch {
-      alert("Unable to add the FRQ. Please try again.");
-    }
-  };
-  
-  const handleRenameFrq = async (frqId: string, title: string) => {
-    const trimmedTitle = title.trim();
-  
-    if (!trimmedTitle) {
-      return;
-    }
-  
-    try {
-      await updateDoc(doc(db, "frqTemplates", frqId), {
+      },
+    );
+
+    setFrqTemplates((currentFrqs) => [
+      ...currentFrqs,
+      newFrq,
+    ]);
+
+    setUnsavedChanges(true);
+  } catch {
+    alert("Unable to add the FRQ. Please try again.");
+  }
+};
+
+const handleRenameFrq = async (
+  frqId: string,
+  title: string,
+): Promise<void> => {
+  const trimmedTitle = title.trim();
+
+  if (!trimmedTitle) {
+    return;
+  }
+
+  const frq = frqTemplates.find((item) => item.id === frqId);
+
+  if (!frq) {
+    alert("Unable to find the FRQ.");
+    return;
+  }
+
+  try {
+    await updateDoc(
+      getFrqTemplateDocRef(params.slug, frq.unitId, frqId),
+      {
         title: trimmedTitle,
         updatedAt: serverTimestamp(),
-      });
-  
-      setFrqTemplates((currentFrqs) =>
-        currentFrqs.map((frq) =>
-          frq.id === frqId ? { ...frq, title: trimmedTitle } : frq,
-        ),
-      );
+      },
+    );
 
-      setUnsavedChanges(true);
+    setFrqTemplates((currentFrqs) =>
+      currentFrqs.map((item) =>
+        item.id === frqId
+          ? { ...item, title: trimmedTitle }
+          : item,
+      ),
+    );
 
-    } catch {
-      alert("Unable to rename the FRQ. Please try again.");
-    }
-  };
-  
-  const handleFrqVisibilityChange = async (
-    frqId: string,
-    isPublic: boolean,
-  ) => {
-    try {
-      await updateDoc(doc(db, "frqTemplates", frqId), {
+    setUnsavedChanges(true);
+  } catch {
+    alert("Unable to rename the FRQ. Please try again.");
+  }
+};
+
+const handleFrqVisibilityChange = async (
+  frqId: string,
+  isPublic: boolean,
+): Promise<void> => {
+  const frq = frqTemplates.find((item) => item.id === frqId);
+
+  if (!frq) {
+    alert("Unable to find the FRQ.");
+    return;
+  }
+
+  try {
+    await updateDoc(
+      getFrqTemplateDocRef(params.slug, frq.unitId, frqId),
+      {
         isPublic,
         updatedAt: serverTimestamp(),
-      });
-  
-      setFrqTemplates((currentFrqs) =>
-        currentFrqs.map((frq) =>
-          frq.id === frqId ? { ...frq, isPublic } : frq,
-        ),
-      );
+      },
+    );
 
-      setUnsavedChanges(true);
+    setFrqTemplates((currentFrqs) =>
+      currentFrqs.map((item) =>
+        item.id === frqId
+          ? { ...item, isPublic }
+          : item,
+      ),
+    );
 
-    } catch {
-      alert("Unable to update the FRQ visibility. Please try again.");
-    }
-  };
+    setUnsavedChanges(true);
+  } catch {
+    alert("Unable to update the FRQ visibility. Please try again.");
+  }
+};
   /****************************************************
    *                   SAVE ACTION
    * This function will force delete anything in the db that isnt in the local to keep db clean
