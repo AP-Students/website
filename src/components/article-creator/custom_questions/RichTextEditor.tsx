@@ -231,6 +231,13 @@ const RichTextEditor = forwardRef<HTMLDivElement, Props>(function RichTextEditor
 
   return (
     <div className="relative">
+      {/*
+        `whitespace-pre-wrap` matches the learner renderer. Questions written
+        before this box became rich text store their line breaks as newline
+        characters, and HTML whitespace collapsing rendered each of those as
+        a single space, so opening an older explanation looked like its
+        paragraphs had been merged together (#372).
+      */}
       <div
         ref={editorRef}
         contentEditable
@@ -252,7 +259,7 @@ const RichTextEditor = forwardRef<HTMLDivElement, Props>(function RichTextEditor
           document.execCommand("insertHTML", false, sanitizeQuestionRichText(html || text));
           emitChange();
         }}
-        className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&:empty]:before:pointer-events-none [&:empty]:before:text-muted-foreground [&:empty]:before:content-[attr(data-placeholder)] [&_mark]:rounded [&_mark]:bg-yellow-200 [&_mark]:px-0.5 [&_mark]:text-gray-950"
+        className="min-h-24 w-full whitespace-pre-wrap rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&:empty]:before:pointer-events-none [&:empty]:before:text-muted-foreground [&:empty]:before:content-[attr(data-placeholder)] [&_mark]:rounded [&_mark]:bg-yellow-200 [&_mark]:px-0.5 [&_mark]:text-gray-950"
       />
       {toolbar && (
         <div

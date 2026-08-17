@@ -26,7 +26,27 @@ export class QuestionsAddCard implements BlockToolConstructable {
   static get toolbox() {
     return {
       title: "Questions",
-      icon: "?", 
+      icon: "?",
+    };
+  }
+
+  /**
+   * Opt this block's data out of EditorJS's own sanitizer.
+   *
+   * A block tool without a `sanitize` config inherits the merged tag list of the
+   * enabled inline tools, and EditorJS applies it to every string in the saved
+   * data. That list has no `<br>` or `<div>`, so saving an article silently
+   * stripped the line breaks out of question/explanation rich text (#372).
+   *
+   * `true` means "leave this value as-is" in EditorJS's sanitizer. That is safe
+   * here because question rich text is sanitized by `sanitizeQuestionRichText`
+   * with an explicit allow-list — on write in the editor and again at render
+   * time — rather than relying on EditorJS.
+   */
+  static get sanitize() {
+    return {
+      instanceId: true,
+      questions: true,
     };
   }
 
