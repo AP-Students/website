@@ -31,14 +31,27 @@ import {
   uploadBytes,
 } from "firebase/storage";
 import { buttonVariants } from "../ui/button";
-import { cn, resolveUploadContentType } from "@/lib/utils";
+import { cn, isSvgFileName, resolveUploadContentType } from "@/lib/utils";
+import {
+  mountRichCaptionEditor,
+  resolveInitialRichCaption,
+  RICH_CAPTION_HOST_ATTR,
+} from "./caption-rich-text/mount";
+import type { RichCaption } from "./caption-rich-text/types";
+import {
+  serializeRichCaption,
+  richCaptionToPlainText,
+} from "./caption-rich-text/convert";
 
 interface EditorImageData {
   file: { url?: string; storageRefFullPath?: string; [key: string]: unknown };
   caption?: string;
+  altText?: string;
+  richCaption?: RichCaption;
   withBorder?: boolean;
   withBackground?: boolean;
   stretched?: boolean;
+  centerImage?: boolean;
 }
 
 type MenuConfigItemList = Array<{
@@ -55,15 +68,214 @@ type CustomImageTool = {
     blocks: {
       getBlockIndex(blockId: string): number;
       delete(index?: number): void;
+      update(
+        blockId: string,
+        data?: Partial<EditorImageData>,
+      ): Promise<unknown>;
     };
   };
   block: {
     id: string;
+    container: HTMLElement;
+  };
+  ui: {
+    nodes: {
+      caption?: HTMLElement;
+      wrapper?: HTMLElement;
+    };
   };
   renderSettings(): MenuConfigItemList;
+  rendered?(): void;
+  save?(block: { holder: HTMLElement }): unknown;
 };
 
 const pendingStorageDeletes = new Set<string>();
+
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+
+async function uploadImageFile(file: File) {
+  if (!file.type.startsWith("image/") && !isSvgFileName(file.name)) {
+    throw new Error("Please select an image file.");
+  }
+
+  if (file.size > MAX_IMAGE_SIZE) {
+    throw new Error(`File "${file.name}" is too large.`);
+  }
+
+  const storage = getStorage();
+  const storageRef = ref(
+    storage,
+    "images/" + new Date().getTime() + "_" + file.name,
+  );
+  const contentType = resolveUploadContentType(file);
+  const snapshot = await uploadBytes(
+    storageRef,
+    file,
+    contentType ? { contentType } : undefined,
+  );
+  const downloadURL = await getDownloadURL(snapshot.ref);
+
+  return { url: downloadURL, storageRefFullPath: storageRef.fullPath };
+}
+
+function openImageReplacementDialog(tool: CustomImageTool) {
+  const currentUrl = tool._data.file.url;
+  const trigger =
+    document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+  const dialog = document.createElement("dialog");
+  dialog.setAttribute("aria-labelledby", "replace-image-title");
+  dialog.style.maxWidth = "min(42rem, calc(100vw - 2rem))";
+  dialog.style.width = "100%";
+  dialog.style.padding = "1.5rem";
+  dialog.style.borderRadius = "0.5rem";
+
+  const title = document.createElement("h2");
+  title.id = "replace-image-title";
+  title.textContent = "Replace image";
+  title.style.marginTop = "0";
+  const description = document.createElement("p");
+  description.textContent =
+    "Your caption, source, styling, and alt text will be kept. Please review the alt text for the new image.";
+
+  const previews = document.createElement("div");
+  previews.style.display = "grid";
+  previews.style.gridTemplateColumns = "repeat(auto-fit, minmax(12rem, 1fr))";
+  previews.style.gap = "1rem";
+  const makePreview = (label: string, url?: string) => {
+    const wrapper = document.createElement("div");
+    const heading = document.createElement("strong");
+    heading.textContent = label;
+    const image = document.createElement("img");
+    image.alt = label;
+    image.style.display = "block";
+    image.style.marginTop = "0.5rem";
+    image.style.maxWidth = "100%";
+    image.style.maxHeight = "15rem";
+    image.style.objectFit = "contain";
+    if (url) image.src = url;
+    wrapper.append(heading, image);
+    return { wrapper, image };
+  };
+  const currentPreview = makePreview("Current image", currentUrl);
+  const replacementPreview = makePreview("Replacement preview");
+  previews.append(currentPreview.wrapper, replacementPreview.wrapper);
+
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/*";
+  input.setAttribute("aria-label", "Choose replacement image");
+  const altLabel = document.createElement("label");
+  altLabel.htmlFor = "replacement-image-alt-text";
+  altLabel.textContent = "Alt text";
+  altLabel.style.display = "block";
+  altLabel.style.marginTop = "1rem";
+  const altText = document.createElement("textarea");
+  altText.id = "replacement-image-alt-text";
+  altText.rows = 3;
+  altText.value = tool._data.altText ?? "";
+  altText.placeholder = "Describe the image for people who cannot see it";
+  altText.style.boxSizing = "border-box";
+  altText.style.width = "100%";
+  const altTextWarning = document.createElement("p");
+  altTextWarning.setAttribute("role", "status");
+  altTextWarning.style.color = "#92400e";
+  altTextWarning.style.marginBottom = "0";
+  const updateAltTextWarning = () => {
+    altTextWarning.textContent =
+      altText.value.trim().length < 10
+        ? "Add a more descriptive alt text before publishing, unless this image is decorative."
+        : "";
+  };
+  updateAltTextWarning();
+  altText.addEventListener("input", updateAltTextWarning);
+  const error = document.createElement("p");
+  error.setAttribute("role", "alert");
+  error.style.color = "#b91c1c";
+  const actions = document.createElement("div");
+  actions.style.display = "flex";
+  actions.style.justifyContent = "flex-end";
+  actions.style.gap = "0.5rem";
+  actions.style.marginTop = "1rem";
+  const cancel = document.createElement("button");
+  cancel.type = "button";
+  cancel.textContent = "Cancel";
+  const confirm = document.createElement("button");
+  confirm.type = "button";
+  confirm.textContent = "Replace image";
+  confirm.disabled = true;
+  actions.append(cancel, confirm);
+  dialog.append(
+    title,
+    description,
+    previews,
+    input,
+    altLabel,
+    altText,
+    altTextWarning,
+    error,
+    actions,
+  );
+  document.body.append(dialog);
+
+  let selectedFile: File | undefined;
+  let previewUrl: string | undefined;
+  const close = () => dialog.close();
+  input.addEventListener("change", () => {
+    selectedFile = input.files?.[0];
+    error.textContent = "";
+    confirm.disabled = !selectedFile;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = selectedFile ? URL.createObjectURL(selectedFile) : undefined;
+    replacementPreview.image.src = previewUrl ?? "";
+  });
+  cancel.addEventListener("click", close);
+  dialog.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    close();
+  });
+  dialog.addEventListener("close", () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    dialog.remove();
+    trigger?.focus();
+  });
+  const replaceImage = async () => {
+    if (!selectedFile) return;
+
+    confirm.disabled = true;
+    cancel.disabled = true;
+    input.disabled = true;
+    confirm.textContent = "Uploading...";
+    try {
+      const file = await uploadImageFile(selectedFile);
+      if (tool.api.blocks.getBlockIndex(tool.block.id) === -1) {
+        close();
+        return;
+      }
+      await tool.api.blocks.update(tool.block.id, {
+        file,
+        altText: altText.value.trim(),
+      });
+      close();
+    } catch (uploadError) {
+      console.error("Failed to replace image:", uploadError);
+      error.textContent =
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Could not upload image. Please try again.";
+      confirm.disabled = false;
+      cancel.disabled = false;
+      input.disabled = false;
+      confirm.textContent = "Replace image";
+    }
+  };
+  confirm.addEventListener("click", () => {
+    void replaceImage();
+  });
+  dialog.showModal();
+  input.focus();
+}
 
 function isStorageObjectNotFoundError(error: unknown): boolean {
   return (
@@ -77,6 +289,60 @@ function isStorageObjectNotFoundError(error: unknown): boolean {
 // https://github.com/editor-js/image/issues/54#issuecomment-1546833098
 // https://github.com/editor-js/image/issues/27
 class CustomImage extends Image {
+  /**
+   * Latest snapshot of the rich caption, kept up to date by the mounted
+   * CaptionRichTextEditor. `this._data.caption` mirrors the plain-text
+   * representation for backwards compatibility with downstream renderers.
+   */
+  private _richCaption: RichCaption = [];
+
+  // The EditorJS image tool's constructor signature is loosely typed at the
+  // boundary; the call below is safe because Image's runtime expects this
+  // shape.
+  constructor(args: Parameters<typeof Image>[0]) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    super(args);
+    // Capture any richCaption in the initial payload before the base class'
+    // `set data()` overwrites `_data.caption` with plain text.
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+    const maybeData = (args as unknown as { data?: EditorImageData }).data;
+    if (maybeData) {
+      // The base Image tool retains only its known fields when it initializes
+      // `_data`. Restore our additional persisted fields so a routine editor
+      // save does not silently discard them.
+      const data = (this as unknown as { _data: EditorImageData })._data;
+      data.altText = maybeData.altText;
+      data.richCaption = maybeData.richCaption;
+      data.centerImage = maybeData.centerImage;
+
+      if (maybeData.richCaption) {
+        this._richCaption = resolveInitialRichCaption(maybeData.richCaption);
+      } else if (typeof maybeData.caption === "string" && maybeData.caption) {
+        this._richCaption = resolveInitialRichCaption(maybeData.caption);
+      }
+    }
+  }
+
+  render(): HTMLElement {
+    const baseImageTool = Image as unknown as {
+      prototype: {
+        render(this: CustomImageTool): HTMLElement;
+      };
+    };
+    // The Image package's inherited render type is `any`; constrain it at the
+    // boundary before calling it so the custom tool remains type-safe.
+    const wrapper = baseImageTool.prototype.render.call(
+      this as unknown as CustomImageTool,
+    );
+
+    // `blocks.update()` replaces this tool's DOM without dispatching the
+    // rendered lifecycle hook. Mount on every render as well so replacing an
+    // image never leaves the caption as an unmanaged native contenteditable.
+    queueMicrotask(() => this.rendered());
+
+    return wrapper;
+  }
+
   renderSettings(): MenuConfigItemList {
     const typedTool = this as unknown as CustomImageTool;
     const baseImageTool = Image as unknown as {
@@ -93,6 +359,13 @@ class CustomImage extends Image {
     ) as unknown[];
 
     return [
+      ...settingsArray,
+      {
+        name: "replaceImage",
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/><path d="M3 12A9 9 0 0 1 18.5 5.8L21 8"/><path d="M16 8h5V3"/></svg>`,
+        title: "Replace image",
+        onActivate: () => openImageReplacementDialog(typedTool),
+      },
       {
         name: "deleteImage",
         icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`,
@@ -114,8 +387,90 @@ class CustomImage extends Image {
           typedTool.api.blocks.delete(blockIndex);
         },
       },
-      ...settingsArray,
     ] as unknown as MenuConfigItemList;
+  }
+
+  /**
+   * Called after the EditorJS image tool renders its UI. We locate the native
+   * caption element, replace it with a host node, and mount the React
+   * CaptionRichTextEditor into it. Repeated renders are idempotent.
+   */
+  rendered(): void {
+    const initialKnown =
+      this._richCaption.length > 0
+        ? this._richCaption
+        : resolveInitialRichCaption(
+            (this as unknown as { _data: EditorImageData })._data.richCaption ??
+              (this as unknown as { _data: EditorImageData })._data.caption ??
+              "",
+          );
+
+    const typed = this as unknown as {
+      ui: {
+        nodes: {
+          caption?: HTMLElement;
+          wrapper?: HTMLElement;
+        };
+      };
+      block: { container: HTMLElement; id: string };
+    };
+
+    // EditorJS's Image tool keeps its DOM refs on `this.ui.nodes`, not
+    // `this.nodes` directly — see @editorjs/image's Ui class.
+    const holder = typed.ui?.nodes?.caption ?? null;
+    if (!holder) return;
+
+    let host = holder.querySelector<HTMLElement>(`[${RICH_CAPTION_HOST_ATTR}]`);
+    if (!host) {
+      host = document.createElement("div");
+      host.setAttribute(RICH_CAPTION_HOST_ATTR, "true");
+      const cdx = holder;
+      cdx.contentEditable = "false";
+      cdx.innerHTML = "";
+      cdx.appendChild(host);
+    }
+
+    const onChange = (next: RichCaption): void => {
+      this._richCaption = next;
+      (this as unknown as { _data: EditorImageData })._data.richCaption =
+        serializeRichCaption(next);
+      (this as unknown as { _data: EditorImageData })._data.caption =
+        richCaptionToPlainText(next);
+    };
+
+    mountRichCaptionEditor({
+      host,
+      initial: initialKnown,
+      placeholder: "Enter a caption (select text to format)...",
+      onChange,
+    });
+  }
+
+  save(): {
+    file: EditorImageData["file"];
+    caption?: string;
+    altText?: string;
+    richCaption?: RichCaption;
+    withBorder?: boolean;
+    withBackground?: boolean;
+    stretched?: boolean;
+    centerImage?: boolean;
+  } {
+    // Avoid calling the parent save(); it would try to read the caption
+    // element that we've repurposed, and we already have a structured value
+    // stored on `_data`. Read from `this._data` for non-caption fields.
+    const d = (this as unknown as { _data: EditorImageData })._data;
+    const rich = this._richCaption;
+    return {
+      file: d.file,
+      caption: richCaptionToPlainText(rich),
+      ...(d.altText === undefined ? {} : { altText: d.altText }),
+      richCaption: serializeRichCaption(rich),
+      withBorder: d.withBorder,
+      withBackground: d.withBackground,
+      stretched: d.stretched,
+      centerImage: d.centerImage ?? false,
+    };
   }
 
   removed() {
@@ -172,32 +527,12 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
     config: {
       uploader: {
         async uploadByFile(file: File) {
-          if (file.size > 5 * 1024 * 1024) {
-            alert(`File "${file.name}" is too large.`);
-            return { success: 0 };
-          }
-
-          const storage = getStorage();
-          const storageRef = ref(
-            storage,
-            "images/" + new Date().getTime() + "_" + file.name,
-          );
-
           try {
-            const contentType = resolveUploadContentType(file);
-            const snapshot = await uploadBytes(
-              storageRef,
-              file,
-              contentType ? { contentType } : undefined,
-            );
-            const downloadURL = await getDownloadURL(snapshot.ref);
+            const uploadedFile = await uploadImageFile(file);
 
             return {
               success: 1,
-              file: {
-                url: downloadURL,
-                storageRefFullPath: storageRef.fullPath,
-              },
+              file: uploadedFile,
             };
           } catch (err) {
             console.log(err);

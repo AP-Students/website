@@ -85,10 +85,20 @@ export default function DigitalTestingPage({
   const [showEliminationTools, setShowEliminationTools] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [showReviewPage, setShowReviewPage] = useState(false);
+  const [showCompletionPage, setShowCompletionPage] = useState(false);
 
   useEffect(() => {
     setQuestions(inputQuestions);
   }, [inputQuestions]);
+
+  const handleSetSubmitted = (value: boolean) => {
+    // Header unmounts while the completion page is up, so continuing on to the
+    // results remounts it with a fresh countdown. Ignore repeat submits so that
+    // restarted timer can't drag the user back to the completion page.
+    if (value && submitted) return;
+    setSubmitted(value);
+    if (value && !adminMode) setShowCompletionPage(true);
+  };
 
   // Track highlights for all --- uses index as key to corrospond to question, and array to hold highlights (might need to move to Highlighter file)
   const handleContentHighlights = (newHighlights: Highlight[]) => {
@@ -121,15 +131,22 @@ export default function DigitalTestingPage({
     }));
   };
 
-  if (submitted && !adminMode) {
-    return <CompletionPage />;
+  if (showCompletionPage && !adminMode) {
+    return (
+      <CompletionPage
+        onContinue={() => {
+          setShowCompletionPage(false);
+          setShowReviewPage(true);
+        }}
+      />
+    );
   }
 
   return (
     <div className="flex flex-col">
       {!adminMode && (
         <Header
-          setSubmitted={setSubmitted}
+          setSubmitted={handleSetSubmitted}
           submitted={submitted}
           timeRemaining={time * 60}
           directions={directions}
@@ -274,7 +291,7 @@ export default function DigitalTestingPage({
         selectedAnswers={selectedAnswers}
         setShowReviewPage={setShowReviewPage}
         showReviewPage={showReviewPage}
-        setSubmitted={setSubmitted}
+        setSubmitted={handleSetSubmitted}
         submitted={submitted}
         adminMode={adminMode}
         testName={testName}
