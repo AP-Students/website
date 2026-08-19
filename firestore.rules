@@ -2,12 +2,12 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
     // Centralized function to check if the user is authenticated
     function isAuthenticated() {
       return request.auth != null;
     }
-    
+
     // Centralized function to check if the user is an admin
     function isAdmin() {
       return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.access == "admin";
@@ -22,6 +22,12 @@ service cloud.firestore {
     function isGraderOrMemberOrAdmin() {
       let accessLevel = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.access;
       return isAuthenticated() && (accessLevel == "admin" || accessLevel == "member" || accessLevel == "grader");
+    }
+
+    function isGraderOrAdmin() {
+      let accessLevel = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.access;
+      return isAuthenticated() &&
+        (accessLevel == "admin" || accessLevel == "grader");
     }
 
     // Allow read/write access to users for their own user data
@@ -51,7 +57,7 @@ service cloud.firestore {
       let userDocAfter = getAfter(/databases/$(database)/documents/users/$(request.auth.uid));
       let userDataAfter = userDocAfter.data;
 
-      return userData.access != "banned" && (isAdmin() || (!("lastFrqResponseAt" in userData) && 
+      return userData.access != "banned" && (isAdmin() || (!("lastFrqResponseAt" in userData) &&
         "lastFrqResponseAt" in userDataAfter
       ) || (
         userData.lastFrqResponseAt < (request.time - duration.value(6, 'h'))
@@ -63,12 +69,74 @@ service cloud.firestore {
     match /{somePath=**}/frqResponses/{frqResponse} {
       allow read: if isGraderOrMemberOrAdmin();
     }
-    
+
+    // Digital testing FRQs deliberately use separate stores. Templates are
+    // published prompts, the queue contains only ungraded responses, and a
+    // grading result is kept separately for the student's dashboard.
+
+
+    match /ungraded-frqs/{submissionId} {
+  allow get, list: if isGraderOrAdmin() ||
+    (isAuthenticated() && resource.data.studentId == request.auth.uid);
+
+  allow create: if isAuthenticated()
+    && request.resource.data.keys().hasOnly([
+      'templateId',
+      'subject',
+      'unitId',
+      'studentId',
+      'responses',
+      'submittedAt'
+    ])
+    && request.resource.data.templateId is string
+    && request.resource.data.subject is string
+    && request.resource.data.unitId is string
+    && request.resource.data.studentId == request.auth.uid
+    && request.resource.data.responses is map
+    && exists(
+      /databases/$(database)/documents/subjects/$(request.resource.data.subject)/units/$(request.resource.data.unitId)/frqs/$(request.resource.data.templateId)
+    );
+
+  allow delete: if isGraderOrAdmin();
+}
+
+    match /graded-frqs/{resultId} {
+  allow get, list: if isGraderOrAdmin() ||
+    (isAuthenticated() && resource.data.studentId == request.auth.uid);
+
+  allow create: if isGraderOrAdmin()
+    && resultId == request.resource.data.sourceSubmissionId
+    && request.resource.data.keys().hasOnly([
+      'sourceSubmissionId',
+      'templateId',
+      'subject',
+      'unitId',
+      'studentId',
+      'responses',
+      'submittedAt',
+      'score',
+      'feedback',
+      'graderId',
+      'gradedAt'
+    ])
+    && request.resource.data.sourceSubmissionId is string
+    && request.resource.data.templateId is string
+    && request.resource.data.subject is string
+    && request.resource.data.unitId is string
+    && request.resource.data.studentId is string
+    && request.resource.data.responses is map
+    && request.resource.data.score is string
+    && request.resource.data.feedback is string
+    && request.resource.data.graderId == request.auth.uid;
+
+  allow update, delete: if isGraderOrAdmin();
+}
+
     // Admins can read/write all user documents
     match /users/{document=**} {
       allow read, write: if isAdmin();
     }
-		
+
     // Subjects and pages can be accessed by members and admins
     match /subjects/{subject} {
     	allow read: if true;
@@ -87,9 +155,14 @@ service cloud.firestore {
           allow read: if resource.data.isPublic == true || isMemberOrAdmin();
           allow write: if isMemberOrAdmin();
         }
+
+        match /frqs/{frq} {
+          allow read: if resource.data.isPublic == true || isMemberOrAdmin();
+          allow write: if isMemberOrAdmin();
+        }
       }
     }
-    
+
     match /pages/{document=**} {
     	allow read: if true;
       allow write: if isMemberOrAdmin();
