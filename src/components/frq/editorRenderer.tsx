@@ -53,33 +53,11 @@ interface EditorFRQ {
   questions: EditorQuestion[];
 }
 
-interface PracticeGradingCriterion {
-  id: string;
-  text: string;
-  points: number;
-}
-
-interface PracticeQuestion {
-  id: string;
-  isVisible?: boolean;
-  prompt?: QuestionInput;
-  answerType?: InputType;
-  gradingCriteria?: PracticeGradingCriterion[];
-}
-
-interface PracticeFrq {
-  id: string;
-  name: string;
-  description?: QuestionInput;
-  questions?: PracticeQuestion[];
-}
-
 type CompatibleFrqTemplate = FRQTemplate & {
   name?: string;
   isVisible?: boolean;
   timeLimit?: number;
   timeLimitMinutes?: number;
-  frqs?: PracticeFrq[];
 };
 
 interface FRQEditorRendererProps {
@@ -90,14 +68,6 @@ interface FRQEditorRendererProps {
 const createQuestionInput = (value = ""): QuestionInput => ({
   value,
   files: [],
-});
-
-const cloneQuestionInput = (
-  input: QuestionInput | undefined,
-  fallbackValue = "",
-): QuestionInput => ({
-  value: input?.value ?? fallbackValue,
-  files: input ? [...input.files] : [],
 });
 
 /**
@@ -116,11 +86,12 @@ const makeId = (prefix: string) =>
  * single source of truth so the editor can never disagree with what the grading
  * page will actually award.
  */
-const getQuestionPoints = (question: EditorQuestion) =>
-  question.criteria.reduce((total, criterion) => total + criterion.points, 0);
 
 const formatPoints = (points: number) =>
   `${points} ${points === 1 ? "point" : "points"}`;
+
+const getQuestionPoints = (question: EditorQuestion) =>
+  question.criteria.reduce((total, criterion) => total + criterion.points, 0);
 
 const createDescriptionQuestion = (
   description: QuestionInput,
@@ -175,21 +146,6 @@ const createEditorQuestionFromTemplate = (
   };
 };
 
-const createEditorQuestionFromPracticeData = (
-  question: PracticeQuestion,
-): EditorQuestion => ({
-  id: question.id,
-  questionData: createQuestionData(cloneQuestionInput(question.prompt)),
-  status: question.isVisible === false ? "legacy" : "public",
-  inputType: question.answerType === "equation" ? "equation" : "text",
-  criteria:
-    question.gradingCriteria?.map((criterion) => ({
-      id: criterion.id,
-      description: criterion.text,
-      points: Math.max(0, criterion.points),
-    })) ?? [],
-});
-
 /**
  * AP-style subquestion label: 1a, 1b, 1c. Past 26 questions it rolls over to
  * two letters (1aa, 1ab) rather than walking off the end of the alphabet into
@@ -207,22 +163,11 @@ const getSubquestionLabel = (frqIndex: number, questionIndex: number) => {
   return `${frqIndex + 1}${label}`;
 };
 
-const createEditorFrqFromTemplate = (template: FRQTemplate): EditorFRQ => {
-  const trimmedTitle = template.title.trim();
-
-  return {
-    id: template.id ?? makeId("frq"),
-    title: trimmedTitle.length > 0 ? trimmedTitle : "Untitled FRQ",
-    description: createQuestionInput(template.directions ?? ""),
-    questions: template.questions.map(createEditorQuestionFromTemplate),
-  };
-};
-
-const createEditorFrqFromPracticeData = (frq: PracticeFrq): EditorFRQ => ({
-  id: frq.id,
-  title: frq.name.trim().length > 0 ? frq.name.trim() : "Untitled FRQ",
-  description: cloneQuestionInput(frq.description),
-  questions: frq.questions?.map(createEditorQuestionFromPracticeData) ?? [],
+const createEditorFrqFromTemplate = (template: FRQTemplate): EditorFRQ => ({
+  id: template.id ?? makeId("frq"),
+  title: template.title?.trim() || "Untitled FRQ",
+  description: createQuestionInput(template.directions ?? ""),
+  questions: (template.questions ?? []).map(createEditorQuestionFromTemplate),
 });
 
 const createBlankEditorFrq = (position: number): EditorFRQ => ({
@@ -232,15 +177,9 @@ const createBlankEditorFrq = (position: number): EditorFRQ => ({
   questions: [],
 });
 
-const createEditorFrqsFromTemplate = (template: FRQTemplate): EditorFRQ[] => {
-  const compatibleTemplate = template as CompatibleFrqTemplate;
-
-  if (compatibleTemplate.frqs && compatibleTemplate.frqs.length > 0) {
-    return compatibleTemplate.frqs.map(createEditorFrqFromPracticeData);
-  }
-
-  return [createEditorFrqFromTemplate(template)];
-};
+const createEditorFrqsFromTemplate = (template: FRQTemplate): EditorFRQ[] => [
+  createEditorFrqFromTemplate(template),
+];
 
 const getBatchName = (template: FRQTemplate | null) => {
   if (!template) {
@@ -254,9 +193,11 @@ const getBatchName = (template: FRQTemplate | null) => {
     return practiceName;
   }
 
-  const templateTitle = template.title.trim();
+  const templateTitle = template.title?.trim();
 
-  return templateTitle.length > 0 ? templateTitle : "Untitled FRQ";
+  return templateTitle && templateTitle.length > 0
+    ? templateTitle
+    : "Untitled FRQ";
 };
 
 const getBatchVisibility = (template: FRQTemplate | null): BatchVisibility => {
