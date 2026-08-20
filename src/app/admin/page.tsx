@@ -7,17 +7,12 @@ import type { User } from "@/types/user";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUserManagement } from "./useUserManagement";
-import { getUngradedFrqsCollectionRef } from "@/lib/firestore/frqRefs";
 import apClassesData from "@/components/apClasses.json";
 import { useUser } from "../../components/hooks/UserContext";
 import Link from "next/link";
 import { cn, formatSlug } from "@/lib/utils";
 import { Ban, ClipboardPen, PencilRuler, ShieldUser, X } from "lucide-react";
-import {
-  doc,
-  getDocs,
-  updateDoc,
-} from "firebase/firestore";
+import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 
@@ -26,28 +21,6 @@ const apClasses = [...apClassesData.apClasses, "AP Porting"];
 const Page = () => {
   const { user } = useUser();
   const router = useRouter();
-
-  const [ungradedFrqCount, setUngradedFrqCount] = useState<number | null>(
-  null,
-);
-
-useEffect(() => {
-  if (!user || user.access !== "admin") return;
-
-  const fetchUngradedFrqCount = async () => {
-    try {
-      const collectionRef = getUngradedFrqsCollectionRef();
-      const snapshot = await getDocs(collectionRef);
-
-      setUngradedFrqCount(snapshot.size);
-    } catch (error) {
-      console.error("Failed to fetch ungraded FRQ count:", error);
-      setUngradedFrqCount(null);
-    }
-  };
-
-  void fetchUngradedFrqCount();
-}, [user]);
 
   if (!user) {
     return (
@@ -72,30 +45,9 @@ useEffect(() => {
         {user.access === "admin" && (
           <>
             <AdminPanel user={user} />
-
-            <div className="mb-4 flex flex-col gap-4 rounded-lg border-4 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-wide opacity-70">
-                  Ungraded FRQs
-                </p>
-
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold">
-                    {ungradedFrqCount ?? "—"}
-                  </span>
-
-                  <span className="text-sm opacity-70">currently ungraded</span>
-                </div>
-              </div>
-
-              <Link href="/frq-grading">
-                <Button className="w-full sm:w-auto">
-                  Open FRQ Grading List
-                </Button>
-              </Link>
-            </div>
           </>
         )}
+
 
         <Link href="/admin/feedback" className="hover:text-yellow-600">
           <Button className="w-full">
