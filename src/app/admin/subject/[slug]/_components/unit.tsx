@@ -12,10 +12,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Unit, Chapter, UnitTest } from "@/types/firestore";
-import type { FRQTemplate } from "@/types/frq";
 import short from "short-uuid";
 import UnitTests from "./unitTests";
-import UnitFrqs from "./unitFrqs";
 import ChapterContent from "./chapterContent";
 import { Input } from "@/components/ui/input";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
@@ -38,13 +36,6 @@ interface UnitComponentProps {
   subjectSlug: string;
   subjectTitle: string;
   hasUnit0?: boolean;
-  frqTemplates: FRQTemplate[];
-  onFrqAdd: (unitId: string, title: string) => Promise<void>;
-  onFrqRename: (frqId: string, title: string) => Promise<void>;
-  onFrqVisibilityChange: (
-    frqId: string,
-    isPublic: boolean,
-  ) => Promise<void>;
 }
 
 /**
@@ -61,10 +52,6 @@ function UnitComponent({
   subjectSlug,
   subjectTitle,
   hasUnit0,
-  frqTemplates,
-  onFrqAdd,
-  onFrqRename,
-  onFrqVisibilityChange,
 }: UnitComponentProps) {
   const [expanded, setExpanded] = useState<boolean>(false);
 
@@ -418,15 +405,6 @@ function UnitComponent({
             setTestVisibility={setTestVisibility}
             moveTestUp={moveTestUp}
             moveTestDown={moveTestDown}
-          />
-          <h3 className="mb-1 mt-6 text-xl font-semibold">FRQs</h3>
-          <UnitFrqs
-            unitId={unit.id}
-            subjectSlug={subjectSlug}
-            frqs={frqTemplates}
-            onFrqAdd={(title) => onFrqAdd(unit.id, title)}
-            onFrqUpdate={onFrqRename}
-            onFrqVisibilityChange={onFrqVisibilityChange}
           />
         </div>
       )}

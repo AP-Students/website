@@ -8,16 +8,9 @@ import SubjectBreadcrumb from "@/components/subject/subject-breadcrumb";
 import TableOfContents from "@/components/subject/table-of-contents";
 import UnitAccordion from "@/components/subject/unit-accordion";
 import { useEffect, useState } from "react";
+import { doc, getDoc } from "firebase/firestore";
 import usePathname from "@/components/client/pathname";
 import { useUser } from "@/components/hooks/UserContext";
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-} from "firebase/firestore";
 
 const Page = ({ params }: { params: { slug: string } }) => {
   const pathname = usePathname();
@@ -30,11 +23,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
   useEffect(() => {
     const fetchSubject = async () => {
       try {
-        const isAuthorized =
-          user &&
-          (user.access === "admin" ||
-            user.access === "member" ||
-            user.access === "grader");
+        const isAuthorized = user && (user.access === "admin" || user.access === "member" || user.access === "grader");
         if (params.slug === "porting" && !isAuthorized) {
           setError("Subject not found. That's probably us, not you.");
           setLoading(false);
@@ -43,44 +32,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
         const docRef = doc(db, "subjects", params.slug);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          const subjectData = docSnap.data() as Subject;
-
-          const canPreview =
-            user?.access === "admin" || user?.access === "member";
-
-          const unitsWithFrqs = await Promise.all(
-            subjectData.units.map(async (unit) => {
-              const frqsCollectionRef = collection(
-                db,
-                "subjects",
-                params.slug,
-                "units",
-                unit.id,
-                "frqs",
-              );
-
-              const frqsQuery = canPreview
-                ? frqsCollectionRef
-                : query(frqsCollectionRef, where("isPublic", "==", true));
-
-              const frqsSnapshot = await getDocs(frqsQuery);
-
-              const frqs = frqsSnapshot.docs.map((frqDoc) => ({
-                ...frqDoc.data(),
-                id: frqDoc.id,
-              }));
-
-              return {
-                ...unit,
-                frqs,
-              };
-            }),
-          );
-
-          setSubject({
-            ...subjectData,
-            units: unitsWithFrqs,
-          });
+          setSubject(docSnap.data() as Subject);
         } else {
           setError("Subject not found. That's probably us, not you.");
         }

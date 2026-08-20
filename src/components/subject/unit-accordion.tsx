@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/accordion";
 import { formatSlug } from "@/lib/utils";
 import { type Unit } from "@/types/firestore";
-import { BookDashed, BookOpenCheck, PencilLine, Pencil } from "lucide-react";
+import { BookDashed, BookOpenCheck } from "lucide-react";
 import Link from "next/link";
 
 type Props = {
@@ -17,13 +17,7 @@ type Props = {
   hasUnit0?: boolean;
 };
 
-const UnitAccordion = ({
-  unit,
-  pathname,
-  unitIndex,
-  preview,
-  hasUnit0,
-}: Props) => {
+const UnitAccordion = ({ unit, pathname, unitIndex, preview, hasUnit0 }: Props) => {
   // uNum: display number used in URLs and badges.
   // 0-indexed when hasUnit0 is true (first array element = Unit 0).
   const uNum = hasUnit0 ? unitIndex : unitIndex + 1;
@@ -118,48 +112,6 @@ const UnitAccordion = ({
                 href={
                   preview
                     ? `${pathname.split("/").slice(0, 4).join("/")}/unit-${uNum}-${unit.id}/test/${test.id}`
-                    : "/apply"
-                }
-                className="ml-auto w-20 shrink-0 text-nowrap rounded-full border border-gray-400 px-2 py-0.5 text-center text-gray-600 transition-colors group-hover:border-primary group-hover:text-black sm:w-36 sm:py-0"
-              >
-                <span className="hidden group-hover:hidden sm:inline">
-                  Work In Progress
-                </span>
-                <span className="group-hover:hidden sm:hidden">WIP</span>
-                <span className="hidden group-hover:inline">
-                  {preview ? "Preview" : "Join FiveHive"}
-                </span>
-              </a>
-            </div>
-          ),
-        )}
-        {unit.frqs?.map((frq, frqIndex) =>
-          frq.isPublic ? (
-            <Link
-              className="flex items-center gap-x-2 font-semibold last:mb-0 hover:underline"
-              href={`${pathname.split("/").slice(0, 4).join("/")}/unit-${uNum}-${unit.id}/frq/${frq.id}`}
-              key={frq.id}
-            >
-              <PencilLine className="size-8" />
-              {frq.title
-                ? frq.title
-                : `Unit ${uNum} FRQ ${unit.frqs && unit.frqs.length > 1 ? ` ${frqIndex + 1}` : ""}`}
-            </Link>
-          ) : (
-            <div
-              className="group flex items-center gap-x-2 font-semibold last:mb-0"
-              key={frq.id}
-            >
-              <Pencil className="size-8 shrink-0 opacity-70" />
-              <span className="opacity-70 group-hover:underline">
-                {frq.title
-                  ? frq.title
-                  : `Unit ${uNum} FRQ ${unit.frqs && unit.frqs.length > 1 ? ` ${frqIndex + 1}` : ""}`}
-              </span>
-              <a
-                href={
-                  preview
-                    ? `${pathname.split("/").slice(0, 4).join("/")}/unit-${uNum}-${unit.id}/frq/${frq.id}`
                     : "/apply"
                 }
                 className="ml-auto w-20 shrink-0 text-nowrap rounded-full border border-gray-400 px-2 py-0.5 text-center text-gray-600 transition-colors group-hover:border-primary group-hover:text-black sm:w-36 sm:py-0"
