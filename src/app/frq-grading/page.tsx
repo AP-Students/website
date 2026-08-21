@@ -3,8 +3,13 @@
 import Navbar from "@/components/global/navbar";
 import Footer from "@/components/global/footer";
 import Link from "next/link";
-import { db } from "@/lib/firebase";
-import { deleteDoc, collection, doc, getDoc, getCountFromServer, getDocs, limit, orderBy, query, startAfter, type DocumentData, type QueryDocumentSnapshot, Timestamp } from "firebase/firestore";
+import { useUser } from "@/components/hooks/UserContext";
+import {
+  getFrqTemplateDocRef,
+  getUngradedFrqDocRef,
+  getUngradedFrqsCollectionRef,
+} from "@/lib/firestore/frqRefs";
+import { deleteDoc, getDoc, getCountFromServer, getDocs, limit, orderBy, query, startAfter, type DocumentData, type QueryDocumentSnapshot, Timestamp } from "firebase/firestore";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Trash2, ChevronLeft, ChevronRight } from "lucide-react";
@@ -28,6 +33,12 @@ type PageCursor =
   QueryDocumentSnapshot<DocumentData> | null;
 
 const Page = () => {
+  const { user, loading: userLoading } = useUser();
+
+  // Firestore rules already reject a non-grader's reads, but without this check
+  // the page renders a full, permanently empty queue and gives no hint why.
+  const canGrade = user?.access === "admin" || user?.access === "grader";
+
   const [frqs, setFrqs] = useState<UngradedFrqRow[] | null>(null);
 
   const [frqToDelete, setFrqToDelete] = useState<UngradedFrqRow | null>(null);
@@ -54,10 +65,11 @@ const Page = () => {
     const fetchFrqs = useCallback(async (cursor: PageCursor) => {
       setIsPageLoading(true);
       try {
-        const collectionRef = collection(
-          db,
-          "gradableFrqSubmissions",
-        );
+        // `ungraded-frqs` is the collection the student test actually writes to.
+        // This page previously read `gradableFrqSubmissions`, a name from an
+        // earlier schema pass that nothing has written to since, so the queue
+        // read as permanently empty no matter how many tests were submitted.
+        const collectionRef = getUngradedFrqsCollectionRef();
 
       const pageQuery = cursor
         ? query(
@@ -107,20 +119,27 @@ const Page = () => {
               )
             : {};
 
+          // A submission records where its template lives, so the location no
+          // longer has to be recovered from a flat template collection.
+          const subject =
+            typeof rawData.subject === "string" ? rawData.subject : "";
+          const unitId =
+            typeof rawData.unitId === "string" ? rawData.unitId : "";
+
           let isMalformed =
             templateId === "" ||
             studentId === "" ||
+            subject === "" ||
+            unitId === "" ||
             submittedAt === null ||
             !hasValidResponses;
-          
-          let frqTitle = "Unknown FRQ";
-          let subject = "Unknown subject";
-          let unitId = "Unknown unit";
 
-          if (templateId !== "") {
+          let frqTitle = "Unknown FRQ";
+
+          if (!isMalformed) {
             try {
               const templateSnapshot = await getDoc(
-                doc(db, "frqTemplates", templateId),
+                getFrqTemplateDocRef(subject, unitId, templateId),
               );
 
               if (templateSnapshot.exists()) {
@@ -128,18 +147,6 @@ const Page = () => {
 
                 if (typeof templateData.title === "string") {
                   frqTitle = templateData.title;
-                } else {
-                  isMalformed = true;
-                }
-
-                if (typeof templateData.subject === "string") {
-                  subject = templateData.subject;
-                } else {
-                  isMalformed = true;
-                }
-
-                if (typeof templateData.unitId === "string") {
-                  unitId = templateData.unitId;
                 } else {
                   isMalformed = true;
                 }
@@ -163,8 +170,8 @@ const Page = () => {
             responses,
             isMalformed,
             frqTitle,
-            subject,
-            unitId
+            subject: subject || "Unknown subject",
+            unitId: unitId || "Unknown unit",
           };
         }),
       );
@@ -179,9 +186,13 @@ const Page = () => {
 
 
     useEffect(() => {
+      if (userLoading || !canGrade) {
+        return;
+      }
+
       const initializePage = async () => {
         const countSnapshot = await getCountFromServer(
-          collection(db, "gradableFrqSubmissions"),
+          getUngradedFrqsCollectionRef(),
         );
 
         setTotalCount(countSnapshot.data().count);
@@ -195,7 +206,7 @@ const Page = () => {
         );
         setFrqs([]);
       });
-    }, [fetchFrqs]);
+    }, [fetchFrqs, userLoading, canGrade]);
 
 
 const handleNextPage = async () => {
@@ -239,8 +250,7 @@ const handlePreviousPage = async () => {
     setIsDeleting(true);
 
     try {
-      await deleteDoc(
-        doc(db, "gradableFrqSubmissions", frqToDelete.id));
+      await deleteDoc(getUngradedFrqDocRef(frqToDelete.id));
 
       setFrqs((currentFrqs) =>
         currentFrqs
@@ -270,8 +280,28 @@ const handlePreviousPage = async () => {
     }
   };
 
+  if (userLoading) {
+    return <div className="p-8">Loading...</div>;
+  }
+
+  if (!canGrade) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Navbar />
+        <main className="mx-auto mt-12 w-full max-w-6xl flex-1 px-8 pb-8">
+          <h1 className="text-4xl font-bold">Grader access required</h1>
+          <p className="mt-4 text-gray-600">
+            Ask an admin to grant your account grader access to review FRQ
+            submissions.
+          </p>
+        </main>
+        <Footer className="w-full" />
+      </div>
+    );
+  }
+
   if (frqs === null) {
-    return <div>Loading...</div>;
+    return <div className="p-8">Loading...</div>;
   }
 
   return (
