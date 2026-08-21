@@ -8,9 +8,16 @@ import SubjectBreadcrumb from "@/components/subject/subject-breadcrumb";
 import TableOfContents from "@/components/subject/table-of-contents";
 import UnitAccordion from "@/components/subject/unit-accordion";
 import { useEffect, useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
 import usePathname from "@/components/client/pathname";
 import { useUser } from "@/components/hooks/UserContext";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 
 const Page = ({ params }: { params: { slug: string } }) => {
   const pathname = usePathname();
@@ -23,7 +30,11 @@ const Page = ({ params }: { params: { slug: string } }) => {
   useEffect(() => {
     const fetchSubject = async () => {
       try {
-        const isAuthorized = user && (user.access === "admin" || user.access === "member" || user.access === "grader");
+        const isAuthorized =
+          user &&
+          (user.access === "admin" ||
+            user.access === "member" ||
+            user.access === "grader");
         if (params.slug === "porting" && !isAuthorized) {
           setError("Subject not found. That's probably us, not you.");
           setLoading(false);
@@ -32,7 +43,60 @@ const Page = ({ params }: { params: { slug: string } }) => {
         const docRef = doc(db, "subjects", params.slug);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setSubject(docSnap.data() as Subject);
+          const subjectData = docSnap.data() as Subject;
+
+          const canPreview =
+            user?.access === "admin" || user?.access === "member";
+
+          const unitsWithFrqs = await Promise.all(
+            subjectData.units.map(async (unit) => {
+              // FRQs are supplementary to the curriculum. A failure here — a
+              // rules change that has not been deployed, an offline read —
+              // must not take down the whole subject page, which is what an
+              // unguarded rejection inside Promise.all did for every visitor.
+              try {
+                const frqsCollectionRef = collection(
+                  db,
+                  "subjects",
+                  params.slug,
+                  "units",
+                  unit.id,
+                  "frqs",
+                );
+
+                const frqsQuery = canPreview
+                  ? frqsCollectionRef
+                  : query(frqsCollectionRef, where("isPublic", "==", true));
+
+                const frqsSnapshot = await getDocs(frqsQuery);
+
+                const frqs = frqsSnapshot.docs.map((frqDoc) => ({
+                  ...frqDoc.data(),
+                  id: frqDoc.id,
+                }));
+
+                return {
+                  ...unit,
+                  frqs,
+                };
+              } catch (frqError) {
+                console.error(
+                  `Unable to load FRQs for unit ${unit.id}:`,
+                  frqError,
+                );
+
+                return {
+                  ...unit,
+                  frqs: [],
+                };
+              }
+            }),
+          );
+
+          setSubject({
+            ...subjectData,
+            units: unitsWithFrqs,
+          });
         } else {
           setError("Subject not found. That's probably us, not you.");
         }
