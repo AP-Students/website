@@ -15,6 +15,7 @@ interface FeedbackSectionProps {
   answer?: ResponseAnswer;
   partFeedback?: FRQPartFeedback;
   isOpen: boolean;
+  readOnly?: boolean;
   onToggle: () => void;
   onFeedbackChange: (feedback: string) => void;
   onPointsChange: (criterionId: string, points: number) => void;
@@ -27,6 +28,7 @@ export default function FeedbackSection({
   answer,
   partFeedback,
   isOpen,
+  readOnly = false,
   onToggle,
   onFeedbackChange,
   onPointsChange,
@@ -98,6 +100,7 @@ export default function FeedbackSection({
                   key={criterion.id}
                   criterion={criterion}
                   points={criterionScore?.points ?? 0}
+                  readOnly={readOnly}
                   onPointsChange={(points) =>
                     onPointsChange(criterion.id, points)
                   }
@@ -106,12 +109,23 @@ export default function FeedbackSection({
             })}
           </div>
 
-          <Textarea
-            value={partFeedback?.feedback ?? ""}
-            onChange={(event) => onFeedbackChange(event.target.value)}
-            placeholder="Enter feedback"
-            className="min-h-24 resize-y border-gray-400"
-          />
+          {readOnly ? (
+            <div className="rounded-md border border-gray-400 p-3 text-sm leading-6">
+              <p className="mb-1 font-semibold">Grader feedback</p>
+              <p className="whitespace-pre-wrap">
+                {partFeedback?.feedback?.trim()
+                  ? partFeedback.feedback
+                  : "The grader did not leave a note for this part."}
+              </p>
+            </div>
+          ) : (
+            <Textarea
+              value={partFeedback?.feedback ?? ""}
+              onChange={(event) => onFeedbackChange(event.target.value)}
+              placeholder="Enter feedback"
+              className="min-h-24 resize-y border-gray-400"
+            />
+          )}
         </div>
       )}
     </div>

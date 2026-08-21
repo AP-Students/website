@@ -3,22 +3,28 @@
 import { useState } from "react";
 import Layout from "./feedback/layout";
 import type { FRQFeedbackDocument } from "./feedback/types";
-import { fallbackFeedbackData } from "./feedback/fallBackData";
 
 interface FRQFeedbackRendererProps {
-  feedbackData?: FRQFeedbackDocument;
+  /**
+   * Required. This used to be optional with a canned AP Human Geography
+   * fallback, which meant a page that failed to build a real document rendered
+   * a plausible-looking fake grade instead of an error.
+   */
+  feedbackData: FRQFeedbackDocument;
+  /** Students see a settled grade; only a grading surface should edit it. */
+  readOnly?: boolean;
+  overallFeedback?: string;
 }
 
 export default function FRQFeedbackRenderer({
   feedbackData,
+  readOnly = false,
+  overallFeedback,
 }: FRQFeedbackRendererProps) {
   const [currentFrqIndex, setCurrentFrqIndex] = useState(0);
 
-  const initialData =
-    feedbackData ?? (fallbackFeedbackData as FRQFeedbackDocument);
-
   const [data, setData] = useState<FRQFeedbackDocument>(() =>
-    structuredClone(initialData),
+    structuredClone(feedbackData),
   );
 
   const currentFrq = data.frqs[currentFrqIndex];
@@ -114,6 +120,8 @@ export default function FRQFeedbackRenderer({
       feedbackData={data}
       currentFrq={currentFrq}
       currentFrqIndex={currentFrqIndex}
+      readOnly={readOnly}
+      overallFeedback={overallFeedback}
       onPrevious={goToPreviousFrq}
       onNext={goToNextFrq}
       onJumpToFrq={jumpToFrq}

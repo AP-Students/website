@@ -7,11 +7,13 @@ import type { FRQFeedbackDocument, FRQQuestion } from "./types";
 export default function QuestionFeedback({
   frq,
   feedbackData,
+  readOnly = false,
   onFeedbackChange,
   onPointsChange,
 }: {
   frq: FRQQuestion;
   feedbackData: FRQFeedbackDocument;
+  readOnly?: boolean;
   onFeedbackChange: (questionId: string, feedback: string) => void;
   onPointsChange: (
     questionId: string,
@@ -77,6 +79,7 @@ export default function QuestionFeedback({
               answer={answer}
               partFeedback={partFeedback}
               isOpen={openParts.includes(part.id)}
+              readOnly={readOnly}
               onToggle={() => togglePart(part.id)}
               onFeedbackChange={(feedback) =>
                 onFeedbackChange(part.id, feedback)
