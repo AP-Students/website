@@ -1,7 +1,9 @@
 "use client";
 
 import FRQEditorRenderer from "@/components/frq/editorRenderer";
+import { useUser } from "@/components/hooks/UserContext";
 import { getFrqTemplateDocRef } from "@/lib/firestore/frqRefs";
+import { normalizeFrqTemplate } from "@/lib/frq/template";
 import type { FRQTemplate } from "@/types/frq";
 import { getDoc } from "firebase/firestore";
 import { usePathname } from "next/navigation";
@@ -9,49 +11,67 @@ import { useEffect, useState } from "react";
 
 const Page = () => {
   const pathname = usePathname() ?? "";
+  const { user, loading: userLoading } = useUser();
 
   const pathParts = pathname.split("/").slice(-4);
   const subject = pathParts[0] ?? "";
   const unitId = pathParts[1] ?? "";
   const frqId = pathParts[3] ?? "";
 
-  const [frqTemplate, setFrqTemplate] =
-    useState<FRQTemplate | null>(null);
+  const [frqTemplate, setFrqTemplate] = useState<FRQTemplate | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [frqFound, setFrqFound] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  // Firestore rules are the real gate, but without a UI check an unauthorized
+  // visitor gets the full editor and only discovers the denial when Save fails.
+  const canEdit = user?.access === "admin" || user?.access === "member";
 
   useEffect(() => {
+    if (userLoading) {
+      return;
+    }
+
+    if (!canEdit) {
+      setIsLoading(false);
+      return;
+    }
+
     if (!subject || !unitId || !frqId) {
-      setFrqFound(false);
+      setLoadError("This FRQ address is not valid.");
       setIsLoading(false);
       return;
     }
 
     const loadFrq = async () => {
+      setIsLoading(true);
+      setLoadError(null);
+
       try {
-        const docRef = getFrqTemplateDocRef(
-          subject,
-          unitId,
-          frqId,
+        const docSnap = await getDoc(
+          getFrqTemplateDocRef(subject, unitId, frqId),
         );
 
-        const docSnap = await getDoc(docRef);
-
         if (!docSnap.exists()) {
-          setFrqFound(false);
+          setLoadError("This FRQ no longer exists.");
           setFrqTemplate(null);
           return;
         }
 
-        const loadedFrq: FRQTemplate = {
-          id: docSnap.id,
-          ...(docSnap.data() as Omit<FRQTemplate, "id">),
-        };
+        setFrqTemplate(
+          normalizeFrqTemplate(docSnap.data(), {
+            id: docSnap.id,
+            subject,
+            unitId,
+          }),
+        );
+      } catch (error) {
+        console.error("Error loading FRQ template:", error);
 
-        setFrqTemplate(loadedFrq);
-        setFrqFound(true);
-      } catch {
-        setFrqFound(false);
+        setLoadError(
+          error instanceof Error
+            ? `Could not load this FRQ: ${error.message}`
+            : "Could not load this FRQ.",
+        );
         setFrqTemplate(null);
       } finally {
         setIsLoading(false);
@@ -59,15 +79,27 @@ const Page = () => {
     };
 
     void loadFrq();
-  }, [subject, unitId, frqId]);
+  }, [userLoading, canEdit, subject, unitId, frqId]);
 
-  if (isLoading) {
-    return <div>Loading...</div>;
+  if (userLoading || isLoading) {
+    return <div className="p-8">Loading...</div>;
+  }
+
+  if (!canEdit) {
+    return (
+      <div className="p-8">
+        You need porter or admin access to edit FRQs.
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return <div className="p-8">{loadError}</div>;
   }
 
   return (
     <FRQEditorRenderer
-      frqFound={frqFound}
+      frqFound={frqTemplate !== null}
       frqTemplate={frqTemplate}
     />
   );

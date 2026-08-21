@@ -1,152 +1,101 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ChevronUp, MapPin, Plus, Trash2 } from "lucide-react";
+import { ChevronUp } from "lucide-react";
 import { useState } from "react";
 
-type BatchVisibility = "public" | "private";
+type FRQVisibility = "public" | "private";
 
-interface FRQNavigationItem {
+interface FRQPartSummary {
   id: string;
-  title: string;
+  label: string;
 }
 
 interface FRQEditorFooterProps {
-  frqs: FRQNavigationItem[];
-  currentFrqIndex: number;
-  batchName: string;
-  batchVisibility: BatchVisibility;
-  onCreateFrq: () => void;
-  onDeleteFrq: () => void;
-  onSelectFrq: (index: number) => void;
-  onPrevious: () => void;
-  onNext: () => void;
+  parts: FRQPartSummary[];
+  frqName: string;
+  visibility: FRQVisibility;
+  hasUnsavedChanges: boolean;
 }
 
+/**
+ * Status bar for the FRQ editor. Each FRQ is its own Firestore document, so
+ * this navigates the parts of the open FRQ rather than a batch of FRQs; adding
+ * and removing whole FRQs belongs to the admin subject page that owns the list.
+ */
 const FRQEditorFooter = ({
-  frqs,
-  currentFrqIndex,
-  batchName,
-  batchVisibility,
-  onCreateFrq,
-  onDeleteFrq,
-  onSelectFrq,
-  onPrevious,
-  onNext,
+  parts,
+  frqName,
+  visibility,
+  hasUnsavedChanges,
 }: FRQEditorFooterProps) => {
-  // Controlled so picking an FRQ closes the panel instead of leaving it parked
+  // Controlled so picking a part closes the panel instead of leaving it parked
   // over the footer, matching frq/FRQFooter.tsx on the other FRQ pages.
   const [navigationOpen, setNavigationOpen] = useState(false);
 
-  const selectFrq = (index: number) => {
-    onSelectFrq(index);
+  const scrollToPart = (partId: string) => {
     setNavigationOpen(false);
+    document
+      .querySelector(`[data-frq-part="${partId}"]`)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   return (
     <footer className="fixed bottom-0 left-0 z-50 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 border-t-2 border-gray-300 bg-background px-4 py-2.5 text-foreground">
       <div className="flex min-w-0 items-center gap-4">
-        <p className="truncate font-medium" title={batchName}>
-          {batchName}
+        <p className="truncate font-medium" title={frqName}>
+          {frqName}
         </p>
 
         <p className="shrink-0 text-sm text-muted-foreground">
           Visibility:{" "}
-          <span className="capitalize text-foreground">{batchVisibility}</span>
+          <span className="capitalize text-foreground">{visibility}</span>
         </p>
       </div>
 
       <div className="flex items-center justify-center gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onDeleteFrq}
-          disabled={frqs.length <= 1}
-          title={
-            frqs.length <= 1
-              ? "An FRQ batch must contain at least one FRQ"
-              : "Delete the current FRQ"
-          }
-        >
-          <Trash2 className="mr-2 size-4" />
-          Delete FRQ
-        </Button>
-
         <Popover open={navigationOpen} onOpenChange={setNavigationOpen}>
           <PopoverTrigger className="flex items-center gap-1 rounded-md bg-black py-1 pl-3 pr-1 text-sm font-bold tabular-nums text-white">
-            FRQ {currentFrqIndex + 1} of {frqs.length}
+            {parts.length} {parts.length === 1 ? "part" : "parts"}
             <ChevronUp />
           </PopoverTrigger>
 
           <PopoverContent side="top" sideOffset={12} className="w-72">
-            <p className="font-semibold">Navigate to an FRQ</p>
+            <p className="font-semibold">Jump to a part</p>
 
-            <p className="mt-1 text-sm text-muted-foreground">
-              Select an FRQ from this batch.
-            </p>
-
-            <div className="mt-6 grid grid-cols-6 gap-4">
-              {frqs.map((frq, index) => {
-                const isCurrent = index === currentFrqIndex;
-
-                return (
+            {parts.length === 0 ? (
+              <p className="mt-1 text-sm text-muted-foreground">
+                This FRQ has no parts yet.
+              </p>
+            ) : (
+              <div className="mt-6 grid grid-cols-6 gap-4">
+                {parts.map((part) => (
                   <button
-                    key={frq.id}
+                    key={part.id}
                     type="button"
-                    aria-label={`Go to ${frq.title}`}
-                    onClick={() => selectFrq(index)}
-                    className={`relative flex size-8 items-center justify-center border-2 font-medium ${
-                      isCurrent
-                        ? "border-transparent bg-[#2a47bb] text-white"
-                        : "border-dotted border-gray-400 text-[#2a47bb] hover:bg-blue-50"
-                    }`}
+                    aria-label={`Go to part ${part.label}`}
+                    onClick={() => scrollToPart(part.id)}
+                    className="flex size-8 items-center justify-center border-2 border-dotted border-gray-400 font-medium text-[#2a47bb] hover:bg-blue-50"
                   >
-                    {index + 1}
-
-                    {isCurrent && (
-                      <MapPin className="absolute -top-5 fill-white stroke-black" />
-                    )}
+                    {part.label}
                   </button>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            )}
           </PopoverContent>
         </Popover>
-
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCreateFrq}
-          title="Create an FRQ"
-        >
-          <Plus className="mr-2 size-4" />
-          Create FRQ
-        </Button>
       </div>
 
-      <div className="justify-self-end">
-        <button
-          type="button"
-          onClick={onPrevious}
-          disabled={currentFrqIndex === 0}
-          className="rounded-full bg-[#294ad1] px-6 py-2 font-bold text-white hover:bg-[#2a47bb] disabled:cursor-not-allowed disabled:bg-gray-300"
-        >
-          Back
-        </button>
-
-        <button
-          type="button"
-          onClick={onNext}
-          disabled={currentFrqIndex === frqs.length - 1}
-          className="ml-3 rounded-full bg-[#294ad1] px-6 py-2 font-bold text-white hover:bg-[#2a47bb] disabled:cursor-not-allowed disabled:bg-gray-300"
-        >
-          Next
-        </button>
+      <div className="justify-self-end text-sm">
+        {hasUnsavedChanges ? (
+          <span className="font-medium text-amber-600">Unsaved changes</span>
+        ) : (
+          <span className="text-muted-foreground">All changes saved</span>
+        )}
       </div>
     </footer>
   );

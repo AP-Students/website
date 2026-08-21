@@ -76,8 +76,11 @@ service cloud.firestore {
 
 
     match /ungraded-frqs/{submissionId} {
+  // `resource` is null when the document does not exist, and dereferencing it
+  // raises an evaluation error rather than denying, which surfaces to the
+  // client as "insufficient permissions" for what is really a missing doc.
   allow get, list: if isGraderOrAdmin() ||
-    (isAuthenticated() && resource.data.studentId == request.auth.uid);
+    (isAuthenticated() && resource != null && resource.data.studentId == request.auth.uid);
 
   allow create: if isAuthenticated()
     && request.resource.data.keys().hasOnly([
@@ -102,7 +105,7 @@ service cloud.firestore {
 
     match /graded-frqs/{resultId} {
   allow get, list: if isGraderOrAdmin() ||
-    (isAuthenticated() && resource.data.studentId == request.auth.uid);
+    (isAuthenticated() && resource != null && resource.data.studentId == request.auth.uid);
 
   allow create: if isGraderOrAdmin()
     && resultId == request.resource.data.sourceSubmissionId
@@ -116,9 +119,11 @@ service cloud.firestore {
       'submittedAt',
       'score',
       'feedback',
+      'grades',
       'graderId',
       'gradedAt'
     ])
+    && request.resource.data.grades is list
     && request.resource.data.sourceSubmissionId is string
     && request.resource.data.templateId is string
     && request.resource.data.subject is string
@@ -156,8 +161,12 @@ service cloud.firestore {
           allow write: if isMemberOrAdmin();
         }
 
+        // Graders read templates too: the rubric being scored against lives on
+        // the template, and so does the prompt shown beside a student's answer.
+        // Restricting reads to members left graders unable to open a private
+        // FRQ's submission at all.
         match /frqs/{frq} {
-          allow read: if resource.data.isPublic == true || isMemberOrAdmin();
+          allow read: if (resource != null && resource.data.isPublic == true) || isGraderOrMemberOrAdmin();
           allow write: if isMemberOrAdmin();
         }
       }

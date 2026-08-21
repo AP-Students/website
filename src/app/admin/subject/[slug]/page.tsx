@@ -107,18 +107,29 @@ export default function Page({ params }: { params: { slug: string } }) {
 
           const frqSnapshots = await Promise.all(
             fetchedUnits.map(async (unit) => {
-              const snapshot = await getDocs(
-                getFrqTemplatesCollectionRef(params.slug, unit.id),
-              );
+              // One unreadable FRQ subcollection must not blank the whole
+              // subject editor; the units and chapters loaded fine.
+              try {
+                const snapshot = await getDocs(
+                  getFrqTemplatesCollectionRef(params.slug, unit.id),
+                );
 
-              return snapshot.docs.map(
-                (frqDoc): FRQTemplate => ({
-                  id: frqDoc.id,
-                  ...(frqDoc.data() as Omit<FRQTemplate, "id">),
-                  subject: params.slug,
-                  unitId: unit.id,
-                }),
-              );
+                return snapshot.docs.map(
+                  (frqDoc): FRQTemplate => ({
+                    id: frqDoc.id,
+                    ...(frqDoc.data() as Omit<FRQTemplate, "id">),
+                    subject: params.slug,
+                    unitId: unit.id,
+                  }),
+                );
+              } catch (frqError) {
+                console.error(
+                  `Unable to load FRQs for unit ${unit.id}:`,
+                  frqError,
+                );
+
+                return [];
+              }
             }),
           );
 
@@ -251,8 +262,16 @@ const handleAddFrq = async (
     ]);
 
     setUnsavedChanges(true);
-  } catch {
-    alert("Unable to add the FRQ. Please try again.");
+  } catch (error) {
+    // Discarding this error is what made a permission-denied rule look
+    // identical to a network blip, so the real cause never reached anyone.
+    console.error("Error adding FRQ:", error);
+
+    alert(
+      error instanceof Error
+        ? `Unable to add the FRQ: ${error.message}`
+        : "Unable to add the FRQ. Please try again.",
+    );
   }
 };
 
@@ -291,8 +310,14 @@ const handleRenameFrq = async (
     );
 
     setUnsavedChanges(true);
-  } catch {
-    alert("Unable to rename the FRQ. Please try again.");
+  } catch (error) {
+    console.error("Error renaming FRQ:", error);
+
+    alert(
+      error instanceof Error
+        ? `Unable to rename the FRQ: ${error.message}`
+        : "Unable to rename the FRQ. Please try again.",
+    );
   }
 };
 
@@ -325,8 +350,14 @@ const handleFrqVisibilityChange = async (
     );
 
     setUnsavedChanges(true);
-  } catch {
-    alert("Unable to update the FRQ visibility. Please try again.");
+  } catch (error) {
+    console.error("Error updating FRQ visibility:", error);
+
+    alert(
+      error instanceof Error
+        ? `Unable to update the FRQ visibility: ${error.message}`
+        : "Unable to update the FRQ visibility. Please try again.",
+    );
   }
 };
   /****************************************************
@@ -428,6 +459,38 @@ const handleFrqVisibilityChange = async (
 
       // 1. Save the main subject doc
       batch.set(doc(db, "subjects", params.slug), subjectToSave);
+
+      // 1b. Remove units that were deleted locally. The loop below only visits
+      // units that still exist, so a deleted unit previously kept its document
+      // and every chapter, test, and FRQ underneath it. The orphaned FRQs are
+      // the visible symptom: they stay readable at their old URL and keep
+      // appearing in the grading queue's template lookups.
+      const unitsCollectionRef = collection(
+        db,
+        "subjects",
+        params.slug,
+        "units",
+      );
+      const existingUnitsSnap = await getDocs(unitsCollectionRef);
+      const localUnitIds = new Set(subjectToSave.units.map((u) => u.id));
+
+      for (const unitDoc of existingUnitsSnap.docs) {
+        if (localUnitIds.has(unitDoc.id)) {
+          continue;
+        }
+
+        for (const subcollection of ["chapters", "tests", "frqs"]) {
+          const staleDocs = await getDocs(
+            collection(unitDoc.ref, subcollection),
+          );
+
+          staleDocs.forEach((staleDoc) => {
+            batch.delete(staleDoc.ref);
+          });
+        }
+
+        batch.delete(unitDoc.ref);
+      }
 
       // 2. For each Unit, update or create the unit doc, then manage sub-collections
       for (const unit of subjectToSave.units) {
