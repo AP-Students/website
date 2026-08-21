@@ -23,47 +23,39 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+import { getFrqTemplateDocRef } from "@/lib/firestore/frqRefs";
+import {
+  DEFAULT_TIME_LIMIT_MINUTES,
+  getPartLabel,
+  getQuestionPoints,
+  toQuestionInput,
+} from "@/lib/frq/template";
 import type { QuestionFormat, QuestionInput } from "@/types/questions";
-import { Clock3, Eye, Info, Plus, Save, Trash2 } from "lucide-react";
-import type { FRQTemplate, FRQTemplateQuestion } from "@/types/frq";
-import { useMemo, useState } from "react";
-
-type QuestionStatus = "public" | "legacy";
-type InputType = "text" | "equation";
-type BatchVisibility = "public" | "private";
-
-interface GradingCriterion {
-  id: string;
-  description: string;
-  points: number;
-}
+import { serverTimestamp, updateDoc } from "firebase/firestore";
+import { Clock3, Info, Plus, Save, Trash2 } from "lucide-react";
+import type {
+  FRQAnswerType,
+  FRQGradingCriterion,
+  FRQQuestionStatus,
+  FRQTemplate,
+  FRQTemplateQuestion,
+} from "@/types/frq";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface EditorQuestion {
   id: string;
   questionData: QuestionFormat;
-  status: QuestionStatus;
-  inputType: InputType;
-  criteria: GradingCriterion[];
+  status: FRQQuestionStatus;
+  answerType: FRQAnswerType;
+  criteria: FRQGradingCriterion[];
 }
-
-interface EditorFRQ {
-  id: string;
-  title: string;
-  description: QuestionInput;
-  questions: EditorQuestion[];
-}
-
-type CompatibleFrqTemplate = FRQTemplate & {
-  name?: string;
-  isVisible?: boolean;
-  timeLimit?: number;
-  timeLimitMinutes?: number;
-};
 
 interface FRQEditorRendererProps {
   frqFound: boolean;
   frqTemplate: FRQTemplate | null;
 }
+
+type SaveState = "idle" | "saving" | "saved" | "error";
 
 const createQuestionInput = (value = ""): QuestionInput => ({
   value,
@@ -71,42 +63,17 @@ const createQuestionInput = (value = ""): QuestionInput => ({
 });
 
 /**
- * Unique, immutable ID built from the current time plus a short random suffix,
- * per the FRQ system spec. The random half is what makes it collision-safe:
- * a timestamp alone repeats when several IDs are minted in the same
- * millisecond.
+ * Unique, immutable ID built from the current time plus a short random suffix.
+ * The random half is what makes it collision-safe: a timestamp alone repeats
+ * when several IDs are minted in the same millisecond.
  */
 const makeId = (prefix: string) =>
   `${prefix}-${Date.now().toString(36)}-${Math.random()
     .toString(36)
     .slice(2, 8)}`;
 
-/**
- * A question's point value is the sum of its grading criteria. Criteria are the
- * single source of truth so the editor can never disagree with what the grading
- * page will actually award.
- */
-
 const formatPoints = (points: number) =>
   `${points} ${points === 1 ? "point" : "points"}`;
-
-const getQuestionPoints = (question: EditorQuestion) =>
-  question.criteria.reduce((total, criterion) => total + criterion.points, 0);
-
-const createDescriptionQuestion = (
-  description: QuestionInput,
-): QuestionFormat => ({
-  question: {
-    value: description.value,
-    files: [...description.files],
-  },
-  type: "frq",
-  options: [],
-  answers: [],
-  explanation: createQuestionInput(),
-  content: createQuestionInput(),
-  topic: "",
-});
 
 const createQuestionData = (
   question = createQuestionInput(),
@@ -124,186 +91,142 @@ const createEditorQuestion = (): EditorQuestion => ({
   id: makeId("question"),
   questionData: createQuestionData(),
   status: "public",
-  inputType: "text",
+  answerType: "text",
   criteria: [],
 });
 
 const createEditorQuestionFromTemplate = (
   templateQuestion: FRQTemplateQuestion,
-): EditorQuestion => {
-  const trimmedPrompt = templateQuestion.prompt?.trim();
-  const prompt =
-    trimmedPrompt && trimmedPrompt.length > 0
-      ? trimmedPrompt
-      : templateQuestion.title;
+): EditorQuestion => ({
+  id: templateQuestion.id,
+  questionData: createQuestionData(
+    toQuestionInput(templateQuestion.prompt, templateQuestion.promptFiles),
+  ),
+  status: templateQuestion.status ?? "public",
+  answerType: templateQuestion.answerType ?? "text",
+  criteria: templateQuestion.criteria ?? [],
+});
 
-  return {
-    id: templateQuestion.id,
-    questionData: createQuestionData(createQuestionInput(prompt)),
-    status: "public",
-    inputType: "text",
-    criteria: [],
-  };
-};
+interface EditorState {
+  title: string;
+  description: QuestionInput;
+  questions: EditorQuestion[];
+  timeLimitMinutes: number;
+  isPublic: boolean;
+}
+
+const buildInitialState = (template: FRQTemplate | null): EditorState => ({
+  title: template?.title ?? "",
+  description: toQuestionInput(
+    template?.directions,
+    template?.directionsFiles,
+  ),
+  questions: (template?.questions ?? []).map(createEditorQuestionFromTemplate),
+  timeLimitMinutes: template?.timeLimitMinutes ?? DEFAULT_TIME_LIMIT_MINUTES,
+  isPublic: template?.isPublic === true,
+});
 
 /**
- * AP-style subquestion label: 1a, 1b, 1c. Past 26 questions it rolls over to
- * two letters (1aa, 1ab) rather than walking off the end of the alphabet into
- * punctuation, which is what a bare String.fromCharCode(97 + index) would do.
+ * The exact document body a save writes, minus the server timestamp. Unsaved
+ * state is detected by comparing this against the last persisted version rather
+ * than by watching for state updates: React StrictMode double-invokes effects
+ * in development, and the rich-text children re-emit equal values on mount, so
+ * a "something changed" listener reported unsaved work before any edit.
  */
-const getSubquestionLabel = (frqIndex: number, questionIndex: number) => {
-  let label = "";
-  let remaining = questionIndex;
-
-  do {
-    label = String.fromCharCode(97 + (remaining % 26)) + label;
-    remaining = Math.floor(remaining / 26) - 1;
-  } while (remaining >= 0);
-
-  return `${frqIndex + 1}${label}`;
-};
-
-const createEditorFrqFromTemplate = (template: FRQTemplate): EditorFRQ => ({
-  id: template.id ?? makeId("frq"),
-  title: template.title?.trim() || "Untitled FRQ",
-  description: createQuestionInput(template.directions ?? ""),
-  questions: (template.questions ?? []).map(createEditorQuestionFromTemplate),
+const buildTemplatePayload = (state: EditorState) => ({
+  title: state.title.trim() || "Untitled FRQ",
+  directions: state.description.value,
+  directionsFiles: state.description.files,
+  timeLimitMinutes: state.timeLimitMinutes,
+  isPublic: state.isPublic,
+  questions: state.questions.map((question, index) => ({
+    id: question.id,
+    title: getPartLabel(index),
+    prompt: question.questionData.question.value,
+    promptFiles: question.questionData.question.files,
+    answerType: question.answerType,
+    status: question.status,
+    criteria: question.criteria,
+  })),
 });
-
-const createBlankEditorFrq = (position: number): EditorFRQ => ({
-  id: makeId("frq"),
-  title: `FRQ ${position}`,
-  description: createQuestionInput(),
-  questions: [],
-});
-
-const createEditorFrqsFromTemplate = (template: FRQTemplate): EditorFRQ[] => [
-  createEditorFrqFromTemplate(template),
-];
-
-const getBatchName = (template: FRQTemplate | null) => {
-  if (!template) {
-    return "Untitled FRQ";
-  }
-
-  const compatibleTemplate = template as CompatibleFrqTemplate;
-  const practiceName = compatibleTemplate.name?.trim();
-
-  if (practiceName && practiceName.length > 0) {
-    return practiceName;
-  }
-
-  const templateTitle = template.title?.trim();
-
-  return templateTitle && templateTitle.length > 0
-    ? templateTitle
-    : "Untitled FRQ";
-};
-
-const getBatchVisibility = (template: FRQTemplate | null): BatchVisibility => {
-  if (!template) {
-    return "private";
-  }
-
-  const compatibleTemplate = template as CompatibleFrqTemplate;
-  const isVisible =
-    typeof compatibleTemplate.isVisible === "boolean"
-      ? compatibleTemplate.isVisible
-      : template.isPublic === true;
-
-  return isVisible ? "public" : "private";
-};
-
-const getInitialTimeLimit = (template: FRQTemplate | null) => {
-  if (!template) {
-    return 90;
-  }
-
-  const compatibleTemplate = template as CompatibleFrqTemplate;
-  const configuredLimit =
-    compatibleTemplate.timeLimitMinutes ?? compatibleTemplate.timeLimit;
-
-  return typeof configuredLimit === "number" &&
-    Number.isFinite(configuredLimit) &&
-    configuredLimit >= 1
-    ? Math.floor(configuredLimit)
-    : 90;
-};
 
 const FRQEditorRenderer = ({
   frqFound,
   frqTemplate,
 }: FRQEditorRendererProps) => {
-  const [frqs, setFrqs] = useState<EditorFRQ[]>(() =>
-    frqTemplate ? createEditorFrqsFromTemplate(frqTemplate) : [],
+  const initialState = useRef(buildInitialState(frqTemplate)).current;
+
+  const [title, setTitle] = useState(initialState.title);
+  const [description, setDescription] = useState<QuestionInput>(
+    initialState.description,
   );
-  const [currentFrqIndex, setCurrentFrqIndex] = useState(0);
-  const batchName = getBatchName(frqTemplate);
-  const batchVisibility = getBatchVisibility(frqTemplate);
-  const [timeLimitMinutes, setTimeLimitMinutes] = useState(() =>
-    getInitialTimeLimit(frqTemplate),
+  const [questions, setQuestions] = useState<EditorQuestion[]>(
+    initialState.questions,
+  );
+  const [timeLimitMinutes, setTimeLimitMinutes] = useState(
+    initialState.timeLimitMinutes,
+  );
+  const [isPublic, setIsPublic] = useState(initialState.isPublic);
+
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [savedSignature, setSavedSignature] = useState(() =>
+    JSON.stringify(buildTemplatePayload(initialState)),
   );
 
-  const goToPreviousFrq = () => {
-    setCurrentFrqIndex((index) => Math.max(index - 1, 0));
-  };
+  const currentPayload = useMemo(
+    () =>
+      buildTemplatePayload({
+        title,
+        description,
+        questions,
+        timeLimitMinutes,
+        isPublic,
+      }),
+    [title, description, questions, timeLimitMinutes, isPublic],
+  );
 
-  const goToNextFrq = () => {
-    setCurrentFrqIndex((index) => Math.min(index + 1, frqs.length - 1));
-  };
+  const hasUnsavedChanges = JSON.stringify(currentPayload) !== savedSignature;
 
-  const updateCurrentFrq = (updater: (frq: EditorFRQ) => EditorFRQ) => {
-    setFrqs((currentFrqs) =>
-      currentFrqs.map((frq, index) =>
-        index === currentFrqIndex ? updater(frq) : frq,
-      ),
-    );
-  };
-
-  const createFrq = () => {
-    const newFrq = createBlankEditorFrq(frqs.length + 1);
-
-    setFrqs((currentFrqs) => [...currentFrqs, newFrq]);
-    setCurrentFrqIndex(frqs.length);
-  };
-
-  const deleteCurrentFrq = () => {
-    if (frqs.length <= 1) {
+  useEffect(() => {
+    if (!hasUnsavedChanges) {
       return;
     }
 
-    const remainingFrqs = frqs.filter(
-      (_frq, index) => index !== currentFrqIndex,
-    );
+    const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
 
-    setFrqs(remainingFrqs);
-    setCurrentFrqIndex(Math.min(currentFrqIndex, remainingFrqs.length - 1));
-  };
+    window.addEventListener("beforeunload", warnBeforeLeaving);
 
-  const addQuestion = () => {
-    updateCurrentFrq((frq) => ({
-      ...frq,
-      questions: [...frq.questions, createEditorQuestion()],
-    }));
-  };
+    return () => {
+      window.removeEventListener("beforeunload", warnBeforeLeaving);
+    };
+  }, [hasUnsavedChanges]);
 
   const updateQuestion = (
     questionId: string,
     updater: (question: EditorQuestion) => EditorQuestion,
   ) => {
-    updateCurrentFrq((frq) => ({
-      ...frq,
-      questions: frq.questions.map((question) =>
+    setQuestions((currentQuestions) =>
+      currentQuestions.map((question) =>
         question.id === questionId ? updater(question) : question,
       ),
-    }));
+    );
+  };
+
+  const addQuestion = () => {
+    setQuestions((currentQuestions) => [
+      ...currentQuestions,
+      createEditorQuestion(),
+    ]);
   };
 
   const deleteQuestion = (questionId: string) => {
-    updateCurrentFrq((frq) => ({
-      ...frq,
-      questions: frq.questions.filter((question) => question.id !== questionId),
-    }));
+    setQuestions((currentQuestions) =>
+      currentQuestions.filter((question) => question.id !== questionId),
+    );
   };
 
   const addCriterion = (questionId: string) => {
@@ -311,11 +234,7 @@ const FRQEditorRenderer = ({
       ...question,
       criteria: [
         ...question.criteria,
-        {
-          id: makeId("criterion"),
-          description: "",
-          points: 1,
-        },
+        { id: makeId("criterion"), description: "", points: 1 },
       ],
     }));
   };
@@ -323,7 +242,7 @@ const FRQEditorRenderer = ({
   const updateCriterion = (
     questionId: string,
     criterionId: string,
-    changes: Partial<Pick<GradingCriterion, "description" | "points">>,
+    changes: Partial<Pick<FRQGradingCriterion, "description" | "points">>,
   ) => {
     updateQuestion(questionId, (question) => ({
       ...question,
@@ -342,44 +261,80 @@ const FRQEditorRenderer = ({
     }));
   };
 
-  const currentFrq = frqs[currentFrqIndex];
+  const saveTemplate = useCallback(async () => {
+    if (!frqTemplate?.id) {
+      setSaveState("error");
+      setSaveError("This FRQ has no document to save to.");
+      return;
+    }
 
-  // Read through to the fields the memos actually depend on. AdvancedTextbox
-  // treats its `questions[qIndex]` entry as a stable reference, so these must
-  // keep their identity across unrelated re-renders instead of being rebuilt
-  // fresh every time the parent renders. Both memos sit above the early returns
-  // so the hooks stay unconditional.
-  const currentDescription = currentFrq?.description;
-  const currentQuestions = currentFrq?.questions;
+    setSaveState("saving");
+    setSaveError(null);
 
+    try {
+      await updateDoc(
+        getFrqTemplateDocRef(
+          frqTemplate.subject,
+          frqTemplate.unitId,
+          frqTemplate.id,
+        ),
+        { ...currentPayload, updatedAt: serverTimestamp() },
+      );
+
+      // Re-baseline against exactly what was written, so an edit made while the
+      // save was in flight still registers as unsaved.
+      setSavedSignature(JSON.stringify(currentPayload));
+      setSaveState("saved");
+    } catch (error) {
+      // The previous version swallowed this entirely, which is why a
+      // permission-denied rule looked identical to a successful save.
+      console.error("Error saving FRQ template:", error);
+
+      setSaveState("error");
+      setSaveError(
+        error instanceof Error
+          ? error.message
+          : "Unknown error while saving this FRQ.",
+      );
+    }
+  }, [currentPayload, frqTemplate]);
+
+  // AdvancedTextbox treats its `questions[qIndex]` entry as a stable reference,
+  // so these must keep identity across unrelated re-renders instead of being
+  // rebuilt fresh. Both memos sit above the early return so hooks stay
+  // unconditional.
   const descriptionQuestions = useMemo(
-    () =>
-      currentDescription ? [createDescriptionQuestion(currentDescription)] : [],
-    [currentDescription],
+    () => [createQuestionData(description)],
+    [description],
   );
 
   const questionFormats = useMemo(
-    () => currentQuestions?.map((question) => question.questionData) ?? [],
-    [currentQuestions],
+    () => questions.map((question) => question.questionData),
+    [questions],
   );
 
-  if (!frqFound || !currentFrq) {
+  const totalPoints = questions.reduce(
+    (total, question) =>
+      total +
+      getQuestionPoints({
+        id: question.id,
+        title: "",
+        criteria: question.criteria,
+      }),
+    0,
+  );
+
+  if (!frqFound || !frqTemplate) {
     return <div>Failed to load FRQ.</div>;
   }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="fixed inset-x-0 top-0 z-50 grid h-16 grid-cols-3 items-center border-b bg-background px-5 shadow-sm">
-        <div>
-          <Button
-            type="button"
-            variant="outline"
-            disabled
-            title="Preview is not implemented yet"
-          >
-            <Eye className="mr-2 size-4" />
-            Preview
-          </Button>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">
+            {formatPoints(totalPoints)} total
+          </span>
         </div>
 
         <div className="flex items-center justify-center gap-2">
@@ -400,14 +355,32 @@ const FRQEditorRenderer = ({
           <span className="text-sm text-muted-foreground">minutes</span>
         </div>
 
-        <div className="justify-self-end">
+        <div className="flex items-center justify-end gap-3">
+          {saveState === "saved" && !hasUnsavedChanges && (
+            <span className="text-sm text-green-700">Saved</span>
+          )}
+
+          {saveState === "error" && (
+            <span
+              className="max-w-64 truncate text-sm text-destructive"
+              title={saveError ?? undefined}
+            >
+              {saveError}
+            </span>
+          )}
+
           <Button
             type="button"
-            disabled
-            title="Saving to Firestore is not implemented yet"
+            onClick={() => void saveTemplate()}
+            disabled={saveState === "saving" || !hasUnsavedChanges}
+            title={
+              hasUnsavedChanges
+                ? "Save this FRQ"
+                : "No changes to save"
+            }
           >
             <Save className="mr-2 size-4" />
-            Save Changes
+            {saveState === "saving" ? "Saving..." : "Save Changes"}
           </Button>
         </div>
       </header>
@@ -416,10 +389,6 @@ const FRQEditorRenderer = ({
         <div className="grid h-full grid-cols-1 overflow-y-auto lg:grid-cols-2 lg:overflow-hidden">
           <section className="min-h-0 overflow-y-auto border-b p-6 lg:border-b-0 lg:border-r">
             <div className="mb-6">
-              <p className="text-sm font-medium text-muted-foreground">
-                FRQ {currentFrqIndex + 1} of {frqs.length}
-              </p>
-
               <label
                 htmlFor="frq-title"
                 className="mt-4 block text-sm font-medium"
@@ -428,27 +397,34 @@ const FRQEditorRenderer = ({
               </label>
               <Input
                 id="frq-title"
-                value={currentFrq.title}
-                onChange={(event) =>
-                  updateCurrentFrq((frq) => ({
-                    ...frq,
-                    title: event.target.value,
-                  }))
-                }
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
                 className="mt-2 max-w-md text-base font-semibold"
               />
+
+              <div className="mt-4 flex items-center gap-2">
+                <input
+                  id="frq-visibility"
+                  type="checkbox"
+                  checked={isPublic}
+                  onChange={(event) => setIsPublic(event.target.checked)}
+                />
+                <label htmlFor="frq-visibility" className="text-sm font-medium">
+                  Visible to students
+                </label>
+              </div>
             </div>
 
             <div>
               <h1 className="text-xl font-semibold">FRQ Description</h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 Add the source material and directions students need for this
-                FRQ.
+                FRQ. This is what students see beside the response box.
               </p>
 
               <div className="mt-4">
                 <AdvancedTextbox
-                  key={`${currentFrq.id}-description`}
+                  key={`${frqTemplate.id}-description`}
                   questions={descriptionQuestions}
                   setQuestions={(updatedQuestions) => {
                     const updatedDescription = updatedQuestions[0]?.question;
@@ -457,10 +433,7 @@ const FRQEditorRenderer = ({
                       return;
                     }
 
-                    updateCurrentFrq((frq) => ({
-                      ...frq,
-                      description: updatedDescription,
-                    }));
+                    setDescription(updatedDescription);
                   }}
                   origin="question"
                   qIndex={0}
@@ -475,7 +448,7 @@ const FRQEditorRenderer = ({
               <div>
                 <h2 className="text-xl font-semibold">Questions</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {currentFrq.questions.length} questions in this FRQ
+                  {questions.length} questions in this FRQ
                 </p>
               </div>
 
@@ -490,15 +463,15 @@ const FRQEditorRenderer = ({
             </div>
 
             <Accordion
-              key={currentFrq.id}
               type="multiple"
-              defaultValue={currentFrq.questions.map((question) => question.id)}
+              defaultValue={questions.map((question) => question.id)}
               className="space-y-4"
             >
-              {currentFrq.questions.map((question, questionIndex) => (
+              {questions.map((question, questionIndex) => (
                 <AccordionItem
                   key={question.id}
                   value={question.id}
+                  data-frq-part={question.id}
                   className="rounded-lg border bg-background px-4 shadow-sm"
                 >
                   <AccordionTrigger
@@ -508,7 +481,7 @@ const FRQEditorRenderer = ({
                     <div className="flex flex-1 items-center justify-between pr-3">
                       <span className="flex items-center gap-2">
                         <span className="font-semibold">
-                          {getSubquestionLabel(currentFrqIndex, questionIndex)}
+                          {getPartLabel(questionIndex)}
                         </span>
 
                         {question.status === "legacy" && (
@@ -518,7 +491,13 @@ const FRQEditorRenderer = ({
                         )}
                       </span>
                       <span className="text-sm font-normal text-muted-foreground">
-                        {formatPoints(getQuestionPoints(question))}
+                        {formatPoints(
+                          getQuestionPoints({
+                            id: question.id,
+                            title: "",
+                            criteria: question.criteria,
+                          }),
+                        )}
                       </span>
                     </div>
                   </AccordionTrigger>
@@ -574,14 +553,14 @@ const FRQEditorRenderer = ({
                               variant="outline"
                               className="mt-2 w-full justify-between"
                             >
-                              {question.inputType === "text"
+                              {question.answerType === "text"
                                 ? "Text"
                                 : "Equation"}
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="start">
                             <DropdownMenuRadioGroup
-                              value={question.inputType}
+                              value={question.answerType}
                               onValueChange={(value) => {
                                 if (value !== "text" && value !== "equation") {
                                   return;
@@ -591,7 +570,7 @@ const FRQEditorRenderer = ({
                                   question.id,
                                   (currentQuestion) => ({
                                     ...currentQuestion,
-                                    inputType: value,
+                                    answerType: value,
                                   }),
                                 );
                               }}
@@ -674,8 +653,8 @@ const FRQEditorRenderer = ({
 
                         <PopoverContent align="start" className="w-72 text-sm">
                           A question&apos;s point total is calculated from its
-                          grading criteria. Set its response type and status
-                          above.
+                          grading criteria. Graders award points against these
+                          exact lines.
                         </PopoverContent>
                       </Popover>
 
@@ -698,7 +677,8 @@ const FRQEditorRenderer = ({
 
                       {question.criteria.length === 0 ? (
                         <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-                          No grading criteria have been added.
+                          No grading criteria have been added. A question with
+                          no criteria is worth zero points.
                         </p>
                       ) : (
                         question.criteria.map((criterion, criterionIndex) => (
@@ -770,15 +750,13 @@ const FRQEditorRenderer = ({
       </main>
 
       <FRQEditorFooter
-        frqs={frqs}
-        currentFrqIndex={currentFrqIndex}
-        batchName={batchName}
-        batchVisibility={batchVisibility}
-        onCreateFrq={createFrq}
-        onDeleteFrq={deleteCurrentFrq}
-        onSelectFrq={setCurrentFrqIndex}
-        onPrevious={goToPreviousFrq}
-        onNext={goToNextFrq}
+        parts={questions.map((question, index) => ({
+          id: question.id,
+          label: getPartLabel(index),
+        }))}
+        frqName={title.trim() || "Untitled FRQ"}
+        visibility={isPublic ? "public" : "private"}
+        hasUnsavedChanges={hasUnsavedChanges}
       />
     </div>
   );

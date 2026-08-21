@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BookDashed, BookOpenCheck, ChevronsLeft } from "lucide-react";
+import { BookDashed, BookOpenCheck, ChevronsLeft, PenLine } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -136,6 +136,40 @@ const SubjectSidebar = (props: Props) => {
                         className={cn(
                           "ml-auto text-nowrap rounded-full border border-gray-400 px-2 text-xs",
                           test.isPublic && "hidden",
+                        )}
+                      >
+                        WIP
+                      </p>
+                    </Link>
+                  ))}
+                  {unit.frqs?.map((frq, frqIndex) => (
+                    <Link
+                      className={cn(
+                        "group mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0",
+                        !props.preview &&
+                          !frq.isPublic &&
+                          "pointer-events-none opacity-70",
+                      )}
+                      aria-disabled={!props.preview && !frq.isPublic}
+                      tabIndex={!props.preview && !frq.isPublic ? -1 : undefined}
+                      href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${uNum}-${unit.id}/frq/${frq.id}`}
+                      key={frq.id}
+                    >
+                      <PenLine
+                        className={cn(
+                          "size-6 shrink-0",
+                          !frq.isPublic && "opacity-70",
+                        )}
+                      />
+                      <span className="text-balance group-hover:underline">
+                        {frq.title
+                          ? frq.title
+                          : `Unit ${uNum} FRQ ${unit.frqs && unit.frqs.length > 1 ? ` ${frqIndex + 1}` : ""}`}
+                      </span>
+                      <p
+                        className={cn(
+                          "ml-auto text-nowrap rounded-full border border-gray-400 px-2 text-xs",
+                          frq.isPublic && "hidden",
                         )}
                       >
                         WIP

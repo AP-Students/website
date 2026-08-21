@@ -1,82 +1,132 @@
 "use client";
 
+import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
 import { useUser } from "@/components/hooks/UserContext";
 import FRQFooter from "@/components/frq/FRQFooter";
 import FRQResponseEditor from "@/components/frq/responseEditor";
 import { getUngradedFrqsCollectionRef } from "@/lib/firestore/frqRefs";
+import {
+  DEFAULT_TIME_LIMIT_MINUTES,
+  getPartLabel,
+  getStudentFacingQuestions,
+  hasResponseText,
+  toQuestionInput,
+} from "@/lib/frq/template";
+import type { FRQTemplate } from "@/types/frq";
 import { addDoc, serverTimestamp } from "firebase/firestore";
 import { Bookmark, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type FRQTestRendererProps = {
-  frq: Record<string, unknown> | null;
+  template: FRQTemplate | null;
   loading?: boolean;
   error?: string | null;
 };
 
-type FRQQuestion = {
-  id: string;
-  title: string;
+/**
+ * Answers live in localStorage until they are submitted. A refresh, a closed
+ * laptop, or a stray back-navigation used to lose the whole attempt, and there
+ * is no server-side draft store to write to.
+ */
+const getDraftKey = (templateId: string, studentId: string) =>
+  `frq-draft:${templateId}:${studentId}`;
+
+const readDraft = (draftKey: string): Record<string, string> => {
+  try {
+    const stored = window.localStorage.getItem(draftKey);
+
+    if (!stored) {
+      return {};
+    }
+
+    const parsed: unknown = JSON.parse(stored);
+
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      return {};
+    }
+
+    return Object.fromEntries(
+      Object.entries(parsed).filter(
+        (entry): entry is [string, string] => typeof entry[1] === "string",
+      ),
+    );
+  } catch {
+    // A corrupt or unreadable draft must not block the student from starting.
+    return {};
+  }
 };
 
-const mockFRQs: FRQQuestion[] = [
-  { id: "mock-demographic-transition", title: "Demographic Transition Model" },
-  { id: "mock-urban-land-use", title: "Urban Land Use" },
-  { id: "mock-agricultural-regions", title: "Agricultural Regions" },
-];
-const emptyQuestions: FRQQuestion[] = [];
-
-const isTemplateQuestion = (value: unknown): value is FRQQuestion =>
-  typeof value === "object" &&
-  value !== null &&
-  typeof (value as FRQQuestion).id === "string" &&
-  typeof (value as FRQQuestion).title === "string";
-
 const FRQTestRenderer = ({
-  frq,
+  template,
   loading = false,
   error = null,
 }: FRQTestRendererProps) => {
   const router = useRouter();
   const { user } = useUser();
-  const [submitting, setSubmitting] = useState(false);
-  const [currentFRQIndex, setCurrentFRQIndex] = useState(0);
-  const templateQuestions = useMemo<FRQQuestion[] | null>(
-    () => (Array.isArray(frq?.questions) ? frq.questions : null),
-    [frq],
-  );
-  const hasInvalidTemplateQuestions =
-    templateQuestions !== null &&
-    (templateQuestions.length === 0 ||
-      !templateQuestions.every(isTemplateQuestion));
-  const questions = hasInvalidTemplateQuestions
-    ? emptyQuestions
-    : (templateQuestions ?? mockFRQs);
-  const [responses, setResponses] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    setResponses((currentResponses) =>
-      Object.fromEntries(
-        questions.map((question) => [
-          question.id,
-          currentResponses[question.id] ?? "",
-        ]),
-      ),
-    );
-    setCurrentFRQIndex(0);
-  }, [questions]);
+  const questions = useMemo(
+    () => (template ? getStudentFacingQuestions(template) : []),
+    [template],
+  );
+
+  const [submitting, setSubmitting] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [currentFRQIndex, setCurrentFRQIndex] = useState(0);
+  const [responses, setResponses] = useState<Record<string, string>>({});
   const [markedForReview, setMarkedForReview] = useState<
     Record<number, boolean>
   >({});
 
-  const [timeRemaining, setTimeRemaining] = useState(1 * 60 * 60 + 30 * 60);
+  const [timeRemaining, setTimeRemaining] = useState(
+    () => (template?.timeLimitMinutes ?? DEFAULT_TIME_LIMIT_MINUTES) * 60,
+  );
   const [timerHidden, setTimerHidden] = useState(false);
   const [showTimeUpPopup, setShowTimeUpPopup] = useState(false);
   const [showReviewPage, setShowReviewPage] = useState(false);
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
 
+  const templateId = template?.id ?? "";
+  const studentId = user?.uid ?? "";
+  const draftKey =
+    templateId && studentId ? getDraftKey(templateId, studentId) : "";
+
+  // Seed responses from the saved draft, then keep every question id present so
+  // the review grid and submission payload never have holes.
   useEffect(() => {
+    const draft = draftKey ? readDraft(draftKey) : {};
+
+    setResponses(
+      Object.fromEntries(
+        questions.map((question) => [question.id, draft[question.id] ?? ""]),
+      ),
+    );
+    setCurrentFRQIndex(0);
+  }, [questions, draftKey]);
+
+  useEffect(() => {
+    if (!draftKey || hasSubmitted) {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(draftKey, JSON.stringify(responses));
+    } catch {
+      // A full or disabled localStorage should not interrupt the attempt.
+    }
+  }, [draftKey, responses, hasSubmitted]);
+
+  useEffect(() => {
+    setTimeRemaining(
+      (template?.timeLimitMinutes ?? DEFAULT_TIME_LIMIT_MINUTES) * 60,
+    );
+  }, [template?.timeLimitMinutes]);
+
+  useEffect(() => {
+    if (hasSubmitted) {
+      return;
+    }
+
     const timer = window.setInterval(() => {
       setTimeRemaining((currentTime) =>
         currentTime > 0 ? currentTime - 1 : 0,
@@ -86,20 +136,66 @@ const FRQTestRenderer = ({
     return () => {
       window.clearInterval(timer);
     };
-  }, []);
+  }, [hasSubmitted]);
 
   useEffect(() => {
-    if (timeRemaining === 0) {
+    if (timeRemaining === 0 && !hasSubmitted) {
       setShowTimeUpPopup(true);
     }
-  }, [timeRemaining]);
+  }, [timeRemaining, hasSubmitted]);
+
+  const submitForGrading = useCallback(async () => {
+    if (!template?.id || !user) {
+      window.alert("Please sign in before submitting this FRQ for grading.");
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      await addDoc(getUngradedFrqsCollectionRef(), {
+        templateId: template.id,
+        subject: template.subject,
+        unitId: template.unitId,
+        studentId: user.uid,
+        responses,
+        submittedAt: serverTimestamp(),
+      });
+
+      setHasSubmitted(true);
+      setShowSubmissionModal(false);
+      setShowTimeUpPopup(false);
+
+      // Only clear the draft once the write has actually landed, so a failed
+      // submission still leaves the student's work recoverable.
+      if (draftKey) {
+        try {
+          window.localStorage.removeItem(draftKey);
+        } catch {
+          // Nothing to do: the submission already succeeded.
+        }
+      }
+
+      window.alert("Your FRQ was submitted for grading.");
+    } catch (submissionError) {
+      console.error("Error submitting FRQ for grading:", submissionError);
+
+      window.alert(
+        submissionError instanceof Error
+          ? `We could not submit your FRQ: ${submissionError.message}`
+          : "We could not submit your FRQ. Please try again.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }, [draftKey, responses, template, user]);
 
   const formattedTime = `${Math.floor(timeRemaining / 3600)}:${String(
     Math.floor((timeRemaining % 3600) / 60),
   ).padStart(2, "0")}:${String(timeRemaining % 60).padStart(2, "0")}`;
 
   const currentFRQ = questions[currentFRQIndex];
-  const hasBackendData = Boolean(frq);
+  const testName = template?.title ?? "FRQ";
 
   const handleNext = () => {
     if (currentFRQIndex === questions.length - 1) {
@@ -111,19 +207,28 @@ const FRQTestRenderer = ({
   };
 
   if (loading) {
-    return <p>Loading FRQ test...</p>;
+    return <p className="p-8">Loading FRQ test...</p>;
   }
 
   if (error) {
-    return <p>Failed to load FRQ test.</p>;
+    return <p className="p-8">{error}</p>;
   }
 
-  if (hasInvalidTemplateQuestions) {
-    return <p>This FRQ template has invalid question identifiers.</p>;
+  if (!template) {
+    return <p className="p-8">FRQ test not found.</p>;
+  }
+
+  if (questions.length === 0) {
+    return (
+      <p className="p-8">
+        This FRQ has no questions yet. Check back once a porter has finished
+        writing it.
+      </p>
+    );
   }
 
   if (!currentFRQ) {
-    return <p>FRQ test not found.</p>;
+    return <p className="p-8">FRQ test not found.</p>;
   }
 
   const timeUpModal = showTimeUpPopup ? (
@@ -153,18 +258,17 @@ const FRQTestRenderer = ({
 
           <button
             type="button"
-            className="rounded bg-blue-700 px-4 py-2 font-semibold text-white"
-            onClick={() => {
-              setShowTimeUpPopup(false);
-              window.alert("Final submission will be connected later.");
-            }}
+            className="rounded bg-blue-700 px-4 py-2 font-semibold text-white disabled:opacity-50"
+            disabled={submitting}
+            onClick={() => void submitForGrading()}
           >
-            Submit Test
+            {submitting ? "Submitting..." : "Submit Test"}
           </button>
         </div>
       </div>
     </div>
   ) : null;
+
   const downloadResponsesAsPdf = () => {
     const printWindow = window.open("", "_blank", "width=900,height=700");
 
@@ -183,7 +287,7 @@ const FRQTestRenderer = ({
 
     const printDocument = printWindow.document;
 
-    printDocument.title = "FRQ Responses";
+    printDocument.title = `${testName} Responses`;
     printDocument.head.replaceChildren();
     printDocument.body.replaceChildren();
 
@@ -221,7 +325,7 @@ const FRQTestRenderer = ({
     printDocument.head.appendChild(styleElement);
 
     const pageTitle = printDocument.createElement("h1");
-    pageTitle.textContent = "AP Human Geography FRQ Responses";
+    pageTitle.textContent = `${testName} Responses`;
     printDocument.body.appendChild(pageTitle);
 
     questions.forEach((question, index) => {
@@ -229,7 +333,7 @@ const FRQTestRenderer = ({
       section.className = "response";
 
       const heading = printDocument.createElement("h2");
-      heading.textContent = `FRQ ${index + 1}: ${question.title}`;
+      heading.textContent = `Part ${getPartLabel(index)}`;
 
       const responseText = printDocument.createElement("p");
       responseText.textContent = getPlainText(responses[question.id] ?? "");
@@ -243,38 +347,6 @@ const FRQTestRenderer = ({
     window.setTimeout(() => {
       printWindow.print();
     }, 250);
-  };
-
-  const submitForGrading = async () => {
-    const templateId = typeof frq?.id === "string" ? frq.id : null;
-    const subject = typeof frq?.subject === "string" ? frq.subject : null;
-    const unitId = typeof frq?.unitId === "string" ? frq.unitId : null;
-
-    if (!user || !templateId || !subject || !unitId) {
-      window.alert("Please sign in before submitting this FRQ for grading.");
-      return;
-    }
-
-    setSubmitting(true);
-
-    try {
-      await addDoc(getUngradedFrqsCollectionRef(), {
-        templateId,
-        subject,
-        unitId,
-        studentId: user.uid,
-        responses,
-        submittedAt: serverTimestamp(),
-      });
-
-      setShowSubmissionModal(false);
-      window.alert("Your FRQ was submitted for grading.");
-    } catch (submissionError) {
-      console.error("Error submitting FRQ for grading:", submissionError);
-      window.alert("We could not submit your FRQ. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
   };
 
   const submissionModal = showSubmissionModal ? (
@@ -313,7 +385,7 @@ const FRQTestRenderer = ({
 
           <button
             type="button"
-            className="rounded bg-blue-700 px-5 py-3 font-semibold text-white"
+            className="rounded bg-blue-700 px-5 py-3 font-semibold text-white disabled:opacity-50"
             onClick={() => void submitForGrading()}
             disabled={submitting}
           >
@@ -332,6 +404,27 @@ const FRQTestRenderer = ({
     </div>
   ) : null;
 
+  if (hasSubmitted) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-50 px-6 text-black">
+        <h1 className="text-4xl font-bold">Test submitted</h1>
+
+        <p className="max-w-md text-center text-gray-600">
+          Your responses for {testName} are in the grading queue. You will be
+          able to see your score and feedback once a grader has reviewed them.
+        </p>
+
+        <button
+          type="button"
+          className="rounded-full bg-blue-700 px-6 py-3 font-semibold text-white"
+          onClick={() => router.back()}
+        >
+          Return to the unit
+        </button>
+      </main>
+    );
+  }
+
   if (showReviewPage) {
     return (
       <main className="min-h-screen bg-gray-50 px-6 py-12 text-black">
@@ -342,7 +435,7 @@ const FRQTestRenderer = ({
 
           <div className="mx-auto mt-6 max-w-2xl space-y-0.5 text-center text-base leading-5">
             <p>Review your responses before submitting your test.</p>
-            <p>Select an FRQ number to return to that question.</p>
+            <p>Select a part to return to that question.</p>
           </div>
 
           <section className="mt-8 rounded-xl bg-white p-8 shadow-lg">
@@ -370,14 +463,7 @@ const FRQTestRenderer = ({
 
             <div className="mt-8 flex flex-wrap items-center justify-start gap-10 py-6 pl-6">
               {questions.map((question, index) => {
-                const response = responses[question.id] ?? "";
-
-                const isAnswered =
-                  response
-                    .replace(/<[^>]*>/g, "")
-                    .replace(/&nbsp;/g, " ")
-                    .trim().length > 0;
-
+                const isAnswered = hasResponseText(responses[question.id]);
                 const isMarked = markedForReview[index] ?? false;
 
                 return (
@@ -394,7 +480,7 @@ const FRQTestRenderer = ({
                       setShowReviewPage(false);
                     }}
                   >
-                    {index + 1}
+                    {getPartLabel(index)}
 
                     {isMarked && (
                       <Bookmark
@@ -434,11 +520,12 @@ const FRQTestRenderer = ({
   return (
     <main className="min-h-screen w-full bg-white text-black">
       {timeUpModal}
+      {submissionModal}
       <section className="flex min-h-screen w-full flex-col border-4 border-black">
         <header className="relative flex items-start justify-between px-6 py-3">
           <div>
-            <p className="text-sm font-bold">Section I</p>
-            <p className="text-xs">Directions ▾</p>
+            <p className="text-sm font-bold">Section II</p>
+            <p className="text-xs">Free response</p>
           </div>
 
           <div className="text-center">
@@ -475,65 +562,21 @@ const FRQTestRenderer = ({
         </header>
 
         <div className="grid flex-1 grid-cols-1 lg:grid-cols-2">
-          <section className="border-b-2 border-solid border-gray-500 p-8 lg:border-b-0 lg:border-r-[3px]">
-            <div className="mb-6 text-xs text-gray-600">
-              {hasBackendData ? "FRQ data loaded" : "Using mock FRQ content"}
-            </div>
-
-            <div className="mb-8">
-              <div className="mx-auto flex h-80 max-w-md items-end justify-center gap-1 border-b border-l border-gray-300 border-gray-300 px-6">
-                {Array.from({ length: 17 }).map((_, index) => (
-                  <div
-                    key={`left-bar-${index}`}
-                    className="bg-sky-500"
-                    style={{
-                      height: `${40 + Math.abs(8 - index) * 10}px`,
-                      width: "10px",
-                    }}
-                  />
-                ))}
-                {Array.from({ length: 17 }).map((_, index) => (
-                  <div
-                    key={`right-bar-${index}`}
-                    className="bg-pink-400"
-                    style={{
-                      height: `${40 + Math.abs(index - 8) * 10}px`,
-                      width: "10px",
-                    }}
-                  />
-                ))}
-              </div>
-              <p className="mt-3 text-center text-sm">Figure 1</p>
-              <p className="mt-2 text-xs italic">
-                Source: populationpyramid.net
-              </p>
-            </div>
-
-            <div className="mx-auto max-w-lg">
-              <p className="mb-4 text-center text-sm font-bold">
-                DEMOGRAPHIC TRANSITION MODEL
-              </p>
-              <div className="relative h-44 border border-gray-300">
-                <div className="absolute left-6 right-6 top-12 h-0.5 bg-black" />
-                <div className="absolute left-6 right-6 top-24 border-t-2 border-solid border-gray-500" />
-                <div className="absolute left-6 top-10 h-20 w-72 rounded-br-full border-b-4 border-r-4 border-black" />
-                <div className="absolute bottom-2 left-8 right-8 flex justify-between text-xs text-gray-600">
-                  <span>Stage 1</span>
-                  <span>Stage 2</span>
-                  <span>Stage 3</span>
-                  <span>Stage 4</span>
-                  <span>Stage 5</span>
-                </div>
-              </div>
-              <p className="mt-3 text-center text-sm">Figure 2</p>
-            </div>
+          <section className="overflow-y-auto border-b-2 border-solid border-gray-500 p-8 lg:border-b-0 lg:border-r-[3px]">
+            <RenderContent
+              content={toQuestionInput(
+                template.directions,
+                template.directionsFiles,
+              )}
+              origin="question"
+            />
           </section>
 
           <section className="p-8">
             <div className="mb-6 w-full max-w-[50rem] bg-gray-100">
               <div className="flex h-8 items-center">
                 <span className="flex h-8 w-8 items-center justify-center bg-black text-lg font-bold text-white">
-                  {currentFRQIndex + 1}
+                  {getPartLabel(currentFRQIndex)}
                 </span>
 
                 <button
@@ -565,65 +608,27 @@ const FRQTestRenderer = ({
                   <span>Mark for Review</span>
                 </button>
               </div>
-
-              <div className="flex h-1 w-full gap-1">
-                <div className="flex-1 bg-blue-600" />
-                <div className="flex-1 bg-red-300" />
-                <div className="flex-1 bg-green-300" />
-                <div className="flex-1 bg-emerald-300" />
-                <div className="flex-1 bg-pink-300" />
-                <div className="flex-1 bg-purple-500" />
-                <div className="flex-1 bg-lime-300" />
-                <div className="flex-1 bg-cyan-500" />
-                <div className="flex-1 bg-indigo-400" />
-                <div className="flex-1 bg-fuchsia-500" />
-                <div className="flex-1 bg-teal-300" />
-                <div className="flex-1 bg-orange-500" />
-                <div className="flex-1 bg-red-500" />
-                <div className="flex-1 bg-sky-400" />
-                <div className="flex-1 bg-green-400" />
-              </div>
             </div>
 
-            <p className="mb-4 font-sans text-sm">
-              The <strong>{currentFRQ.title}</strong> can be used to theorize
-              changes in a country&apos;s total population over time.
-            </p>
-
-            <ol className="mb-6 list-[upper-alpha] space-y-2 pl-6 font-sans text-sm leading-relaxed">
-              <li>
-                Identify the stage of the model that this country is most likely
-                in.
-              </li>
-              <li>
-                Explain one social cause of the transition between two stages.
-              </li>
-              <li>Define the term post-industrial society.</li>
-              <li>
-                Explain one change in the birth rate or death rate shown in the
-                model.
-              </li>
-              <li>
-                Describe how economic development can affect population growth.
-              </li>
-              <li>
-                Explain one factor that may contribute to a country&apos;s aging
-                population.
-              </li>
-              <li>Explain how migration may influence population trends.</li>
-            </ol>
+            <div className="mb-4 font-sans text-sm">
+              <RenderContent
+                content={toQuestionInput(
+                  currentFRQ.prompt,
+                  currentFRQ.promptFiles,
+                )}
+                origin="question"
+              />
+            </div>
 
             <div className="w-full max-w-[50rem]">
               <FRQResponseEditor
-                ariaLabel={`Response for FRQ ${currentFRQIndex + 1}`}
+                ariaLabel={`Response for part ${getPartLabel(currentFRQIndex)}`}
                 value={responses[currentFRQ.id] ?? ""}
                 onChange={(newResponse) => {
-                  setResponses((currentResponses) => {
-                    return {
-                      ...currentResponses,
-                      [currentFRQ.id]: newResponse,
-                    };
-                  });
+                  setResponses((currentResponses) => ({
+                    ...currentResponses,
+                    [currentFRQ.id]: newResponse,
+                  }));
                 }}
               />
             </div>
@@ -631,7 +636,7 @@ const FRQTestRenderer = ({
         </div>
 
         <FRQFooter
-          testName="AP Human Geography Practice Exam 1"
+          testName={testName}
           currentFrqIndex={currentFRQIndex}
           totalFrqs={questions.length}
           onPrevious={() => {

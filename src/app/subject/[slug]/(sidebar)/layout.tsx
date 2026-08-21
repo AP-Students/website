@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { type Subject } from "@/types/firestore";
 
 import { db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { useUser } from "@/components/hooks/UserContext";
 
 export default function Layout({
@@ -35,7 +35,51 @@ export default function Layout({
         const docRef = doc(db, "subjects", params.slug);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setSubject(docSnap.data() as Subject);
+          const subjectData = docSnap.data() as Subject;
+
+          const canPreview =
+            user?.access === "admin" || user?.access === "member";
+
+          // The sidebar is the only navigation on chapter and test pages, so it
+          // needs the unit's FRQs too — otherwise an FRQ is reachable only from
+          // the subject landing page.
+          const unitsWithFrqs = await Promise.all(
+            subjectData.units.map(async (unit) => {
+              try {
+                const frqsCollectionRef = collection(
+                  db,
+                  "subjects",
+                  params.slug,
+                  "units",
+                  unit.id,
+                  "frqs",
+                );
+
+                const frqsSnapshot = await getDocs(
+                  canPreview
+                    ? frqsCollectionRef
+                    : query(frqsCollectionRef, where("isPublic", "==", true)),
+                );
+
+                return {
+                  ...unit,
+                  frqs: frqsSnapshot.docs.map((frqDoc) => ({
+                    ...frqDoc.data(),
+                    id: frqDoc.id,
+                  })),
+                };
+              } catch (frqError) {
+                console.error(
+                  `Unable to load FRQs for unit ${unit.id}:`,
+                  frqError,
+                );
+
+                return { ...unit, frqs: [] };
+              }
+            }),
+          );
+
+          setSubject({ ...subjectData, units: unitsWithFrqs });
         }
       } catch (error) {
         console.error("Error fetching subject data:", error);

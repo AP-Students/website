@@ -50,30 +50,46 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
           const unitsWithFrqs = await Promise.all(
             subjectData.units.map(async (unit) => {
-              const frqsCollectionRef = collection(
-                db,
-                "subjects",
-                params.slug,
-                "units",
-                unit.id,
-                "frqs",
-              );
+              // FRQs are supplementary to the curriculum. A failure here — a
+              // rules change that has not been deployed, an offline read —
+              // must not take down the whole subject page, which is what an
+              // unguarded rejection inside Promise.all did for every visitor.
+              try {
+                const frqsCollectionRef = collection(
+                  db,
+                  "subjects",
+                  params.slug,
+                  "units",
+                  unit.id,
+                  "frqs",
+                );
 
-              const frqsQuery = canPreview
-                ? frqsCollectionRef
-                : query(frqsCollectionRef, where("isPublic", "==", true));
+                const frqsQuery = canPreview
+                  ? frqsCollectionRef
+                  : query(frqsCollectionRef, where("isPublic", "==", true));
 
-              const frqsSnapshot = await getDocs(frqsQuery);
+                const frqsSnapshot = await getDocs(frqsQuery);
 
-              const frqs = frqsSnapshot.docs.map((frqDoc) => ({
-                ...frqDoc.data(),
-                id: frqDoc.id,
-              }));
+                const frqs = frqsSnapshot.docs.map((frqDoc) => ({
+                  ...frqDoc.data(),
+                  id: frqDoc.id,
+                }));
 
-              return {
-                ...unit,
-                frqs,
-              };
+                return {
+                  ...unit,
+                  frqs,
+                };
+              } catch (frqError) {
+                console.error(
+                  `Unable to load FRQs for unit ${unit.id}:`,
+                  frqError,
+                );
+
+                return {
+                  ...unit,
+                  frqs: [],
+                };
+              }
             }),
           );
 
