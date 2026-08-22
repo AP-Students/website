@@ -8,7 +8,7 @@ import { getUngradedFrqsCollectionRef } from "@/lib/firestore/frqRefs";
 import {
   DEFAULT_TIME_LIMIT_MINUTES,
   getPartLabel,
-  getStudentFacingQuestions,
+  getStudentFacingParts,
   hasResponseText,
   toQuestionInput,
 } from "@/lib/frq/template";
@@ -42,7 +42,11 @@ const readDraft = (draftKey: string): Record<string, string> => {
 
     const parsed: unknown = JSON.parse(stored);
 
-    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      Array.isArray(parsed)
+    ) {
       return {};
     }
 
@@ -65,8 +69,10 @@ const FRQTestRenderer = ({
   const router = useRouter();
   const { user } = useUser();
 
+  // PR 1 keeps the flat part list so behaviour is unchanged. PR 3 replaces this
+  // with per-question paging.
   const questions = useMemo(
-    () => (template ? getStudentFacingQuestions(template) : []),
+    () => (template ? getStudentFacingParts(template) : []),
     [template],
   );
 

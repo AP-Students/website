@@ -22,7 +22,8 @@ export interface FRQGradingCriterion {
   points: number;
 }
 
-export interface FRQTemplateQuestion {
+/** One part — the unit a student writes a single response to. */
+export interface FRQTemplatePart {
   /** Stable template-local identifier; never derived from display order. */
   id: string;
   title: string;
@@ -32,6 +33,19 @@ export interface FRQTemplateQuestion {
   answerType?: FRQAnswerType;
   status?: FRQQuestionStatus;
   criteria?: FRQGradingCriterion[];
+}
+
+/**
+ * One numbered question: its own stimulus plus the parts hanging off it.
+ * Part labels restart at A within each question, which is how AP numbers them.
+ */
+export interface FRQTemplateQuestion {
+  /** Stable template-local identifier; never derived from display order. */
+  id: string;
+  /** Stimulus shown in the left pane while this question is open. */
+  stimulus?: string;
+  stimulusFiles?: QuestionFile[];
+  parts: FRQTemplatePart[];
 }
 
 /** An admin-authored prompt used by the digital FRQ testing experience. */
@@ -47,6 +61,13 @@ export interface FRQTemplate {
    */
   directions: string;
   directionsFiles?: QuestionFile[];
+  /**
+   * Section heading shown while taking the test, e.g. "Section II" or
+   * "Section I, Part B". Absent on templates authored before this was
+   * configurable, which fall back to the original hardcoded strings.
+   */
+  sectionLabel?: string;
+  sectionSubtitle?: string;
   questions: FRQTemplateQuestion[];
   isPublic?: boolean;
   /** Minutes on the test clock. Absent on templates authored before timing. */
@@ -79,6 +100,11 @@ export interface FRQCriterionScore {
  * were earned and what the grader said about each part.
  */
 export interface FRQQuestionGrade {
+  /**
+   * The id of the FRQTemplatePart this grade covers. Named `questionId`
+   * because it is a stored field in `graded-frqs` that predates the
+   * question/part split — renaming it would orphan existing documents.
+   */
   questionId: string;
   feedback: string;
   criteria: FRQCriterionScore[];
