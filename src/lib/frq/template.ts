@@ -84,7 +84,8 @@ const normalizeStatus = (value: unknown): FRQQuestionStatus =>
   value === "legacy" ? "legacy" : "public";
 
 /**
- * The id of the single question that legacy flat documents are wrapped into.
+ * The id of the single question that legacy flat documents are wrapped into,
+ * and also minted for every new save (including brand-new FRQs never legacy).
  * A constant rather than a generated id: the wrap is re-derived on every read,
  * so a random id would differ between two reads of the same document.
  */
@@ -158,16 +159,13 @@ const normalizeQuestions = (value: unknown): FRQTemplateQuestion[] => {
     return [];
   }
 
-  // A document is legacy only if EVERY entry lacks a parts array. Using `some`
-  // here let one malformed entry reclassify the whole document and silently
-  // discard the nested parts of every other question.
+  // Legacy iff NO entry carries a parts array. Stated negatively on purpose:
+  // an `every` over "lacks parts" also fails on non-object entries, which
+  // misclassified a legacy document containing a stray null as nested and
+  // silently discarded all of its parts.
   const isLegacyShape =
     value.length > 0 &&
-    value.every((entry) => {
-      const record = asRecord(entry);
-
-      return record !== null && !Array.isArray(record.parts);
-    });
+    !value.some((entry) => Array.isArray(asRecord(entry)?.parts));
 
   if (!isLegacyShape) {
     return value.flatMap(normalizeQuestion);

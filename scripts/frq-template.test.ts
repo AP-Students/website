@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  LEGACY_QUESTION_ID,
   getAllParts,
   getPartLabel,
   getStudentFacingParts,
@@ -93,7 +94,11 @@ test("the legacy wrap id is stable across reads", () => {
 
   assert.equal(
     normalizeFrqTemplate(raw, identity).questions[0]?.id,
+    LEGACY_QUESTION_ID,
+  );
+  assert.equal(
     normalizeFrqTemplate(raw, identity).questions[0]?.id,
+    LEGACY_QUESTION_ID,
   );
 });
 
@@ -253,6 +258,23 @@ test("a null parts field does not reclassify the whole document", () => {
   assert.deepEqual(out.questions[0]?.parts, []);
   assert.deepEqual(
     out.questions[1]?.parts.map((part) => part.id),
+    ["p1"],
+  );
+});
+
+test("a legacy document with a stray non-object entry keeps its parts", () => {
+  const out = normalizeFrqTemplate(
+    {
+      directions: "Old stimulus",
+      questions: [null, { id: "p1", prompt: "kept" }, "junk"],
+    },
+    { id: "t1", subject: "calc", unitId: "u1" },
+  );
+
+  assert.equal(out.questions.length, 1);
+  assert.equal(out.questions[0]?.id, LEGACY_QUESTION_ID);
+  assert.deepEqual(
+    out.questions[0]?.parts.map((part) => part.id),
     ["p1"],
   );
 });
