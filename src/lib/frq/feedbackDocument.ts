@@ -1,7 +1,7 @@
 import type { FRQFeedbackDocument } from "@/components/frq/feedback/types";
 import type { FRQTemplate, GradedFRQSubmission } from "@/types/frq";
 import type { Timestamp } from "firebase/firestore";
-import { toQuestionInput } from "./template";
+import { getAllParts, toQuestionInput } from "./template";
 
 const formatTimestamp = (value: Timestamp | undefined) => {
   if (!value || typeof value.toDate !== "function") {
@@ -39,17 +39,17 @@ export const buildFeedbackDocument = (
       id: graded.sourceSubmissionId,
       graderId: graded.graderId,
       submittedAt: formatTimestamp(graded.gradedAt),
-      questions: template.questions.map((question) => {
+      questions: getAllParts(template).map((part) => {
         const partGrade = grades.find(
-          (grade) => grade.questionId === question.id,
+          (grade) => grade.questionId === part.id,
         );
 
         return {
-          questionId: question.id,
+          questionId: part.id,
           feedback: partGrade?.feedback ?? "",
           // Every criterion gets a row even when the grader left it at zero, so
           // the student sees the whole rubric rather than only what was earned.
-          gradingCriteria: (question.criteria ?? []).map((criterion) => ({
+          gradingCriteria: (part.criteria ?? []).map((criterion) => ({
             criterionId: criterion.id,
             points:
               partGrade?.criteria.find(
@@ -64,9 +64,9 @@ export const buildFeedbackDocument = (
       id: graded.sourceSubmissionId,
       userId: graded.studentId,
       submittedAt: formatTimestamp(graded.submittedAt),
-      answers: template.questions.map((question) => ({
-        questionId: question.id,
-        value: graded.responses?.[question.id] ?? "",
+      answers: getAllParts(template).map((part) => ({
+        questionId: part.id,
+        value: graded.responses?.[part.id] ?? "",
       })),
     },
 
@@ -79,13 +79,13 @@ export const buildFeedbackDocument = (
           template.directionsFiles,
         ),
         isVisible: true,
-        questions: template.questions.map((question) => ({
-          id: question.id,
-          name: question.title,
-          isVisible: question.status !== "legacy",
-          prompt: toQuestionInput(question.prompt, question.promptFiles),
+        questions: getAllParts(template).map((part) => ({
+          id: part.id,
+          name: part.title,
+          isVisible: part.status !== "legacy",
+          prompt: toQuestionInput(part.prompt, part.promptFiles),
           answerType: "text" as const,
-          gradingCriteria: (question.criteria ?? []).map((criterion) => ({
+          gradingCriteria: (part.criteria ?? []).map((criterion) => ({
             id: criterion.id,
             text: criterion.description,
             points: criterion.points,

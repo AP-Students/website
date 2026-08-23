@@ -26,8 +26,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { getFrqTemplateDocRef } from "@/lib/firestore/frqRefs";
 import {
   DEFAULT_TIME_LIMIT_MINUTES,
+  getAllParts,
   getPartLabel,
-  getQuestionPoints,
+  getPartPoints,
+  LEGACY_QUESTION_ID,
+  makeId,
   toQuestionInput,
 } from "@/lib/frq/template";
 import type { QuestionFormat, QuestionInput } from "@/types/questions";
@@ -38,7 +41,7 @@ import type {
   FRQGradingCriterion,
   FRQQuestionStatus,
   FRQTemplate,
-  FRQTemplateQuestion,
+  FRQTemplatePart,
 } from "@/types/frq";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -61,16 +64,6 @@ const createQuestionInput = (value = ""): QuestionInput => ({
   value,
   files: [],
 });
-
-/**
- * Unique, immutable ID built from the current time plus a short random suffix.
- * The random half is what makes it collision-safe: a timestamp alone repeats
- * when several IDs are minted in the same millisecond.
- */
-const makeId = (prefix: string) =>
-  `${prefix}-${Date.now().toString(36)}-${Math.random()
-    .toString(36)
-    .slice(2, 8)}`;
 
 const formatPoints = (points: number) =>
   `${points} ${points === 1 ? "point" : "points"}`;
@@ -96,7 +89,7 @@ const createEditorQuestion = (): EditorQuestion => ({
 });
 
 const createEditorQuestionFromTemplate = (
-  templateQuestion: FRQTemplateQuestion,
+  templateQuestion: FRQTemplatePart,
 ): EditorQuestion => ({
   id: templateQuestion.id,
   questionData: createQuestionData(
@@ -117,11 +110,10 @@ interface EditorState {
 
 const buildInitialState = (template: FRQTemplate | null): EditorState => ({
   title: template?.title ?? "",
-  description: toQuestionInput(
-    template?.directions,
-    template?.directionsFiles,
+  description: toQuestionInput(template?.directions, template?.directionsFiles),
+  questions: (template ? getAllParts(template) : []).map(
+    createEditorQuestionFromTemplate,
   ),
-  questions: (template?.questions ?? []).map(createEditorQuestionFromTemplate),
   timeLimitMinutes: template?.timeLimitMinutes ?? DEFAULT_TIME_LIMIT_MINUTES,
   isPublic: template?.isPublic === true,
 });
@@ -139,15 +131,24 @@ const buildTemplatePayload = (state: EditorState) => ({
   directionsFiles: state.description.files,
   timeLimitMinutes: state.timeLimitMinutes,
   isPublic: state.isPublic,
-  questions: state.questions.map((question, index) => ({
-    id: question.id,
-    title: getPartLabel(index),
-    prompt: question.questionData.question.value,
-    promptFiles: question.questionData.question.files,
-    answerType: question.answerType,
-    status: question.status,
-    criteria: question.criteria,
-  })),
+  // PR 1 authors a single question; PR 2 adds the question-level UI. Wrapping
+  // here means a save from the current editor already writes the new shape.
+  questions: [
+    {
+      id: LEGACY_QUESTION_ID,
+      stimulus: "",
+      stimulusFiles: [],
+      parts: state.questions.map((question, index) => ({
+        id: question.id,
+        title: getPartLabel(index),
+        prompt: question.questionData.question.value,
+        promptFiles: question.questionData.question.files,
+        answerType: question.answerType,
+        status: question.status,
+        criteria: question.criteria,
+      })),
+    },
+  ],
 });
 
 const FRQEditorRenderer = ({
@@ -316,7 +317,7 @@ const FRQEditorRenderer = ({
   const totalPoints = questions.reduce(
     (total, question) =>
       total +
-      getQuestionPoints({
+      getPartPoints({
         id: question.id,
         title: "",
         criteria: question.criteria,
@@ -373,11 +374,7 @@ const FRQEditorRenderer = ({
             type="button"
             onClick={() => void saveTemplate()}
             disabled={saveState === "saving" || !hasUnsavedChanges}
-            title={
-              hasUnsavedChanges
-                ? "Save this FRQ"
-                : "No changes to save"
-            }
+            title={hasUnsavedChanges ? "Save this FRQ" : "No changes to save"}
           >
             <Save className="mr-2 size-4" />
             {saveState === "saving" ? "Saving..." : "Save Changes"}
@@ -492,7 +489,7 @@ const FRQEditorRenderer = ({
                       </span>
                       <span className="text-sm font-normal text-muted-foreground">
                         {formatPoints(
-                          getQuestionPoints({
+                          getPartPoints({
                             id: question.id,
                             title: "",
                             criteria: question.criteria,

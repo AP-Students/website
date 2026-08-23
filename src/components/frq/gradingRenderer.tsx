@@ -16,8 +16,9 @@ import {
   getUngradedFrqDocRef,
 } from "@/lib/firestore/frqRefs";
 import {
+  getAllParts,
   getPartLabel,
-  getQuestionPoints,
+  getPartPoints,
   getTemplatePoints,
   toQuestionInput,
 } from "@/lib/frq/template";
@@ -25,7 +26,7 @@ import {
 import { useUser } from "@/components/hooks/UserContext";
 import type {
   FRQTemplate,
-  FRQTemplateQuestion,
+  FRQTemplatePart,
   GradableFRQSubmission,
 } from "@/types/frq";
 
@@ -40,7 +41,7 @@ type PartGrade = {
   criteria: Record<string, number>;
 };
 
-const createEmptyGrade = (question: FRQTemplateQuestion): PartGrade => ({
+const createEmptyGrade = (question: FRQTemplatePart): PartGrade => ({
   feedback: "",
   criteria: Object.fromEntries(
     (question.criteria ?? []).map((criterion) => [criterion.id, 0]),
@@ -55,7 +56,10 @@ const FRQGradingRenderer = ({
 
   // Grading covers every part the template defines, including ones marked
   // legacy: an older submission may still hold a response to them.
-  const questions = useMemo(() => template?.questions ?? [], [template]);
+  const questions = useMemo(
+    () => (template ? getAllParts(template) : []),
+    [template],
+  );
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
@@ -275,7 +279,7 @@ const FRQGradingRenderer = ({
               {getPartLabel(currentIndex)}
             </span>
             <span className="px-3 font-semibold tabular-nums">
-              {currentEarned}/{getQuestionPoints(currentQuestion)} Points
+              {currentEarned}/{getPartPoints(currentQuestion)} Points
             </span>
           </div>
 
