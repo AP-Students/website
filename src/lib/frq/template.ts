@@ -14,6 +14,19 @@ export const DEFAULT_TIME_LIMIT_MINUTES = 90;
 const asString = (value: unknown): string =>
   typeof value === "string" ? value : "";
 
+/**
+ * For fields the type marks optional, where absent carries meaning. Blank
+ * collapses to absent so the field is only ever a non-empty string or missing,
+ * which is what lets a consumer use `??` and `||` interchangeably: against a
+ * stored `""` the two disagree, and `sectionLabel ?? "Section II"` would render
+ * a blank heading for a template nobody ever configured.
+ */
+const asOptionalString = (value: unknown): string | undefined => {
+  const text = typeof value === "string" ? value.trim() : "";
+
+  return text === "" ? undefined : text;
+};
+
 const asRecord = (value: unknown): Record<string, unknown> | null =>
   typeof value === "object" && value !== null && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -198,15 +211,13 @@ export const normalizeFrqTemplate = (
   const record = asRecord(raw) ?? {};
   const timeLimit = Number(record.timeLimitMinutes);
 
-  return {
+  const template: FRQTemplate = {
     id: identity.id,
     subject: asString(record.subject) || identity.subject,
     unitId: asString(record.unitId) || identity.unitId,
     title: asString(record.title) || "Untitled FRQ",
     directions: asString(record.directions),
     directionsFiles: normalizeFiles(record.directionsFiles),
-    sectionLabel: asString(record.sectionLabel),
-    sectionSubtitle: asString(record.sectionSubtitle),
     questions: normalizeQuestions(record.questions),
     isPublic: record.isPublic === true,
     timeLimitMinutes:
@@ -214,6 +225,16 @@ export const normalizeFrqTemplate = (
         ? Math.floor(timeLimit)
         : DEFAULT_TIME_LIMIT_MINUTES,
   };
+
+  // Assigned only when configured, so the key is genuinely missing on a
+  // template that predates section headings rather than present-and-blank.
+  const sectionLabel = asOptionalString(record.sectionLabel);
+  const sectionSubtitle = asOptionalString(record.sectionSubtitle);
+
+  if (sectionLabel) template.sectionLabel = sectionLabel;
+  if (sectionSubtitle) template.sectionSubtitle = sectionSubtitle;
+
+  return template;
 };
 
 export const toQuestionInput = (
