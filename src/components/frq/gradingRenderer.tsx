@@ -2,51 +2,39 @@
 
 import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
 import { db } from "@/lib/firebase";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ChevronUp, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { runTransaction, serverTimestamp } from "firebase/firestore";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   getGradedFrqDocRef,
   getUngradedFrqDocRef,
 } from "@/lib/firestore/frqRefs";
+import GradingFooter from "@/components/frq/grading/gradingFooter";
+import GradingPartCard, {
+  getGradingPartAnchorId,
+} from "@/components/frq/grading/partCard";
 import {
-  getAllParts,
-  getPartLabel,
-  getPartPoints,
-  getTemplatePoints,
-  toQuestionInput,
-} from "@/lib/frq/template";
+  buildGradingQuestions,
+  buildStoredGrades,
+  clampCriterionPoints,
+  countGradedParts,
+  createEmptyGrades,
+  findGradingQuestionIndexForPart,
+  getEarnedPoints,
+  getGradingParts,
+  getQuestionLabel,
+} from "@/lib/frq/gradingView";
+import type { PartGrade } from "@/lib/frq/gradingView";
+import { getTemplatePoints, toQuestionInput } from "@/lib/frq/template";
 
 import { useUser } from "@/components/hooks/UserContext";
-import type {
-  FRQTemplate,
-  FRQTemplatePart,
-  GradableFRQSubmission,
-} from "@/types/frq";
+import type { FRQTemplate, GradableFRQSubmission } from "@/types/frq";
 
 type FRQGradingRendererProps = {
   submission: GradableFRQSubmission | null;
   template: FRQTemplate | null;
 };
-
-/** Points awarded per criterion, and the grader's note, for one part. */
-type PartGrade = {
-  feedback: string;
-  criteria: Record<string, number>;
-};
-
-const createEmptyGrade = (question: FRQTemplatePart): PartGrade => ({
-  feedback: "",
-  criteria: Object.fromEntries(
-    (question.criteria ?? []).map((criterion) => [criterion.id, 0]),
-  ),
-});
 
 const FRQGradingRenderer = ({
   submission,
@@ -54,81 +42,102 @@ const FRQGradingRenderer = ({
 }: FRQGradingRendererProps) => {
   const { user } = useUser();
 
-  // Grading covers every part the template defines, including ones marked
-  // legacy: an older submission may still hold a response to them.
+  // The grader pages through questions, not parts: one page carries a
+  // question's stimulus and every part hanging off it. Grading still covers
+  // every part the template defines, including ones marked legacy, because an
+  // older submission may still hold a response to them.
   const questions = useMemo(
-    () => (template ? getAllParts(template) : []),
+    () => (template ? buildGradingQuestions(template) : []),
     [template],
   );
 
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isNavigationOpen, setIsNavigationOpen] = useState(false);
+  const parts = useMemo(() => getGradingParts(questions), [questions]);
+
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [overallFeedback, setOverallFeedback] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPrompt, setShowPrompt] = useState(true);
+  const [pendingScrollPartId, setPendingScrollPartId] = useState<string | null>(
+    null,
+  );
+  // Keyed by part id, which is what the stored response map and every existing
+  // grade are keyed by. Grouping parts under questions changes navigation and
+  // nothing about how a grade resolves.
   const [grades, setGrades] = useState<Record<string, PartGrade>>(() =>
-    Object.fromEntries(
-      questions.map((question) => [question.id, createEmptyGrade(question)]),
-    ),
+    createEmptyGrades(parts),
   );
 
-  const possiblePoints = getTemplatePoints(questions);
-
-  const earnedPoints = questions.reduce((total, question) => {
-    const partGrade = grades[question.id];
-
-    if (!partGrade) {
-      return total;
+  // Runs after the target question has rendered, so the part being scrolled to
+  // is in the DOM. Jumping to a part on another question sets the index and
+  // this id together, and React commits both before the effect fires.
+  useEffect(() => {
+    if (!pendingScrollPartId) {
+      return;
     }
 
-    return (
-      total +
-      (question.criteria ?? []).reduce(
-        (partTotal, criterion) =>
-          partTotal + (partGrade.criteria[criterion.id] ?? 0),
-        0,
-      )
-    );
-  }, 0);
+    document
+      .getElementById(getGradingPartAnchorId(pendingScrollPartId))
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
 
-  // A part counts as graded once the grader has written a note for it, which is
-  // the only signal that distinguishes "looked at and awarded zero" from
-  // "not looked at yet".
-  const gradedPartCount = questions.filter((question) =>
-    (grades[question.id]?.feedback ?? "").trim(),
-  ).length;
+    setPendingScrollPartId(null);
+  }, [pendingScrollPartId, currentQuestionIndex]);
+
+  const possiblePoints = getTemplatePoints(parts);
+  const earnedPoints = getEarnedPoints(parts, grades);
+  const gradedPartCount = countGradedParts(parts, grades);
+
+  // Index-aligned with the question grid so the footer can offer every part as
+  // its own shortcut.
+  const questionParts = useMemo(
+    () =>
+      questions.map((question) =>
+        question.parts.map(({ part, label }) => ({ id: part.id, label })),
+      ),
+    [questions],
+  );
 
   const setCriterionPoints = (
-    questionId: string,
+    partId: string,
     criterionId: string,
     rawPoints: number,
     maximumPoints: number,
   ) => {
-    const points = Math.min(
-      Math.max(Number.isFinite(rawPoints) ? Math.round(rawPoints) : 0, 0),
-      maximumPoints,
-    );
+    const points = clampCriterionPoints(rawPoints, maximumPoints);
 
     setGrades((currentGrades) => ({
       ...currentGrades,
-      [questionId]: {
-        feedback: currentGrades[questionId]?.feedback ?? "",
+      [partId]: {
+        feedback: currentGrades[partId]?.feedback ?? "",
         criteria: {
-          ...(currentGrades[questionId]?.criteria ?? {}),
+          ...(currentGrades[partId]?.criteria ?? {}),
           [criterionId]: points,
         },
       },
     }));
   };
 
-  const setPartFeedback = (questionId: string, feedback: string) => {
+  const setPartFeedback = (partId: string, feedback: string) => {
     setGrades((currentGrades) => ({
       ...currentGrades,
-      [questionId]: {
+      [partId]: {
         feedback,
-        criteria: currentGrades[questionId]?.criteria ?? {},
+        criteria: currentGrades[partId]?.criteria ?? {},
       },
     }));
+  };
+
+  const jumpToPart = (partId: string) => {
+    const questionIndex = findGradingQuestionIndexForPart(questions, partId);
+
+    // -1 means the template no longer defines the part. Doing nothing beats
+    // opening question 1, which would look like the shortcut went to the wrong
+    // place.
+    if (questionIndex === -1) {
+      return;
+    }
+
+    setCurrentQuestionIndex(questionIndex);
+    setPendingScrollPartId(partId);
   };
 
   const submitGradeReport = async () => {
@@ -173,15 +182,10 @@ const FRQGradingRenderer = ({
           score: `${earnedPoints}/${possiblePoints}`,
           feedback: overallFeedback.trim(),
           // Per-part detail is what lets the student's feedback page show which
-          // rubric lines were earned instead of a bare aggregate.
-          grades: questions.map((question) => ({
-            questionId: question.id,
-            feedback: grades[question.id]?.feedback?.trim() ?? "",
-            criteria: (question.criteria ?? []).map((criterion) => ({
-              criterionId: criterion.id,
-              points: grades[question.id]?.criteria[criterion.id] ?? 0,
-            })),
-          })),
+          // rubric lines were earned instead of a bare aggregate. The payload
+          // is unchanged by question paging: still one flat entry per part,
+          // still keyed by part id, still in reading order.
+          grades: buildStoredGrades(parts, grades),
           graderId: user.uid,
           gradedAt: serverTimestamp(),
         });
@@ -215,22 +219,23 @@ const FRQGradingRenderer = ({
     );
   }
 
-  const currentQuestion = questions[currentIndex];
+  const currentQuestion = questions[currentQuestionIndex];
 
   if (!currentQuestion) {
-    return (
-      <div className="p-8">
-        This FRQ has no questions to grade.
-      </div>
-    );
+    return <div className="p-8">This FRQ has no questions to grade.</div>;
   }
 
-  const currentGrade = grades[currentQuestion.id];
-  const currentCriteria = currentQuestion.criteria ?? [];
-  const currentEarned = currentCriteria.reduce(
-    (total, criterion) => total + (currentGrade?.criteria[criterion.id] ?? 0),
-    0,
+  const questionLabel = getQuestionLabel(
+    questions.length,
+    currentQuestionIndex,
   );
+
+  // `normalizeFrqTemplate` stores an unauthored stimulus as "", not as absent,
+  // so this cannot lean on `??`. Files are checked separately because a
+  // stimulus can be an image with no accompanying text.
+  const hasStimulus =
+    Boolean(currentQuestion.stimulus?.trim()) ||
+    (currentQuestion.stimulusFiles?.length ?? 0) > 0;
 
   return (
     <div className="flex min-h-screen flex-col border-t-[6px] border-black bg-white pb-14">
@@ -251,8 +256,14 @@ const FRQGradingRenderer = ({
         </div>
 
         <div className="flex flex-1 justify-center">
+          {/*
+            Counts parts, and now says so. It read "Questions Graded" back when
+            the page paged through a flat part list and the two words meant the
+            same thing.
+          */}
           <p className="text-sm font-semibold text-gray-900">
-            {gradedPartCount}/{questions.length} Questions Graded
+            {gradedPartCount}/{parts.length}{" "}
+            {parts.length === 1 ? "Part" : "Parts"} Graded
           </p>
         </div>
 
@@ -267,91 +278,63 @@ const FRQGradingRenderer = ({
         </div>
       </header>
 
-      <main className="grid flex-1 grid-cols-1 divide-y divide-gray-300 lg:grid-cols-2 lg:divide-x lg:divide-y-0">
-        <section className="px-10 py-8">
-          <h2 className="mb-5 text-base font-semibold">
-            {template.title} | Part {getPartLabel(currentIndex)} | Grader
-            Response
-          </h2>
+      <main className="grid flex-1 grid-cols-1 items-start divide-y divide-gray-300 lg:grid-cols-2 lg:divide-x lg:divide-y-0">
+        {/*
+          Sticky rather than a scroll container: the page itself scrolls, and a
+          question's parts now stack tall enough that the reading material would
+          otherwise scroll out of sight while grading the last part.
+        */}
+        <section className="px-10 py-8 lg:sticky lg:top-0 lg:max-h-screen lg:overflow-y-auto">
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <h2 className="text-base font-semibold">
+              {template.title} | {questions.length}{" "}
+              {questions.length === 1 ? "Question" : "Questions"}
+            </h2>
 
-          <div className="mb-3 flex h-9 items-center bg-gray-100 pr-3">
-            <span className="flex h-full w-9 items-center justify-center bg-black font-bold text-white">
-              {getPartLabel(currentIndex)}
-            </span>
-            <span className="px-3 font-semibold tabular-nums">
-              {currentEarned}/{getPartPoints(currentQuestion)} Points
-            </span>
+            <button
+              type="button"
+              onClick={() => setShowPrompt((visible) => !visible)}
+              className="shrink-0 rounded-md bg-black px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
+            >
+              {showPrompt ? "Hide Prompt" : "Show Prompt"}
+            </button>
           </div>
 
-          <div className="space-y-1">
-            {currentCriteria.length === 0 ? (
-              <p className="rounded-md border border-dashed p-4 text-sm text-gray-500">
-                This part has no grading criteria, so it is worth zero points.
-                Add criteria in the FRQ editor.
-              </p>
-            ) : (
-              currentCriteria.map((criterion) => (
-                <div
-                  key={criterion.id}
-                  className="flex min-h-9 items-center gap-2"
-                >
-                  <div className="min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm">
-                    <span className="block">
-                      {criterion.description || "Untitled criterion"}
-                    </span>
-                  </div>
+          {showPrompt && (
+            <div className="mb-5 border-b border-gray-200 pb-5 text-sm leading-6 text-gray-900">
+              {/*
+                Exam-wide directions and the open question's stimulus are
+                separate fields and both may be present, so the stimulus is
+                stacked under the directions rather than replacing them.
+              */}
+              <RenderContent
+                content={toQuestionInput(
+                  template.directions,
+                  template.directionsFiles,
+                )}
+                origin="question"
+              />
 
-                  <div className="flex shrink-0 items-center gap-1">
-                    <input
-                      type="number"
-                      min={0}
-                      max={criterion.points}
-                      step={1}
-                      aria-label={`Points for ${
-                        criterion.description || "criterion"
-                      }`}
-                      value={currentGrade?.criteria[criterion.id] ?? 0}
-                      onChange={(event) =>
-                        setCriterionPoints(
-                          currentQuestion.id,
-                          criterion.id,
-                          Number(event.target.value),
-                          criterion.points,
-                        )
-                      }
-                      className="h-8 w-16 rounded-md border border-gray-300 px-2 text-center"
-                    />
-                    <span>/</span>
-                    <span className="tabular-nums">{criterion.points}</span>
-                  </div>
+              {hasStimulus && (
+                <div className="mt-6 border-t border-gray-300 pt-6">
+                  <RenderContent
+                    content={toQuestionInput(
+                      currentQuestion.stimulus,
+                      currentQuestion.stimulusFiles,
+                    )}
+                    origin="question"
+                  />
                 </div>
-              ))
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
-          <div className="mt-4">
-            <label
-              htmlFor="part-feedback"
-              className="text-sm font-semibold"
-            >
-              Feedback for part {getPartLabel(currentIndex)}
-            </label>
-            <textarea
-              id="part-feedback"
-              value={currentGrade?.feedback ?? ""}
-              placeholder="Explain what this part earned and what was missing."
-              onChange={(event) =>
-                setPartFeedback(currentQuestion.id, event.target.value)
-              }
-              className="mt-2 min-h-[110px] w-full resize-y rounded-md border border-gray-300 p-3 text-sm outline-none"
-            />
-          </div>
-
-          <div className="mt-6">
-            <label
-              htmlFor="overall-feedback"
-              className="text-sm font-semibold"
-            >
+          {/*
+            Outside the prompt toggle because it is required to submit, so it
+            has to stay reachable from whichever question is open.
+          */}
+          <div>
+            <label htmlFor="overall-feedback" className="text-sm font-semibold">
               Overall feedback
             </label>
             <textarea
@@ -365,126 +348,54 @@ const FRQGradingRenderer = ({
         </section>
 
         <section className="px-10 py-8">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-base font-semibold">
-              {template.title} | {questions.length}{" "}
-              {questions.length === 1 ? "Question" : "Questions"}
-            </h2>
+          <h2 className="mb-5 text-base font-semibold">
+            {questionLabel ?? template.title} | Grader Response
+          </h2>
 
-            <button
-              type="button"
-              onClick={() => setShowPrompt((visible) => !visible)}
-              className="rounded-md bg-black px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
-            >
-              {showPrompt ? "Hide Prompt" : "Show Prompt"}
-            </button>
-          </div>
-
-          {showPrompt && (
-            <div className="mb-5 border-b border-gray-200 pb-5 text-sm leading-6 text-gray-900">
-              <RenderContent
-                content={toQuestionInput(
-                  template.directions,
-                  template.directionsFiles,
-                )}
-                origin="question"
+          <div className="space-y-10">
+            {currentQuestion.parts.map(({ part, label }) => (
+              <GradingPartCard
+                key={part.id}
+                part={part}
+                label={label}
+                response={submission.responses[part.id]}
+                grade={grades[part.id]}
+                onCriterionPointsChange={(criterionId, rawPoints) =>
+                  setCriterionPoints(
+                    part.id,
+                    criterionId,
+                    rawPoints,
+                    (part.criteria ?? []).find(
+                      (criterion) => criterion.id === criterionId,
+                    )?.points ?? 0,
+                  )
+                }
+                onFeedbackChange={(feedback) =>
+                  setPartFeedback(part.id, feedback)
+                }
               />
-
-              <div className="mt-4">
-                <RenderContent
-                  content={toQuestionInput(
-                    currentQuestion.prompt,
-                    currentQuestion.promptFiles,
-                  )}
-                  origin="question"
-                />
-              </div>
-            </div>
-          )}
-
-          <h3 className="mb-2 text-sm font-semibold">Student response</h3>
-
-          <div
-            className="min-h-[260px] rounded-md border border-gray-400 p-4 text-sm leading-6 [&_p]:mb-3"
-            // The student response is authored in a contenteditable that
-            // sanitizes on every keystroke and again on submit, so what is
-            // stored is already safe to render.
-            dangerouslySetInnerHTML={{
-              __html:
-                submission.responses[currentQuestion.id] ??
-                "<em>No response submitted for this part.</em>",
-            }}
-          />
+            ))}
+          </div>
         </section>
       </main>
 
-      <footer className="fixed bottom-0 left-0 z-50 flex h-14 w-full items-center justify-between border-t-2 border-gray-300 bg-white px-8">
-        <p className="font-semibold">{template.title}</p>
-
-        <div className="absolute left-1/2 flex -translate-x-1/2 items-center gap-2">
-          <button
-            type="button"
-            aria-label="Previous part"
-            disabled={currentIndex === 0}
-            onClick={() => setCurrentIndex((index) => Math.max(index - 1, 0))}
-            className="rounded-md bg-black p-2 text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <ChevronLeft aria-hidden="true" className="size-5" />
-          </button>
-
-          <Popover open={isNavigationOpen} onOpenChange={setIsNavigationOpen}>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                className="flex items-center gap-1 rounded-md bg-black px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-gray-800"
-              >
-                Part {getPartLabel(currentIndex)} of {questions.length}
-                <ChevronUp aria-hidden="true" className="size-4" />
-              </button>
-            </PopoverTrigger>
-
-            <PopoverContent align="center" side="top" className="w-40 p-2">
-              <div className="flex flex-col gap-2">
-                {questions.map((question, index) => (
-                  <button
-                    key={question.id}
-                    type="button"
-                    onClick={() => {
-                      setCurrentIndex(index);
-                      setIsNavigationOpen(false);
-                    }}
-                    className={`rounded-md px-3 py-2 text-left text-sm transition-colors ${
-                      index === currentIndex
-                        ? "bg-[#294ad1] font-bold text-white"
-                        : "bg-gray-100 hover:bg-gray-200"
-                    }`}
-                  >
-                    Part {getPartLabel(index)}
-                  </button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-
-          <button
-            type="button"
-            aria-label="Next part"
-            disabled={currentIndex === questions.length - 1}
-            onClick={() =>
-              setCurrentIndex((index) =>
-                Math.min(index + 1, questions.length - 1),
-              )
-            }
-            className="rounded-md bg-black p-2 text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <ChevronRight aria-hidden="true" className="size-5" />
-          </button>
-        </div>
-
-        <p className="text-sm text-gray-600">
-          Student: <span className="font-mono">{submission.studentId}</span>
-        </p>
-      </footer>
+      <GradingFooter
+        testName={template.title}
+        studentId={submission.studentId}
+        currentQuestionIndex={currentQuestionIndex}
+        questionCount={questions.length}
+        questionParts={questionParts}
+        onPrevious={() =>
+          setCurrentQuestionIndex((index) => Math.max(index - 1, 0))
+        }
+        onNext={() =>
+          setCurrentQuestionIndex((index) =>
+            Math.min(index + 1, questions.length - 1),
+          )
+        }
+        onJumpToQuestion={setCurrentQuestionIndex}
+        onJumpToPart={jumpToPart}
+      />
     </div>
   );
 };

@@ -209,7 +209,9 @@ test("a grade stored under a part id still resolves after the regrouping", () =>
   );
 
   assert.equal(retired?.feedback, "retired but answered");
-  assert.deepEqual(retired?.gradingCriteria, [{ criterionId: "c4", points: 1 }]);
+  assert.deepEqual(retired?.gradingCriteria, [
+    { criterionId: "c4", points: 1 },
+  ]);
   assert.equal(
     document.response.answers.find((entry) => entry.questionId === "p4")?.value,
     "answer four",

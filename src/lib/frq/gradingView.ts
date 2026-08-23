@@ -159,7 +159,10 @@ export const countGradedParts = (
     .length;
 
 /** Clamp a typed-in score to a whole number the criterion can actually award. */
-export const clampCriterionPoints = (rawPoints: number, maximumPoints: number) =>
+export const clampCriterionPoints = (
+  rawPoints: number,
+  maximumPoints: number,
+) =>
   Math.min(
     Math.max(Number.isFinite(rawPoints) ? Math.round(rawPoints) : 0, 0),
     maximumPoints,
