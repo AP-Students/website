@@ -51,7 +51,7 @@ export interface EditorState {
   isPublic: boolean;
 }
 
-export const createQuestionInput = (value = ""): QuestionInput => ({
+const createQuestionInput = (value = ""): QuestionInput => ({
   value,
   files: [],
 });
@@ -60,7 +60,7 @@ export const createQuestionInput = (value = ""): QuestionInput => ({
  * AdvancedTextbox only ever reads `question` here, but it spreads the whole
  * record on every edit, so the unused fields have to exist to survive a save.
  */
-export const createQuestionData = (
+const createQuestionData = (
   question = createQuestionInput(),
 ): QuestionFormat => ({
   question,
@@ -201,6 +201,49 @@ export const locatePart = (questions: EditorQuestion[], partId: string) => {
 
   return null;
 };
+
+/**
+ * Apply an edit to a part wherever it currently lives.
+ *
+ * Addressed by part id rather than by "question X, part Y" on purpose. Parts
+ * change parent now, and an edit can land after the move: a file upload that
+ * started in question 1 resolves seconds later, by which point the author may
+ * have moved that part into question 2. Routing through the question it used
+ * to sit in would match nothing and drop the upload's download URL, leaving a
+ * file that exists in Storage but renders blank for every student.
+ *
+ * Questions that do not hold the part keep their identity, so an edit to one
+ * part does not force every other question card to re-render.
+ */
+export const updatePartById = (
+  questions: EditorQuestion[],
+  partId: string,
+  updater: (part: EditorPart) => EditorPart,
+): EditorQuestion[] =>
+  questions.map((question) =>
+    question.parts.some((part) => part.id === partId)
+      ? {
+          ...question,
+          parts: question.parts.map((part) =>
+            part.id === partId ? updater(part) : part,
+          ),
+        }
+      : question,
+  );
+
+/** Remove a part from whichever question holds it. */
+export const deletePartById = (
+  questions: EditorQuestion[],
+  partId: string,
+): EditorQuestion[] =>
+  questions.map((question) =>
+    question.parts.some((part) => part.id === partId)
+      ? {
+          ...question,
+          parts: question.parts.filter((part) => part.id !== partId),
+        }
+      : question,
+  );
 
 /**
  * Move a part one slot, crossing into the neighbouring question when it runs

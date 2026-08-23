@@ -4,7 +4,9 @@ import {
   buildInitialState,
   buildTemplatePayload,
   canMovePart,
+  deletePartById,
   movePart,
+  updatePartById,
 } from "../src/lib/frq/editorState.ts";
 import { normalizeFrqTemplate } from "../src/lib/frq/template.ts";
 
@@ -91,22 +93,70 @@ test("part labels restart at A inside every question", () => {
   );
 });
 
-test("a section heading round trips, and a blank one is not stored", () => {
+test("a section heading round trips; a blank one normalizes back to absent", () => {
   const configured = buildTemplatePayload(openEditor(nestedDocument));
 
   assert.equal(configured.sectionLabel, "Section I, Part B");
   assert.equal(configured.sectionSubtitle, "Short answer");
 
-  // An untouched heading saves as "", which the editor writes as a field
-  // delete so the reloaded template falls back rather than showing a blank.
+  // An untouched heading reaches the payload as "".
   const untouched = buildTemplatePayload(openEditor({ title: "No heading" }));
 
   assert.equal(untouched.sectionLabel, "");
-  assert.equal(
-    normalizeFrqTemplate({ ...untouched, sectionLabel: undefined }, identity)
-      .sectionLabel,
-    undefined,
+  assert.equal(untouched.sectionSubtitle, "");
+
+  // Were a "" ever to reach the document, reading it back still yields an
+  // absent key, so a `?? "Section II"` fallback holds either way. The editor
+  // additionally maps "" to deleteField() so the key never gets stored at all;
+  // that mapping lives in editorRenderer and is NOT covered here, because
+  // importing firebase/firestore would need a bundler this runner does not have.
+  const stored = normalizeFrqTemplate(untouched, identity);
+
+  assert.equal("sectionLabel" in stored, false);
+  assert.equal(stored.sectionLabel ?? "Section II", "Section II");
+});
+
+test("a part edit finds the part after it moved to another question", () => {
+  const { questions } = openEditor(nestedDocument);
+
+  // The M1 scenario: an upload starts against part-a in question 1, the author
+  // moves part-a into question 2, and only then does the upload resolve.
+  const moved = movePart(questions, "part-a", 1);
+  const edited = updatePartById(moved, "part-a", (part) => ({
+    ...part,
+    criteria: [{ id: "c9", description: "Uploaded", points: 5 }],
+  }));
+
+  const landed = edited
+    .flatMap((question) => question.parts)
+    .find((part) => part.id === "part-a");
+
+  assert.deepEqual(
+    landed?.criteria.map((criterion) => criterion.points),
+    [5],
+    "an edit addressed by part id must land wherever the part now lives",
   );
+
+  // Questions holding no matching part keep their identity, so one part's
+  // keystroke does not re-render every other question card.
+  assert.equal(edited[1], moved[1]);
+});
+
+test("deleting a part removes exactly that part, wherever it lives", () => {
+  const { questions } = openEditor(nestedDocument);
+
+  assert.deepEqual(
+    deletePartById(questions, "part-b").map((question) =>
+      question.parts.map((part) => part.id),
+    ),
+    [["part-a"], ["part-c"]],
+  );
+
+  // An id no question holds leaves every question untouched by identity.
+  const missing = deletePartById(questions, "nope");
+
+  assert.equal(missing[0], questions[0]);
+  assert.equal(missing[1], questions[1]);
 });
 
 test("moving a part down past the last one enters the next question", () => {

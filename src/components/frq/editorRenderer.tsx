@@ -7,22 +7,30 @@ import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getFrqTemplateDocRef } from "@/lib/firestore/frqRefs";
-import type { EditorQuestion, EditorState } from "@/lib/frq/editorState";
+import type {
+  EditorPart,
+  EditorQuestion,
+  EditorState,
+} from "@/lib/frq/editorState";
 import {
   buildInitialState,
   buildTemplatePayload,
   canMovePart,
+  createEditorPart,
   createEditorQuestion,
+  deletePartById,
   formatPoints,
   getEditorTotalPoints,
+  locatePart,
   movePart,
+  updatePartById,
 } from "@/lib/frq/editorState";
 import { getPartLabel } from "@/lib/frq/template";
 import type { FRQTemplate } from "@/types/frq";
 import type { QuestionFormat } from "@/types/questions";
 import { deleteField, serverTimestamp, updateDoc } from "firebase/firestore";
 import { Clock3, Plus, Save } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 interface FRQEditorRendererProps {
   frqFound: boolean;
@@ -51,7 +59,9 @@ const FRQEditorRenderer = ({
   frqFound,
   frqTemplate,
 }: FRQEditorRendererProps) => {
-  const initialState = useRef(buildInitialState(frqTemplate)).current;
+  // Lazy: useRef(buildInitialState(...)) would rebuild the state on every
+  // render and throw it away, minting a wasted question id each time.
+  const [initialState] = useState(() => buildInitialState(frqTemplate));
 
   const [title, setTitle] = useState(initialState.title);
   const [description, setDescription] = useState<QuestionFormat>(
@@ -68,6 +78,19 @@ const FRQEditorRenderer = ({
     initialState.timeLimitMinutes,
   );
   const [isPublic, setIsPublic] = useState(initialState.isPublic);
+
+  // Both accordions are controlled. With Radix's uncontrolled `defaultValue`
+  // the open list is read once at mount, so anything added or moved afterwards
+  // renders collapsed: "Add Part" would look broken, and a part moved into a
+  // collapsed question would disappear from the page the moment it was moved.
+  const [openQuestions, setOpenQuestions] = useState(() =>
+    initialState.questions.map((question) => question.id),
+  );
+  const [openParts, setOpenParts] = useState(() =>
+    initialState.questions.flatMap((question) =>
+      question.parts.map((part) => part.id),
+    ),
+  );
 
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -127,14 +150,87 @@ const FRQEditorRenderer = ({
     );
   };
 
+  const reveal = (
+    setOpen: typeof setOpenQuestions,
+    id: string,
+  ) => setOpen((open) => (open.includes(id) ? open : [...open, id]));
+
   const addQuestion = () => {
-    setQuestions((current) => [...current, createEditorQuestion()]);
+    const question = createEditorQuestion();
+
+    setQuestions((current) => [...current, question]);
+    reveal(setOpenQuestions, question.id);
   };
 
   const deleteQuestion = (questionId: string) => {
     setQuestions((current) =>
       current.filter((question) => question.id !== questionId),
     );
+  };
+
+  const addPart = (questionId: string) => {
+    const part = createEditorPart();
+
+    setQuestions((current) =>
+      current.map((question) =>
+        question.id === questionId
+          ? { ...question, parts: [...question.parts, part] }
+          : question,
+      ),
+    );
+    reveal(setOpenParts, part.id);
+  };
+
+  // Part edits address the part by id, never by the question it sat in when
+  // this handler was created. A part can change parent mid-edit: an upload
+  // started in question 1 can resolve after the author moved that part into
+  // question 2, and a question-scoped update would then match nothing and
+  // silently drop the file's download URL.
+  const updatePart = (
+    partId: string,
+    updater: (part: EditorPart) => EditorPart,
+  ) => {
+    setQuestions((current) => updatePartById(current, partId, updater));
+  };
+
+  const deletePart = (partId: string) => {
+    setQuestions((current) => deletePartById(current, partId));
+  };
+
+  const movePartBy = (partId: string, direction: -1 | 1) => {
+    // Computed outside the updater: revealing is a second state write, and
+    // React invokes updaters twice in StrictMode.
+    const next = movePart(questions, partId, direction);
+    const landed = locatePart(next, partId);
+    const questionId = landed ? next[landed.questionIndex]?.id : undefined;
+
+    setQuestions(next);
+
+    // Open wherever it landed, or a move into a collapsed question reads as
+    // the part vanishing off the page.
+    if (questionId) {
+      reveal(setOpenQuestions, questionId);
+      reveal(setOpenParts, partId);
+    }
+  };
+
+  /** Reveal a part the footer jumped to, then scroll once it is mounted. */
+  const selectPart = (partId: string) => {
+    const location = locatePart(questions, partId);
+    const questionId = location ? questions[location.questionIndex]?.id : null;
+
+    if (!questionId) {
+      return;
+    }
+
+    reveal(setOpenQuestions, questionId);
+    reveal(setOpenParts, partId);
+
+    requestAnimationFrame(() => {
+      document
+        .querySelector(`[data-frq-part="${partId}"]`)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   };
 
   const saveTemplate = useCallback(async () => {
@@ -351,7 +447,8 @@ const FRQEditorRenderer = ({
 
             <Accordion
               type="multiple"
-              defaultValue={questions.map((question) => question.id)}
+              value={openQuestions}
+              onValueChange={setOpenQuestions}
               className="space-y-4"
             >
               {questions.map((question, questionIndex) => (
@@ -361,15 +458,16 @@ const FRQEditorRenderer = ({
                   index={questionIndex}
                   onChange={(updater) => updateQuestion(question.id, updater)}
                   onDelete={() => deleteQuestion(question.id)}
-                  onMovePart={(partId, direction) =>
-                    setQuestions((current) =>
-                      movePart(current, partId, direction),
-                    )
-                  }
+                  onAddPart={() => addPart(question.id)}
+                  onUpdatePart={updatePart}
+                  onDeletePart={deletePart}
+                  onMovePart={movePartBy}
                   canMovePart={(partId, direction) =>
                     canMovePart(questions, partId, direction)
                   }
                   canDelete={questions.length > 1}
+                  openParts={openParts}
+                  onOpenPartsChange={setOpenParts}
                 />
               ))}
             </Accordion>
@@ -389,6 +487,7 @@ const FRQEditorRenderer = ({
         frqName={title.trim() || "Untitled FRQ"}
         visibility={isPublic ? "public" : "private"}
         hasUnsavedChanges={hasUnsavedChanges}
+        onSelectPart={selectPart}
       />
     </div>
   );

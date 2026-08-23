@@ -11,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import type { EditorPart, EditorQuestion } from "@/lib/frq/editorState";
 import {
-  createEditorPart,
   formatPoints,
   getEditorQuestionPoints,
 } from "@/lib/frq/editorState";
@@ -22,11 +21,26 @@ interface QuestionCardProps {
   question: EditorQuestion;
   /** Zero-based position; questions are numbered 1, 2, 3 for the author. */
   index: number;
+  /** Edits this question's own fields. Its parts are addressed separately. */
   onChange: (updater: (question: EditorQuestion) => EditorQuestion) => void;
   onDelete: () => void;
+  onAddPart: () => void;
+  /**
+   * Part handlers take a part id and live in the editor, not here. A part can
+   * move to another question while an edit to it is still in flight, so an
+   * update scoped to the question this card renders would land nowhere.
+   */
+  onUpdatePart: (
+    partId: string,
+    updater: (part: EditorPart) => EditorPart,
+  ) => void;
+  onDeletePart: (partId: string) => void;
   onMovePart: (partId: string, direction: -1 | 1) => void;
   canMovePart: (partId: string, direction: -1 | 1) => boolean;
   canDelete: boolean;
+  /** Open part ids across the whole FRQ; part ids are unique per document. */
+  openParts: string[];
+  onOpenPartsChange: (openParts: string[]) => void;
 }
 
 const QuestionCard = ({
@@ -34,36 +48,15 @@ const QuestionCard = ({
   index,
   onChange,
   onDelete,
+  onAddPart,
+  onUpdatePart,
+  onDeletePart,
   onMovePart,
   canMovePart,
   canDelete,
+  openParts,
+  onOpenPartsChange,
 }: QuestionCardProps) => {
-  const updatePart = (
-    partId: string,
-    updater: (part: EditorPart) => EditorPart,
-  ) => {
-    onChange((current) => ({
-      ...current,
-      parts: current.parts.map((part) =>
-        part.id === partId ? updater(part) : part,
-      ),
-    }));
-  };
-
-  const addPart = () => {
-    onChange((current) => ({
-      ...current,
-      parts: [...current.parts, createEditorPart()],
-    }));
-  };
-
-  const deletePart = (partId: string) => {
-    onChange((current) => ({
-      ...current,
-      parts: current.parts.filter((part) => part.id !== partId),
-    }));
-  };
-
   return (
     <AccordionItem
       value={question.id}
@@ -113,7 +106,18 @@ const QuestionCard = ({
         ) : (
           <Accordion
             type="multiple"
-            defaultValue={question.parts.map((part) => part.id)}
+            value={openParts}
+            // This accordion reports only the parts it owns, so the ids of
+            // every other question's open parts have to be carried across or
+            // opening one part would collapse the rest of the FRQ.
+            onValueChange={(next) => {
+              const owned = new Set(question.parts.map((part) => part.id));
+
+              onOpenPartsChange([
+                ...openParts.filter((id) => !owned.has(id)),
+                ...next,
+              ]);
+            }}
             className="space-y-3"
           >
             {question.parts.map((part, partIndex) => (
@@ -123,8 +127,8 @@ const QuestionCard = ({
                 // Labels restart at A inside every question, which is how AP
                 // numbers them.
                 label={getPartLabel(partIndex)}
-                onChange={(updater) => updatePart(part.id, updater)}
-                onDelete={() => deletePart(part.id)}
+                onChange={(updater) => onUpdatePart(part.id, updater)}
+                onDelete={() => onDeletePart(part.id)}
                 onMove={(direction) => onMovePart(part.id, direction)}
                 canMoveUp={canMovePart(part.id, -1)}
                 canMoveDown={canMovePart(part.id, 1)}
@@ -134,7 +138,7 @@ const QuestionCard = ({
         )}
 
         <div className="flex flex-wrap items-center gap-2 border-t pt-4">
-          <Button type="button" variant="outline" onClick={addPart}>
+          <Button type="button" variant="outline" onClick={onAddPart}>
             <Plus className="mr-2 size-4" />
             Add Part
           </Button>
