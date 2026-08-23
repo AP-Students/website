@@ -107,8 +107,8 @@ const QuestionCard = ({
 
         {question.parts.length === 0 ? (
           <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-            This question has no parts yet. A question with no parts is not shown
-            to students.
+            This question has no parts yet. A question with no parts is not
+            shown to students.
           </p>
         ) : (
           <Accordion

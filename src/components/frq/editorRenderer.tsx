@@ -7,10 +7,7 @@ import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getFrqTemplateDocRef } from "@/lib/firestore/frqRefs";
-import type {
-  EditorQuestion,
-  EditorState,
-} from "@/lib/frq/editorState";
+import type { EditorQuestion, EditorState } from "@/lib/frq/editorState";
 import {
   buildInitialState,
   buildTemplatePayload,
@@ -41,7 +38,9 @@ type SaveState = "idle" | "saving" | "saved" | "error";
  * Deleting rather than storing `""` is also what keeps `normalizeFrqTemplate`'s
  * "absent means unconfigured" rule true of documents this editor writes.
  */
-const toFirestoreUpdate = (payload: ReturnType<typeof buildTemplatePayload>) => ({
+const toFirestoreUpdate = (
+  payload: ReturnType<typeof buildTemplatePayload>,
+) => ({
   ...payload,
   sectionLabel: payload.sectionLabel || deleteField(),
   sectionSubtitle: payload.sectionSubtitle || deleteField(),

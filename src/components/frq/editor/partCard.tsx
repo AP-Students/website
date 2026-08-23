@@ -83,7 +83,10 @@ const PartCard = ({
       data-frq-part={part.id}
       className="rounded-lg border bg-background px-4 shadow-sm"
     >
-      <AccordionTrigger variant="secondary" className="mr-0 py-4 hover:no-underline">
+      <AccordionTrigger
+        variant="secondary"
+        className="mr-0 py-4 hover:no-underline"
+      >
         <div className="flex flex-1 items-center justify-between pr-3">
           <span className="flex items-center gap-2">
             <span className="font-semibold">Part {label}</span>
@@ -147,7 +150,9 @@ const PartCard = ({
                     onChange((current) => ({ ...current, answerType: value }));
                   }}
                 >
-                  <DropdownMenuRadioItem value="text">Text</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="text">
+                    Text
+                  </DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="equation">
                     Equation
                   </DropdownMenuRadioItem>

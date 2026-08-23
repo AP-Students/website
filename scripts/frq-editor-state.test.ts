@@ -219,10 +219,7 @@ test("an FRQ with no questions still opens with somewhere to add a part", () => 
   assert.deepEqual(state.questions[0]?.parts, []);
 
   // An empty question saves as the nested shape, not as a legacy document.
-  const reloaded = normalizeFrqTemplate(
-    buildTemplatePayload(state),
-    identity,
-  );
+  const reloaded = normalizeFrqTemplate(buildTemplatePayload(state), identity);
 
   assert.equal(reloaded.questions.length, 1);
   assert.deepEqual(reloaded.questions[0]?.parts, []);

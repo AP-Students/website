@@ -107,7 +107,9 @@ const toEditorQuestion = (question: FRQTemplateQuestion): EditorQuestion => ({
   parts: question.parts.map(toEditorPart),
 });
 
-export const buildInitialState = (template: FRQTemplate | null): EditorState => {
+export const buildInitialState = (
+  template: FRQTemplate | null,
+): EditorState => {
   const questions = (template?.questions ?? []).map(toEditorQuestion);
 
   return {
@@ -183,7 +185,11 @@ export const formatPoints = (points: number) =>
 
 /** Where a part currently sits, or null if no question holds it. */
 export const locatePart = (questions: EditorQuestion[], partId: string) => {
-  for (let questionIndex = 0; questionIndex < questions.length; questionIndex++) {
+  for (
+    let questionIndex = 0;
+    questionIndex < questions.length;
+    questionIndex++
+  ) {
     const partIndex =
       questions[questionIndex]?.parts.findIndex((part) => part.id === partId) ??
       -1;
