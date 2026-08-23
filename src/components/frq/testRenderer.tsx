@@ -8,10 +8,7 @@ import QuestionPane, {
   getPartAnchorId,
 } from "@/components/frq/test/questionPane";
 import ReviewPage from "@/components/frq/test/reviewPage";
-import {
-  SubmissionModal,
-  TimeUpModal,
-} from "@/components/frq/test/testModals";
+import { SubmissionModal, TimeUpModal } from "@/components/frq/test/testModals";
 import { getUngradedFrqsCollectionRef } from "@/lib/firestore/frqRefs";
 import {
   buildStudentQuestions,
@@ -19,7 +16,10 @@ import {
   getResponsePartIds,
   getSectionHeading,
 } from "@/lib/frq/studentView";
-import { DEFAULT_TIME_LIMIT_MINUTES, toQuestionInput } from "@/lib/frq/template";
+import {
+  DEFAULT_TIME_LIMIT_MINUTES,
+  toQuestionInput,
+} from "@/lib/frq/template";
 import type { FRQTemplate } from "@/types/frq";
 import { addDoc, serverTimestamp } from "firebase/firestore";
 import { LogOut } from "lucide-react";

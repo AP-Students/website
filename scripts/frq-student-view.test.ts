@@ -8,6 +8,7 @@ import {
 import {
   buildStudentQuestions,
   findQuestionIndexForPart,
+  getPartHeading,
   getResponsePartIds,
   getSectionHeading,
 } from "../src/lib/frq/studentView.ts";
@@ -123,6 +124,19 @@ test("question paging exposes exactly the parts the flat list did", () => {
       getStudentFacingParts(template).map((part) => part.id),
     );
   }
+});
+
+test("a one-question exam prints bare part headings, as it did before", () => {
+  // A legacy document always normalizes into exactly one question, so this is
+  // the path that keeps its review grid and printed copy unchanged.
+  const legacy = buildStudentQuestions(legacyFlatTemplate());
+
+  assert.equal(legacy.length, 1);
+  assert.equal(getPartHeading(legacy.length, 0, "A"), "Part A");
+
+  // Two or more questions need the number, or several squares all read "A".
+  assert.equal(getPartHeading(2, 0, "A"), "Question 1, Part A");
+  assert.equal(getPartHeading(2, 1, "B"), "Question 2, Part B");
 });
 
 test("response keys are part ids in reading order", () => {

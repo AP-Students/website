@@ -1,6 +1,7 @@
 "use client";
 
 import type { StudentQuestion } from "@/lib/frq/studentView";
+import { getPartHeading } from "@/lib/frq/studentView";
 import { hasResponseText } from "@/lib/frq/template";
 import { Bookmark } from "lucide-react";
 
@@ -56,9 +57,17 @@ const ReviewPage = ({
       <div className="mt-8 space-y-8 py-2 pl-6">
         {questions.map((question, questionIndex) => (
           <div key={question.id}>
-            <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-gray-600">
-              Question {questionIndex + 1}
-            </h3>
+            {/*
+              Only worth a grouping heading when there is more than one group.
+              A legacy document normalizes into a single question, and its grid
+              showed no question heading before, so numbering it now would
+              reword a page that is supposed to render unchanged.
+            */}
+            {questions.length > 1 && (
+              <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-gray-600">
+                Question {questionIndex + 1}
+              </h3>
+            )}
 
             <div className="flex flex-wrap items-center justify-start gap-10">
               {question.parts.map(({ part, label }) => {
@@ -69,7 +78,11 @@ const ReviewPage = ({
                   <button
                     key={part.id}
                     type="button"
-                    aria-label={`Question ${questionIndex + 1}, part ${label}`}
+                    aria-label={getPartHeading(
+                      questions.length,
+                      questionIndex,
+                      label,
+                    )}
                     className={`relative flex h-14 w-14 items-center justify-center text-xl font-bold ${
                       isAnswered
                         ? "bg-blue-700 text-white"

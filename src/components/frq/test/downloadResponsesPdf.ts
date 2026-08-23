@@ -1,4 +1,5 @@
 import type { StudentQuestion } from "@/lib/frq/studentView";
+import { getPartHeading } from "@/lib/frq/studentView";
 
 const PRINT_STYLES = `
     body {
@@ -83,7 +84,11 @@ export const downloadResponsesAsPdf = ({
       section.className = "response";
 
       const heading = printDocument.createElement("h2");
-      heading.textContent = `Question ${questionIndex + 1}, Part ${label}`;
+      heading.textContent = getPartHeading(
+        questions.length,
+        questionIndex,
+        label,
+      );
 
       const responseText = printDocument.createElement("p");
       responseText.textContent = getPlainText(responses[part.id] ?? "");

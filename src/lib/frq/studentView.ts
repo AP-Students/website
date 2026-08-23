@@ -71,6 +71,22 @@ export const findQuestionIndexForPart = (
   );
 
 /**
+ * Heading for one part outside the test pane, on the review grid and in the
+ * printed copy. A single-question exam omits the question number: that is what
+ * every legacy document normalizes into, and those pages printed a bare
+ * "Part A" before questions existed, so numbering them now would reword a
+ * legacy exam that is supposed to render unchanged.
+ */
+export const getPartHeading = (
+  questionCount: number,
+  questionIndex: number,
+  label: string,
+) =>
+  questionCount > 1
+    ? `Question ${questionIndex + 1}, Part ${label}`
+    : `Part ${label}`;
+
+/**
  * The strings the test page printed before section headings were authorable.
  * They are the fallback so an exam nobody has configured renders exactly as it
  * does today.
