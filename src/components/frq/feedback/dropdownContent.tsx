@@ -11,7 +11,12 @@ import type { FRQPart, FRQPartFeedback, ResponseAnswer } from "./types";
 interface FeedbackSectionProps {
   part: FRQPart;
   label: string;
-  questionNumber: number;
+  /**
+   * "Question 2, Part A", or "Part A" on a one-question exam. Replaces a
+   * question number derived from the part's position, which printed part B of
+   * question 1 as "Question 2" once a page held more than one part.
+   */
+  heading: string;
   answer?: ResponseAnswer;
   partFeedback?: FRQPartFeedback;
   isOpen: boolean;
@@ -24,7 +29,7 @@ interface FeedbackSectionProps {
 export default function FeedbackSection({
   part,
   label,
-  questionNumber,
+  heading,
   answer,
   partFeedback,
   isOpen,
@@ -56,9 +61,10 @@ export default function FeedbackSection({
         </span>
 
         <div className="flex flex-1 items-center justify-between px-3 py-2">
-          <div className="flex items-center gap-2 font-bold"><span>Question {questionNumber}</span>
-          <span>|</span>
-          <span>{pointsPossible} Points</span>
+          <div className="flex items-center gap-2 font-bold">
+            <span>{heading}</span>
+            <span>|</span>
+            <span>{pointsPossible} Points</span>
           </div>
 
           <div className="flex items-center gap-3">

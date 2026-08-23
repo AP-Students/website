@@ -48,8 +48,15 @@ export interface FRQPart {
 export interface FRQQuestion {
   id: string;
   name: string;
+  /**
+   * The exam-wide directions, repeated on every question's page the way the
+   * test itself repeats them. Distinct from `stimulus`, which belongs to this
+   * question alone: both may be present and neither replaces the other.
+   */
   description: QuestionInput;
+  stimulus?: QuestionInput;
   isVisible: boolean;
+  /** This question's parts. Named `questions` since before parts existed. */
   questions: FRQPart[];
 }
 

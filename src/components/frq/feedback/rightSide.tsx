@@ -1,17 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getPartHeading } from "@/lib/frq/studentView";
+import { getPartLabel } from "@/lib/frq/template";
 import FeedbackSection from "./dropdownContent";
 import type { FRQFeedbackDocument, FRQQuestion } from "./types";
 
 export default function QuestionFeedback({
   frq,
+  questionCount,
+  questionIndex,
   feedbackData,
   readOnly = false,
   onFeedbackChange,
   onPointsChange,
 }: {
   frq: FRQQuestion;
+  /** Both are needed to say "Question 2, Part A" rather than just "Part A". */
+  questionCount: number;
+  questionIndex: number;
   feedbackData: FRQFeedbackDocument;
   readOnly?: boolean;
   onFeedbackChange: (questionId: string, feedback: string) => void;
@@ -45,11 +52,19 @@ export default function QuestionFeedback({
     <section className="h-full overflow-y-auto px-16 py-8">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="flex items-center gap-2 text-xl font-bold">
-  <span>{frq.name}</span>
-  <span>|</span>
-  <span>{frq.questions.length} Questions</span>
-  <span>|</span>
-</h1>
+          <span>{frq.name}</span>
+          <span>|</span>
+          {/*
+            These have always been the question's parts. The heading called
+            them questions back when the document held one flat list and the
+            distinction did not exist; now that a page really is one question,
+            leaving the word would have it contradict its own contents.
+          */}
+          <span>
+            {frq.questions.length}{" "}
+            {frq.questions.length === 1 ? "Part" : "Parts"}
+          </span>
+        </h1>
 
         <button
           type="button"
@@ -70,12 +85,17 @@ export default function QuestionFeedback({
             (item) => item.questionId === part.id,
           );
 
+          // Shared with the test and review pages so a student reads the same
+          // name for a part everywhere. `getPartLabel` also carries the walk
+          // past 26 parts into AA, AB, which counting up from "A" does not.
+          const label = getPartLabel(index);
+
           return (
             <FeedbackSection
               key={part.id}
-              questionNumber={index + 1}
+              heading={getPartHeading(questionCount, questionIndex, label)}
               part={part}
-              label={String.fromCharCode(65 + index)}
+              label={label}
               answer={answer}
               partFeedback={partFeedback}
               isOpen={openParts.includes(part.id)}
