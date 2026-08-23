@@ -132,6 +132,33 @@ test("a nested document is read as authored", () => {
   assert.equal(out.sectionSubtitle, "Short answer");
 });
 
+test("an unconfigured section heading is absent, not blank", () => {
+  const identity = { id: "t1", subject: "calc", unitId: "u1" };
+
+  // A `??` fallback is the shape PR 3 uses to reach the hardcoded default. It
+  // only reaches it if the key is missing, so assert the key, not the value.
+  const older = normalizeFrqTemplate({ title: "Old FRQ" }, identity);
+
+  assert.equal("sectionLabel" in older, false);
+  assert.equal("sectionSubtitle" in older, false);
+  assert.equal(older.sectionLabel ?? "Section II", "Section II");
+
+  // A stored blank means the author cleared the field; it reads the same as
+  // never having set it, so the two cannot drift apart downstream.
+  const blanked = normalizeFrqTemplate(
+    { sectionLabel: "", sectionSubtitle: "   " },
+    identity,
+  );
+
+  assert.equal("sectionLabel" in blanked, false);
+  assert.equal("sectionSubtitle" in blanked, false);
+
+  // Non-string junk must not survive as a heading either.
+  const junk = normalizeFrqTemplate({ sectionLabel: 42 }, identity);
+
+  assert.equal(junk.sectionLabel, undefined);
+});
+
 test("parts with no stable id are dropped in both shapes", () => {
   const identity = { id: "t1", subject: "calc", unitId: "u1" };
 

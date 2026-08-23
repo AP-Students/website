@@ -1,44 +1,26 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  buildInitialState,
+  buildTemplatePayload,
+} from "../src/lib/frq/editorState.ts";
+import {
   LEGACY_QUESTION_ID,
   getAllParts,
-  getPartLabel,
   normalizeFrqTemplate,
 } from "../src/lib/frq/template.ts";
 
 const identity = { id: "t1", subject: "calc", unitId: "u1" };
 
 /**
- * Mirrors buildTemplatePayload in editorRenderer.tsx: the editor holds a flat
- * part list and writes it back wrapped in one question. Kept in step with that
- * function by shape, so this exercises the real save format.
+ * Opening the editor on a template and pressing Save, using the same two
+ * functions the editor itself calls. This used to re-implement the save format
+ * by hand, which meant the round trip could keep passing after the real editor
+ * started writing something else.
  */
 const simulateEditorSave = (
   template: ReturnType<typeof normalizeFrqTemplate>,
-) => ({
-  title: template.title,
-  directions: template.directions,
-  directionsFiles: template.directionsFiles,
-  timeLimitMinutes: template.timeLimitMinutes,
-  isPublic: template.isPublic,
-  questions: [
-    {
-      id: LEGACY_QUESTION_ID,
-      stimulus: "",
-      stimulusFiles: [],
-      parts: getAllParts(template).map((part, index) => ({
-        id: part.id,
-        title: getPartLabel(index),
-        prompt: part.prompt,
-        promptFiles: part.promptFiles,
-        answerType: part.answerType,
-        status: part.status,
-        criteria: part.criteria,
-      })),
-    },
-  ],
-});
+) => buildTemplatePayload(buildInitialState(template));
 
 // A realistic pre-migration document: flat parts, stimulus in `directions`,
 // mixed statuses, real criteria.
