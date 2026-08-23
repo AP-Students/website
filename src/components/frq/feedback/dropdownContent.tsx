@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronRight} from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
 import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
 import { Textarea } from "@/components/ui/textarea";
@@ -56,7 +56,7 @@ export default function FeedbackSection({
         onClick={onToggle}
         className="flex w-full items-center bg-gray-100 text-left"
       >
-        <span className="flex self-stretch items-center bg-black px-3 font-bold text-white">
+        <span className="flex items-center self-stretch bg-black px-3 font-bold text-white">
           {label}
         </span>
 
