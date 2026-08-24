@@ -10,10 +10,7 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import type { EditorPart, EditorQuestion } from "@/lib/frq/editorState";
-import {
-  formatPoints,
-  getEditorQuestionPoints,
-} from "@/lib/frq/editorState";
+import { formatPoints, getEditorQuestionPoints } from "@/lib/frq/editorState";
 import { getPartLabel } from "@/lib/frq/template";
 import { Plus, Trash2 } from "lucide-react";
 

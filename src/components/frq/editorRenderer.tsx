@@ -150,10 +150,8 @@ const FRQEditorRenderer = ({
     );
   };
 
-  const reveal = (
-    setOpen: typeof setOpenQuestions,
-    id: string,
-  ) => setOpen((open) => (open.includes(id) ? open : [...open, id]));
+  const reveal = (setOpen: typeof setOpenQuestions, id: string) =>
+    setOpen((open) => (open.includes(id) ? open : [...open, id]));
 
   const addQuestion = () => {
     const question = createEditorQuestion();
