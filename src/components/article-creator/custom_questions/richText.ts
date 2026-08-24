@@ -1,6 +1,30 @@
 import DOMPurify from "dompurify";
 
-const allowedTags = ["strong", "b", "em", "i", "u", "mark", "br", "div"];
+/**
+ * The tags the question and response editors can actually produce. `sup`,
+ * `sub` and the list tags are here because the FRQ response toolbar has
+ * buttons that emit them: leaving them off meant a student's own superscript
+ * survived into storage and was then stripped back out by the page that read
+ * the response back to them, so "x²" was shown to its author as "x2".
+ *
+ * All of these are attribute-free structural tags, and `ALLOWED_ATTR` stays
+ * empty, so widening the list adds no attack surface.
+ */
+const allowedTags = [
+  "strong",
+  "b",
+  "em",
+  "i",
+  "u",
+  "mark",
+  "br",
+  "div",
+  "sup",
+  "sub",
+  "ul",
+  "ol",
+  "li",
+];
 
 /**
  * Questions intentionally support a very small rich-text vocabulary. Keeping
@@ -52,8 +76,10 @@ export function sanitizeQuestionRichText(value: string): string {
       node.replaceWith(...Array.from(node.childNodes));
     }
   });
+  // List tags are deliberately absent: an empty `li` is a bullet the author is
+  // still typing into, and removing it would collapse the list under the caret.
   template.content
-    .querySelectorAll("strong, em, u, mark")
+    .querySelectorAll("strong, em, u, mark, sup, sub")
     .forEach((node) => {
       if (!node.textContent && !node.querySelector("br")) node.remove();
     });

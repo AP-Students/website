@@ -64,7 +64,10 @@ export default function Layout({
 
       <main className="grid h-screen grid-cols-2 pb-14 pt-16">
         <div className="overflow-y-auto border-r-2 border-gray-500">
-          <LeftSide description={currentFrq.description} />
+          <LeftSide
+            description={currentFrq.description}
+            stimulus={currentFrq.stimulus}
+          />
 
           {overallFeedback?.trim() && (
             <div className="mx-8 mb-8 rounded-md border border-gray-400 p-4">
@@ -78,6 +81,8 @@ export default function Layout({
 
         <QuestionFeedback
           frq={currentFrq}
+          questionCount={feedbackData.frqs.length}
+          questionIndex={currentFrqIndex}
           feedbackData={feedbackData}
           readOnly={readOnly}
           onFeedbackChange={onFeedbackChange}
