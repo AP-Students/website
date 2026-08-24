@@ -1,3 +1,4 @@
+import type { FRQAnswerType } from "@/types/frq";
 import type { QuestionInput } from "@/types/questions";
 
 export interface RubricScore {
@@ -41,7 +42,8 @@ export interface FRQPart {
   name: string;
   isVisible: boolean;
   prompt: QuestionInput;
-  answerType: "text";
+  /** Mirrors the template's part. Nothing branches on it yet. */
+  answerType: FRQAnswerType;
   gradingCriteria: GradingCriterion[];
 }
 

@@ -110,7 +110,10 @@ export const buildFeedbackDocument = (
         name: part.title,
         isVisible: part.status !== "legacy",
         prompt: toQuestionInput(part.prompt, part.promptFiles),
-        answerType: "text" as const,
+        // Carried from the template rather than pinned to "text". The editor
+        // can mark a part as an equation, and pinning it here made the
+        // feedback document contradict the template it was built from.
+        answerType: part.answerType ?? "text",
         gradingCriteria: (part.criteria ?? []).map((criterion) => ({
           id: criterion.id,
           text: criterion.description,

@@ -246,3 +246,33 @@ test("a part with no stored response reads as empty, not as missing", () => {
     "",
   );
 });
+
+test("a part authored as an equation is not reported as text", () => {
+  const template = normalizeFrqTemplate(
+    {
+      title: "Equation FRQ",
+      directions: "Directions",
+      questions: [
+        {
+          id: "q1",
+          parts: [
+            { id: "p1", title: "Written", criteria: [criterion("c1", 1)] },
+            {
+              id: "p2",
+              title: "Derivation",
+              answerType: "equation",
+              criteria: [criterion("c2", 1)],
+            },
+          ],
+        },
+      ],
+    },
+    identity,
+  );
+
+  const parts = buildFeedbackDocument(gradedSubmission(), template).frqs[0]
+    ?.questions;
+
+  assert.equal(parts?.find((part) => part.id === "p1")?.answerType, "text");
+  assert.equal(parts?.find((part) => part.id === "p2")?.answerType, "equation");
+});
