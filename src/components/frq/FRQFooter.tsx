@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import FRQDropdown from "@/components/frq/FRQDropdown";
+import type { FRQDropdownPart } from "@/components/frq/FRQDropdown";
 
 interface FooterProps {
   testName: string;
@@ -11,6 +12,13 @@ interface FooterProps {
   onPrevious: () => void;
   onNext: () => void;
   onJumpToFrq: (index: number) => void;
+  /**
+   * Passed straight through to the dropdown so a student can reach a single
+   * part. Both are optional: the feedback page navigates a list with no parts
+   * and omits them, which keeps its dropdown exactly as it was.
+   */
+  questionParts?: FRQDropdownPart[][];
+  onJumpToPart?: (partId: string) => void;
 }
 
 export default function Footer({
@@ -20,6 +28,8 @@ export default function Footer({
   onPrevious,
   onNext,
   onJumpToFrq,
+  questionParts,
+  onJumpToPart,
 }: FooterProps) {
   return (
     <footer className="fixed bottom-0 left-0 z-50 flex h-14 w-full items-center justify-between border-t-2 border-gray-300 bg-white px-8">
@@ -41,6 +51,8 @@ export default function Footer({
           currentFrqIndex={currentFrqIndex}
           totalFrqs={totalFrqs}
           onJumpToFrq={onJumpToFrq}
+          questionParts={questionParts}
+          onJumpToPart={onJumpToPart}
         />
 
         <button

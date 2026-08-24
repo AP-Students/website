@@ -20,6 +20,13 @@ interface FRQEditorFooterProps {
   frqName: string;
   visibility: FRQVisibility;
   hasUnsavedChanges: boolean;
+  /**
+   * Reveals and scrolls to a part. The editor owns this rather than the footer
+   * because a part sits inside its question's accordion panel: while that
+   * question is collapsed the part is not in the DOM at all, so the footer
+   * cannot find it to scroll to. The editor opens both first.
+   */
+  onSelectPart: (partId: string) => void;
 }
 
 /**
@@ -32,16 +39,15 @@ const FRQEditorFooter = ({
   frqName,
   visibility,
   hasUnsavedChanges,
+  onSelectPart,
 }: FRQEditorFooterProps) => {
   // Controlled so picking a part closes the panel instead of leaving it parked
   // over the footer, matching frq/FRQFooter.tsx on the other FRQ pages.
   const [navigationOpen, setNavigationOpen] = useState(false);
 
-  const scrollToPart = (partId: string) => {
+  const selectPart = (partId: string) => {
     setNavigationOpen(false);
-    document
-      .querySelector(`[data-frq-part="${partId}"]`)
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    onSelectPart(partId);
   };
 
   return (
@@ -78,7 +84,7 @@ const FRQEditorFooter = ({
                     key={part.id}
                     type="button"
                     aria-label={`Go to part ${part.label}`}
-                    onClick={() => scrollToPart(part.id)}
+                    onClick={() => selectPart(part.id)}
                     className="flex size-8 items-center justify-center border-2 border-dotted border-gray-400 font-medium text-[#2a47bb] hover:bg-blue-50"
                   >
                     {part.label}

@@ -269,8 +269,19 @@ export function RenderContent({ content, origin }: Props) {
     const children = Array.from(node.childNodes).map((child, index) => renderNode(child, `${key}-${index}`));
     switch ((node as Element).tagName.toLowerCase()) {
       case "strong": return <strong key={key}>{children}</strong>;
+      // `b` and `i` survive the sanitizer's allow-list, and stored content
+      // written before it normalized them still carries them, so they are
+      // mapped rather than left to fall through the default and lose styling.
+      case "b": return <strong key={key}>{children}</strong>;
       case "em": return <em key={key}>{children}</em>;
+      case "i": return <em key={key}>{children}</em>;
       case "u": return <u key={key}>{children}</u>;
+      case "sup": return <sup key={key}>{children}</sup>;
+      case "sub": return <sub key={key}>{children}</sub>;
+      // Preflight strips list styling, so the markers have to be asked for.
+      case "ul": return <ul key={key} className="my-2 list-disc pl-6">{children}</ul>;
+      case "ol": return <ol key={key} className="my-2 list-decimal pl-6">{children}</ol>;
+      case "li": return <li key={key}>{children}</li>;
       case "mark": return <mark key={key} className="rounded bg-yellow-200 px-0.5 text-gray-950">{children}</mark>;
       case "br": return <br key={key} />;
       case "div": return <div key={key}>{children}</div>;

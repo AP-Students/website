@@ -1,3 +1,4 @@
+import type { FRQAnswerType } from "@/types/frq";
 import type { QuestionInput } from "@/types/questions";
 
 export interface RubricScore {
@@ -41,15 +42,23 @@ export interface FRQPart {
   name: string;
   isVisible: boolean;
   prompt: QuestionInput;
-  answerType: "text";
+  /** Mirrors the template's part. Nothing branches on it yet. */
+  answerType: FRQAnswerType;
   gradingCriteria: GradingCriterion[];
 }
 
 export interface FRQQuestion {
   id: string;
   name: string;
+  /**
+   * The exam-wide directions, repeated on every question's page the way the
+   * test itself repeats them. Distinct from `stimulus`, which belongs to this
+   * question alone: both may be present and neither replaces the other.
+   */
   description: QuestionInput;
+  stimulus?: QuestionInput;
   isVisible: boolean;
+  /** This question's parts. Named `questions` since before parts existed. */
   questions: FRQPart[];
 }
 

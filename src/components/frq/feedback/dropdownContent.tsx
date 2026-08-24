@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronRight} from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
 import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,7 +11,12 @@ import type { FRQPart, FRQPartFeedback, ResponseAnswer } from "./types";
 interface FeedbackSectionProps {
   part: FRQPart;
   label: string;
-  questionNumber: number;
+  /**
+   * "Question 2, Part A", or "Part A" on a one-question exam. Replaces a
+   * question number derived from the part's position, which printed part B of
+   * question 1 as "Question 2" once a page held more than one part.
+   */
+  heading: string;
   answer?: ResponseAnswer;
   partFeedback?: FRQPartFeedback;
   isOpen: boolean;
@@ -24,7 +29,7 @@ interface FeedbackSectionProps {
 export default function FeedbackSection({
   part,
   label,
-  questionNumber,
+  heading,
   answer,
   partFeedback,
   isOpen,
@@ -51,14 +56,15 @@ export default function FeedbackSection({
         onClick={onToggle}
         className="flex w-full items-center bg-gray-100 text-left"
       >
-        <span className="flex self-stretch items-center bg-black px-3 font-bold text-white">
+        <span className="flex items-center self-stretch bg-black px-3 font-bold text-white">
           {label}
         </span>
 
         <div className="flex flex-1 items-center justify-between px-3 py-2">
-          <div className="flex items-center gap-2 font-bold"><span>Question {questionNumber}</span>
-          <span>|</span>
-          <span>{pointsPossible} Points</span>
+          <div className="flex items-center gap-2 font-bold">
+            <span>{heading}</span>
+            <span>|</span>
+            <span>{pointsPossible} Points</span>
           </div>
 
           <div className="flex items-center gap-3">
