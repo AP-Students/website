@@ -67,15 +67,25 @@ const GradingPartCard = ({
 
       <h3 className="mb-2 text-sm font-semibold">Student response</h3>
 
-      <div
-        className="min-h-[180px] rounded-md border border-gray-400 p-4 text-sm leading-6 [&_p]:mb-3"
-        // The student response is authored in a contenteditable that sanitizes
-        // on every keystroke and again on submit, so what is stored is already
-        // safe to render.
-        dangerouslySetInnerHTML={{
-          __html: response ?? "<em>No response submitted for this part.</em>",
-        }}
-      />
+      {/*
+        Rendered through the component the student's own feedback page uses,
+        rather than injected as raw HTML. Injecting it made the grader the one
+        reader who saw `$@x^2$` as literal text while the student who wrote it
+        saw the equation, so a response could be marked down for notation the
+        grader was never shown.
+      */}
+      <div className="min-h-[180px] rounded-md border border-gray-400 p-4 text-sm leading-6 [&_p]:mb-3">
+        {response === undefined ? (
+          <p className="italic text-gray-500">
+            No response submitted for this part.
+          </p>
+        ) : (
+          <RenderContent
+            content={toQuestionInput(response, [])}
+            origin="content"
+          />
+        )}
+      </div>
 
       <div className="mt-4 space-y-1">
         {criteria.length === 0 ? (
