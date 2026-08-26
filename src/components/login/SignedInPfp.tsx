@@ -69,6 +69,13 @@ const SignedInPfp = ({ mobile }: { mobile?: boolean }) => {
             Account Settings
           </Link>
 
+          <Link
+            href="/frq-feedback"
+            className="block w-full px-3 py-2 text-left transition-colors duration-100 hover:bg-gray-100"
+          >
+            My FRQ Results
+          </Link>
+
           <button
             onClick={signOutUser}
             className="block w-full px-3 py-2 text-left transition-colors duration-100 hover:bg-gray-100"
@@ -94,6 +101,13 @@ const SignedInPfp = ({ mobile }: { mobile?: boolean }) => {
             className={buttonVariants({ variant: "default" })}
           >
             Account Settings
+          </Link>
+
+          <Link
+            href="/frq-feedback"
+            className={buttonVariants({ variant: "default" })}
+          >
+            My FRQ Results
           </Link>
 
           <button
