@@ -91,6 +91,12 @@ const sectionData = [
     borderColor: "#0891b2",
     courses: ["AP Research", "AP Seminar"],
   },
+  {
+    title: "AP Career Kickstart",
+    numofCol: "lg:col-span-1",
+    borderColor: "#65a30d",
+    courses: ["AP Business", "AP Cybersecurity"],
+  },
 ];
 
 const APLibrary = () => {
