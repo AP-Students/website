@@ -9,6 +9,7 @@ import QuestionPane, {
 } from "@/components/frq/test/questionPane";
 import ReviewPage from "@/components/frq/test/reviewPage";
 import { SubmissionModal, TimeUpModal } from "@/components/frq/test/testModals";
+import { usePendingPartScroll } from "@/components/frq/usePendingPartScroll";
 import { getUngradedFrqsCollectionRef } from "@/lib/firestore/frqRefs";
 import {
   buildStudentQuestions,
@@ -96,10 +97,6 @@ const FRQTestRenderer = ({
   const [markedForReview, setMarkedForReview] = useState<
     Record<string, boolean>
   >({});
-  const [pendingScrollPartId, setPendingScrollPartId] = useState<string | null>(
-    null,
-  );
-
   const [timeRemaining, setTimeRemaining] = useState(
     () => (template?.timeLimitMinutes ?? DEFAULT_TIME_LIMIT_MINUTES) * 60,
   );
@@ -142,20 +139,10 @@ const FRQTestRenderer = ({
     }
   }, [draftKey, responses, hasSubmitted]);
 
-  // Runs after the target question has rendered, so the part being scrolled to
-  // is in the DOM. Jumping to a part on another question sets the index and
-  // this id together, and React commits both before the effect fires.
-  useEffect(() => {
-    if (!pendingScrollPartId) {
-      return;
-    }
-
-    document
-      .getElementById(getPartAnchorId(pendingScrollPartId))
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-
-    setPendingScrollPartId(null);
-  }, [pendingScrollPartId, currentQuestionIndex]);
+  const setPendingScrollPartId = usePendingPartScroll(
+    getPartAnchorId,
+    currentQuestionIndex,
+  );
 
   useEffect(() => {
     setTimeRemaining(

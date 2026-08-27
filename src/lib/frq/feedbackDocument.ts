@@ -2,7 +2,7 @@ import type { FRQFeedbackDocument } from "@/components/frq/feedback/types";
 import type { FRQTemplate, GradedFRQSubmission } from "@/types/frq";
 import type { Timestamp } from "firebase/firestore";
 import { buildGradingQuestions } from "./gradingView.ts";
-import { getAllParts, toQuestionInput } from "./template.ts";
+import { getAllParts, isMultiQuestion, toQuestionInput } from "./template.ts";
 
 const formatTimestamp = (value: Timestamp | undefined) => {
   if (!value || typeof value.toDate !== "function") {
@@ -27,7 +27,10 @@ const getQuestionName = (
   templateTitle: string,
   questionCount: number,
   questionIndex: number,
-) => (questionCount > 1 ? `Question ${questionIndex + 1}` : templateTitle);
+) =>
+  isMultiQuestion(questionCount)
+    ? `Question ${questionIndex + 1}`
+    : templateTitle;
 
 /**
  * Rebuild the rubric-shaped document the feedback UI renders from the two

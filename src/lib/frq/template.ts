@@ -270,6 +270,14 @@ export const getStudentFacingQuestions = (
     }))
     .filter((question) => question.parts.length > 0);
 
+/**
+ * Whether a document's questions should be numbered at all. Every legacy
+ * document normalizes into exactly one question, and those pages never
+ * carried a question number, so a single-question exam stays unnumbered
+ * rather than reading "Question 1" for an exam nobody split up.
+ */
+export const isMultiQuestion = (questionCount: number) => questionCount > 1;
+
 export const getPartPoints = (part: FRQTemplatePart) =>
   (part.criteria ?? []).reduce(
     (total, criterion) => total + criterion.points,
@@ -295,12 +303,21 @@ export const getPartLabel = (index: number) => {
   return label;
 };
 
-/** Strips markup so "did the student write anything" is not fooled by `<p></p>`. */
-export const hasResponseText = (response: string | undefined) =>
+/**
+ * Strip a response's stored HTML down to plain text. Regex-based rather than
+ * `richTextToPlainText`'s DOM-parsing so it behaves the same whether this
+ * runs in the browser or under `node:test`, and so `src/lib/frq` does not
+ * reach into `article-creator` for something this small.
+ */
+export const stripResponseHtml = (response: string | undefined) =>
   (response ?? "")
     .replace(/<[^>]*>/g, "")
     .replace(/&nbsp;/g, " ")
-    .trim().length > 0;
+    .trim();
+
+/** Whether a response has anything in it, not fooled by markup-only `<p></p>`. */
+export const hasResponseText = (response: string | undefined) =>
+  stripResponseHtml(response).length > 0;
 
 /**
  * Unique, immutable ID built from the current time plus a short random suffix.

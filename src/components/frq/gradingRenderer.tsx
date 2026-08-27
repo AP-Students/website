@@ -2,7 +2,7 @@
 
 import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
 import { db } from "@/lib/firebase";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { LogOut } from "lucide-react";
 import { runTransaction, serverTimestamp } from "firebase/firestore";
@@ -14,6 +14,7 @@ import GradingFooter from "@/components/frq/grading/gradingFooter";
 import GradingPartCard, {
   getGradingPartAnchorId,
 } from "@/components/frq/grading/partCard";
+import { usePendingPartScroll } from "@/components/frq/usePendingPartScroll";
 import {
   buildGradingQuestions,
   buildStoredGrades,
@@ -57,9 +58,6 @@ const FRQGradingRenderer = ({
   const [overallFeedback, setOverallFeedback] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPrompt, setShowPrompt] = useState(true);
-  const [pendingScrollPartId, setPendingScrollPartId] = useState<string | null>(
-    null,
-  );
   // Keyed by part id, which is what the stored response map and every existing
   // grade are keyed by. Grouping parts under questions changes navigation and
   // nothing about how a grade resolves.
@@ -67,20 +65,10 @@ const FRQGradingRenderer = ({
     createEmptyGrades(parts),
   );
 
-  // Runs after the target question has rendered, so the part being scrolled to
-  // is in the DOM. Jumping to a part on another question sets the index and
-  // this id together, and React commits both before the effect fires.
-  useEffect(() => {
-    if (!pendingScrollPartId) {
-      return;
-    }
-
-    document
-      .getElementById(getGradingPartAnchorId(pendingScrollPartId))
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-
-    setPendingScrollPartId(null);
-  }, [pendingScrollPartId, currentQuestionIndex]);
+  const setPendingScrollPartId = usePendingPartScroll(
+    getGradingPartAnchorId,
+    currentQuestionIndex,
+  );
 
   const possiblePoints = getTemplatePoints(parts);
   const earnedPoints = getEarnedPoints(parts, grades);

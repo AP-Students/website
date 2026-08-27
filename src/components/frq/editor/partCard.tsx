@@ -26,6 +26,17 @@ import { formatPoints, getEditorPartPoints } from "@/lib/frq/editorState";
 import { makeId } from "@/lib/frq/template";
 import { ChevronDown, ChevronUp, Info, Plus, Trash2 } from "lucide-react";
 
+/**
+ * DOM id of one part's card. The footer's jump-to-part shortcut scrolls to
+ * this.
+ *
+ * Read back with `getElementById` rather than `querySelector`, because a part
+ * id comes from Firestore and may contain characters that need escaping in a
+ * CSS selector but are fine in an id lookup.
+ */
+export const getEditorPartAnchorId = (partId: string) =>
+  `frq-editor-part-${partId}`;
+
 interface PartCardProps {
   part: EditorPart;
   /** Display label within its question, restarting at A for each question. */
@@ -80,7 +91,7 @@ const PartCard = ({
   return (
     <AccordionItem
       value={part.id}
-      data-frq-part={part.id}
+      id={getEditorPartAnchorId(part.id)}
       className="rounded-lg border bg-background px-4 shadow-sm"
     >
       <AccordionTrigger

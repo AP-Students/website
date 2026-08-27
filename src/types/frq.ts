@@ -83,7 +83,7 @@ export interface GradableFRQSubmission {
   subject: string;
   unitId: string;
   studentId: string;
-  /** Responses are keyed by a stable FRQTemplateQuestion.id. */
+  /** Responses are keyed by a stable FRQTemplatePart.id. */
   responses: Record<string, string>;
   submittedAt: Timestamp;
 }
