@@ -27,13 +27,32 @@ const Page = ({ params }: PageProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const canGrade = user?.access === "admin" || user?.access === "grader";
+  // Members grade alongside admins and graders.
+  const isStaffGrader =
+    user?.access === "admin" ||
+    user?.access === "grader" ||
+    user?.access === "member";
+
+  // Whether a student may open this page depends on the submission, not on the
+  // account, so unlike the queue list this cannot be settled before the fetch:
+  // a student is allowed here for exactly one document, their own. Firestore
+  // rules enforce the same rule server-side.
+  //
+  // Staff are not exempt. Scoring your own work is a self-assessment whatever
+  // access you hold, so a member who takes an FRQ and grades it files a
+  // self-grade rather than an official FiveHive one.
+  const isSelfGrading =
+    submission !== null && user !== null && submission.studentId === user.uid;
+
+  const canGrade = isStaffGrader || isSelfGrading;
 
   useEffect(() => {
-    if (userLoading || !canGrade) {
-      if (!userLoading) {
-        setIsLoading(false);
-      }
+    if (userLoading) {
+      return;
+    }
+
+    if (!user) {
+      setIsLoading(false);
       return;
     }
 
@@ -93,25 +112,33 @@ const Page = ({ params }: PageProps) => {
     };
 
     void fetchSubmissionAndTemplate();
-  }, [params.id, userLoading, canGrade]);
+  }, [params.id, userLoading, user]);
 
   if (userLoading || isLoading) {
     return <div className="p-8">Loading...</div>;
-  }
-
-  if (!canGrade) {
-    return (
-      <div className="p-8">
-        You need grader or admin access to grade FRQ submissions.
-      </div>
-    );
   }
 
   if (loadError) {
     return <div className="p-8">{loadError}</div>;
   }
 
-  return <FRQGradingRenderer submission={submission} template={template} />;
+  if (!canGrade) {
+    return (
+      <div className="p-8">
+        You need member, grader, or admin access to grade other people&apos;s
+        FRQ submissions.
+      </div>
+    );
+  }
+
+  return (
+    <FRQGradingRenderer
+      submission={submission}
+      template={template}
+      selfGrading={isSelfGrading}
+      canReturnToQueue={isStaffGrader}
+    />
+  );
 };
 
 export default Page;

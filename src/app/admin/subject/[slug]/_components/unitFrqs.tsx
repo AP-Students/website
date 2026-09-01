@@ -2,7 +2,7 @@
 
 import { memo, useState } from "react";
 import { Link } from "../../link";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { FRQTemplate } from "@/types/frq";
@@ -13,6 +13,7 @@ type UnitFrqsProps = {
   frqs: FRQTemplate[];
   onFrqAdd: (title: string) => void;
   onFrqUpdate: (frqId: string, title: string) => void;
+  onFrqDelete: (frqId: string) => void;
   onFrqVisibilityChange: (frqId: string, isPublic: boolean) => void;
 };
 
@@ -22,6 +23,7 @@ function UnitFrqs({
   frqs,
   onFrqAdd,
   onFrqUpdate,
+  onFrqDelete,
   onFrqVisibilityChange,
 }: UnitFrqsProps) {
   const [newFrqTitle, setNewFrqTitle] = useState("");
@@ -38,7 +40,9 @@ function UnitFrqs({
   };
 
   const handleRenameFrq = (frqId: string, currentTitle: string) => {
-    const updatedTitle = window.prompt("Enter new FRQ name", currentTitle)?.trim();
+    const updatedTitle = window
+      .prompt("Enter new FRQ name", currentTitle)
+      ?.trim();
 
     if (updatedTitle) {
       onFrqUpdate(frqId, updatedTitle);
@@ -84,6 +88,19 @@ function UnitFrqs({
             >
               {frq.title || "Untitled FRQ"}
             </p>
+
+            {/* Matches the delete control the tests list has had all along.
+                Without it an FRQ added by mistake could only be hidden, never
+                removed. */}
+            <Button
+              className="ml-auto mr-1 aspect-square rounded-md p-0"
+              variant="destructive"
+              onClick={() => onFrqDelete(frq.id!)}
+              aria-label={`Delete ${frq.title || "Untitled FRQ"}`}
+              title="Delete this FRQ"
+            >
+              <Trash2 />
+            </Button>
           </div>
         );
       })}

@@ -185,54 +185,68 @@ const FRQTestRenderer = ({
     }
   }, [timeRemaining, hasSubmitted]);
 
-  const submitForGrading = useCallback(async () => {
-    if (!template?.id || !user) {
-      window.alert("Please sign in before submitting this FRQ for grading.");
-      return;
-    }
-
-    setSubmitting(true);
-
-    try {
-      // Payload shape is unchanged: `responses` stays a flat part-id map, so
-      // the grading queue reads submissions written before question paging
-      // exactly as it reads new ones.
-      await addDoc(getUngradedFrqsCollectionRef(), {
-        templateId: template.id,
-        subject: template.subject,
-        unitId: template.unitId,
-        studentId: user.uid,
-        responses,
-        submittedAt: serverTimestamp(),
-      });
-
-      setHasSubmitted(true);
-      setShowSubmissionModal(false);
-      setShowTimeUpPopup(false);
-
-      // Only clear the draft once the write has actually landed, so a failed
-      // submission still leaves the student's work recoverable.
-      if (draftKey) {
-        try {
-          window.localStorage.removeItem(draftKey);
-        } catch {
-          // Nothing to do: the submission already succeeded.
-        }
+  /**
+   * Both destinations write the same submission document. "self" then opens the
+   * grading page on it immediately; "queue" leaves it for staff. Writing first
+   * either way is what lets a self-grade be reviewed later and keeps one code
+   * path for the payload.
+   */
+  const submitForGrading = useCallback(
+    async (destination: "queue" | "self" = "queue") => {
+      if (!template?.id || !user) {
+        window.alert("Please sign in before submitting this FRQ for grading.");
+        return;
       }
 
-      window.alert("Your FRQ was submitted for grading.");
-    } catch (submissionError) {
-      console.error("Error submitting FRQ for grading:", submissionError);
+      setSubmitting(true);
 
-      window.alert(
-        submissionError instanceof Error
-          ? `We could not submit your FRQ: ${submissionError.message}`
-          : "We could not submit your FRQ. Please try again.",
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  }, [draftKey, responses, template, user]);
+      try {
+        // Payload shape is unchanged: `responses` stays a flat part-id map, so
+        // the grading queue reads submissions written before question paging
+        // exactly as it reads new ones.
+        const submissionRef = await addDoc(getUngradedFrqsCollectionRef(), {
+          templateId: template.id,
+          subject: template.subject,
+          unitId: template.unitId,
+          studentId: user.uid,
+          responses,
+          submittedAt: serverTimestamp(),
+        });
+
+        setHasSubmitted(true);
+        setShowSubmissionModal(false);
+        setShowTimeUpPopup(false);
+
+        // Only clear the draft once the write has actually landed, so a failed
+        // submission still leaves the student's work recoverable.
+        if (draftKey) {
+          try {
+            window.localStorage.removeItem(draftKey);
+          } catch {
+            // Nothing to do: the submission already succeeded.
+          }
+        }
+
+        if (destination === "self") {
+          router.push(`/frq-grading/${submissionRef.id}`);
+          return;
+        }
+
+        window.alert("Your FRQ was submitted for grading.");
+      } catch (submissionError) {
+        console.error("Error submitting FRQ for grading:", submissionError);
+
+        window.alert(
+          submissionError instanceof Error
+            ? `We could not submit your FRQ: ${submissionError.message}`
+            : "We could not submit your FRQ. Please try again.",
+        );
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [draftKey, responses, router, template, user],
+  );
 
   const formattedTime = `${Math.floor(timeRemaining / 3600)}:${String(
     Math.floor((timeRemaining % 3600) / 60),
@@ -337,7 +351,8 @@ const FRQTestRenderer = ({
       onDownload={() =>
         downloadResponsesAsPdf({ testName, questions, responses })
       }
-      onSubmit={() => void submitForGrading()}
+      onSubmit={() => void submitForGrading("queue")}
+      onSelfGrade={() => void submitForGrading("self")}
       onClose={() => setShowSubmissionModal(false)}
     />
   ) : null;

@@ -28,6 +28,16 @@ interface Props {
   setUnsavedChanges?: (unchangedChanges: boolean) => void;
 }
 
+/**
+ * The syntax this box understands, spelled out for the author. Exported so the
+ * FRQ editor's fields can carry the same guidance: they render this very
+ * component, but pass their own placeholder, and overriding it used to drop the
+ * hint entirely — leaving FRQ authors with no indication that LaTeX, code
+ * fences, and image placeholders work there exactly as they do in an MCQ.
+ */
+export const RICH_TEXT_SYNTAX_HINT =
+  "Latex syntax starts with $@ and ends with $ (eg: $@e^{ipi} + 1 = 0$). Code blocks use ``` around the code. References to images can be made via [image:1] placeholders.";
+
 function isStorageObjectNotFoundError(error: unknown): boolean {
   return (
     typeof error === "object" &&
@@ -496,8 +506,7 @@ export default function AdvancedTextbox({
         onChange={updateQuestionText}
         onKeyDown={handleKeyDown}
         placeholder={
-          placeholder ??
-          "Type or drag and drop here. Latex syntax starts with $@ and ends with $ (eg: $@e^{ipi} + 1 = 0$). Code blocks use ``` around the code. References to images can be made via [image:1] placeholders."
+          placeholder ?? `Type or drag and drop here. ${RICH_TEXT_SYNTAX_HINT}`
         }
       />
 

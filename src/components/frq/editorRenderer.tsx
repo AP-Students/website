@@ -1,5 +1,7 @@
 "use client";
 
+import { AdminEditorBackLinks } from "@/app/admin/subject/link";
+import { Blocker } from "@/app/admin/subject/navigation-block";
 import FRQEditorFooter from "@/components/frq/editorFooter";
 import QuestionCard from "@/components/frq/editor/questionCard";
 import RichPromptEditor from "@/components/frq/editor/richPromptEditor";
@@ -281,9 +283,25 @@ const FRQEditorRenderer = ({
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="fixed inset-x-0 top-0 z-50 grid h-16 grid-cols-3 items-center border-b bg-background px-5 shadow-sm">
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">
+      {/* Arms the confirm inside the `Link` below. Without it the back button
+          would discard an unsaved edit silently, which is the whole reason the
+          MCQ test editor pairs the two. */}
+      {hasUnsavedChanges && <Blocker />}
+
+      {/* Columns are sized to their content rather than split into equal
+          thirds: a fixed third no longer fits the back links beside the points
+          total, which truncated it to "0 points t...". */}
+      <header className="fixed inset-x-0 top-0 z-50 grid h-16 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 border-b bg-background px-5 shadow-sm">
+        <div className="flex min-w-0 items-center gap-3">
+          {/* The same pair the MCQ test editor uses, from the same component:
+              these confirm before discarding unsaved work. */}
+          <AdminEditorBackLinks
+            subjectSlug={frqTemplate.subject}
+            unsavedChanges={hasUnsavedChanges}
+            layout="inline"
+          />
+
+          <span className="truncate text-sm text-muted-foreground">
             {formatPoints(totalPoints)} total
           </span>
         </div>

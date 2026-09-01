@@ -24,12 +24,6 @@ service cloud.firestore {
       return isAuthenticated() && (accessLevel == "admin" || accessLevel == "member" || accessLevel == "grader");
     }
 
-    function isGraderOrAdmin() {
-      let accessLevel = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.access;
-      return isAuthenticated() &&
-        (accessLevel == "admin" || accessLevel == "grader");
-    }
-
     // Allow read/write access to users for their own user data
     match /users/{userId} {
       allow read: if isAuthenticated() && request.auth.uid == userId;
@@ -79,7 +73,7 @@ service cloud.firestore {
   // `resource` is null when the document does not exist, and dereferencing it
   // raises an evaluation error rather than denying, which surfaces to the
   // client as "insufficient permissions" for what is really a missing doc.
-  allow get, list: if isGraderOrAdmin() ||
+  allow get, list: if isGraderOrMemberOrAdmin() ||
     (isAuthenticated() && resource != null && resource.data.studentId == request.auth.uid);
 
   allow create: if isAuthenticated()
@@ -100,14 +94,21 @@ service cloud.firestore {
       /databases/$(database)/documents/subjects/$(request.resource.data.subject)/units/$(request.resource.data.unitId)/frqs/$(request.resource.data.templateId)
     );
 
-  allow delete: if isGraderOrAdmin();
+  // The owner is included because issuing a grade deletes the queue entry in
+  // the same transaction, and a student self-grading their own submission runs
+  // that transaction as themselves.
+  allow delete: if isGraderOrMemberOrAdmin() ||
+    (isAuthenticated() && resource != null && resource.data.studentId == request.auth.uid);
 }
 
     match /graded-frqs/{resultId} {
-  allow get, list: if isGraderOrAdmin() ||
+  allow get, list: if isGraderOrMemberOrAdmin() ||
     (isAuthenticated() && resource != null && resource.data.studentId == request.auth.uid);
 
-  allow create: if isGraderOrAdmin()
+  // Staff only. This collection is what an official FiveHive grade means, so a
+  // student cannot write here even about their own attempt — a self-assessment
+  // goes to `self-graded-frqs` instead, where it carries no such authority.
+  allow create: if isGraderOrMemberOrAdmin()
     && resultId == request.resource.data.sourceSubmissionId
     && request.resource.data.keys().hasOnly([
       'sourceSubmissionId',
@@ -134,7 +135,50 @@ service cloud.firestore {
     && request.resource.data.feedback is string
     && request.resource.data.graderId == request.auth.uid;
 
-  allow update, delete: if isGraderOrAdmin();
+  allow update, delete: if isGraderOrMemberOrAdmin();
+}
+
+    // A student's own assessment of their own attempt. Deliberately a separate
+    // collection from `graded-frqs`: anyone may score themselves however they
+    // like, so nothing stored here carries a grader's authority, and no query
+    // for official results has to remember to filter these back out.
+    match /self-graded-frqs/{resultId} {
+  allow get, list: if isGraderOrMemberOrAdmin() ||
+    (isAuthenticated() && resource != null && resource.data.studentId == request.auth.uid);
+
+  // Only the author of the attempt, and only as themselves: both ids must be
+  // the caller's own uid, so a self-assessment cannot be filed against
+  // somebody else's work or signed as though staff had graded it.
+  allow create: if isAuthenticated()
+    && request.resource.data.studentId == request.auth.uid
+    && request.resource.data.graderId == request.auth.uid
+    && resultId == request.resource.data.sourceSubmissionId
+    && request.resource.data.keys().hasOnly([
+      'sourceSubmissionId',
+      'templateId',
+      'subject',
+      'unitId',
+      'studentId',
+      'responses',
+      'submittedAt',
+      'score',
+      'feedback',
+      'grades',
+      'graderId',
+      'gradedAt'
+    ])
+    && request.resource.data.grades is list
+    && request.resource.data.sourceSubmissionId is string
+    && request.resource.data.templateId is string
+    && request.resource.data.subject is string
+    && request.resource.data.unitId is string
+    && request.resource.data.responses is map
+    && request.resource.data.score is string
+    && request.resource.data.feedback is string;
+
+  // Write-once, like an official result: a student may not quietly restate
+  // yesterday's self-assessment. Staff can clear one out.
+  allow update, delete: if isGraderOrMemberOrAdmin();
 }
 
     // Admins can read/write all user documents

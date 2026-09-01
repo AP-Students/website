@@ -6,7 +6,7 @@ import { syncedQuestions } from "@/components/article-creator/custom_questions/Q
 import { useUser } from "@/components/hooks/UserContext";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import type { UnitTest } from "@/types/firestore";
 import { usePathname } from "next/navigation";
@@ -15,8 +15,7 @@ import { processQuestions } from "@/components/article-creator/FetchArticleFunct
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Link } from "@/app/admin/subject/link";
-import { ArrowLeft, UserRoundCog } from "lucide-react";
+import { AdminEditorBackLinks } from "@/app/admin/subject/link";
 import { cn } from "@/lib/utils";
 import { Blocker } from "@/app/admin/subject/navigation-block";
 
@@ -131,31 +130,11 @@ const Page = () => {
     return (
       <div className="relative min-h-screen">
         {unsavedChanges && <Blocker />}
-        <div className="grid gap-2 pl-4 pt-6">
-          <Link
-            className={cn(
-              buttonVariants({
-                variant: unsavedChanges ? "destructive" : "outline",
-              }),
-              "w-min",
-            )}
-            href={`/admin`}
-          >
-            <UserRoundCog className="mr-2" />
-            Return to Admin Dashboard
-          </Link>
-          <Link
-            className={cn(
-              buttonVariants({
-                variant: unsavedChanges ? "destructive" : "outline",
-              }),
-              "w-min",
-            )}
-            href={`/admin/subject/${subject}`}
-          >
-            <ArrowLeft className="mr-2" />
-            Return to Subject
-          </Link>
+        <div className="pl-4 pt-6">
+          <AdminEditorBackLinks
+            subjectSlug={subject}
+            unsavedChanges={unsavedChanges}
+          />
         </div>
         <div className="flex gap-2 p-4 pb-0">
           <div className="grid place-content-start gap-1.5">
