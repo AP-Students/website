@@ -304,16 +304,44 @@ export const getPartLabel = (index: number) => {
 };
 
 /**
+ * The named entities the response toolbar can actually produce or that show
+ * up in ordinary typed text once `&` is escaped. Not an exhaustive HTML5
+ * entity table on purpose: this only has to undo what the sanitizer/editor
+ * puts in, not parse arbitrary markup.
+ */
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: " ",
+};
+
+const decodeHtmlEntities = (value: string) =>
+  value.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (match, entity: string) => {
+    if (entity[0] === "#") {
+      const codePoint =
+        entity[1]?.toLowerCase() === "x"
+          ? parseInt(entity.slice(2), 16)
+          : parseInt(entity.slice(1), 10);
+
+      return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : match;
+    }
+
+    return NAMED_ENTITIES[entity.toLowerCase()] ?? match;
+  });
+
+/**
  * Strip a response's stored HTML down to plain text. Regex-based rather than
  * `richTextToPlainText`'s DOM-parsing so it behaves the same whether this
  * runs in the browser or under `node:test`, and so `src/lib/frq` does not
- * reach into `article-creator` for something this small.
+ * reach into `article-creator` for something this small. Entities are decoded
+ * after tags are stripped, so `&lt;p&gt;` typed as literal text renders as
+ * `<p>` rather than vanishing as if it were markup.
  */
 export const stripResponseHtml = (response: string | undefined) =>
-  (response ?? "")
-    .replace(/<[^>]*>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .trim();
+  decodeHtmlEntities((response ?? "").replace(/<[^>]*>/g, "")).trim();
 
 /** Whether a response has anything in it, not fooled by markup-only `<p></p>`. */
 export const hasResponseText = (response: string | undefined) =>

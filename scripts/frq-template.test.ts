@@ -10,6 +10,7 @@ import {
   hasResponseText,
   makeId,
   normalizeFrqTemplate,
+  stripResponseHtml,
 } from "../src/lib/frq/template.ts";
 
 test("part labels do not walk off the alphabet", () => {
@@ -23,6 +24,17 @@ test("hasResponseText ignores markup-only responses", () => {
   assert.equal(hasResponseText("<p>&nbsp;</p>"), false);
   assert.equal(hasResponseText("<p>an answer</p>"), true);
   assert.equal(hasResponseText(undefined), false);
+});
+
+test("stripResponseHtml decodes HTML entities, not just strips tags", () => {
+  assert.equal(
+    stripResponseHtml("<p>Supply &amp; demand shift the curve.</p>"),
+    "Supply & demand shift the curve.",
+  );
+  assert.equal(stripResponseHtml("<p>5 &lt; 10 &gt; 2</p>"), "5 < 10 > 2");
+  assert.equal(stripResponseHtml("<p>&quot;quoted&quot;</p>"), '"quoted"');
+  assert.equal(stripResponseHtml("<p>caf&#233;</p>"), "café");
+  assert.equal(stripResponseHtml("<p>&nbsp;padded&nbsp;</p>"), "padded");
 });
 
 test("a malformed document degrades instead of throwing", () => {
