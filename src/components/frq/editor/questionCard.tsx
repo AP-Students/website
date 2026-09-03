@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import type { EditorPart, EditorQuestion } from "@/lib/frq/editorState";
 import { formatPoints, getEditorQuestionPoints } from "@/lib/frq/editorState";
 import { getPartLabel } from "@/lib/frq/template";
+import type { CalculatorPermission } from "@/lib/calculator";
 import { Plus, Trash2 } from "lucide-react";
 
 interface QuestionCardProps {
@@ -92,6 +93,31 @@ const QuestionCard = ({
               }
               placeholder="Enter the stimulus for this question here."
             />
+          </div>
+
+          <div className="mt-4">
+            <label
+              htmlFor={`calculator-override-${question.id}`}
+              className="text-sm font-medium"
+            >
+              Calculator
+            </label>
+            <select
+              id={`calculator-override-${question.id}`}
+              className="mt-2 block rounded border p-1.5 text-sm"
+              value={question.calculatorOverride}
+              onChange={(event) =>
+                onChange((current) => ({
+                  ...current,
+                  calculatorOverride: event.target
+                    .value as CalculatorPermission,
+                }))
+              }
+            >
+              <option value="inherit">Inherit from FRQ default</option>
+              <option value="allowed">Allowed</option>
+              <option value="not-allowed">Not allowed</option>
+            </select>
           </div>
         </div>
 

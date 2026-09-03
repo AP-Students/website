@@ -7,6 +7,7 @@ import type {
   FRQTemplateQuestion,
 } from "@/types/frq";
 import type { QuestionFormat, QuestionInput } from "@/types/questions";
+import type { CalculatorPermission, CalculatorType } from "@/lib/calculator";
 import {
   DEFAULT_TIME_LIMIT_MINUTES,
   getPartLabel,
@@ -38,6 +39,8 @@ export interface EditorQuestion {
   /** Stimulus text and files, same rich-text shape as a part's prompt. */
   stimulus: QuestionFormat;
   parts: EditorPart[];
+  /** "inherit" or absent defers to the template's calculatorDefault. */
+  calculatorOverride: CalculatorPermission;
 }
 
 export interface EditorState {
@@ -49,6 +52,8 @@ export interface EditorState {
   questions: EditorQuestion[];
   timeLimitMinutes: number;
   isPublic: boolean;
+  calculatorDefault: CalculatorPermission;
+  calculatorType: CalculatorType;
 }
 
 const createQuestionInput = (value = ""): QuestionInput => ({
@@ -89,6 +94,7 @@ export const createEditorQuestion = (): EditorQuestion => ({
   id: makeId("question"),
   stimulus: createQuestionData(),
   parts: [],
+  calculatorOverride: "inherit",
 });
 
 const toEditorPart = (part: FRQTemplatePart): EditorPart => ({
@@ -105,6 +111,7 @@ const toEditorQuestion = (question: FRQTemplateQuestion): EditorQuestion => ({
     toQuestionInput(question.stimulus, question.stimulusFiles),
   ),
   parts: question.parts.map(toEditorPart),
+  calculatorOverride: question.calculatorOverride ?? "inherit",
 });
 
 export const buildInitialState = (
@@ -126,6 +133,8 @@ export const buildInitialState = (
     questions: questions.length > 0 ? questions : [createEditorQuestion()],
     timeLimitMinutes: template?.timeLimitMinutes ?? DEFAULT_TIME_LIMIT_MINUTES,
     isPublic: template?.isPublic === true,
+    calculatorDefault: template?.calculatorDefault ?? "not-allowed",
+    calculatorType: template?.calculatorType ?? "graphing",
   };
 };
 
@@ -144,10 +153,13 @@ export const buildTemplatePayload = (state: EditorState) => ({
   sectionSubtitle: state.sectionSubtitle.trim(),
   timeLimitMinutes: state.timeLimitMinutes,
   isPublic: state.isPublic,
+  calculatorDefault: state.calculatorDefault,
+  calculatorType: state.calculatorType,
   questions: state.questions.map((question) => ({
     id: question.id,
     stimulus: question.stimulus.question.value,
     stimulusFiles: question.stimulus.question.files,
+    calculatorOverride: question.calculatorOverride,
     parts: question.parts.map((part, index) => ({
       id: part.id,
       // Labels are positional and recomputed on every save, so a part that

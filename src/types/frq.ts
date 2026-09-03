@@ -1,5 +1,6 @@
 import type { Timestamp } from "firebase/firestore";
 import type { QuestionFile } from "@/types/questions";
+import type { CalculatorPermission, CalculatorType } from "@/lib/calculator";
 
 /** How a student is expected to answer a single FRQ part. */
 export type FRQAnswerType = "text" | "equation";
@@ -46,6 +47,8 @@ export interface FRQTemplateQuestion {
   stimulus?: string;
   stimulusFiles?: QuestionFile[];
   parts: FRQTemplatePart[];
+  /** Per-question calculator override; "inherit" or absent defers to the template's default. */
+  calculatorOverride?: CalculatorPermission;
 }
 
 /** An admin-authored prompt used by the digital FRQ testing experience. */
@@ -72,6 +75,10 @@ export interface FRQTemplate {
   isPublic?: boolean;
   /** Minutes on the test clock. Absent on templates authored before timing. */
   timeLimitMinutes?: number;
+  /** Default calculator setting for every question; absent/"not-allowed" means no calculator. */
+  calculatorDefault?: CalculatorPermission;
+  /** Which Desmos calculator to offer when the calculator is allowed. */
+  calculatorType?: CalculatorType;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }

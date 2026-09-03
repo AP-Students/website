@@ -30,6 +30,11 @@ import {
 import { getPartLabel } from "@/lib/frq/template";
 import type { FRQTemplate } from "@/types/frq";
 import type { QuestionFormat } from "@/types/questions";
+import {
+  CALCULATOR_TYPE_LABELS,
+  type CalculatorPermission,
+  type CalculatorType,
+} from "@/lib/calculator";
 import { deleteField, serverTimestamp, updateDoc } from "firebase/firestore";
 import { Clock3, Plus, Save } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -80,6 +85,12 @@ const FRQEditorRenderer = ({
     initialState.timeLimitMinutes,
   );
   const [isPublic, setIsPublic] = useState(initialState.isPublic);
+  const [calculatorDefault, setCalculatorDefault] = useState(
+    initialState.calculatorDefault,
+  );
+  const [calculatorType, setCalculatorType] = useState(
+    initialState.calculatorType,
+  );
 
   // Both accordions are controlled. With Radix's uncontrolled `defaultValue`
   // the open list is read once at mount, so anything added or moved afterwards
@@ -110,6 +121,8 @@ const FRQEditorRenderer = ({
         questions,
         timeLimitMinutes,
         isPublic,
+        calculatorDefault,
+        calculatorType,
       } satisfies EditorState),
     [
       title,
@@ -119,6 +132,8 @@ const FRQEditorRenderer = ({
       questions,
       timeLimitMinutes,
       isPublic,
+      calculatorDefault,
+      calculatorType,
     ],
   );
 
@@ -377,6 +392,59 @@ const FRQEditorRenderer = ({
                 <label htmlFor="frq-visibility" className="text-sm font-medium">
                   Visible to students
                 </label>
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-end gap-4">
+                <div>
+                  <label
+                    htmlFor="frq-calculator-default"
+                    className="text-sm font-medium"
+                  >
+                    Default Calculator
+                  </label>
+                  <select
+                    id="frq-calculator-default"
+                    className="mt-2 block rounded border p-1.5 text-sm"
+                    value={calculatorDefault}
+                    onChange={(event) =>
+                      setCalculatorDefault(
+                        event.target.value as CalculatorPermission,
+                      )
+                    }
+                  >
+                    <option value="not-allowed">Not allowed</option>
+                    <option value="allowed">Allowed</option>
+                  </select>
+                </div>
+
+                {calculatorDefault === "allowed" && (
+                  <div>
+                    <label
+                      htmlFor="frq-calculator-type"
+                      className="text-sm font-medium"
+                    >
+                      Calculator Type
+                    </label>
+                    <select
+                      id="frq-calculator-type"
+                      className="mt-2 block rounded border p-1.5 text-sm"
+                      value={calculatorType}
+                      onChange={(event) =>
+                        setCalculatorType(
+                          event.target.value as CalculatorType,
+                        )
+                      }
+                    >
+                      {Object.entries(CALCULATOR_TYPE_LABELS).map(
+                        ([value, label]) => (
+                          <option key={value} value={value}>
+                            {label}
+                          </option>
+                        ),
+                      )}
+                    </select>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -18,6 +18,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { AdminEditorBackLinks } from "@/app/admin/subject/link";
 import { cn } from "@/lib/utils";
 import { Blocker } from "@/app/admin/subject/navigation-block";
+import {
+  CALCULATOR_TYPE_LABELS,
+  type CalculatorPermission,
+  type CalculatorType,
+} from "@/lib/calculator";
 
 const Page = () => {
   const pathname = usePathname() ?? "";
@@ -33,6 +38,10 @@ const Page = () => {
   const { questions, setQuestions } = syncedQuestions(instanceId);
   const [directions, setDirections] = useState("");
   const [testName, setTestName] = useState<string>("");
+  const [calculatorDefault, setCalculatorDefault] =
+    useState<CalculatorPermission>("not-allowed");
+  const [calculatorType, setCalculatorType] =
+    useState<CalculatorType>("graphing");
 
   const [testLoading, setTestLoading] = useState<boolean>(true);
   const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
@@ -77,6 +86,8 @@ const Page = () => {
         );
 
         setTestName(data.name ?? "");
+        setCalculatorDefault(data.calculatorDefault ?? "not-allowed");
+        setCalculatorType(data.calculatorType ?? "graphing");
         if (questions) {
           setQuestions(questions);
         } else {
@@ -110,6 +121,8 @@ const Page = () => {
         time: minutes * 60 + seconds,
         instanceId: instanceId ?? "",
         directions,
+        calculatorDefault,
+        calculatorType,
       };
 
       await setDoc(testRef, testData, { merge: true });
@@ -178,6 +191,43 @@ const Page = () => {
               }}
             />
           </div>
+          <div className="grid place-content-start gap-1.5">
+            <Label htmlFor="calculatorDefault">Default Calculator</Label>
+            <select
+              id="calculatorDefault"
+              className="rounded border p-1.5 text-sm"
+              value={calculatorDefault}
+              onChange={(e) => {
+                setCalculatorDefault(e.target.value as CalculatorPermission);
+                setUnsavedChanges(true);
+              }}
+            >
+              <option value="not-allowed">Not allowed</option>
+              <option value="allowed">Allowed</option>
+            </select>
+          </div>
+          {calculatorDefault === "allowed" && (
+            <div className="grid place-content-start gap-1.5">
+              <Label htmlFor="calculatorType">Calculator Type</Label>
+              <select
+                id="calculatorType"
+                className="rounded border p-1.5 text-sm"
+                value={calculatorType}
+                onChange={(e) => {
+                  setCalculatorType(e.target.value as CalculatorType);
+                  setUnsavedChanges(true);
+                }}
+              >
+                {Object.entries(CALCULATOR_TYPE_LABELS).map(
+                  ([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ),
+                )}
+              </select>
+            </div>
+          )}
           {(!testLoading || unsavedChanges) && (
             <Button
               className={cn(
@@ -206,6 +256,8 @@ const Page = () => {
               inputQuestions={questions}
               adminMode={true}
               testName={testName}
+              calculatorDefault={calculatorDefault}
+              calculatorType={calculatorType}
             />
           </div>
         </div>

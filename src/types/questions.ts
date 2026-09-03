@@ -1,3 +1,5 @@
+import type { CalculatorPermission } from "@/lib/calculator";
+
 export interface QuestionFile {
   key: string;
   url?: string;
@@ -27,6 +29,8 @@ export interface QuestionFormat {
   content: QuestionInput; // Leftside content to be shown for test renderer
   bookmarked?: boolean; // for test renderer
   topic: string;
+  /** Per-question calculator override; "inherit" or absent defers to the test's default. */
+  calculatorOverride?: CalculatorPermission;
 }
 
 export interface Props {

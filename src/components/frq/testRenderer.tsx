@@ -21,8 +21,10 @@ import {
   toQuestionInput,
 } from "@/lib/frq/template";
 import type { FRQTemplate } from "@/types/frq";
+import CalculatorPanel from "@/components/questions/CalculatorPanel";
+import { resolveCalculatorPermission } from "@/lib/calculator";
 import { addDoc, serverTimestamp } from "firebase/firestore";
-import { LogOut } from "lucide-react";
+import { Calculator, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -107,6 +109,7 @@ const FRQTestRenderer = ({
   const [showTimeUpPopup, setShowTimeUpPopup] = useState(false);
   const [showReviewPage, setShowReviewPage] = useState(false);
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
+  const [showCalculator, setShowCalculator] = useState(false);
 
   const templateId = template?.id ?? "";
   const studentId = user?.uid ?? "";
@@ -184,6 +187,19 @@ const FRQTestRenderer = ({
       setShowTimeUpPopup(true);
     }
   }, [timeRemaining, hasSubmitted]);
+
+  const calculatorAllowed = resolveCalculatorPermission(
+    template?.calculatorDefault,
+    questions[currentQuestionIndex]?.calculatorOverride,
+  );
+
+  // Moving to a question where the calculator isn't allowed force-closes the
+  // panel, which unmounts its iframe and discards whatever state it held —
+  // the simplest way to guarantee a student can't carry a live calculator
+  // into a question it's not permitted on.
+  useEffect(() => {
+    if (!calculatorAllowed) setShowCalculator(false);
+  }, [calculatorAllowed]);
 
   /**
    * Both destinations write the same submission document. "self" then opens the
@@ -401,6 +417,11 @@ const FRQTestRenderer = ({
     <main className="min-h-screen w-full bg-white text-black">
       {timeUpModal}
       {submissionModal}
+      <CalculatorPanel
+        open={showCalculator && calculatorAllowed}
+        onOpenChange={setShowCalculator}
+        calculatorType={template.calculatorType ?? "graphing"}
+      />
       <section className="flex min-h-screen w-full flex-col border-4 border-black">
         <header className="relative flex items-start justify-between px-6 py-3">
           <div>
@@ -422,14 +443,40 @@ const FRQTestRenderer = ({
             </button>
           </div>
 
-          <button
-            type="button"
-            className="flex items-center gap-2 text-sm font-bold text-red-500"
-            onClick={() => router.back()}
-          >
-            <LogOut size={16} />
-            Exit Test
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => calculatorAllowed && setShowCalculator(true)}
+              aria-disabled={!calculatorAllowed}
+              aria-label={
+                calculatorAllowed
+                  ? "Open calculator"
+                  : "Calculator not permitted for this question"
+              }
+              className={
+                calculatorAllowed
+                  ? "flex items-center gap-2 text-sm font-bold text-blue-600"
+                  : "flex cursor-not-allowed items-center gap-2 text-sm font-bold text-gray-400"
+              }
+              title={
+                calculatorAllowed
+                  ? "Open calculator"
+                  : "Calculator not permitted for this question"
+              }
+            >
+              <Calculator size={16} />
+              Calculator
+            </button>
+
+            <button
+              type="button"
+              className="flex items-center gap-2 text-sm font-bold text-red-500"
+              onClick={() => router.back()}
+            >
+              <LogOut size={16} />
+              Exit Test
+            </button>
+          </div>
 
           <div
             aria-hidden="true"
