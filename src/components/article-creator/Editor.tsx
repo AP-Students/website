@@ -52,6 +52,8 @@ interface EditorImageData {
   withBackground?: boolean;
   stretched?: boolean;
   centerImage?: boolean;
+  /** Custom width as a percentage (15-100) of the content column. Unset means natural/default sizing. */
+  width?: number;
 }
 
 type MenuConfigItemList = Array<{
@@ -82,6 +84,7 @@ type CustomImageTool = {
     nodes: {
       caption?: HTMLElement;
       wrapper?: HTMLElement;
+      imageContainer?: HTMLElement;
     };
   };
   renderSettings(): MenuConfigItemList;
@@ -92,6 +95,9 @@ type CustomImageTool = {
 const pendingStorageDeletes = new Set<string>();
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+
+const MIN_IMAGE_WIDTH_PERCENT = 15;
+const MAX_IMAGE_WIDTH_PERCENT = 100;
 
 async function uploadImageFile(file: File) {
   if (!file.type.startsWith("image/") && !isSvgFileName(file.name)) {
@@ -277,6 +283,119 @@ function openImageReplacementDialog(tool: CustomImageTool) {
   input.focus();
 }
 
+const RESIZE_HANDLE_ATTR = "data-resize-handle";
+
+/**
+ * Attaches a Google-Docs-style drag handle to the bottom-right corner of the
+ * image container. Dragging sets `_data.width` as a percentage of the
+ * block's own width (clamped), preserving aspect ratio. Idempotent: safe to
+ * call on every render.
+ */
+function mountResizeHandle(
+  imageContainer: HTMLElement,
+  getWidth: () => number | undefined,
+  onResize: (widthPercent: number | undefined) => void,
+) {
+  imageContainer.style.position = "relative";
+  imageContainer.style.maxWidth = "100%";
+
+  const initialWidth = getWidth();
+  imageContainer.style.width =
+    initialWidth !== undefined ? `${initialWidth}%` : "";
+
+  let handle = imageContainer.querySelector<HTMLElement>(
+    `[${RESIZE_HANDLE_ATTR}]`,
+  );
+  if (handle) return;
+
+  handle = document.createElement("div");
+  handle.setAttribute(RESIZE_HANDLE_ATTR, "true");
+  handle.setAttribute("role", "slider");
+  handle.setAttribute("aria-label", "Resize image");
+  handle.setAttribute("aria-valuemin", String(MIN_IMAGE_WIDTH_PERCENT));
+  handle.setAttribute("aria-valuemax", String(MAX_IMAGE_WIDTH_PERCENT));
+  handle.tabIndex = 0;
+  handle.style.position = "absolute";
+  handle.style.right = "4px";
+  handle.style.bottom = "4px";
+  handle.style.width = "14px";
+  handle.style.height = "14px";
+  handle.style.borderRadius = "9999px";
+  handle.style.border = "2px solid #fff";
+  handle.style.background = "#2563eb";
+  handle.style.boxShadow = "0 1px 3px rgba(0,0,0,0.4)";
+  handle.style.cursor = "nwse-resize";
+  handle.style.touchAction = "none";
+  handle.style.zIndex = "10";
+
+  const step = (delta: number) => {
+    const current = getWidth() ?? 100;
+    const next = clampWidthPercent(current + delta);
+    imageContainer.style.width = `${next}%`;
+    handle?.setAttribute("aria-valuenow", String(next));
+    onResize(next >= MAX_IMAGE_WIDTH_PERCENT ? undefined : next);
+  };
+
+  handle.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
+      event.preventDefault();
+      step(-2);
+    } else if (event.key === "ArrowRight" || event.key === "ArrowUp") {
+      event.preventDefault();
+      step(2);
+    }
+  });
+
+  handle.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const pointerId = event.pointerId;
+    const startX = event.clientX;
+    const blockContent = imageContainer.closest<HTMLElement>(
+      ".ce-block__content",
+    );
+    const referenceWidth =
+      blockContent?.clientWidth ?? imageContainer.clientWidth;
+    const startWidthPercent =
+      getWidth() ??
+      Math.min(
+        100,
+        (imageContainer.clientWidth / (referenceWidth || 1)) * 100,
+      );
+    handle?.setPointerCapture(pointerId);
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const deltaPercent = (deltaX / (referenceWidth || 1)) * 100;
+      const next = clampWidthPercent(startWidthPercent + deltaPercent);
+      imageContainer.style.width = `${next}%`;
+      handle?.setAttribute("aria-valuenow", String(Math.round(next)));
+    };
+
+    const onPointerUp = () => {
+      handle?.releasePointerCapture(pointerId);
+      document.removeEventListener("pointermove", onPointerMove);
+      document.removeEventListener("pointerup", onPointerUp);
+      const finalWidth = clampWidthPercent(
+        Number.parseFloat(imageContainer.style.width) || startWidthPercent,
+      );
+      onResize(finalWidth >= MAX_IMAGE_WIDTH_PERCENT ? undefined : finalWidth);
+    };
+
+    document.addEventListener("pointermove", onPointerMove);
+    document.addEventListener("pointerup", onPointerUp, { once: true });
+  });
+
+  imageContainer.appendChild(handle);
+}
+
+function clampWidthPercent(value: number): number {
+  return Math.min(
+    MAX_IMAGE_WIDTH_PERCENT,
+    Math.max(MIN_IMAGE_WIDTH_PERCENT, Math.round(value)),
+  );
+}
+
 function isStorageObjectNotFoundError(error: unknown): boolean {
   return (
     typeof error === "object" &&
@@ -314,6 +433,7 @@ class CustomImage extends Image {
       data.altText = maybeData.altText;
       data.richCaption = maybeData.richCaption;
       data.centerImage = maybeData.centerImage;
+      data.width = maybeData.width;
 
       if (maybeData.richCaption) {
         this._richCaption = resolveInitialRichCaption(maybeData.richCaption);
@@ -410,10 +530,26 @@ class CustomImage extends Image {
         nodes: {
           caption?: HTMLElement;
           wrapper?: HTMLElement;
+          imageContainer?: HTMLElement;
         };
       };
       block: { container: HTMLElement; id: string };
     };
+
+    const imageContainer = typed.ui?.nodes?.imageContainer ?? null;
+    if (imageContainer) {
+      const data = (this as unknown as { _data: EditorImageData })._data;
+      mountResizeHandle(
+        imageContainer,
+        () => data.width,
+        (nextWidth) => {
+          data.width = nextWidth;
+          if (nextWidth !== undefined) {
+            data.stretched = false;
+          }
+        },
+      );
+    }
 
     // EditorJS's Image tool keeps its DOM refs on `this.ui.nodes`, not
     // `this.nodes` directly — see @editorjs/image's Ui class.
@@ -455,6 +591,7 @@ class CustomImage extends Image {
     withBackground?: boolean;
     stretched?: boolean;
     centerImage?: boolean;
+    width?: number;
   } {
     // Avoid calling the parent save(); it would try to read the caption
     // element that we've repurposed, and we already have a structured value
@@ -470,6 +607,7 @@ class CustomImage extends Image {
       withBackground: d.withBackground,
       stretched: d.stretched,
       centerImage: d.centerImage ?? false,
+      ...(d.width === undefined ? {} : { width: d.width }),
     };
   }
 
