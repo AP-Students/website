@@ -270,6 +270,14 @@ export const getStudentFacingQuestions = (
     }))
     .filter((question) => question.parts.length > 0);
 
+/**
+ * Whether a document's questions should be numbered at all. Every legacy
+ * document normalizes into exactly one question, and those pages never
+ * carried a question number, so a single-question exam stays unnumbered
+ * rather than reading "Question 1" for an exam nobody split up.
+ */
+export const isMultiQuestion = (questionCount: number) => questionCount > 1;
+
 export const getPartPoints = (part: FRQTemplatePart) =>
   (part.criteria ?? []).reduce(
     (total, criterion) => total + criterion.points,
@@ -295,12 +303,48 @@ export const getPartLabel = (index: number) => {
   return label;
 };
 
-/** Strips markup so "did the student write anything" is not fooled by `<p></p>`. */
+/**
+ * The named entities the response toolbar can actually produce or that show
+ * up in ordinary typed text once `&` is escaped. Not an exhaustive HTML5
+ * entity table on purpose: this only has to undo what the sanitizer/editor
+ * puts in, not parse arbitrary markup.
+ */
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: " ",
+};
+
+const decodeHtmlEntities = (value: string) =>
+  value.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (match, entity: string) => {
+    if (entity.startsWith("#")) {
+      const codePoint = entity.toLowerCase().startsWith("#x")
+        ? parseInt(entity.slice(2), 16)
+        : parseInt(entity.slice(1), 10);
+
+      return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : match;
+    }
+
+    return NAMED_ENTITIES[entity.toLowerCase()] ?? match;
+  });
+
+/**
+ * Strip a response's stored HTML down to plain text. Regex-based rather than
+ * `richTextToPlainText`'s DOM-parsing so it behaves the same whether this
+ * runs in the browser or under `node:test`, and so `src/lib/frq` does not
+ * reach into `article-creator` for something this small. Entities are decoded
+ * after tags are stripped, so `&lt;p&gt;` typed as literal text renders as
+ * `<p>` rather than vanishing as if it were markup.
+ */
+export const stripResponseHtml = (response: string | undefined) =>
+  decodeHtmlEntities((response ?? "").replace(/<[^>]*>/g, "")).trim();
+
+/** Whether a response has anything in it, not fooled by markup-only `<p></p>`. */
 export const hasResponseText = (response: string | undefined) =>
-  (response ?? "")
-    .replace(/<[^>]*>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .trim().length > 0;
+  stripResponseHtml(response).length > 0;
 
 /**
  * Unique, immutable ID built from the current time plus a short random suffix.

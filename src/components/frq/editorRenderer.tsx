@@ -4,6 +4,7 @@ import { AdminEditorBackLinks } from "@/app/admin/subject/link";
 import { Blocker } from "@/app/admin/subject/navigation-block";
 import FRQEditorFooter from "@/components/frq/editorFooter";
 import QuestionCard from "@/components/frq/editor/questionCard";
+import { getEditorPartAnchorId } from "@/components/frq/editor/partCard";
 import RichPromptEditor from "@/components/frq/editor/richPromptEditor";
 import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
@@ -16,8 +17,9 @@ import type {
 } from "@/lib/frq/editorState";
 import {
   buildInitialState,
+  buildPartLocationIndex,
   buildTemplatePayload,
-  canMovePart,
+  canMovePartIndexed,
   createEditorPart,
   createEditorQuestion,
   deletePartById,
@@ -122,7 +124,10 @@ const FRQEditorRenderer = ({
     ],
   );
 
-  const hasUnsavedChanges = JSON.stringify(currentPayload) !== savedSignature;
+  const hasUnsavedChanges = useMemo(
+    () => JSON.stringify(currentPayload) !== savedSignature,
+    [currentPayload, savedSignature],
+  );
 
   useEffect(() => {
     if (!hasUnsavedChanges) {
@@ -228,7 +233,7 @@ const FRQEditorRenderer = ({
 
     requestAnimationFrame(() => {
       document
-        .querySelector(`[data-frq-part="${partId}"]`)
+        .getElementById(getEditorPartAnchorId(partId))
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   };
@@ -270,6 +275,11 @@ const FRQEditorRenderer = ({
       );
     }
   }, [currentPayload, frqTemplate]);
+
+  const partLocationIndex = useMemo(
+    () => buildPartLocationIndex(questions),
+    [questions],
+  );
 
   const totalPoints = getEditorTotalPoints(questions);
   const totalParts = questions.reduce(
@@ -479,7 +489,12 @@ const FRQEditorRenderer = ({
                   onDeletePart={deletePart}
                   onMovePart={movePartBy}
                   canMovePart={(partId, direction) =>
-                    canMovePart(questions, partId, direction)
+                    canMovePartIndexed(
+                      questions,
+                      partLocationIndex,
+                      partId,
+                      direction,
+                    )
                   }
                   canDelete={questions.length > 1}
                   openParts={openParts}

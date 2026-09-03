@@ -4,7 +4,26 @@ import { RenderContent } from "@/components/article-creator/custom_questions/Ren
 import FRQResponseEditor from "@/components/frq/responseEditor";
 import type { StudentQuestion } from "@/lib/frq/studentView";
 import { toQuestionInput } from "@/lib/frq/template";
+import type { QuestionFile } from "@/types/questions";
 import { Bookmark } from "lucide-react";
+import { memo } from "react";
+
+/**
+ * A page now stacks every part of a question, so an unmemoized prompt would
+ * re-run KaTeX rendering and rich-text sanitization for every other part on
+ * the page each time a keystroke in any one part's response box re-renders
+ * `QuestionPane`. Memoized on the prompt's own text and files so it only
+ * re-renders when its own content actually changes.
+ */
+const PartPrompt = memo(
+  ({ prompt, promptFiles }: { prompt?: string; promptFiles?: QuestionFile[] }) => (
+    <RenderContent
+      content={toQuestionInput(prompt, promptFiles)}
+      origin="question"
+    />
+  ),
+);
+PartPrompt.displayName = "PartPrompt";
 
 /**
  * DOM id of one part's block. The footer's part shortcuts and the review grid
@@ -70,10 +89,7 @@ const QuestionPane = ({
           </div>
 
           <div className="mb-4 font-sans text-sm">
-            <RenderContent
-              content={toQuestionInput(part.prompt, part.promptFiles)}
-              origin="question"
-            />
+            <PartPrompt prompt={part.prompt} promptFiles={part.promptFiles} />
           </div>
 
           <div className="w-full max-w-[50rem]">

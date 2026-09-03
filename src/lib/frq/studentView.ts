@@ -1,6 +1,10 @@
 import type { FRQTemplate, FRQTemplatePart } from "@/types/frq";
 import type { QuestionFile } from "@/types/questions";
-import { getPartLabel, getStudentFacingQuestions } from "./template.ts";
+import {
+  getPartLabel,
+  getStudentFacingQuestions,
+  isMultiQuestion,
+} from "./template.ts";
 
 /**
  * The model the test renderer pages through, kept apart from the component so
@@ -82,7 +86,7 @@ export const getPartHeading = (
   questionIndex: number,
   label: string,
 ) =>
-  questionCount > 1
+  isMultiQuestion(questionCount)
     ? `Question ${questionIndex + 1}, Part ${label}`
     : `Part ${label}`;
 
