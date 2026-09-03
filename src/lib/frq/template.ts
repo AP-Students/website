@@ -224,15 +224,18 @@ export const normalizeFrqTemplate = (
       Number.isFinite(timeLimit) && timeLimit >= 1
         ? Math.floor(timeLimit)
         : DEFAULT_TIME_LIMIT_MINUTES,
+    referenceSheetEnabled: record.referenceSheetEnabled === true,
   };
 
   // Assigned only when configured, so the key is genuinely missing on a
   // template that predates section headings rather than present-and-blank.
   const sectionLabel = asOptionalString(record.sectionLabel);
   const sectionSubtitle = asOptionalString(record.sectionSubtitle);
+  const referenceSheetId = asOptionalString(record.referenceSheetId);
 
   if (sectionLabel) template.sectionLabel = sectionLabel;
   if (sectionSubtitle) template.sectionSubtitle = sectionSubtitle;
+  if (referenceSheetId) template.referenceSheetId = referenceSheetId;
 
   return template;
 };

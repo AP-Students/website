@@ -6,6 +6,7 @@ import Header from "./digital-testing/Header";
 import QuestionPanel from "./digital-testing/QuestionPanel";
 import Footer from "./digital-testing/Footer";
 import type { QuestionFormat } from "@/types/questions";
+import type { ReferenceSheet } from "@/types/firestore";
 import { RenderContent } from "../../components/article-creator/custom_questions/RenderAdvancedTextbox";
 import Highlighter, { type Highlight } from "./digital-testing/Highlighter";
 import ReviewPage, { isQuestionCorrect } from "./digital-testing/ReviewPage";
@@ -20,6 +21,10 @@ interface Props {
   adminMode?: boolean;
   directions?: string;
   testName: string;
+  /** Whether this test has a reference sheet assigned, regardless of whether it loaded. */
+  referenceSheetEnabled?: boolean;
+  /** The resolved sheet, or null if enabled but unavailable (deleted, fetch error). */
+  referenceSheet?: ReferenceSheet | null;
 }
 
 const initialQuestions: QuestionFormat[] = [
@@ -69,6 +74,8 @@ export default function DigitalTestingPage({
   adminMode = false,
   directions,
   testName,
+  referenceSheetEnabled = false,
+  referenceSheet,
 }: Props) {
   const [questions, setQuestions] = useState<QuestionFormat[]>(
     inputQuestions || initialQuestions,
@@ -150,6 +157,8 @@ export default function DigitalTestingPage({
           submitted={submitted}
           timeRemaining={time * 60}
           directions={directions}
+          referenceSheetEnabled={referenceSheetEnabled}
+          referenceSheet={referenceSheet}
         />
       )}
       {showReviewPage ? (

@@ -30,7 +30,16 @@ import {
 import { getPartLabel } from "@/lib/frq/template";
 import type { FRQTemplate } from "@/types/frq";
 import type { QuestionFormat } from "@/types/questions";
-import { deleteField, serverTimestamp, updateDoc } from "firebase/firestore";
+import type { ReferenceSheet, Subject } from "@/types/firestore";
+import ReferenceSheetPanel from "@/components/questions/ReferenceSheetPanel";
+import { db } from "@/lib/firebase";
+import {
+  deleteField,
+  doc,
+  getDoc,
+  serverTimestamp,
+  updateDoc,
+} from "firebase/firestore";
 import { Clock3, Plus, Save } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -53,6 +62,7 @@ const toFirestoreUpdate = (
 ) => ({
   ...payload,
   sectionLabel: payload.sectionLabel || deleteField(),
+  referenceSheetId: payload.referenceSheetId || deleteField(),
   sectionSubtitle: payload.sectionSubtitle || deleteField(),
   updatedAt: serverTimestamp(),
 });
@@ -80,6 +90,40 @@ const FRQEditorRenderer = ({
     initialState.timeLimitMinutes,
   );
   const [isPublic, setIsPublic] = useState(initialState.isPublic);
+  const [referenceSheetEnabled, setReferenceSheetEnabled] = useState(
+    initialState.referenceSheetEnabled,
+  );
+  const [referenceSheetId, setReferenceSheetId] = useState(
+    initialState.referenceSheetId,
+  );
+  const [subjectReferenceSheets, setSubjectReferenceSheets] = useState<
+    ReferenceSheet[]
+  >([]);
+  const [showReferenceSheetPreview, setShowReferenceSheetPreview] =
+    useState(false);
+
+  useEffect(() => {
+    const subject = frqTemplate?.subject;
+
+    if (!subject) {
+      return;
+    }
+
+    const loadSubjectReferenceSheets = async () => {
+      const subjectSnap = await getDoc(doc(db, "subjects", subject));
+      const subjectData = subjectSnap.exists()
+        ? (subjectSnap.data() as Subject)
+        : null;
+      const availableSheets = subjectData?.referenceSheets ?? [];
+
+      setSubjectReferenceSheets(availableSheets);
+      setReferenceSheetId(
+        (current) => current || (availableSheets[0]?.id ?? ""),
+      );
+    };
+
+    void loadSubjectReferenceSheets();
+  }, [frqTemplate?.subject]);
 
   // Both accordions are controlled. With Radix's uncontrolled `defaultValue`
   // the open list is read once at mount, so anything added or moved afterwards
@@ -110,6 +154,8 @@ const FRQEditorRenderer = ({
         questions,
         timeLimitMinutes,
         isPublic,
+        referenceSheetEnabled,
+        referenceSheetId,
       } satisfies EditorState),
     [
       title,
@@ -119,6 +165,8 @@ const FRQEditorRenderer = ({
       questions,
       timeLimitMinutes,
       isPublic,
+      referenceSheetEnabled,
+      referenceSheetId,
     ],
   );
 
@@ -378,6 +426,53 @@ const FRQEditorRenderer = ({
                   Visible to students
                 </label>
               </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <input
+                  id="frq-reference-sheet-enabled"
+                  type="checkbox"
+                  checked={referenceSheetEnabled}
+                  onChange={(event) =>
+                    setReferenceSheetEnabled(event.target.checked)
+                  }
+                />
+                <label
+                  htmlFor="frq-reference-sheet-enabled"
+                  className="text-sm font-medium"
+                >
+                  Enable Reference Sheet
+                </label>
+
+                {referenceSheetEnabled && (
+                  <select
+                    className="rounded border p-1.5 text-sm"
+                    value={referenceSheetId}
+                    onChange={(event) =>
+                      setReferenceSheetId(event.target.value)
+                    }
+                  >
+                    <option value="" disabled>
+                      Select a reference sheet...
+                    </option>
+                    {subjectReferenceSheets.map((sheet) => (
+                      <option key={sheet.id} value={sheet.id}>
+                        {sheet.title || "Untitled Reference Sheet"}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
+                {referenceSheetEnabled && referenceSheetId && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowReferenceSheetPreview(true)}
+                  >
+                    Preview
+                  </Button>
+                )}
+              </div>
             </div>
 
             <div className="mb-6">
@@ -505,6 +600,21 @@ const FRQEditorRenderer = ({
         hasUnsavedChanges={hasUnsavedChanges}
         onSelectPart={selectPart}
       />
+
+      {referenceSheetEnabled &&
+        (() => {
+          const selectedSheet = subjectReferenceSheets.find(
+            (sheet) => sheet.id === referenceSheetId,
+          );
+
+          return selectedSheet ? (
+            <ReferenceSheetPanel
+              sheet={selectedSheet}
+              open={showReferenceSheetPreview}
+              onOpenChange={setShowReferenceSheetPreview}
+            />
+          ) : null;
+        })()}
     </div>
   );
 };

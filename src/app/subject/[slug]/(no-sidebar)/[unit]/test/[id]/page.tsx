@@ -4,7 +4,7 @@ import TestRenderer from "@/components/questions/testRenderer";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { type UnitTest } from "@/types/firestore";
+import { type ReferenceSheet, type Subject, type UnitTest } from "@/types/firestore";
 import { type QuestionFormat } from "@/types/questions";
 import usePathname from "@/components/client/pathname";
 
@@ -22,6 +22,11 @@ const Page = () => {
   const [questions, setQuestions] = useState<QuestionFormat[] | null>(null);
   const [directions, setDirections] = useState("");
   const [testName, setTestName] = useState<string>("");
+  const [referenceSheetEnabled, setReferenceSheetEnabled] =
+    useState<boolean>(false);
+  const [referenceSheet, setReferenceSheet] = useState<ReferenceSheet | null>(
+    null,
+  );
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -51,6 +56,34 @@ const Page = () => {
           } else {
             console.log("No questions found for this unit.");
           }
+
+          setReferenceSheetEnabled(data.referenceSheetEnabled ?? false);
+
+          if (data.referenceSheetEnabled && data.referenceSheetId) {
+            try {
+              const subjectSnap = await getDoc(doc(db, "subjects", subject));
+              const subjectData = subjectSnap.exists()
+                ? (subjectSnap.data() as Subject)
+                : null;
+
+              // Left null (rather than throwing) when the sheet was deleted
+              // or the subject doc is missing, so the toolbar can still show
+              // "unavailable" instead of the whole test failing to load.
+              setReferenceSheet(
+                subjectData?.referenceSheets?.find(
+                  (sheet) => sheet.id === data.referenceSheetId,
+                ) ?? null,
+              );
+            } catch (referenceSheetError) {
+              console.error(
+                "Error fetching reference sheet:",
+                referenceSheetError,
+              );
+              setReferenceSheet(null);
+            }
+          } else {
+            setReferenceSheet(null);
+          }
         } else {
           console.error("Subject document does not exist!");
         }
@@ -78,6 +111,8 @@ const Page = () => {
         adminMode={false}
         directions={directions}
         testName={testName}
+        referenceSheetEnabled={referenceSheetEnabled}
+        referenceSheet={referenceSheet}
       />
     </div>
   );

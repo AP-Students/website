@@ -4,8 +4,10 @@ import usePathname from "@/components/client/pathname";
 import FRQTestRenderer from "@/components/frq/testRenderer";
 import { getFrqTemplateDocRef } from "@/lib/firestore/frqRefs";
 import { normalizeFrqTemplate } from "@/lib/frq/template";
+import { db } from "@/lib/firebase";
 import type { FRQTemplate } from "@/types/frq";
-import { getDoc } from "firebase/firestore";
+import type { ReferenceSheet, Subject } from "@/types/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 /**
@@ -30,6 +32,9 @@ const Page = () => {
   const [template, setTemplate] = useState<FRQTemplate | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [referenceSheet, setReferenceSheet] = useState<ReferenceSheet | null>(
+    null,
+  );
 
   useEffect(() => {
     const fetchFRQ = async () => {
@@ -53,13 +58,41 @@ const Page = () => {
           return;
         }
 
-        setTemplate(
-          normalizeFrqTemplate(docSnap.data(), {
-            id: docSnap.id,
-            subject,
-            unitId,
-          }),
-        );
+        const normalizedTemplate = normalizeFrqTemplate(docSnap.data(), {
+          id: docSnap.id,
+          subject,
+          unitId,
+        });
+
+        setTemplate(normalizedTemplate);
+
+        if (
+          normalizedTemplate.referenceSheetEnabled &&
+          normalizedTemplate.referenceSheetId
+        ) {
+          // Isolated from the outer catch: a broken reference sheet should
+          // leave the toolbar showing "unavailable," not fail the whole FRQ.
+          try {
+            const subjectSnap = await getDoc(doc(db, "subjects", subject));
+            const subjectData = subjectSnap.exists()
+              ? (subjectSnap.data() as Subject)
+              : null;
+
+            setReferenceSheet(
+              subjectData?.referenceSheets?.find(
+                (sheet) => sheet.id === normalizedTemplate.referenceSheetId,
+              ) ?? null,
+            );
+          } catch (referenceSheetError) {
+            console.error(
+              "Error fetching reference sheet:",
+              referenceSheetError,
+            );
+            setReferenceSheet(null);
+          }
+        } else {
+          setReferenceSheet(null);
+        }
       } catch (fetchError: unknown) {
         console.error("Error fetching FRQ data:", fetchError);
 
@@ -77,7 +110,12 @@ const Page = () => {
   }, [subject, unitId, frqId]);
 
   return (
-    <FRQTestRenderer template={template} loading={loading} error={error} />
+    <FRQTestRenderer
+      template={template}
+      loading={loading}
+      error={error}
+      referenceSheet={referenceSheet}
+    />
   );
 };
 

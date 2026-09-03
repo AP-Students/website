@@ -23,8 +23,9 @@ import { Blocker } from "@/app/admin/subject/navigation-block";
 import apClassesData from "@/components/apClasses.json";
 import { cn, formatSlug } from "@/lib/utils";
 import short from "short-uuid";
-import type { Subject, Unit } from "@/types/firestore";
+import type { ReferenceSheet, Subject, Unit } from "@/types/firestore";
 import UnitComponent from "./_components/unit";
+import ReferenceSheets from "./_components/referenceSheets";
 import { DEFAULT_PORTING_SUBJECT } from "@/lib/apPortingDefaults";
 import {
   getFrqTemplateDocRef,
@@ -78,6 +79,7 @@ export default function Page({ params }: { params: { slug: string } }) {
   const { user, error, setError, setLoading } = useUser();
   const [subjectTitle, setSubjectTitle] = useState<string>("");
   const [units, setUnits] = useState<Unit[]>([]);
+  const [referenceSheets, setReferenceSheets] = useState<ReferenceSheet[]>([]);
   const [frqTemplates, setFrqTemplates] = useState<FRQTemplate[]>([]);
   const [hasUnit0, setHasUnit0] = useState<boolean>(false);
   const [resetting, setResetting] = useState<boolean>(false);
@@ -105,6 +107,7 @@ export default function Page({ params }: { params: { slug: string } }) {
           setSubjectTitle(fetchedSubject.title);
           setUnits(fetchedUnits);
           setHasUnit0(fetchedSubject.hasUnit0 ?? false);
+          setReferenceSheets(fetchedSubject.referenceSheets ?? []);
 
           const frqSnapshots = await Promise.all(
             fetchedUnits.map(async (unit) => {
@@ -147,6 +150,7 @@ export default function Page({ params }: { params: { slug: string } }) {
 
           setSubjectTitle(newSubject.title);
           setUnits(newSubject.units);
+          setReferenceSheets([]);
           setFrqTemplates([]);
         }
 
@@ -213,6 +217,56 @@ export default function Page({ params }: { params: { slug: string } }) {
   // Called by each <UnitComponent> whenever that unit updates
   const handleUnitChange = (unitId: string, updatedUnit: Unit) => {
     setUnits((prev) => prev.map((u) => (u.id === unitId ? updatedUnit : u)));
+    setUnsavedChanges(true);
+  };
+
+  /****************************************************
+   *              REFERENCE SHEET ACTIONS
+   ****************************************************/
+
+  const handleAddReferenceSheet = (title: string) => {
+    const newSheet: ReferenceSheet = {
+      id: generateShortId(),
+      title,
+      content: { value: "", files: [] },
+    };
+    setReferenceSheets((prev) => [...prev, newSheet]);
+    setUnsavedChanges(true);
+  };
+
+  const handleDeleteReferenceSheet = (sheetId: string) => {
+    if (!confirm("Delete this reference sheet?")) return;
+    setReferenceSheets((prev) => prev.filter((sheet) => sheet.id !== sheetId));
+    setUnsavedChanges(true);
+  };
+
+  const handleReferenceSheetChange = (
+    sheetId: string,
+    updated: ReferenceSheet,
+  ) => {
+    setReferenceSheets((prev) =>
+      prev.map((sheet) => (sheet.id === sheetId ? updated : sheet)),
+    );
+    setUnsavedChanges(true);
+  };
+
+  const handleMoveReferenceSheetUp = (index: number) => {
+    if (index === 0) return;
+    const updatedSheets = [...referenceSheets];
+    const temp = updatedSheets[index];
+    updatedSheets[index] = updatedSheets[index - 1]!;
+    updatedSheets[index - 1] = temp!;
+    setReferenceSheets(updatedSheets);
+    setUnsavedChanges(true);
+  };
+
+  const handleMoveReferenceSheetDown = (index: number) => {
+    if (index === referenceSheets.length - 1) return;
+    const updatedSheets = [...referenceSheets];
+    const temp = updatedSheets[index];
+    updatedSheets[index] = updatedSheets[index + 1]!;
+    updatedSheets[index + 1] = temp!;
+    setReferenceSheets(updatedSheets);
     setUnsavedChanges(true);
   };
 
@@ -508,6 +562,7 @@ export default function Page({ params }: { params: { slug: string } }) {
       title: subjectTitle,
       units: units,
       hasUnit0: hasUnit0,
+      referenceSheets: referenceSheets,
     };
 
     try {
@@ -759,6 +814,22 @@ export default function Page({ params }: { params: { slug: string } }) {
             This subject has a Unit 0 (foundational unit numbered starting from
             0)
           </label>
+
+          {/* Reference Sheets */}
+          <h2 className="mt-6 text-2xl font-bold">Reference Sheets</h2>
+          <p className="mb-2 text-sm text-gray-600">
+            Reusable reference material (formulas, constants, unit
+            conversions, definitions) that tests and FRQs in this subject can
+            offer to students while testing.
+          </p>
+          <ReferenceSheets
+            sheets={referenceSheets}
+            onAdd={handleAddReferenceSheet}
+            onDelete={handleDeleteReferenceSheet}
+            onChange={handleReferenceSheetChange}
+            onMoveUp={handleMoveReferenceSheetUp}
+            onMoveDown={handleMoveReferenceSheetDown}
+          />
 
           {/* Render each Unit */}
           <div className="my-4 space-y-4">

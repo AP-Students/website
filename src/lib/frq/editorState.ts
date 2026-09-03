@@ -49,6 +49,8 @@ export interface EditorState {
   questions: EditorQuestion[];
   timeLimitMinutes: number;
   isPublic: boolean;
+  referenceSheetEnabled: boolean;
+  referenceSheetId: string;
 }
 
 const createQuestionInput = (value = ""): QuestionInput => ({
@@ -126,6 +128,8 @@ export const buildInitialState = (
     questions: questions.length > 0 ? questions : [createEditorQuestion()],
     timeLimitMinutes: template?.timeLimitMinutes ?? DEFAULT_TIME_LIMIT_MINUTES,
     isPublic: template?.isPublic === true,
+    referenceSheetEnabled: template?.referenceSheetEnabled ?? false,
+    referenceSheetId: template?.referenceSheetId ?? "",
   };
 };
 
@@ -144,6 +148,8 @@ export const buildTemplatePayload = (state: EditorState) => ({
   sectionSubtitle: state.sectionSubtitle.trim(),
   timeLimitMinutes: state.timeLimitMinutes,
   isPublic: state.isPublic,
+  referenceSheetEnabled: state.referenceSheetEnabled,
+  referenceSheetId: state.referenceSheetEnabled ? state.referenceSheetId : "",
   questions: state.questions.map((question) => ({
     id: question.id,
     stimulus: question.stimulus.question.value,
