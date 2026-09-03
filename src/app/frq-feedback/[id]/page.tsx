@@ -6,12 +6,41 @@ import type { FRQFeedbackDocument } from "@/components/frq/feedback/types";
 import {
   getFrqTemplateDocRef,
   getGradedFrqDocRef,
+  getSelfGradedFrqDocRef,
 } from "@/lib/firestore/frqRefs";
 import { buildFeedbackDocument } from "@/lib/frq/feedbackDocument";
 import { normalizeFrqTemplate } from "@/lib/frq/template";
 import type { GradedFRQSubmission } from "@/types/frq";
-import { getDoc } from "firebase/firestore";
+import { getDoc, type DocumentReference } from "firebase/firestore";
 import { useEffect, useState } from "react";
+
+/**
+ * An ownership-scoped rule denies a read of a document that is missing *or*
+ * belonging to someone else, and the client cannot tell the two apart. Both
+ * mean "no result here" to this page, so both resolve to null — which is also
+ * what stops the page from confirming that another student's grade exists.
+ *
+ * Returning rather than throwing is what lets the caller try the next
+ * collection: a self-assessment has no document in `graded-frqs` at all, so
+ * looking there for one is expected to come back empty.
+ */
+const readResultIfReadable = async (reference: DocumentReference) => {
+  try {
+    const snapshot = await getDoc(reference);
+
+    return snapshot.exists() ? snapshot : null;
+  } catch (error: unknown) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      (error as { code?: string }).code === "permission-denied"
+    ) {
+      return null;
+    }
+
+    throw error;
+  }
+};
 
 const Page = () => {
   const pathname = usePathname() ?? "";
@@ -23,6 +52,7 @@ const Page = () => {
   const [overallFeedback, setOverallFeedback] = useState("");
   const [storedScore, setStoredScore] = useState("");
   const [hasPerPartGrades, setHasPerPartGrades] = useState(true);
+  const [isSelfGraded, setIsSelfGraded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -38,12 +68,22 @@ const Page = () => {
       }
 
       try {
-        const gradedSnapshot = await getDoc(getGradedFrqDocRef(frqId));
+        // An official result wins: a self-assessment is only shown when there
+        // is no grader's verdict to show in its place.
+        const officialSnapshot = await readResultIfReadable(
+          getGradedFrqDocRef(frqId),
+        );
 
-        if (!gradedSnapshot.exists()) {
+        const gradedSnapshot =
+          officialSnapshot ??
+          (await readResultIfReadable(getSelfGradedFrqDocRef(frqId)));
+
+        if (!gradedSnapshot) {
           setLoadError("Feedback not found.");
           return;
         }
+
+        setIsSelfGraded(officialSnapshot === null);
 
         const graded = {
           id: gradedSnapshot.id,
@@ -120,6 +160,16 @@ const Page = () => {
 
   return (
     <div>
+      {/* Separate storage is only half of keeping the two apart — without this
+          a self-assessment reads exactly like a grader's verdict on the page
+          that shows it. */}
+      {isSelfGraded && (
+        <div className="border-b border-blue-400 bg-blue-50 px-8 py-3 text-sm">
+          This is your own <strong>self-assessment</strong>, not an official
+          FiveHive grade. You scored your responses against the rubric yourself.
+        </div>
+      )}
+
       {!hasPerPartGrades && (
         <div className="border-b border-yellow-400 bg-yellow-50 px-8 py-3 text-sm">
           This submission was graded before per-question scores were recorded,

@@ -33,7 +33,10 @@ const allowedTags = [
  */
 export function sanitizeQuestionRichText(value: string): string {
   if (typeof window === "undefined") {
-    return DOMPurify.sanitize(value, { ALLOWED_TAGS: allowedTags, ALLOWED_ATTR: [] });
+    return DOMPurify.sanitize(value, {
+      ALLOWED_TAGS: allowedTags,
+      ALLOWED_ATTR: [],
+    });
   }
 
   const template = document.createElement("template");
@@ -95,3 +98,22 @@ export function richTextToPlainText(value: string): string {
   template.innerHTML = sanitizeQuestionRichText(value);
   return template.content.textContent ?? "";
 }
+
+/**
+ * List markers and indent, kept here because three separate surfaces have to
+ * agree on them: the MCQ authoring box, the FRQ response box, and the renderer
+ * that reads either one back. Tailwind's preflight resets `list-style`,
+ * `margin` and `padding` on `ul`/`ol`, so every surface showing a list has to
+ * ask for them again — and when one of them forgot, bullets a student typed
+ * were simply invisible while they typed them (#357).
+ *
+ * The plain and `[&_…]` forms are both spelled out rather than derived from
+ * one another because Tailwind's scanner only sees literal class strings.
+ */
+export const UNORDERED_LIST_CLASSES = "my-2 list-disc pl-6";
+
+export const ORDERED_LIST_CLASSES = "my-2 list-decimal pl-6";
+
+/** The same rules, applied from a contentEditable host's own class list. */
+export const RICH_TEXT_LIST_CLASSES =
+  "[&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-6";

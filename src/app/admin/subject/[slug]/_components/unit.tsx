@@ -41,10 +41,8 @@ interface UnitComponentProps {
   frqTemplates: FRQTemplate[];
   onFrqAdd: (unitId: string, title: string) => Promise<void>;
   onFrqRename: (frqId: string, title: string) => Promise<void>;
-  onFrqVisibilityChange: (
-    frqId: string,
-    isPublic: boolean,
-  ) => Promise<void>;
+  onFrqDelete: (frqId: string) => Promise<void>;
+  onFrqVisibilityChange: (frqId: string, isPublic: boolean) => Promise<void>;
 }
 
 /**
@@ -64,6 +62,7 @@ function UnitComponent({
   frqTemplates,
   onFrqAdd,
   onFrqRename,
+  onFrqDelete,
   onFrqVisibilityChange,
 }: UnitComponentProps) {
   const [expanded, setExpanded] = useState<boolean>(false);
@@ -426,6 +425,7 @@ function UnitComponent({
             frqs={frqTemplates}
             onFrqAdd={(title) => onFrqAdd(unit.id, title)}
             onFrqUpdate={onFrqRename}
+            onFrqDelete={(frqId) => void onFrqDelete(frqId)}
             onFrqVisibilityChange={onFrqVisibilityChange}
           />
         </div>

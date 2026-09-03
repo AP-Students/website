@@ -5,7 +5,11 @@ import "../../../styles/katexStyling.css";
 import { decodeEntities, katexMacros } from "../Renderer";
 
 import { cn, isSvgFileName, parseSvgIntrinsicSize } from "@/lib/utils";
-import { sanitizeQuestionRichText } from "./richText";
+import {
+  ORDERED_LIST_CLASSES,
+  UNORDERED_LIST_CLASSES,
+  sanitizeQuestionRichText,
+} from "./richText";
 
 interface Props {
   content: QuestionInput;
@@ -212,80 +216,116 @@ export function RenderContent({ content, origin }: Props) {
 
   const renderText = (text: string, keyPrefix: string): React.ReactNode[] =>
     decodeEntities(text)
-    .split(/(```[\s\S]*?```|\$@[^$]+\$|\[image:[^\]]+\])/g)
-    .map((token, tokenIndex) => {
-      if (token.startsWith("```") && token.endsWith("```")) {
-        const codeContent = token.slice(3, -3).replace(/^\n/, "");
-        return (
-          <pre
-            key={`${keyPrefix}-code-${tokenIndex}`}
-            className="my-2 max-w-full overflow-x-auto whitespace-pre-wrap rounded p-2 font-mono text-sm leading-relaxed text-black"
-            style={{
-              fontFamily: "'Consolas', monospace",
-              backgroundColor: "#f0f0f0",
-            }}
-          >
-            <code>{codeContent}</code>
-          </pre>
-        );
-      } else if (token.startsWith("$@") && token.endsWith("$")) {
-        return (
-          <span
-            key={`${keyPrefix}-latex-${tokenIndex}`}
-            dangerouslySetInnerHTML={{
-              __html: katex.renderToString(token.slice(2, -1), {
-                throwOnError: false,
-                macros: katexMacros,
-              }),
-            }}
-          ></span>
-        );
-      } else if (token.startsWith("[image:") && token.endsWith("]")) {
-        const param = token.slice(7, -1);
-        const matchedFile = getMatchingFile(param);
-        if (matchedFile) {
-          renderedInlineKeys.add(matchedFile.key);
+      .split(/(```[\s\S]*?```|\$@[^$]+\$|\[image:[^\]]+\])/g)
+      .map((token, tokenIndex) => {
+        if (token.startsWith("```") && token.endsWith("```")) {
+          const codeContent = token.slice(3, -3).replace(/^\n/, "");
           return (
-            <div
-              key={`${keyPrefix}-inline-img-${tokenIndex}`}
-              className="my-4 block text-center"
+            <pre
+              key={`${keyPrefix}-code-${tokenIndex}`}
+              className="my-2 max-w-full overflow-x-auto whitespace-pre-wrap rounded p-2 font-mono text-sm leading-relaxed text-black"
+              style={{
+                fontFamily: "'Consolas', monospace",
+                backgroundColor: "#f0f0f0",
+              }}
             >
-              <FileRenderer file={matchedFile} />
-              {matchedFile.alt && (
-                <span className="mt-1 block text-center text-xs italic text-gray-500">
-                  {matchedFile.alt}
-                </span>
-              )}
-            </div>
+              <code>{codeContent}</code>
+            </pre>
           );
+        } else if (token.startsWith("$@") && token.endsWith("$")) {
+          return (
+            <span
+              key={`${keyPrefix}-latex-${tokenIndex}`}
+              dangerouslySetInnerHTML={{
+                __html: katex.renderToString(token.slice(2, -1), {
+                  throwOnError: false,
+                  macros: katexMacros,
+                }),
+              }}
+            ></span>
+          );
+        } else if (token.startsWith("[image:") && token.endsWith("]")) {
+          const param = token.slice(7, -1);
+          const matchedFile = getMatchingFile(param);
+          if (matchedFile) {
+            renderedInlineKeys.add(matchedFile.key);
+            return (
+              <div
+                key={`${keyPrefix}-inline-img-${tokenIndex}`}
+                className="my-4 block text-center"
+              >
+                <FileRenderer file={matchedFile} />
+                {matchedFile.alt && (
+                  <span className="mt-1 block text-center text-xs italic text-gray-500">
+                    {matchedFile.alt}
+                  </span>
+                )}
+              </div>
+            );
+          }
         }
-      }
-      return <React.Fragment key={`${keyPrefix}-text-${tokenIndex}`}>{token}</React.Fragment>;
-    });
+        return (
+          <React.Fragment key={`${keyPrefix}-text-${tokenIndex}`}>
+            {token}
+          </React.Fragment>
+        );
+      });
 
   const renderNode = (node: Node, key: string): React.ReactNode => {
-    if (node.nodeType === Node.TEXT_NODE) return renderText(node.textContent ?? "", key);
+    if (node.nodeType === Node.TEXT_NODE)
+      return renderText(node.textContent ?? "", key);
     if (node.nodeType !== Node.ELEMENT_NODE) return null;
-    const children = Array.from(node.childNodes).map((child, index) => renderNode(child, `${key}-${index}`));
+    const children = Array.from(node.childNodes).map((child, index) =>
+      renderNode(child, `${key}-${index}`),
+    );
     switch ((node as Element).tagName.toLowerCase()) {
-      case "strong": return <strong key={key}>{children}</strong>;
+      case "strong":
+        return <strong key={key}>{children}</strong>;
       // `b` and `i` survive the sanitizer's allow-list, and stored content
       // written before it normalized them still carries them, so they are
       // mapped rather than left to fall through the default and lose styling.
-      case "b": return <strong key={key}>{children}</strong>;
-      case "em": return <em key={key}>{children}</em>;
-      case "i": return <em key={key}>{children}</em>;
-      case "u": return <u key={key}>{children}</u>;
-      case "sup": return <sup key={key}>{children}</sup>;
-      case "sub": return <sub key={key}>{children}</sub>;
+      case "b":
+        return <strong key={key}>{children}</strong>;
+      case "em":
+        return <em key={key}>{children}</em>;
+      case "i":
+        return <em key={key}>{children}</em>;
+      case "u":
+        return <u key={key}>{children}</u>;
+      case "sup":
+        return <sup key={key}>{children}</sup>;
+      case "sub":
+        return <sub key={key}>{children}</sub>;
       // Preflight strips list styling, so the markers have to be asked for.
-      case "ul": return <ul key={key} className="my-2 list-disc pl-6">{children}</ul>;
-      case "ol": return <ol key={key} className="my-2 list-decimal pl-6">{children}</ol>;
-      case "li": return <li key={key}>{children}</li>;
-      case "mark": return <mark key={key} className="rounded bg-yellow-200 px-0.5 text-gray-950">{children}</mark>;
-      case "br": return <br key={key} />;
-      case "div": return <div key={key}>{children}</div>;
-      default: return <React.Fragment key={key}>{children}</React.Fragment>;
+      case "ul":
+        return (
+          <ul key={key} className={UNORDERED_LIST_CLASSES}>
+            {children}
+          </ul>
+        );
+      case "ol":
+        return (
+          <ol key={key} className={ORDERED_LIST_CLASSES}>
+            {children}
+          </ol>
+        );
+      case "li":
+        return <li key={key}>{children}</li>;
+      case "mark":
+        return (
+          <mark
+            key={key}
+            className="rounded bg-yellow-200 px-0.5 text-gray-950"
+          >
+            {children}
+          </mark>
+        );
+      case "br":
+        return <br key={key} />;
+      case "div":
+        return <div key={key}>{children}</div>;
+      default:
+        return <React.Fragment key={key}>{children}</React.Fragment>;
     }
   };
 
@@ -296,7 +336,9 @@ export function RenderContent({ content, origin }: Props) {
       : (() => {
           const template = document.createElement("template");
           template.innerHTML = safeValue;
-          return Array.from(template.content.childNodes).map((node, index) => renderNode(node, `node-${index}`));
+          return Array.from(template.content.childNodes).map((node, index) =>
+            renderNode(node, `node-${index}`),
+          );
         })();
 
   // Filter out files that were already rendered inline

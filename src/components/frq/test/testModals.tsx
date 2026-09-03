@@ -53,14 +53,20 @@ type SubmissionModalProps = {
   submitting: boolean;
   onDownload: () => void;
   onSubmit: () => void;
+  onSelfGrade: () => void;
   onClose: () => void;
 };
 
-/** Final gate before the responses are written to the grading queue. */
+/**
+ * Final gate before the responses are written. Both paths store the same
+ * submission; they differ only in who grades it afterwards, so the choice is
+ * made here rather than by a separate flow.
+ */
 export const SubmissionModal = ({
   submitting,
   onDownload,
   onSubmit,
+  onSelfGrade,
   onClose,
 }: SubmissionModalProps) => (
   <div
@@ -84,7 +90,8 @@ export const SubmissionModal = ({
       </h2>
 
       <p className="mt-3 text-sm text-gray-600">
-        Download a copy of your responses or submit them for grading.
+        Download a copy of your responses, grade them yourself against the
+        rubric, or send them to the FiveHive graders.
       </p>
 
       <div className="mt-6 flex flex-col gap-3">
@@ -98,11 +105,20 @@ export const SubmissionModal = ({
 
         <button
           type="button"
+          className="rounded border border-blue-700 px-5 py-3 font-semibold text-blue-700 disabled:opacity-50"
+          onClick={onSelfGrade}
+          disabled={submitting}
+        >
+          {submitting ? "Submitting..." : "Grade It Myself"}
+        </button>
+
+        <button
+          type="button"
           className="rounded bg-blue-700 px-5 py-3 font-semibold text-white disabled:opacity-50"
           onClick={onSubmit}
           disabled={submitting}
         >
-          {submitting ? "Submitting..." : "Submit for Grading"}
+          {submitting ? "Submitting..." : "Submit to FiveHive Graders"}
         </button>
 
         <button

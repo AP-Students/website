@@ -8,6 +8,7 @@ import { db } from "@/lib/firebase";
 import type { FRQTemplate } from "@/types/frq";
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -216,35 +217,30 @@ export default function Page({ params }: { params: { slug: string } }) {
   };
 
   /****************************************************
- *                   FRQ ACTIONS
- ****************************************************/
+   *                   FRQ ACTIONS
+   ****************************************************/
 
-const handleAddFrq = async (
-  unitId: string,
-  title: string,
-): Promise<void> => {
-  const trimmedTitle = title.trim();
+  const handleAddFrq = async (unitId: string, title: string): Promise<void> => {
+    const trimmedTitle = title.trim();
 
-  if (!trimmedTitle) {
-    return;
-  }
+    if (!trimmedTitle) {
+      return;
+    }
 
-  const frqId = generateShortId();
+    const frqId = generateShortId();
 
-  const newFrq: FRQTemplate = {
-    id: frqId,
-    subject: params.slug,
-    unitId,
-    title: trimmedTitle,
-    directions: "",
-    questions: [],
-    isPublic: false,
-  };
+    const newFrq: FRQTemplate = {
+      id: frqId,
+      subject: params.slug,
+      unitId,
+      title: trimmedTitle,
+      directions: "",
+      questions: [],
+      isPublic: false,
+    };
 
-  try {
-    await setDoc(
-      getFrqTemplateDocRef(params.slug, unitId, frqId),
-      {
+    try {
+      await setDoc(getFrqTemplateDocRef(params.slug, unitId, frqId), {
         subject: newFrq.subject,
         unitId: newFrq.unitId,
         title: newFrq.title,
@@ -253,113 +249,139 @@ const handleAddFrq = async (
         isPublic: newFrq.isPublic,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      },
-    );
+      });
 
-    setFrqTemplates((currentFrqs) => [
-      ...currentFrqs,
-      newFrq,
-    ]);
+      setFrqTemplates((currentFrqs) => [...currentFrqs, newFrq]);
 
-    setUnsavedChanges(true);
-  } catch (error) {
-    // Discarding this error is what made a permission-denied rule look
-    // identical to a network blip, so the real cause never reached anyone.
-    console.error("Error adding FRQ:", error);
+      setUnsavedChanges(true);
+    } catch (error) {
+      // Discarding this error is what made a permission-denied rule look
+      // identical to a network blip, so the real cause never reached anyone.
+      console.error("Error adding FRQ:", error);
 
-    alert(
-      error instanceof Error
-        ? `Unable to add the FRQ: ${error.message}`
-        : "Unable to add the FRQ. Please try again.",
-    );
-  }
-};
+      alert(
+        error instanceof Error
+          ? `Unable to add the FRQ: ${error.message}`
+          : "Unable to add the FRQ. Please try again.",
+      );
+    }
+  };
 
-const handleRenameFrq = async (
-  frqId: string,
-  title: string,
-): Promise<void> => {
-  const trimmedTitle = title.trim();
+  const handleRenameFrq = async (
+    frqId: string,
+    title: string,
+  ): Promise<void> => {
+    const trimmedTitle = title.trim();
 
-  if (!trimmedTitle) {
-    return;
-  }
+    if (!trimmedTitle) {
+      return;
+    }
 
-  const frq = frqTemplates.find((item) => item.id === frqId);
+    const frq = frqTemplates.find((item) => item.id === frqId);
 
-  if (!frq) {
-    alert("Unable to find the FRQ.");
-    return;
-  }
+    if (!frq) {
+      alert("Unable to find the FRQ.");
+      return;
+    }
 
-  try {
-    await updateDoc(
-      getFrqTemplateDocRef(params.slug, frq.unitId, frqId),
-      {
+    try {
+      await updateDoc(getFrqTemplateDocRef(params.slug, frq.unitId, frqId), {
         title: trimmedTitle,
         updatedAt: serverTimestamp(),
-      },
-    );
+      });
 
-    setFrqTemplates((currentFrqs) =>
-      currentFrqs.map((item) =>
-        item.id === frqId
-          ? { ...item, title: trimmedTitle }
-          : item,
-      ),
-    );
+      setFrqTemplates((currentFrqs) =>
+        currentFrqs.map((item) =>
+          item.id === frqId ? { ...item, title: trimmedTitle } : item,
+        ),
+      );
 
-    setUnsavedChanges(true);
-  } catch (error) {
-    console.error("Error renaming FRQ:", error);
+      setUnsavedChanges(true);
+    } catch (error) {
+      console.error("Error renaming FRQ:", error);
 
-    alert(
-      error instanceof Error
-        ? `Unable to rename the FRQ: ${error.message}`
-        : "Unable to rename the FRQ. Please try again.",
-    );
-  }
-};
+      alert(
+        error instanceof Error
+          ? `Unable to rename the FRQ: ${error.message}`
+          : "Unable to rename the FRQ. Please try again.",
+      );
+    }
+  };
 
-const handleFrqVisibilityChange = async (
-  frqId: string,
-  isPublic: boolean,
-): Promise<void> => {
-  const frq = frqTemplates.find((item) => item.id === frqId);
+  /**
+   * Deletes immediately rather than deferring to Save. Each FRQ is its own
+   * document under the unit, not an array inside the unit document the way tests
+   * are, so there is no unit write for a deferred delete to ride along on — and
+   * `handleAddFrq` and `handleRenameFrq` already write straight through for the
+   * same reason.
+   */
+  const handleDeleteFrq = async (frqId: string): Promise<void> => {
+    const frq = frqTemplates.find((item) => item.id === frqId);
 
-  if (!frq) {
-    alert("Unable to find the FRQ.");
-    return;
-  }
+    if (!frq) {
+      alert("Unable to find the FRQ.");
+      return;
+    }
 
-  try {
-    await updateDoc(
-      getFrqTemplateDocRef(params.slug, frq.unitId, frqId),
-      {
+    if (
+      !confirm(
+        `Delete "${frq.title || "Untitled FRQ"}"? This takes permanent effect immediately and cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await deleteDoc(getFrqTemplateDocRef(params.slug, frq.unitId, frqId));
+
+      setFrqTemplates((currentFrqs) =>
+        currentFrqs.filter((item) => item.id !== frqId),
+      );
+    } catch (error) {
+      console.error("Error deleting FRQ:", error);
+
+      alert(
+        error instanceof Error
+          ? `Unable to delete the FRQ: ${error.message}`
+          : "Unable to delete the FRQ. Please try again.",
+      );
+    }
+  };
+
+  const handleFrqVisibilityChange = async (
+    frqId: string,
+    isPublic: boolean,
+  ): Promise<void> => {
+    const frq = frqTemplates.find((item) => item.id === frqId);
+
+    if (!frq) {
+      alert("Unable to find the FRQ.");
+      return;
+    }
+
+    try {
+      await updateDoc(getFrqTemplateDocRef(params.slug, frq.unitId, frqId), {
         isPublic,
         updatedAt: serverTimestamp(),
-      },
-    );
+      });
 
-    setFrqTemplates((currentFrqs) =>
-      currentFrqs.map((item) =>
-        item.id === frqId
-          ? { ...item, isPublic }
-          : item,
-      ),
-    );
+      setFrqTemplates((currentFrqs) =>
+        currentFrqs.map((item) =>
+          item.id === frqId ? { ...item, isPublic } : item,
+        ),
+      );
 
-    setUnsavedChanges(true);
-  } catch (error) {
-    console.error("Error updating FRQ visibility:", error);
+      setUnsavedChanges(true);
+    } catch (error) {
+      console.error("Error updating FRQ visibility:", error);
 
-    alert(
-      error instanceof Error
-        ? `Unable to update the FRQ visibility: ${error.message}`
-        : "Unable to update the FRQ visibility. Please try again.",
-    );
-  }
-};
+      alert(
+        error instanceof Error
+          ? `Unable to update the FRQ visibility: ${error.message}`
+          : "Unable to update the FRQ visibility. Please try again.",
+      );
+    }
+  };
   /****************************************************
    *                   SAVE ACTION
    * This function will force delete anything in the db that isnt in the local to keep db clean
@@ -367,7 +389,11 @@ const handleFrqVisibilityChange = async (
    ****************************************************/
 
   const handleReset = async () => {
-    if (!confirm("Are you sure you want to reset the AP Porting course? This will restore all articles, MCQs, and structure to their default values and delete any custom changes you made.")) {
+    if (
+      !confirm(
+        "Are you sure you want to reset the AP Porting course? This will restore all articles, MCQs, and structure to their default values and delete any custom changes you made.",
+      )
+    ) {
       return;
     }
     setResetting(true);
@@ -379,13 +405,27 @@ const handleFrqVisibilityChange = async (
       const batch = writeBatch(db);
 
       for (const unitDoc of unitsSnap.docs) {
-        const chaptersCollectionRef = collection(db, "subjects", "porting", "units", unitDoc.id, "chapters");
+        const chaptersCollectionRef = collection(
+          db,
+          "subjects",
+          "porting",
+          "units",
+          unitDoc.id,
+          "chapters",
+        );
         const chaptersSnap = await getDocs(chaptersCollectionRef);
         chaptersSnap.forEach((chapterDoc) => {
           batch.delete(chapterDoc.ref);
         });
 
-        const testsCollectionRef = collection(db, "subjects", "porting", "units", unitDoc.id, "tests");
+        const testsCollectionRef = collection(
+          db,
+          "subjects",
+          "porting",
+          "units",
+          unitDoc.id,
+          "tests",
+        );
         const testsSnap = await getDocs(testsCollectionRef);
         testsSnap.forEach((testDoc) => {
           batch.delete(testDoc.ref);
@@ -409,7 +449,15 @@ const handleFrqVisibilityChange = async (
         writeBatchObj.set(unitRef, unit);
 
         for (const chapter of unit.chapters) {
-          const chapterRef = doc(db, "subjects", "porting", "units", unit.id, "chapters", chapter.id);
+          const chapterRef = doc(
+            db,
+            "subjects",
+            "porting",
+            "units",
+            unit.id,
+            "chapters",
+            chapter.id,
+          );
           writeBatchObj.set(chapterRef, {
             id: chapter.id,
             createdAt: new Date(),
@@ -421,7 +469,15 @@ const handleFrqVisibilityChange = async (
 
         if (unit.tests) {
           for (const test of unit.tests) {
-            const testRef = doc(db, "subjects", "porting", "units", unit.id, "tests", test.id);
+            const testRef = doc(
+              db,
+              "subjects",
+              "porting",
+              "units",
+              unit.id,
+              "tests",
+              test.id,
+            );
             writeBatchObj.set(testRef, {
               ...test,
               instanceId: `porting_${unit.id}_test_${test.id}`,
@@ -662,7 +718,7 @@ const handleFrqVisibilityChange = async (
             <div className="flex gap-2">
               {params.slug === "porting" && (
                 <Button
-                  className="bg-red-500 hover:bg-red-600 text-white"
+                  className="bg-red-500 text-white hover:bg-red-600"
                   onClick={handleReset}
                   disabled={resetting}
                 >
@@ -700,31 +756,33 @@ const handleFrqVisibilityChange = async (
               }}
               className="h-4 w-4"
             />
-            This subject has a Unit 0 (foundational unit numbered starting from 0)
+            This subject has a Unit 0 (foundational unit numbered starting from
+            0)
           </label>
 
           {/* Render each Unit */}
           <div className="my-4 space-y-4">
-          {units.map((unit, index) => (
-            <UnitComponent
-              key={unit.id}
-              unit={unit}
-              index={index}
-              subjectTitle={subjectTitle}
-              onChange={handleUnitChange}
-              onDelete={handleDeleteUnit}
-              onMoveUp={handleMoveUnitUp}
-              onMoveDown={handleMoveUnitDown}
-              subjectSlug={params.slug}
-              hasUnit0={hasUnit0}
-              frqTemplates={frqTemplates.filter(
-                (frq) => frq.unitId === unit.id,
-              )}
-              onFrqAdd={handleAddFrq}
-              onFrqRename={handleRenameFrq}
-              onFrqVisibilityChange={handleFrqVisibilityChange}
-            />
-          ))}
+            {units.map((unit, index) => (
+              <UnitComponent
+                key={unit.id}
+                unit={unit}
+                index={index}
+                subjectTitle={subjectTitle}
+                onChange={handleUnitChange}
+                onDelete={handleDeleteUnit}
+                onMoveUp={handleMoveUnitUp}
+                onMoveDown={handleMoveUnitDown}
+                subjectSlug={params.slug}
+                hasUnit0={hasUnit0}
+                frqTemplates={frqTemplates.filter(
+                  (frq) => frq.unitId === unit.id,
+                )}
+                onFrqAdd={handleAddFrq}
+                onFrqRename={handleRenameFrq}
+                onFrqDelete={handleDeleteFrq}
+                onFrqVisibilityChange={handleFrqVisibilityChange}
+              />
+            ))}
           </div>
 
           {/* Add new Unit */}

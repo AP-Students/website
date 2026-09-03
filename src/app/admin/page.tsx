@@ -13,11 +13,7 @@ import { useUser } from "../../components/hooks/UserContext";
 import Link from "next/link";
 import { cn, formatSlug } from "@/lib/utils";
 import { Ban, ClipboardPen, PencilRuler, ShieldUser, X } from "lucide-react";
-import {
-  doc,
-  getDocs,
-  updateDoc,
-} from "firebase/firestore";
+import { doc, getDocs, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 
@@ -27,27 +23,33 @@ const Page = () => {
   const { user } = useUser();
   const router = useRouter();
 
-  const [ungradedFrqCount, setUngradedFrqCount] = useState<number | null>(
-  null,
-);
+  const [ungradedFrqCount, setUngradedFrqCount] = useState<number | null>(null);
 
-useEffect(() => {
-  if (!user || user.access !== "admin") return;
+  // Every FiveHive staff role grades FRQs, not just admins. Gating this on
+  // "admin" alone is why a member who was told to grade saw no queue, no count,
+  // and no link to either.
+  const canGradeFrqs =
+    user?.access === "admin" ||
+    user?.access === "member" ||
+    user?.access === "grader";
 
-  const fetchUngradedFrqCount = async () => {
-    try {
-      const collectionRef = getUngradedFrqsCollectionRef();
-      const snapshot = await getDocs(collectionRef);
+  useEffect(() => {
+    if (!canGradeFrqs) return;
 
-      setUngradedFrqCount(snapshot.size);
-    } catch (error) {
-      console.error("Failed to fetch ungraded FRQ count:", error);
-      setUngradedFrqCount(null);
-    }
-  };
+    const fetchUngradedFrqCount = async () => {
+      try {
+        const collectionRef = getUngradedFrqsCollectionRef();
+        const snapshot = await getDocs(collectionRef);
 
-  void fetchUngradedFrqCount();
-}, [user]);
+        setUngradedFrqCount(snapshot.size);
+      } catch (error) {
+        console.error("Failed to fetch ungraded FRQ count:", error);
+        setUngradedFrqCount(null);
+      }
+    };
+
+    void fetchUngradedFrqCount();
+  }, [canGradeFrqs]);
 
   if (!user) {
     return (
@@ -69,38 +71,35 @@ useEffect(() => {
       <div className="mx-auto flex max-w-3xl flex-col p-8">
         <h1 className="text-5xl font-extrabold lg:text-6xl">Admin Dashboard</h1>
 
-        {user.access === "admin" && (
-          <>
-            <AdminPanel user={user} />
+        {/* User management is genuinely admin-only; the grading queue is not. */}
+        {user.access === "admin" && <AdminPanel user={user} />}
 
-            <div className="mb-4 flex flex-col gap-4 rounded-lg border-4 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-wide opacity-70">
-                  Ungraded FRQs
-                </p>
+        {canGradeFrqs && (
+          <div className="mb-4 flex flex-col gap-4 rounded-lg border-4 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wide opacity-70">
+                Ungraded FRQs
+              </p>
 
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold">
-                    {ungradedFrqCount ?? "—"}
-                  </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold">
+                  {ungradedFrqCount ?? "—"}
+                </span>
 
-                  <span className="text-sm opacity-70">currently ungraded</span>
-                </div>
+                <span className="text-sm opacity-70">currently ungraded</span>
               </div>
-
-              <Link href="/frq-grading">
-                <Button className="w-full sm:w-auto">
-                  Open FRQ Grading List
-                </Button>
-              </Link>
             </div>
-          </>
+
+            <Link href="/frq-grading">
+              <Button className="w-full sm:w-auto">
+                Open FRQ Grading List
+              </Button>
+            </Link>
+          </div>
         )}
 
         <Link href="/admin/feedback" className="hover:text-yellow-600">
-          <Button className="w-full">
-            Check Feedback & Bug Reports
-          </Button>
+          <Button className="w-full">Check Feedback & Bug Reports</Button>
         </Link>
         <br></br>
         <SelectCourse />
@@ -175,8 +174,12 @@ function AdminPanel({ user }: { user: User }) {
 
   const filteredUsers = users.filter(
     (user) =>
-      user.displayName?.toLowerCase().includes(searchTermUsers.toLowerCase().trim()) ||
-      user.email?.toLowerCase().includes(searchTermUsers.toLowerCase().trim()) ||
+      user.displayName
+        ?.toLowerCase()
+        .includes(searchTermUsers.toLowerCase().trim()) ||
+      user.email
+        ?.toLowerCase()
+        .includes(searchTermUsers.toLowerCase().trim()) ||
       user.access?.toLowerCase().includes(searchTermUsers.toLowerCase().trim()),
   );
 

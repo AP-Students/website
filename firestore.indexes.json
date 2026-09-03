@@ -1,21 +1,6 @@
 {
   "indexes": [
     {
-      "collectionGroup": "ungraded-frqs",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "submittedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "ungraded-frqs",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "studentId", "order": "ASCENDING" },
-        { "fieldPath": "submittedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "graded-frqs",
       "queryScope": "COLLECTION",
       "fields": [

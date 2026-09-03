@@ -1,6 +1,8 @@
 "use client";
 
-import AdvancedTextbox from "@/components/article-creator/custom_questions/AdvancedTextbox";
+import AdvancedTextbox, {
+  RICH_TEXT_SYNTAX_HINT,
+} from "@/components/article-creator/custom_questions/AdvancedTextbox";
 import type { QuestionFormat } from "@/types/questions";
 import { useMemo } from "react";
 
@@ -52,7 +54,12 @@ const RichPromptEditor = ({
       }}
       origin="question"
       qIndex={0}
-      placeholder={placeholder}
+      // The caller's sentence says which field this is; the shared hint says
+      // what the field understands. Passing only the former is what made these
+      // boxes read as plainer than the MCQ ones they are.
+      placeholder={
+        placeholder ? `${placeholder} ${RICH_TEXT_SYNTAX_HINT}` : undefined
+      }
     />
   );
 };

@@ -4,10 +4,12 @@ import { RenderContent } from "@/components/article-creator/custom_questions/Ren
 import { db } from "@/lib/firebase";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { runTransaction, serverTimestamp } from "firebase/firestore";
 import {
   getGradedFrqDocRef,
+  getSelfGradedFrqDocRef,
   getUngradedFrqDocRef,
 } from "@/lib/firestore/frqRefs";
 import GradingFooter from "@/components/frq/grading/gradingFooter";
@@ -34,13 +36,29 @@ import type { FRQTemplate, GradableFRQSubmission } from "@/types/frq";
 type FRQGradingRendererProps = {
   submission: GradableFRQSubmission | null;
   template: FRQTemplate | null;
+  /**
+   * Whoever is grading wrote the responses themselves. The scoring is
+   * identical; where the result lands is not. A self-assessment is written to
+   * `self-graded-frqs`, never to the collection an official FiveHive grade
+   * lives in, because nobody's score of their own work carries that authority.
+   */
+  selfGrading?: boolean;
+  /**
+   * The viewer holds staff access, so the queue is somewhere they can go back
+   * to. Distinct from `!selfGrading`: a member grading their own attempt is
+   * doing both at once.
+   */
+  canReturnToQueue?: boolean;
 };
 
 const FRQGradingRenderer = ({
   submission,
   template,
+  selfGrading = false,
+  canReturnToQueue = !selfGrading,
 }: FRQGradingRendererProps) => {
   const { user } = useUser();
+  const router = useRouter();
 
   // The grader pages through questions, not parts: one page carries a
   // question's stimulus and every part hanging off it. Grading still covers
@@ -157,7 +175,15 @@ const FRQGradingRenderer = ({
       // item. Firestore retries concurrent transactions, so only one grader
       // can successfully issue a report for a submission.
       const queueRef = getUngradedFrqDocRef(submission.id);
-      const resultRef = getGradedFrqDocRef(submission.id);
+
+      // A self-assessment is not an official result and is never written where
+      // one would be read from. Claiming the queue entry either way is what
+      // stops the same attempt from being scored twice: a student who grades
+      // themselves has taken the attempt out of the staff queue, and a staff
+      // grade can no longer land on it.
+      const resultRef = selfGrading
+        ? getSelfGradedFrqDocRef(submission.id)
+        : getGradedFrqDocRef(submission.id);
 
       await runTransaction(db, async (transaction) => {
         const [queueSnapshot, resultSnapshot] = await Promise.all([
@@ -192,6 +218,13 @@ const FRQGradingRenderer = ({
 
         transaction.delete(queueRef);
       });
+
+      if (selfGrading) {
+        // The result doc is keyed by the submission id, so this is now readable
+        // and it is the only FRQ page a non-staff account can open.
+        router.push(`/frq-feedback/${submission.id}`);
+        return;
+      }
 
       window.alert("Grade report submitted.");
     } catch (error) {
@@ -247,7 +280,11 @@ const FRQGradingRenderer = ({
             onClick={() => void submitGradeReport()}
             className="min-w-[176px] rounded-full bg-[#294ad1] px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#203cad] disabled:opacity-50"
           >
-            {isSubmitting ? "Submitting..." : "Submit Grade Report"}
+            {isSubmitting
+              ? "Submitting..."
+              : selfGrading
+                ? "Submit Self-Grade"
+                : "Submit Grade Report"}
           </button>
 
           <p className="text-sm font-semibold tabular-nums">
@@ -269,11 +306,15 @@ const FRQGradingRenderer = ({
 
         <div className="flex flex-1 justify-end">
           <Link
-            href="/frq-grading"
+            href={
+              canReturnToQueue
+                ? "/frq-grading"
+                : `/subject/${submission.subject}`
+            }
             className="flex items-center gap-2 text-sm font-semibold text-red-500 transition-colors hover:text-red-600 hover:underline"
           >
             <LogOut aria-hidden="true" size={19} strokeWidth={2} />
-            Return To Grading Queue
+            {canReturnToQueue ? "Return To Grading Queue" : "Exit Self-Grading"}
           </Link>
         </div>
       </header>
