@@ -227,9 +227,11 @@ const customParsers: Record<
     const isSvg =
       storagePath.toLowerCase().endsWith(".svg") ||
       (typeof data.url === "string" && data.url.toLowerCase().includes(".svg"));
-    const imageConditions = `${data.stretched ? "img-fullwidth" : ""} ${
+    const width = typeof data.width === "number" ? data.width : undefined;
+    const imageConditions = `${data.stretched && width === undefined ? "img-fullwidth" : ""} ${
       data.withBorder ? "img-border" : ""
     } ${data.withBackground ? "img-bg" : ""} ${data.centerImage ? "img-center" : ""} ${isSvg ? "img-svg" : ""}`;
+    const widthStyle = width !== undefined ? ` style="width:${width}%;max-width:100%;"` : "";
     const imgClass = _config.image.imgClass ?? "";
     let imageSrc;
 
@@ -268,12 +270,12 @@ const customParsers: Record<
       .replaceAll(">", "&gt;");
 
     if (_config.image.use === "img") {
-      return `<img class="${imageConditions} ${imgClass}" src="${imageSrc}" alt="${altText}">`;
+      return `<img class="${imageConditions} ${imgClass}" src="${imageSrc}" alt="${altText}"${widthStyle}>`;
     } else if (_config.image.use === "figure") {
       const figureClass = _config.image.figureClass ?? "";
       const figCapClass = _config.image.figCapClass ?? "";
 
-      return `<figure class="${figureClass}"><img class="${imgClass} ${imageConditions}" src="${imageSrc}" alt="${altText}"><figcaption class="${figCapClass}">${captionBody}</figcaption></figure>`;
+      return `<figure class="${figureClass}"><img class="${imgClass} ${imageConditions}" src="${imageSrc}" alt="${altText}"${widthStyle}><figcaption class="${figCapClass}">${captionBody}</figcaption></figure>`;
     }
     return "ERROR DISPLAYING IMAGE";
   },

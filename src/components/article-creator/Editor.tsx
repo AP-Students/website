@@ -55,6 +55,8 @@ interface EditorImageData {
   withBackground?: boolean;
   stretched?: boolean;
   centerImage?: boolean;
+  /** Custom width as a percentage (15-100) of the content column. Unset means natural/default sizing. */
+  width?: number;
 }
 
 type MenuConfigItemList = Array<{
@@ -85,6 +87,7 @@ type CustomImageTool = {
     nodes: {
       caption?: HTMLElement;
       wrapper?: HTMLElement;
+      imageContainer?: HTMLElement;
     };
   };
   renderSettings(): MenuConfigItemList;
@@ -95,6 +98,9 @@ type CustomImageTool = {
 const pendingStorageDeletes = new Set<string>();
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+
+const MIN_IMAGE_WIDTH_PERCENT = 15;
+const MAX_IMAGE_WIDTH_PERCENT = 100;
 
 async function uploadImageFile(file: File) {
   if (!file.type.startsWith("image/") && !isSvgFileName(file.name)) {
@@ -280,6 +286,142 @@ function openImageReplacementDialog(tool: CustomImageTool) {
   input.focus();
 }
 
+const RESIZE_HANDLE_ATTR = "data-resize-handle";
+const CUSTOM_WIDTH_ATTR = "data-custom-width";
+
+/**
+ * Applies (or clears) a custom width on the image container.
+ *
+ * The `data-custom-width` marker is what lets the stylesheet stretch the
+ * `<img>` to fill the container. The image tool only gives its picture element
+ * `max-width: 100%`, so without that rule the picture keeps its natural width
+ * while the container resizes around it — any image narrower than the content
+ * column could only ever be shrunk, and the drag handle drifted off the image
+ * into empty space.
+ */
+function applyContainerWidth(
+  imageContainer: HTMLElement,
+  widthPercent: number | undefined,
+): void {
+  if (widthPercent === undefined) {
+    imageContainer.style.width = "";
+    imageContainer.removeAttribute(CUSTOM_WIDTH_ATTR);
+    return;
+  }
+
+  imageContainer.style.width = `${widthPercent}%`;
+  imageContainer.setAttribute(CUSTOM_WIDTH_ATTR, "true");
+}
+
+/**
+ * Attaches a Google-Docs-style drag handle to the bottom-right corner of the
+ * image container. Dragging sets `_data.width` as a percentage of the
+ * block's own width (clamped), preserving aspect ratio. Idempotent: safe to
+ * call on every render.
+ */
+function mountResizeHandle(
+  imageContainer: HTMLElement,
+  getWidth: () => number | undefined,
+  onResize: (widthPercent: number) => void,
+) {
+  imageContainer.style.position = "relative";
+  imageContainer.style.maxWidth = "100%";
+
+  applyContainerWidth(imageContainer, getWidth());
+
+  let handle = imageContainer.querySelector<HTMLElement>(
+    `[${RESIZE_HANDLE_ATTR}]`,
+  );
+  if (handle) return;
+
+  handle = document.createElement("div");
+  handle.setAttribute(RESIZE_HANDLE_ATTR, "true");
+  handle.setAttribute("role", "slider");
+  handle.setAttribute("aria-label", "Resize image");
+  handle.setAttribute("aria-valuemin", String(MIN_IMAGE_WIDTH_PERCENT));
+  handle.setAttribute("aria-valuemax", String(MAX_IMAGE_WIDTH_PERCENT));
+  handle.tabIndex = 0;
+  handle.style.position = "absolute";
+  handle.style.right = "4px";
+  handle.style.bottom = "4px";
+  handle.style.width = "14px";
+  handle.style.height = "14px";
+  handle.style.borderRadius = "9999px";
+  handle.style.border = "2px solid #fff";
+  handle.style.background = "#2563eb";
+  handle.style.boxShadow = "0 1px 3px rgba(0,0,0,0.4)";
+  handle.style.cursor = "nwse-resize";
+  handle.style.touchAction = "none";
+  handle.style.zIndex = "10";
+
+  const step = (delta: number) => {
+    const current = getWidth() ?? 100;
+    const next = clampWidthPercent(current + delta);
+    applyContainerWidth(imageContainer, next);
+    handle?.setAttribute("aria-valuenow", String(next));
+    onResize(next);
+  };
+
+  handle.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
+      event.preventDefault();
+      step(-2);
+    } else if (event.key === "ArrowRight" || event.key === "ArrowUp") {
+      event.preventDefault();
+      step(2);
+    }
+  });
+
+  handle.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const pointerId = event.pointerId;
+    const startX = event.clientX;
+    const blockContent =
+      imageContainer.closest<HTMLElement>(".ce-block__content");
+    const referenceWidth =
+      blockContent?.clientWidth ?? imageContainer.clientWidth;
+    const startWidthPercent =
+      getWidth() ??
+      Math.min(100, (imageContainer.clientWidth / (referenceWidth || 1)) * 100);
+    handle?.setPointerCapture(pointerId);
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const deltaPercent = (deltaX / (referenceWidth || 1)) * 100;
+      const next = clampWidthPercent(startWidthPercent + deltaPercent);
+      applyContainerWidth(imageContainer, next);
+      handle?.setAttribute("aria-valuenow", String(Math.round(next)));
+    };
+
+    const onPointerUp = () => {
+      handle?.releasePointerCapture(pointerId);
+      document.removeEventListener("pointermove", onPointerMove);
+      document.removeEventListener("pointerup", onPointerUp);
+      const finalWidth = clampWidthPercent(
+        Number.parseFloat(imageContainer.style.width) || startWidthPercent,
+      );
+      // Keep the width even at 100%: now that the picture fills the container,
+      // clearing it here would snap an image narrower than the column back to
+      // its natural size the moment the drag ended.
+      applyContainerWidth(imageContainer, finalWidth);
+      onResize(finalWidth);
+    };
+
+    document.addEventListener("pointermove", onPointerMove);
+    document.addEventListener("pointerup", onPointerUp, { once: true });
+  });
+
+  imageContainer.appendChild(handle);
+}
+
+function clampWidthPercent(value: number): number {
+  return Math.min(
+    MAX_IMAGE_WIDTH_PERCENT,
+    Math.max(MIN_IMAGE_WIDTH_PERCENT, Math.round(value)),
+  );
+}
+
 function isStorageObjectNotFoundError(error: unknown): boolean {
   return (
     typeof error === "object" &&
@@ -317,6 +459,7 @@ class CustomImage extends Image {
       data.altText = maybeData.altText;
       data.richCaption = maybeData.richCaption;
       data.centerImage = maybeData.centerImage;
+      data.width = maybeData.width;
 
       if (maybeData.richCaption) {
         this._richCaption = resolveInitialRichCaption(maybeData.richCaption);
@@ -344,6 +487,43 @@ class CustomImage extends Image {
     queueMicrotask(() => this.rendered());
 
     return wrapper;
+  }
+
+  /**
+   * Invokes the base Image tool's `setTune`, which — unlike assigning to
+   * `_data` — also toggles the tune's CSS class and, for "stretched", the
+   * block's stretched layout. The inherited member is loosely typed, so it is
+   * constrained here rather than widening the rest of the file.
+   */
+  private setBaseTune(tuneName: string, value: boolean): void {
+    const baseImageTool = Image as unknown as {
+      prototype: {
+        setTune(this: unknown, tuneName: string, value: boolean): void;
+      };
+    };
+    baseImageTool.prototype.setTune.call(this, tuneName, value);
+  }
+
+  /**
+   * A custom width and the "stretched" tune are two mutually exclusive ways of
+   * saying how wide the image should be, so turning stretch on discards any
+   * custom width. Without this both fields end up set at once, and because the
+   * renderers prefer an explicit width the stretch became a silent no-op on
+   * the published article.
+   */
+  setTune(tuneName: string, value: boolean): void {
+    const data = (this as unknown as { _data: EditorImageData })._data;
+
+    if (tuneName === "stretched" && value && data.width !== undefined) {
+      data.width = undefined;
+      const imageContainer = (this as unknown as CustomImageTool).ui?.nodes
+        ?.imageContainer;
+      if (imageContainer) {
+        applyContainerWidth(imageContainer, undefined);
+      }
+    }
+
+    this.setBaseTune(tuneName, value);
   }
 
   renderSettings(): MenuConfigItemList {
@@ -413,10 +593,31 @@ class CustomImage extends Image {
         nodes: {
           caption?: HTMLElement;
           wrapper?: HTMLElement;
+          imageContainer?: HTMLElement;
         };
       };
       block: { container: HTMLElement; id: string };
     };
+
+    const imageContainer = typed.ui?.nodes?.imageContainer ?? null;
+    if (imageContainer) {
+      const data = (this as unknown as { _data: EditorImageData })._data;
+      mountResizeHandle(
+        imageContainer,
+        () => data.width,
+        (nextWidth) => {
+          data.width = nextWidth;
+          // Go through the tune rather than writing `_data.stretched`: the
+          // base tool's setTune also drops the tune's CSS class and the
+          // block's stretched layout. Setting the field alone left the editor
+          // showing a full-bleed image that the article rendered at the
+          // custom width, and desynced the tunes menu's checked state.
+          if (data.stretched) {
+            this.setBaseTune("stretched", false);
+          }
+        },
+      );
+    }
 
     // EditorJS's Image tool keeps its DOM refs on `this.ui.nodes`, not
     // `this.nodes` directly — see @editorjs/image's Ui class.
@@ -458,6 +659,7 @@ class CustomImage extends Image {
     withBackground?: boolean;
     stretched?: boolean;
     centerImage?: boolean;
+    width?: number;
   } {
     // Avoid calling the parent save(); it would try to read the caption
     // element that we've repurposed, and we already have a structured value
@@ -473,6 +675,7 @@ class CustomImage extends Image {
       withBackground: d.withBackground,
       stretched: d.stretched,
       centerImage: d.centerImage ?? false,
+      ...(d.width === undefined ? {} : { width: d.width }),
     };
   }
 
