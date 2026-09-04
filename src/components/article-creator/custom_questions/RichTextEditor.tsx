@@ -302,6 +302,7 @@ const RichTextEditor = forwardRef<HTMLDivElement, Props>(
           }}
           onPaste={(event) => {
             event.preventDefault();
+            event.stopPropagation();
             const html = event.clipboardData.getData("text/html");
             const text = event.clipboardData.getData("text/plain");
             document.execCommand(

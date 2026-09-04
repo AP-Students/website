@@ -97,6 +97,31 @@
   @apply h-auto w-full max-w-[480px];
 }
 
+/* editorjs/image resize handle ─────────────────────────────────────────── */
+
+.image-tool__image {
+  display: inline-block;
+  max-width: 100%;
+}
+
+/* The image tool gives its picture only `max-width: 100%`, so a container with
+   a custom width would grow around an image that stayed at its natural size.
+   Make the picture fill the container it has been resized to, matching how the
+   public renderers put the width straight onto the <img>. */
+.image-tool__image[data-custom-width] .image-tool__image-picture {
+  width: 100%;
+}
+
+.image-tool__image [data-resize-handle] {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.image-tool__image:hover [data-resize-handle],
+.image-tool__image [data-resize-handle]:focus-visible {
+  opacity: 1;
+}
+
 /* image rich-text caption editor ─────────────────────────────────────────── */
 
 .caption-editor-root {
@@ -265,4 +290,3 @@ figcaption a {
     width: calc(100vw - 24px);
   }
 }
-

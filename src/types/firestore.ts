@@ -1,11 +1,19 @@
 import type { Block } from "editorjs-parser";
-import type { QuestionFormat } from "./questions";
+import type { QuestionFormat, QuestionInput } from "./questions";
 import type { CalculatorPermission, CalculatorType } from "@/lib/calculator";
 
 export type Subject = {
   title: string;
   units: Unit[];
   hasUnit0?: boolean;
+  referenceSheets?: ReferenceSheet[];
+};
+
+/** A course-scoped, natively-authored sheet of formulas/constants/etc. students can open while testing. */
+export type ReferenceSheet = {
+  id: string;
+  title: string;
+  content: QuestionInput;
 };
 
 export type Unit = {
@@ -30,6 +38,8 @@ export type UnitTest = {
   calculatorDefault?: CalculatorPermission;
   /** Which Desmos calculator to offer when the calculator is allowed. */
   calculatorType?: CalculatorType;
+  referenceSheetEnabled?: boolean;
+  referenceSheetId?: string;
 };
 
 export type UnitFRQ = {

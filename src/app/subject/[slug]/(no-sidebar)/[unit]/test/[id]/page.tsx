@@ -4,7 +4,11 @@ import TestRenderer from "@/components/questions/testRenderer";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { type UnitTest } from "@/types/firestore";
+import {
+  type ReferenceSheet,
+  type Subject,
+  type UnitTest,
+} from "@/types/firestore";
 import { type QuestionFormat } from "@/types/questions";
 import usePathname from "@/components/client/pathname";
 import type { CalculatorPermission, CalculatorType } from "@/lib/calculator";
@@ -29,6 +33,11 @@ const Page = () => {
   const [calculatorDefault, setCalculatorDefault] =
     useState<CalculatorPermission>();
   const [calculatorType, setCalculatorType] = useState<CalculatorType>();
+  const [referenceSheetEnabled, setReferenceSheetEnabled] =
+    useState<boolean>(false);
+  const [referenceSheet, setReferenceSheet] = useState<ReferenceSheet | null>(
+    null,
+  );
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -60,6 +69,42 @@ const Page = () => {
           } else {
             console.log("No questions found for this unit.");
           }
+
+          const referenceSheetIsEnabled = data.referenceSheetEnabled ?? false;
+
+          if (referenceSheetIsEnabled && data.referenceSheetId) {
+            try {
+              const subjectSnap = await getDoc(doc(db, "subjects", subject));
+              const subjectData = subjectSnap.exists()
+                ? (subjectSnap.data() as Subject)
+                : null;
+
+              // Left null (rather than throwing) when the sheet was deleted
+              // or the subject doc is missing, so the toolbar can still show
+              // "unavailable" instead of the whole test failing to load.
+              setReferenceSheet(
+                subjectData?.referenceSheets?.find(
+                  (sheet) => sheet.id === data.referenceSheetId,
+                ) ?? null,
+              );
+            } catch (referenceSheetError) {
+              console.error(
+                "Error fetching reference sheet:",
+                referenceSheetError,
+              );
+              setReferenceSheet(null);
+            }
+          } else {
+            setReferenceSheet(null);
+          }
+
+          // Turned on only once the sheet above has resolved. The toolbar
+          // derives "unavailable" from enabled-but-absent, so enabling it any
+          // earlier makes the questions render alongside a greyed-out button
+          // claiming the sheet could not be loaded, for however long the
+          // subject document takes to arrive. Both state updates land in the
+          // same render, so the button appears already in its final state.
+          setReferenceSheetEnabled(referenceSheetIsEnabled);
         } else {
           console.error("Subject document does not exist!");
         }
@@ -89,6 +134,8 @@ const Page = () => {
         testName={testName}
         calculatorDefault={calculatorDefault}
         calculatorType={calculatorType}
+        referenceSheetEnabled={referenceSheetEnabled}
+        referenceSheet={referenceSheet}
       />
     </div>
   );

@@ -1,8 +1,10 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { type OutputData } from "@editorjs/editorjs";
-import Editor from "./Editor";
+import Editor, { type EditorHandle } from "./Editor";
 import { cn } from "@/lib/utils";
+import { ChevronDown, ClipboardCopy, Upload } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
@@ -232,6 +234,44 @@ function ArticleCreator({ className }: { className?: string }) {
 
   const [author, setAuthor] = useState<string>("");
 
+  const editorHandleRef = useRef<EditorHandle | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [pastedJson, setPastedJson] = useState<string>("");
+  const [importPanelOpen, setImportPanelOpen] = useState<boolean>(false);
+
+  const handleUploadEditorData = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    try {
+      const fileText = await file.text();
+      const parsed = JSON.parse(fileText) as unknown;
+      await editorHandleRef.current?.importData(parsed);
+    } catch (error) {
+      console.error("Error importing editor data:\n", error);
+      alert("Failed to import JSON data.\n" + String(error));
+    }
+  };
+
+  const handleImportPastedJson = async () => {
+    if (!pastedJson.trim()) {
+      alert("Paste JSON text first.");
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(pastedJson) as unknown;
+      await editorHandleRef.current?.importData(parsed);
+    } catch (error) {
+      console.error("Error importing pasted JSON:\n", error);
+      alert("Failed to parse pasted JSON.\n" + String(error));
+    }
+  };
+
   return (
     <>
       {unsavedChanges && <Blocker />}
@@ -257,10 +297,89 @@ function ArticleCreator({ className }: { className?: string }) {
         )}
       </div>
 
+      <div className="mb-4 w-full rounded-sm border">
+        <button
+          aria-expanded={importPanelOpen}
+          className="flex w-full items-center justify-between p-3 text-left text-sm font-medium"
+          onClick={() => setImportPanelOpen((open) => !open)}
+          type="button"
+        >
+          Import / Export JSON
+          <ChevronDown
+            className={cn(
+              "size-4 transition-transform",
+              importPanelOpen && "rotate-180",
+            )}
+          />
+        </button>
+
+        {importPanelOpen && (
+          <div className="border-t p-3">
+            <div className="mb-4 flex flex-wrap gap-2">
+              <button
+                className={cn(
+                  buttonVariants({ variant: "outline" }),
+                  "rounded-sm pl-3",
+                )}
+                onClick={() => void editorHandleRef.current?.copyDataToClipboard()}
+                type="button"
+              >
+                <ClipboardCopy className="mr-1" />
+                Copy Data to Clipboard
+              </button>
+
+              <button
+                className={cn(
+                  buttonVariants({ variant: "outline" }),
+                  "rounded-sm pl-3",
+                )}
+                onClick={() => fileInputRef.current?.click()}
+                type="button"
+              >
+                <Upload className="mr-1" />
+                Upload JSON
+              </button>
+            </div>
+
+            <input
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(event) => void handleUploadEditorData(event)}
+              ref={fileInputRef}
+              type="file"
+            />
+
+            <label
+              className="mb-2 block text-sm font-medium"
+              htmlFor="pasted-editor-json"
+            >
+              Paste raw Editor JSON
+            </label>
+            <textarea
+              className="min-h-40 w-full rounded-sm border p-2 font-mono text-xs"
+              id="pasted-editor-json"
+              onChange={(event) => setPastedJson(event.target.value)}
+              placeholder='Paste JSON from "Copy Data to Clipboard" here'
+              value={pastedJson}
+            />
+            <div className="mt-2 flex justify-end">
+              <button
+                className={cn(buttonVariants({ variant: "outline" }), "rounded-sm")}
+                onClick={() => void handleImportPastedJson()}
+                type="button"
+              >
+                Import Pasted JSON
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className={cn("grid grid-cols-1 pb-8 sm:grid-cols-2", className)}>
         {/* Left column: Editor */}
         <div className="rounded-md border p-4">
           <Editor
+            ref={editorHandleRef}
             content={initialData}
             setData={setData}
             setUnsavedChanges={setUnsavedChanges}

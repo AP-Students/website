@@ -1,18 +1,30 @@
 import React, { useState, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { ChevronDown, ChevronUp, LogOut } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronUp, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import katex from "katex";
 import {
   decodeEntities,
   katexMacros,
 } from "@/components/article-creator/Renderer";
+import ReferenceSheetPanel from "@/components/questions/ReferenceSheetPanel";
+import type { ReferenceSheet } from "@/types/firestore";
 
 interface HeaderProps {
   timeRemaining: number; // seconds
   setSubmitted: (value: boolean) => void;
   submitted: boolean;
   directions?: string;
+  /** Whether this test has a reference sheet assigned, regardless of whether it loaded. */
+  referenceSheetEnabled?: boolean;
+  /**
+   * The resolved sheet content, or null while `referenceSheetEnabled` is true if
+   * the assigned sheet could not be loaded (deleted, or a fetch error). That
+   * distinction is what lets the button show "unavailable" instead of just
+   * vanishing, so a real failure doesn't look identical to the tool never
+   * having been turned on.
+   */
+  referenceSheet?: ReferenceSheet | null;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -20,7 +32,14 @@ const Header: React.FC<HeaderProps> = ({
   setSubmitted,
   submitted,
   directions,
+  referenceSheetEnabled = false,
+  referenceSheet,
 }) => {
+  const [showReferenceSheet, setShowReferenceSheet] = useState(false);
+  const [showReferenceSheetError, setShowReferenceSheetError] =
+    useState(false);
+  const referenceButtonRef = useRef<HTMLButtonElement>(null);
+  const referenceSheetUnavailable = referenceSheetEnabled && !referenceSheet;
   const pathname = usePathname() ?? "";
   const [showTimer, setShowTimer] = useState(true);
   const [remainingTime, setRemainingTime] = useState(timeRemaining);
@@ -83,6 +102,31 @@ const Header: React.FC<HeaderProps> = ({
           Directions
           {showDirections ? <ChevronUp /> : <ChevronDown />}
         </button>
+        {referenceSheetEnabled && (
+          <button
+            ref={referenceButtonRef}
+            onClick={() =>
+              referenceSheetUnavailable
+                ? setShowReferenceSheetError(true)
+                : setShowReferenceSheet(true)
+            }
+            aria-disabled={referenceSheetUnavailable}
+            title={
+              referenceSheetUnavailable
+                ? "This reference sheet could not be loaded."
+                : undefined
+            }
+            className={cn(
+              "ml-4 flex items-center gap-1",
+              referenceSheetUnavailable
+                ? "text-gray-400 hover:underline"
+                : "text-blue-500 hover:underline",
+            )}
+          >
+            <BookOpen size={18} />
+            Reference Sheet
+          </button>
+        )}
         <div className="flex flex-1 items-center justify-center gap-2">
           {!submitted && (showTimer || remainingTime < 5 * 60) && (
             <p
@@ -160,6 +204,33 @@ const Header: React.FC<HeaderProps> = ({
             Close
           </button>
         </div>
+      )}
+
+      {showReferenceSheetError && (
+        <div
+          role="alertdialog"
+          aria-label="Reference sheet unavailable"
+          className="absolute left-0 right-0 top-12 z-[9000] border-2 border-red-300 bg-red-50 p-5 text-red-700 shadow-lg"
+        >
+          <p>
+            The reference sheet for this test could not be loaded. Your
+            answers are unaffected — you can continue the test without it.
+          </p>
+          <button
+            onClick={() => setShowReferenceSheetError(false)}
+            className="mt-4 font-semibold text-red-800"
+          >
+            Close
+          </button>
+        </div>
+      )}
+
+      {referenceSheet && (
+        <ReferenceSheetPanel
+          sheet={referenceSheet}
+          open={showReferenceSheet}
+          onOpenChange={setShowReferenceSheet}
+        />
       )}
     </header>
   );

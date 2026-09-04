@@ -4,7 +4,7 @@ import type {
   FRQTemplatePart,
 } from "@/types/frq";
 import type { QuestionFile } from "@/types/questions";
-import { getPartLabel } from "./template.ts";
+import { getPartLabel, isMultiQuestion } from "./template.ts";
 
 /**
  * The model the grading page pages through, kept apart from the component so
@@ -97,7 +97,7 @@ export const getQuestionLabel = (
   questionCount: number,
   questionIndex: number,
 ): string | null =>
-  questionCount > 1 ? `Question ${questionIndex + 1}` : null;
+  isMultiQuestion(questionCount) ? `Question ${questionIndex + 1}` : null;
 
 /**
  * A blank grade for every part, keyed by part id.

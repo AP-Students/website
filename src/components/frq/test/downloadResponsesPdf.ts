@@ -1,5 +1,6 @@
 import type { StudentQuestion } from "@/lib/frq/studentView";
 import { getPartHeading } from "@/lib/frq/studentView";
+import { stripResponseHtml } from "@/lib/frq/template";
 
 const PRINT_STYLES = `
     body {
@@ -33,13 +34,10 @@ const PRINT_STYLES = `
 /**
  * Responses are stored as sanitized HTML, but the printed copy is plain text:
  * the print window has none of the app's styles, so markup would show up as
- * literal tags.
+ * literal tags. Shares its stripping logic with `hasResponseText` rather than
+ * parsing each response through its own `DOMParser` instance.
  */
-const getPlainText = (html: string) => {
-  const parsedDocument = new DOMParser().parseFromString(html, "text/html");
-
-  return parsedDocument.body.textContent?.trim() || "No response";
-};
+const getPlainText = (html: string) => stripResponseHtml(html) || "No response";
 
 /**
  * Open a print window holding the student's own answers. Headings name both

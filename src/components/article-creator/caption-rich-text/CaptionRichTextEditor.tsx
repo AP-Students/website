@@ -292,6 +292,7 @@ export function CaptionRichTextEditor({
   const handlePaste = useCallback(
     (e: React.ClipboardEvent<HTMLDivElement>) => {
       e.preventDefault();
+      e.stopPropagation();
       const html = e.clipboardData.getData("text/html");
       const text = e.clipboardData.getData("text/plain");
       const source = html || text;
@@ -366,6 +367,7 @@ export function CaptionRichTextEditor({
           style={toolbarStyle}
           role="toolbar"
           aria-label="Caption formatting"
+          onMouseDown={(e) => e.preventDefault()}
         >
           <ToolbarButton
             label="Bold"
@@ -406,6 +408,10 @@ export function CaptionRichTextEditor({
           style={linkStyle}
           role="dialog"
           aria-label="Edit link"
+          onMouseDown={(e) => {
+            const target = e.target as HTMLElement;
+            if (target.tagName !== "INPUT") e.preventDefault();
+          }}
         >
           <Label htmlFor="caption-link-url" className="sr-only">
             Link URL

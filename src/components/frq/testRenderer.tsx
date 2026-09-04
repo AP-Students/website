@@ -9,6 +9,7 @@ import QuestionPane, {
 } from "@/components/frq/test/questionPane";
 import ReviewPage from "@/components/frq/test/reviewPage";
 import { SubmissionModal, TimeUpModal } from "@/components/frq/test/testModals";
+import { usePendingPartScroll } from "@/components/frq/usePendingPartScroll";
 import { getUngradedFrqsCollectionRef } from "@/lib/firestore/frqRefs";
 import {
   buildStudentQuestions,
@@ -23,8 +24,10 @@ import {
 import type { FRQTemplate } from "@/types/frq";
 import CalculatorPanel from "@/components/questions/CalculatorPanel";
 import { resolveCalculatorPermission } from "@/lib/calculator";
+import type { ReferenceSheet } from "@/types/firestore";
+import ReferenceSheetPanel from "@/components/questions/ReferenceSheetPanel";
 import { addDoc, serverTimestamp } from "firebase/firestore";
-import { Calculator, LogOut } from "lucide-react";
+import { BookOpen, Calculator, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -32,6 +35,13 @@ type FRQTestRendererProps = {
   template: FRQTemplate | null;
   loading?: boolean;
   error?: string | null;
+  /**
+   * The resolved sheet, or null when `template.referenceSheetEnabled` is true
+   * but it could not be loaded (deleted, or a fetch error) — that distinction
+   * is what lets the toolbar show "unavailable" instead of just hiding the
+   * button, matching how a real failure should read to the student.
+   */
+  referenceSheet?: ReferenceSheet | null;
 };
 
 /**
@@ -75,9 +85,14 @@ const FRQTestRenderer = ({
   template,
   loading = false,
   error = null,
+  referenceSheet = null,
 }: FRQTestRendererProps) => {
   const router = useRouter();
   const { user } = useUser();
+  const [showReferenceSheet, setShowReferenceSheet] = useState(false);
+  const [showReferenceSheetError, setShowReferenceSheetError] = useState(false);
+  const referenceSheetEnabled = template?.referenceSheetEnabled ?? false;
+  const referenceSheetUnavailable = referenceSheetEnabled && !referenceSheet;
 
   // The student pages through questions, not parts: one page carries a
   // question's stimulus and every part hanging off it. A legacy flat document
@@ -98,10 +113,6 @@ const FRQTestRenderer = ({
   const [markedForReview, setMarkedForReview] = useState<
     Record<string, boolean>
   >({});
-  const [pendingScrollPartId, setPendingScrollPartId] = useState<string | null>(
-    null,
-  );
-
   const [timeRemaining, setTimeRemaining] = useState(
     () => (template?.timeLimitMinutes ?? DEFAULT_TIME_LIMIT_MINUTES) * 60,
   );
@@ -146,20 +157,10 @@ const FRQTestRenderer = ({
     }
   }, [draftKey, responses, hasSubmitted]);
 
-  // Runs after the target question has rendered, so the part being scrolled to
-  // is in the DOM. Jumping to a part on another question sets the index and
-  // this id together, and React commits both before the effect fires.
-  useEffect(() => {
-    if (!pendingScrollPartId) {
-      return;
-    }
-
-    document
-      .getElementById(getPartAnchorId(pendingScrollPartId))
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-
-    setPendingScrollPartId(null);
-  }, [pendingScrollPartId, currentQuestionIndex]);
+  const setPendingScrollPartId = usePendingPartScroll(
+    getPartAnchorId,
+    currentQuestionIndex,
+  );
 
   useEffect(() => {
     setTimeRemaining(
@@ -418,6 +419,31 @@ const FRQTestRenderer = ({
     <main className="min-h-screen w-full bg-white text-black">
       {timeUpModal}
       {submissionModal}
+      {referenceSheet && (
+        <ReferenceSheetPanel
+          sheet={referenceSheet}
+          open={showReferenceSheet}
+          onOpenChange={setShowReferenceSheet}
+        />
+      )}
+      {showReferenceSheetError && (
+        <div
+          role="alertdialog"
+          aria-label="Reference sheet unavailable"
+          className="fixed inset-x-0 top-16 z-[2000] mx-auto max-w-md border-2 border-red-300 bg-red-50 p-5 text-red-700 shadow-lg"
+        >
+          <p>
+            The reference sheet for this test could not be loaded. Your answers
+            are unaffected — you can continue the test without it.
+          </p>
+          <button
+            onClick={() => setShowReferenceSheetError(false)}
+            className="mt-4 font-semibold text-red-800"
+          >
+            Close
+          </button>
+        </div>
+      )}
       <CalculatorPanel
         open={showCalculator && calculatorAllowed}
         onOpenChange={setShowCalculator}
@@ -446,6 +472,29 @@ const FRQTestRenderer = ({
           </div>
 
           <div className="flex items-center gap-4">
+            {referenceSheetEnabled && (
+              <button
+                type="button"
+                className={
+                  referenceSheetUnavailable
+                    ? "flex items-center gap-2 text-sm font-bold text-gray-400"
+                    : "flex items-center gap-2 text-sm font-bold text-blue-600"
+                }
+                title={
+                  referenceSheetUnavailable
+                    ? "This reference sheet could not be loaded."
+                    : undefined
+                }
+                onClick={() =>
+                  referenceSheetUnavailable
+                    ? setShowReferenceSheetError(true)
+                    : setShowReferenceSheet(true)
+                }
+              >
+                <BookOpen size={16} />
+                Reference Sheet
+              </button>
+            )}
             <button
               ref={calculatorButtonRef}
               type="button"

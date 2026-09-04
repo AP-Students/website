@@ -54,6 +54,8 @@ export interface EditorState {
   isPublic: boolean;
   calculatorDefault: CalculatorPermission;
   calculatorType: CalculatorType;
+  referenceSheetEnabled: boolean;
+  referenceSheetId: string;
 }
 
 const createQuestionInput = (value = ""): QuestionInput => ({
@@ -135,6 +137,8 @@ export const buildInitialState = (
     isPublic: template?.isPublic === true,
     calculatorDefault: template?.calculatorDefault ?? "not-allowed",
     calculatorType: template?.calculatorType ?? "graphing",
+    referenceSheetEnabled: template?.referenceSheetEnabled ?? false,
+    referenceSheetId: template?.referenceSheetId ?? "",
   };
 };
 
@@ -155,6 +159,8 @@ export const buildTemplatePayload = (state: EditorState) => ({
   isPublic: state.isPublic,
   calculatorDefault: state.calculatorDefault,
   calculatorType: state.calculatorType,
+  referenceSheetEnabled: state.referenceSheetEnabled,
+  referenceSheetId: state.referenceSheetEnabled ? state.referenceSheetId : "",
   questions: state.questions.map((question) => ({
     id: question.id,
     stimulus: question.stimulus.question.value,
@@ -327,6 +333,20 @@ export const movePart = (
   });
 };
 
+/** Whether a part at an already-located position has anywhere to go. */
+const canMoveLocatedPart = (
+  questions: EditorQuestion[],
+  location: { questionIndex: number; partIndex: number },
+  direction: -1 | 1,
+): boolean => {
+  const { questionIndex, partIndex } = location;
+
+  return direction === -1
+    ? questionIndex > 0 || partIndex > 0
+    : questionIndex < questions.length - 1 ||
+        partIndex < (questions[questionIndex]?.parts.length ?? 0) - 1;
+};
+
 /** Whether a part has anywhere to go, used to disable the move buttons. */
 export const canMovePart = (
   questions: EditorQuestion[],
@@ -335,14 +355,38 @@ export const canMovePart = (
 ): boolean => {
   const location = locatePart(questions, partId);
 
-  if (!location) {
-    return false;
-  }
+  return location ? canMoveLocatedPart(questions, location, direction) : false;
+};
 
-  const { questionIndex, partIndex } = location;
+/**
+ * Every part's location, computed once instead of scanning all questions per
+ * part. The editor calls `canMovePart` twice for every part on every render,
+ * which made `locatePart`'s linear scan effectively O(n^2) over the whole
+ * document; building this map once per `questions` change keeps each lookup
+ * O(1).
+ */
+export const buildPartLocationIndex = (
+  questions: EditorQuestion[],
+): Map<string, { questionIndex: number; partIndex: number }> => {
+  const index = new Map<string, { questionIndex: number; partIndex: number }>();
 
-  return direction === -1
-    ? questionIndex > 0 || partIndex > 0
-    : questionIndex < questions.length - 1 ||
-        partIndex < (questions[questionIndex]?.parts.length ?? 0) - 1;
+  questions.forEach((question, questionIndex) => {
+    question.parts.forEach((part, partIndex) => {
+      index.set(part.id, { questionIndex, partIndex });
+    });
+  });
+
+  return index;
+};
+
+/** Same as `canMovePart`, but reading from a precomputed location index. */
+export const canMovePartIndexed = (
+  questions: EditorQuestion[],
+  locationIndex: Map<string, { questionIndex: number; partIndex: number }>,
+  partId: string,
+  direction: -1 | 1,
+): boolean => {
+  const location = locationIndex.get(partId);
+
+  return location ? canMoveLocatedPart(questions, location, direction) : false;
 };

@@ -79,6 +79,10 @@ export interface FRQTemplate {
   calculatorDefault?: CalculatorPermission;
   /** Which Desmos calculator to offer when the calculator is allowed. */
   calculatorType?: CalculatorType;
+  /** Whether the subject's reference sheet is offered while taking this FRQ. */
+  referenceSheetEnabled?: boolean;
+  /** Id into the subject document's `referenceSheets`. */
+  referenceSheetId?: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -90,7 +94,7 @@ export interface GradableFRQSubmission {
   subject: string;
   unitId: string;
   studentId: string;
-  /** Responses are keyed by a stable FRQTemplateQuestion.id. */
+  /** Responses are keyed by a stable FRQTemplatePart.id. */
   responses: Record<string, string>;
   submittedAt: Timestamp;
 }
