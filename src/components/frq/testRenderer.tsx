@@ -26,7 +26,7 @@ import { resolveCalculatorPermission } from "@/lib/calculator";
 import { addDoc, serverTimestamp } from "firebase/firestore";
 import { Calculator, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type FRQTestRendererProps = {
   template: FRQTemplate | null;
@@ -110,6 +110,7 @@ const FRQTestRenderer = ({
   const [showReviewPage, setShowReviewPage] = useState(false);
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
+  const calculatorButtonRef = useRef<HTMLButtonElement>(null);
 
   const templateId = template?.id ?? "";
   const studentId = user?.uid ?? "";
@@ -421,6 +422,7 @@ const FRQTestRenderer = ({
         open={showCalculator && calculatorAllowed}
         onOpenChange={setShowCalculator}
         calculatorType={template.calculatorType ?? "graphing"}
+        triggerRef={calculatorButtonRef}
       />
       <section className="flex min-h-screen w-full flex-col border-4 border-black">
         <header className="relative flex items-start justify-between px-6 py-3">
@@ -445,6 +447,7 @@ const FRQTestRenderer = ({
 
           <div className="flex items-center gap-4">
             <button
+              ref={calculatorButtonRef}
               type="button"
               onClick={() => calculatorAllowed && setShowCalculator(true)}
               aria-disabled={!calculatorAllowed}

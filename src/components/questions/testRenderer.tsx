@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bookmark, Calculator, Check, X } from "lucide-react";
 import Header from "./digital-testing/Header";
 import QuestionPanel from "./digital-testing/QuestionPanel";
@@ -97,6 +97,7 @@ export default function DigitalTestingPage({
   const [showReviewPage, setShowReviewPage] = useState(false);
   const [showCompletionPage, setShowCompletionPage] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
+  const calculatorButtonRef = useRef<HTMLButtonElement>(null);
 
   const calculatorAllowed = resolveCalculatorPermission(
     calculatorDefault,
@@ -250,6 +251,8 @@ export default function DigitalTestingPage({
 
               {!submitted && (
                 <button
+                  ref={calculatorButtonRef}
+                  type="button"
                   onClick={() => calculatorAllowed && setShowCalculator(true)}
                   aria-disabled={!calculatorAllowed}
                   aria-label={
@@ -347,6 +350,7 @@ export default function DigitalTestingPage({
         open={showCalculator && calculatorAllowed}
         onOpenChange={setShowCalculator}
         calculatorType={calculatorType}
+        triggerRef={calculatorButtonRef}
       />
     </div>
   );

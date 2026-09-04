@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { type UnitTest } from "@/types/firestore";
 import { type QuestionFormat } from "@/types/questions";
 import usePathname from "@/components/client/pathname";
+import type { CalculatorPermission, CalculatorType } from "@/lib/calculator";
 
 const Page = () => {
   const pathname = usePathname();
@@ -22,6 +23,12 @@ const Page = () => {
   const [questions, setQuestions] = useState<QuestionFormat[] | null>(null);
   const [directions, setDirections] = useState("");
   const [testName, setTestName] = useState<string>("");
+  // Left undefined when the test document predates the calculator settings, so
+  // `resolveCalculatorPermission` falls through to its safe "no calculator"
+  // default rather than to whatever this page happened to seed.
+  const [calculatorDefault, setCalculatorDefault] =
+    useState<CalculatorPermission>();
+  const [calculatorType, setCalculatorType] = useState<CalculatorType>();
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -44,6 +51,8 @@ const Page = () => {
           setTime((time && time / 60) ?? 20);
           setDirections(data.directions);
           setTestName(data.name ?? "");
+          setCalculatorDefault(data.calculatorDefault);
+          setCalculatorType(data.calculatorType);
 
           const questionsData = data.questions;
           if (questionsData) {
@@ -78,6 +87,8 @@ const Page = () => {
         adminMode={false}
         directions={directions}
         testName={testName}
+        calculatorDefault={calculatorDefault}
+        calculatorType={calculatorType}
       />
     </div>
   );
