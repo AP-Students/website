@@ -72,6 +72,10 @@ export interface FRQTemplate {
   isPublic?: boolean;
   /** Minutes on the test clock. Absent on templates authored before timing. */
   timeLimitMinutes?: number;
+  /** Whether the subject's reference sheet is offered while taking this FRQ. */
+  referenceSheetEnabled?: boolean;
+  /** Id into the subject document's `referenceSheets`. */
+  referenceSheetId?: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }

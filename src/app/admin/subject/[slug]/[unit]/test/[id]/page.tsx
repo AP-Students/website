@@ -8,7 +8,7 @@ import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
-import type { UnitTest } from "@/types/firestore";
+import type { ReferenceSheet, Subject, UnitTest } from "@/types/firestore";
 import { usePathname } from "next/navigation";
 import type { QuestionFormat } from "@/types/questions";
 import { processQuestions } from "@/components/article-creator/FetchArticleFunctions";
@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { AdminEditorBackLinks } from "@/app/admin/subject/link";
 import { cn } from "@/lib/utils";
 import { Blocker } from "@/app/admin/subject/navigation-block";
+import ReferenceSheetPanel from "@/components/questions/ReferenceSheetPanel";
 
 const Page = () => {
   const pathname = usePathname() ?? "";
@@ -33,6 +34,14 @@ const Page = () => {
   const { questions, setQuestions } = syncedQuestions(instanceId);
   const [directions, setDirections] = useState("");
   const [testName, setTestName] = useState<string>("");
+  const [subjectReferenceSheets, setSubjectReferenceSheets] = useState<
+    ReferenceSheet[]
+  >([]);
+  const [referenceSheetEnabled, setReferenceSheetEnabled] =
+    useState<boolean>(false);
+  const [referenceSheetId, setReferenceSheetId] = useState<string>("");
+  const [showReferenceSheetPreview, setShowReferenceSheetPreview] =
+    useState<boolean>(false);
 
   const [testLoading, setTestLoading] = useState<boolean>(true);
   const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
@@ -82,6 +91,19 @@ const Page = () => {
         } else {
           setQuestions(syncedQuestions(instanceId).questions);
         }
+
+        const subjectSnap = await getDoc(doc(db, "subjects", subject));
+        const subjectData = subjectSnap.exists()
+          ? (subjectSnap.data() as Subject)
+          : null;
+        const availableSheets = subjectData?.referenceSheets ?? [];
+
+        setSubjectReferenceSheets(availableSheets);
+        setReferenceSheetEnabled(data.referenceSheetEnabled ?? false);
+        setReferenceSheetId(
+          data.referenceSheetId ?? availableSheets[0]?.id ?? "",
+        );
+
         setTestLoading(false);
       }
     })().catch((error) => {
@@ -110,6 +132,8 @@ const Page = () => {
         time: minutes * 60 + seconds,
         instanceId: instanceId ?? "",
         directions,
+        referenceSheetEnabled,
+        referenceSheetId: referenceSheetEnabled ? referenceSheetId : "",
       };
 
       await setDoc(testRef, testData, { merge: true });
@@ -178,6 +202,51 @@ const Page = () => {
               }}
             />
           </div>
+          <div className="grid place-content-start gap-1.5">
+            <Label
+              htmlFor="referenceSheetEnabled"
+              className="flex items-center gap-2"
+            >
+              <input
+                type="checkbox"
+                id="referenceSheetEnabled"
+                checked={referenceSheetEnabled}
+                onChange={(e) => {
+                  setReferenceSheetEnabled(e.target.checked);
+                  setUnsavedChanges(true);
+                }}
+              />
+              Enable Reference Sheet
+            </Label>
+            {referenceSheetEnabled && (
+              <select
+                className="rounded border p-1.5 text-sm"
+                value={referenceSheetId}
+                onChange={(e) => {
+                  setReferenceSheetId(e.target.value);
+                  setUnsavedChanges(true);
+                }}
+              >
+                <option value="" disabled>
+                  Select a reference sheet...
+                </option>
+                {subjectReferenceSheets.map((sheet) => (
+                  <option key={sheet.id} value={sheet.id}>
+                    {sheet.title || "Untitled Reference Sheet"}
+                  </option>
+                ))}
+              </select>
+            )}
+            {referenceSheetEnabled && referenceSheetId && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowReferenceSheetPreview(true)}
+              >
+                Preview
+              </Button>
+            )}
+          </div>
           {(!testLoading || unsavedChanges) && (
             <Button
               className={cn(
@@ -209,6 +278,21 @@ const Page = () => {
             />
           </div>
         </div>
+
+        {referenceSheetEnabled &&
+          (() => {
+            const selectedSheet = subjectReferenceSheets.find(
+              (sheet) => sheet.id === referenceSheetId,
+            );
+
+            return selectedSheet ? (
+              <ReferenceSheetPanel
+                sheet={selectedSheet}
+                open={showReferenceSheetPreview}
+                onOpenChange={setShowReferenceSheetPreview}
+              />
+            ) : null;
+          })()}
       </div>
     );
   } else if (user && questions) {
