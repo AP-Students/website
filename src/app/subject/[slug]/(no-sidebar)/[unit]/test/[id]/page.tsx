@@ -57,9 +57,9 @@ const Page = () => {
             console.log("No questions found for this unit.");
           }
 
-          setReferenceSheetEnabled(data.referenceSheetEnabled ?? false);
+          const referenceSheetIsEnabled = data.referenceSheetEnabled ?? false;
 
-          if (data.referenceSheetEnabled && data.referenceSheetId) {
+          if (referenceSheetIsEnabled && data.referenceSheetId) {
             try {
               const subjectSnap = await getDoc(doc(db, "subjects", subject));
               const subjectData = subjectSnap.exists()
@@ -84,6 +84,14 @@ const Page = () => {
           } else {
             setReferenceSheet(null);
           }
+
+          // Turned on only once the sheet above has resolved. The toolbar
+          // derives "unavailable" from enabled-but-absent, so enabling it any
+          // earlier makes the questions render alongside a greyed-out button
+          // claiming the sheet could not be loaded, for however long the
+          // subject document takes to arrive. Both state updates land in the
+          // same render, so the button appears already in its final state.
+          setReferenceSheetEnabled(referenceSheetIsEnabled);
         } else {
           console.error("Subject document does not exist!");
         }
