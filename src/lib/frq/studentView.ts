@@ -1,5 +1,6 @@
 import type { FRQTemplate, FRQTemplatePart } from "@/types/frq";
 import type { QuestionFile } from "@/types/questions";
+import type { CalculatorPermission } from "@/lib/calculator";
 import {
   getPartLabel,
   getStudentFacingQuestions,
@@ -31,6 +32,8 @@ export interface StudentQuestion {
   stimulus?: string;
   stimulusFiles?: QuestionFile[];
   parts: StudentPart[];
+  /** "inherit" or absent defers to the template's calculatorDefault. */
+  calculatorOverride?: CalculatorPermission;
 }
 
 /**
@@ -45,6 +48,7 @@ export const buildStudentQuestions = (
     id: question.id,
     stimulus: question.stimulus,
     stimulusFiles: question.stimulusFiles,
+    calculatorOverride: question.calculatorOverride,
     parts: question.parts.map((part, index) => ({
       part,
       // Labels are positional within the question, never within the exam, so

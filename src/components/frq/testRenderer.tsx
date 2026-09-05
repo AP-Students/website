@@ -22,12 +22,14 @@ import {
   toQuestionInput,
 } from "@/lib/frq/template";
 import type { FRQTemplate } from "@/types/frq";
+import CalculatorPanel from "@/components/questions/CalculatorPanel";
+import { resolveCalculatorPermission } from "@/lib/calculator";
 import type { ReferenceSheet } from "@/types/firestore";
 import ReferenceSheetPanel from "@/components/questions/ReferenceSheetPanel";
 import { addDoc, serverTimestamp } from "firebase/firestore";
-import { BookOpen, LogOut } from "lucide-react";
+import { BookOpen, Calculator, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type FRQTestRendererProps = {
   template: FRQTemplate | null;
@@ -88,8 +90,7 @@ const FRQTestRenderer = ({
   const router = useRouter();
   const { user } = useUser();
   const [showReferenceSheet, setShowReferenceSheet] = useState(false);
-  const [showReferenceSheetError, setShowReferenceSheetError] =
-    useState(false);
+  const [showReferenceSheetError, setShowReferenceSheetError] = useState(false);
   const referenceSheetEnabled = template?.referenceSheetEnabled ?? false;
   const referenceSheetUnavailable = referenceSheetEnabled && !referenceSheet;
 
@@ -119,6 +120,8 @@ const FRQTestRenderer = ({
   const [showTimeUpPopup, setShowTimeUpPopup] = useState(false);
   const [showReviewPage, setShowReviewPage] = useState(false);
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
+  const [showCalculator, setShowCalculator] = useState(false);
+  const calculatorButtonRef = useRef<HTMLButtonElement>(null);
 
   const templateId = template?.id ?? "";
   const studentId = user?.uid ?? "";
@@ -186,6 +189,19 @@ const FRQTestRenderer = ({
       setShowTimeUpPopup(true);
     }
   }, [timeRemaining, hasSubmitted]);
+
+  const calculatorAllowed = resolveCalculatorPermission(
+    template?.calculatorDefault,
+    questions[currentQuestionIndex]?.calculatorOverride,
+  );
+
+  // Moving to a question where the calculator isn't allowed force-closes the
+  // panel, which unmounts its iframe and discards whatever state it held —
+  // the simplest way to guarantee a student can't carry a live calculator
+  // into a question it's not permitted on.
+  useEffect(() => {
+    if (!calculatorAllowed) setShowCalculator(false);
+  }, [calculatorAllowed]);
 
   /**
    * Both destinations write the same submission document. "self" then opens the
@@ -417,8 +433,8 @@ const FRQTestRenderer = ({
           className="fixed inset-x-0 top-16 z-[2000] mx-auto max-w-md border-2 border-red-300 bg-red-50 p-5 text-red-700 shadow-lg"
         >
           <p>
-            The reference sheet for this test could not be loaded. Your
-            answers are unaffected — you can continue the test without it.
+            The reference sheet for this test could not be loaded. Your answers
+            are unaffected — you can continue the test without it.
           </p>
           <button
             onClick={() => setShowReferenceSheetError(false)}
@@ -428,6 +444,12 @@ const FRQTestRenderer = ({
           </button>
         </div>
       )}
+      <CalculatorPanel
+        open={showCalculator && calculatorAllowed}
+        onOpenChange={setShowCalculator}
+        calculatorType={template.calculatorType ?? "graphing"}
+        triggerRef={calculatorButtonRef}
+      />
       <section className="flex min-h-screen w-full flex-col border-4 border-black">
         <header className="relative flex items-start justify-between px-6 py-3">
           <div>
@@ -473,6 +495,30 @@ const FRQTestRenderer = ({
                 Reference Sheet
               </button>
             )}
+            <button
+              ref={calculatorButtonRef}
+              type="button"
+              onClick={() => calculatorAllowed && setShowCalculator(true)}
+              aria-disabled={!calculatorAllowed}
+              aria-label={
+                calculatorAllowed
+                  ? "Open calculator"
+                  : "Calculator not permitted for this question"
+              }
+              className={
+                calculatorAllowed
+                  ? "flex items-center gap-2 text-sm font-bold text-blue-600"
+                  : "flex cursor-not-allowed items-center gap-2 text-sm font-bold text-gray-400"
+              }
+              title={
+                calculatorAllowed
+                  ? "Open calculator"
+                  : "Calculator not permitted for this question"
+              }
+            >
+              <Calculator size={16} />
+              Calculator
+            </button>
 
             <button
               type="button"

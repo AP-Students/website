@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Bookmark, Check, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Bookmark, Calculator, Check, X } from "lucide-react";
 import Header from "./digital-testing/Header";
 import QuestionPanel from "./digital-testing/QuestionPanel";
 import Footer from "./digital-testing/Footer";
@@ -11,6 +11,12 @@ import { RenderContent } from "../../components/article-creator/custom_questions
 import Highlighter, { type Highlight } from "./digital-testing/Highlighter";
 import ReviewPage, { isQuestionCorrect } from "./digital-testing/ReviewPage";
 import CompletionPage from "./digital-testing/CompletionPage";
+import CalculatorPanel from "./CalculatorPanel";
+import {
+  resolveCalculatorPermission,
+  type CalculatorPermission,
+  type CalculatorType,
+} from "@/lib/calculator";
 import clsx from "clsx";
 import { cn } from "@/lib/utils";
 import "katex/dist/katex.min.css";
@@ -21,6 +27,8 @@ interface Props {
   adminMode?: boolean;
   directions?: string;
   testName: string;
+  calculatorDefault?: CalculatorPermission;
+  calculatorType?: CalculatorType;
   /** Whether this test has a reference sheet assigned, regardless of whether it loaded. */
   referenceSheetEnabled?: boolean;
   /** The resolved sheet, or null if enabled but unavailable (deleted, fetch error). */
@@ -74,6 +82,8 @@ export default function DigitalTestingPage({
   adminMode = false,
   directions,
   testName,
+  calculatorDefault,
+  calculatorType = "graphing",
   referenceSheetEnabled = false,
   referenceSheet,
 }: Props) {
@@ -93,6 +103,21 @@ export default function DigitalTestingPage({
   const [submitted, setSubmitted] = useState(false);
   const [showReviewPage, setShowReviewPage] = useState(false);
   const [showCompletionPage, setShowCompletionPage] = useState(false);
+  const [showCalculator, setShowCalculator] = useState(false);
+  const calculatorButtonRef = useRef<HTMLButtonElement>(null);
+
+  const calculatorAllowed = resolveCalculatorPermission(
+    calculatorDefault,
+    questions[currentQuestionIndex]?.calculatorOverride,
+  );
+
+  // Moving to a question where the calculator isn't allowed force-closes the
+  // panel, which unmounts its iframe and discards whatever state it held —
+  // the simplest way to guarantee a student can't carry a live calculator
+  // into a question it's not permitted on.
+  useEffect(() => {
+    if (!calculatorAllowed) setShowCalculator(false);
+  }, [calculatorAllowed]);
 
   useEffect(() => {
     setQuestions(inputQuestions);
@@ -235,8 +260,33 @@ export default function DigitalTestingPage({
 
               {!submitted && (
                 <button
+                  ref={calculatorButtonRef}
+                  type="button"
+                  onClick={() => calculatorAllowed && setShowCalculator(true)}
+                  aria-disabled={!calculatorAllowed}
+                  aria-label={
+                    calculatorAllowed
+                      ? "Open calculator"
+                      : "Calculator not permitted for this question"
+                  }
+                  className={cn(
+                    "ml-auto flex items-center gap-1 p-1",
+                    !calculatorAllowed && "cursor-not-allowed text-gray-400",
+                  )}
+                  title={
+                    calculatorAllowed
+                      ? "Open calculator"
+                      : "Calculator not permitted for this question"
+                  }
+                >
+                  <Calculator size={22} />
+                </button>
+              )}
+
+              {!submitted && (
+                <button
                   onClick={() => setShowEliminationTools(!showEliminationTools)}
-                  className="ml-auto p-1"
+                  className="p-1"
                   title="Eliminate options"
                 >
                   <svg
@@ -304,6 +354,12 @@ export default function DigitalTestingPage({
         submitted={submitted}
         adminMode={adminMode}
         testName={testName}
+      />
+      <CalculatorPanel
+        open={showCalculator && calculatorAllowed}
+        onOpenChange={setShowCalculator}
+        calculatorType={calculatorType}
+        triggerRef={calculatorButtonRef}
       />
     </div>
   );

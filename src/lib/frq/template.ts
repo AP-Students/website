@@ -7,6 +7,7 @@ import type {
   FRQTemplateQuestion,
 } from "@/types/frq";
 import type { QuestionFile, QuestionInput } from "@/types/questions";
+import type { CalculatorPermission, CalculatorType } from "@/lib/calculator";
 
 /** Default minutes on the clock when a template predates the time-limit field. */
 export const DEFAULT_TIME_LIMIT_MINUTES = 90;
@@ -96,6 +97,18 @@ const normalizeAnswerType = (value: unknown): FRQAnswerType =>
 const normalizeStatus = (value: unknown): FRQQuestionStatus =>
   value === "legacy" ? "legacy" : "public";
 
+const normalizeCalculatorPermission = (
+  value: unknown,
+): CalculatorPermission | undefined =>
+  value === "allowed" || value === "not-allowed" || value === "inherit"
+    ? value
+    : undefined;
+
+const normalizeCalculatorType = (value: unknown): CalculatorType | undefined =>
+  value === "fourFunction" || value === "scientific" || value === "graphing"
+    ? value
+    : undefined;
+
 /**
  * The id of the single question that legacy flat documents are wrapped into,
  * and also minted for every new save (including brand-new FRQs never legacy).
@@ -146,16 +159,22 @@ const normalizeQuestion = (value: unknown): FRQTemplateQuestion[] => {
     return [];
   }
 
-  return [
-    {
-      id,
-      stimulus: asString(record.stimulus),
-      stimulusFiles: normalizeFiles(record.stimulusFiles),
-      parts: Array.isArray(record.parts)
-        ? record.parts.flatMap(normalizePart)
-        : [],
-    },
-  ];
+  const question: FRQTemplateQuestion = {
+    id,
+    stimulus: asString(record.stimulus),
+    stimulusFiles: normalizeFiles(record.stimulusFiles),
+    parts: Array.isArray(record.parts)
+      ? record.parts.flatMap(normalizePart)
+      : [],
+  };
+
+  const calculatorOverride = normalizeCalculatorPermission(
+    record.calculatorOverride,
+  );
+
+  if (calculatorOverride) question.calculatorOverride = calculatorOverride;
+
+  return [question];
 };
 
 /**
@@ -231,10 +250,16 @@ export const normalizeFrqTemplate = (
   // template that predates section headings rather than present-and-blank.
   const sectionLabel = asOptionalString(record.sectionLabel);
   const sectionSubtitle = asOptionalString(record.sectionSubtitle);
+  const calculatorDefault = normalizeCalculatorPermission(
+    record.calculatorDefault,
+  );
+  const calculatorType = normalizeCalculatorType(record.calculatorType);
   const referenceSheetId = asOptionalString(record.referenceSheetId);
 
   if (sectionLabel) template.sectionLabel = sectionLabel;
   if (sectionSubtitle) template.sectionSubtitle = sectionSubtitle;
+  if (calculatorDefault) template.calculatorDefault = calculatorDefault;
+  if (calculatorType) template.calculatorType = calculatorType;
   if (referenceSheetId) template.referenceSheetId = referenceSheetId;
 
   return template;
@@ -328,7 +353,9 @@ const decodeHtmlEntities = (value: string) =>
         ? parseInt(entity.slice(2), 16)
         : parseInt(entity.slice(1), 10);
 
-      return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : match;
+      return Number.isFinite(codePoint)
+        ? String.fromCodePoint(codePoint)
+        : match;
     }
 
     return NAMED_ENTITIES[entity.toLowerCase()] ?? match;

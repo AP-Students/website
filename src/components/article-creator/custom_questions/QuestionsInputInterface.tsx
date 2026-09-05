@@ -350,6 +350,27 @@ const QuestionsInputInterface: React.FC<Props> = ({
                     className="w-fit grow"
                   />
                 </div>
+                <div>
+                  <label htmlFor={`calculator-override-${qIndex}`}>
+                    Calculator
+                  </label>
+                  <select
+                    id={`calculator-override-${qIndex}`}
+                    className="w-fit rounded border p-1.5 text-sm"
+                    value={questionInstance.calculatorOverride ?? "inherit"}
+                    onChange={(e) => {
+                      updateQuestion(qIndex, {
+                        ...questionInstance,
+                        calculatorOverride: e.target
+                          .value as QuestionFormat["calculatorOverride"],
+                      });
+                    }}
+                  >
+                    <option value="inherit">Inherit from test</option>
+                    <option value="allowed">Allowed</option>
+                    <option value="not-allowed">Not allowed</option>
+                  </select>
+                </div>
               </div>
 
               <div className="my-4">
