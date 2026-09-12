@@ -152,7 +152,7 @@ function SellingPoint() {
                 d="M5 13l4 4L19 7"
               ></path>
             </svg>
-            No corporations or &quot;non-profits&quot;
+            Official 501(c)(3) nonprofit
           </li>
           <li className="flex items-center">
             <svg
