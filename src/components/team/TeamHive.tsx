@@ -31,7 +31,7 @@ const teamLeads: TeamMember[] = [
     id: 22,
     name: "Shreya Suresh",
     position: "Outreach Team Lead",
-    image: "/team/Shreya Suresh.png",
+    image: "/team/Shreya Suresh.webp",
   },
   {
     id: 23,
