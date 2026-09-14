@@ -48,19 +48,21 @@ const ChapterClient = ({
 
   if (error) {
     return (
-      <div className="grid min-h-screen grow place-content-center text-xl">
-        <p>
-          {error}
-          <br />
-          Return to{" "}
+      <div className="grid min-h-screen grow place-content-center px-6 text-center">
+        <div className="max-w-lg rounded-2xl border border-amber-200 bg-amber-50 p-8 shadow-sm dark:border-amber-900 dark:bg-amber-950/30">
+          <p className="text-2xl font-semibold">
+            We&apos;re still working on this topic.
+          </p>
+          <p className="mt-2 text-muted-foreground">
+            Please check again later.
+          </p>
           <Link
             href={`/subject/${params.slug}`}
-            className="text-blue-600 hover:underline"
+            className="mt-5 inline-block text-blue-600 hover:underline"
           >
-            subject homepage
+            Return to subject homepage
           </Link>
-          .
-        </p>
+        </div>
       </div>
     );
   }
