@@ -5,6 +5,8 @@ import type { CalculatorPermission, CalculatorType } from "@/lib/calculator";
 export type Subject = {
   title: string;
   units: Unit[];
+  /** Course-wide calculator default; individual sets and questions may override it. */
+  calculatorDefault?: CalculatorPermission;
   hasUnit0?: boolean;
   referenceSheets?: ReferenceSheet[];
 };
@@ -34,7 +36,7 @@ export type UnitTest = {
   time: number;
   directions: string;
   isPublic?: boolean;
-  /** Default calculator setting for every question; absent/"not-allowed" means no calculator. */
+  /** Set-level calculator setting; "inherit" defers to the course default. */
   calculatorDefault?: CalculatorPermission;
   /** Which Desmos calculator to offer when the calculator is allowed. */
   calculatorType?: CalculatorType;

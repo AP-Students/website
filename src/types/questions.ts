@@ -9,7 +9,6 @@ export interface QuestionFile {
   order?: number;
 }
 
-
 export interface QuestionInput {
   value: string;
   files: QuestionFile[];
@@ -29,7 +28,7 @@ export interface QuestionFormat {
   content: QuestionInput; // Leftside content to be shown for test renderer
   bookmarked?: boolean; // for test renderer
   topic: string;
-  /** Per-question calculator override; "inherit" or absent defers to the test's default. */
+  /** Per-question calculator override; "inherit" or absent defers to the set/course default. */
   calculatorOverride?: CalculatorPermission;
 }
 

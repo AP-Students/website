@@ -27,10 +27,12 @@ const Page = () => {
   const [questions, setQuestions] = useState<QuestionFormat[] | null>(null);
   const [directions, setDirections] = useState("");
   const [testName, setTestName] = useState<string>("");
-  // Left undefined when the test document predates the calculator settings, so
-  // `resolveCalculatorPermission` falls through to its safe "no calculator"
-  // default rather than to whatever this page happened to seed.
+  // Left undefined when this test predates the calculator settings so the
+  // resolver can fall through to the course setting (or its safe no-calculator
+  // default) rather than to a page-local seed value.
   const [calculatorDefault, setCalculatorDefault] =
+    useState<CalculatorPermission>();
+  const [calculatorCourseDefault, setCalculatorCourseDefault] =
     useState<CalculatorPermission>();
   const [calculatorType, setCalculatorType] = useState<CalculatorType>();
   const [referenceSheetEnabled, setReferenceSheetEnabled] =
@@ -70,15 +72,16 @@ const Page = () => {
             console.log("No questions found for this unit.");
           }
 
+          const subjectSnap = await getDoc(doc(db, "subjects", subject));
+          const subjectData = subjectSnap.exists()
+            ? (subjectSnap.data() as Subject)
+            : null;
+          setCalculatorCourseDefault(subjectData?.calculatorDefault);
+
           const referenceSheetIsEnabled = data.referenceSheetEnabled ?? false;
 
           if (referenceSheetIsEnabled && data.referenceSheetId) {
             try {
-              const subjectSnap = await getDoc(doc(db, "subjects", subject));
-              const subjectData = subjectSnap.exists()
-                ? (subjectSnap.data() as Subject)
-                : null;
-
               // Left null (rather than throwing) when the sheet was deleted
               // or the subject doc is missing, so the toolbar can still show
               // "unavailable" instead of the whole test failing to load.
@@ -132,6 +135,7 @@ const Page = () => {
         adminMode={false}
         directions={directions}
         testName={testName}
+        calculatorCourseDefault={calculatorCourseDefault}
         calculatorDefault={calculatorDefault}
         calculatorType={calculatorType}
         referenceSheetEnabled={referenceSheetEnabled}

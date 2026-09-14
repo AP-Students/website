@@ -24,6 +24,7 @@ import apClassesData from "@/components/apClasses.json";
 import { cn, formatSlug } from "@/lib/utils";
 import short from "short-uuid";
 import type { ReferenceSheet, Subject, Unit } from "@/types/firestore";
+import type { CalculatorPermission } from "@/lib/calculator";
 import UnitComponent from "./_components/unit";
 import ReferenceSheets from "./_components/referenceSheets";
 import { DEFAULT_PORTING_SUBJECT } from "@/lib/apPortingDefaults";
@@ -82,6 +83,8 @@ export default function Page({ params }: { params: { slug: string } }) {
   const [referenceSheets, setReferenceSheets] = useState<ReferenceSheet[]>([]);
   const [frqTemplates, setFrqTemplates] = useState<FRQTemplate[]>([]);
   const [hasUnit0, setHasUnit0] = useState<boolean>(false);
+  const [calculatorDefault, setCalculatorDefault] =
+    useState<CalculatorPermission>("not-allowed");
   const [resetting, setResetting] = useState<boolean>(false);
 
   const [subjectLoading, setSubjectLoading] = useState<boolean>(true);
@@ -107,6 +110,9 @@ export default function Page({ params }: { params: { slug: string } }) {
           setSubjectTitle(fetchedSubject.title);
           setUnits(fetchedUnits);
           setHasUnit0(fetchedSubject.hasUnit0 ?? false);
+          setCalculatorDefault(
+            fetchedSubject.calculatorDefault ?? "not-allowed",
+          );
           setReferenceSheets(fetchedSubject.referenceSheets ?? []);
 
           const frqSnapshots = await Promise.all(
@@ -562,6 +568,7 @@ export default function Page({ params }: { params: { slug: string } }) {
       title: subjectTitle,
       units: units,
       hasUnit0: hasUnit0,
+      calculatorDefault,
       referenceSheets: referenceSheets,
     };
 
@@ -816,11 +823,35 @@ export default function Page({ params }: { params: { slug: string } }) {
           </label>
 
           {/* Reference Sheets */}
+          <div className="mt-6 grid w-fit gap-1.5">
+            <label
+              htmlFor="course-calculator-default"
+              className="text-sm font-medium"
+            >
+              Course Calculator Default
+            </label>
+            <select
+              id="course-calculator-default"
+              className="rounded border p-1.5 text-sm"
+              value={calculatorDefault}
+              onChange={(e) => {
+                setCalculatorDefault(e.target.value as CalculatorPermission);
+                setUnsavedChanges(true);
+              }}
+            >
+              <option value="not-allowed">Not allowed</option>
+              <option value="allowed">Allowed</option>
+            </select>
+            <p className="text-sm text-gray-600">
+              Sets and individual questions can override this setting.
+            </p>
+          </div>
+
           <h2 className="mt-6 text-2xl font-bold">Reference Sheets</h2>
           <p className="mb-2 text-sm text-gray-600">
-            Reusable reference material (formulas, constants, unit
-            conversions, definitions) that tests and FRQs in this subject can
-            offer to students while testing.
+            Reusable reference material (formulas, constants, unit conversions,
+            definitions) that tests and FRQs in this subject can offer to
+            students while testing.
           </p>
           <ReferenceSheets
             sheets={referenceSheets}

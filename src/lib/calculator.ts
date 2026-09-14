@@ -1,4 +1,4 @@
-/** Per-assessment or per-question calculator setting. "inherit" defers to the assessment default. */
+/** A calculator setting. "inherit" defers to the next broader scope. */
 export type CalculatorPermission = "allowed" | "not-allowed" | "inherit";
 
 export type CalculatorType = "fourFunction" | "scientific" | "graphing";
@@ -17,16 +17,20 @@ export const CALCULATOR_TYPE_LABELS: Record<CalculatorType, string> = {
 };
 
 /**
- * Question setting overrides assessment default; "inherit" or absent falls
- * through. An assessment/question with neither field set resolves to `false`,
- * matching the safe default for assessments authored before this feature.
+ * Resolve calculator permission from most-specific to broadest scope:
+ * question > set > course. "inherit" (or an absent legacy field) falls
+ * through, and no explicit setting resolves to `false` for safety.
  */
 export const resolveCalculatorPermission = (
-  assessmentDefault: CalculatorPermission | undefined,
+  courseDefault: CalculatorPermission | undefined,
+  setDefault: CalculatorPermission | undefined,
   questionOverride: CalculatorPermission | undefined,
 ): boolean => {
   if (questionOverride === "allowed") return true;
   if (questionOverride === "not-allowed") return false;
 
-  return assessmentDefault === "allowed";
+  if (setDefault === "allowed") return true;
+  if (setDefault === "not-allowed") return false;
+
+  return courseDefault === "allowed";
 };
