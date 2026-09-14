@@ -1,5 +1,10 @@
 "use client";
 
+// Reference sheets are also available from FRQs, which do not otherwise load
+// KaTeX's stylesheet. Keep the renderer's required CSS with this shared panel
+// so mathematical notation is formatted correctly in every test surface.
+import "katex/dist/katex.min.css";
+
 import {
   Sheet,
   SheetContent,
