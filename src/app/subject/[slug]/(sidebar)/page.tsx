@@ -25,6 +25,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
   const [subject, setSubject] = useState<Subject | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isComingSoon, setIsComingSoon] = useState(false);
   const { user } = useUser();
 
   useEffect(() => {
@@ -44,12 +45,18 @@ const Page = ({ params }: { params: { slug: string } }) => {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const subjectData = docSnap.data() as Subject;
+          const units = Array.isArray(subjectData.units) ? subjectData.units : [];
+
+          if (units.length === 0) {
+            setIsComingSoon(true);
+            return;
+          }
 
           const canPreview =
             user?.access === "admin" || user?.access === "member";
 
           const unitsWithFrqs = await Promise.all(
-            subjectData.units.map(async (unit) => {
+            units.map(async (unit) => {
               // FRQs are supplementary to the curriculum. A failure here — a
               // rules change that has not been deployed, an offline read —
               // must not take down the whole subject page, which is what an
@@ -98,7 +105,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
             units: unitsWithFrqs,
           });
         } else {
-          setError("Subject not found. That's probably us, not you.");
+          setIsComingSoon(true);
         }
       } catch (error) {
         console.error("Error fetching subject data:", error);
@@ -123,6 +130,22 @@ const Page = ({ params }: { params: { slug: string } }) => {
     );
   }
   if (error ?? !subject) {
+    if (isComingSoon) {
+      return (
+        <div className="flex min-h-screen flex-col items-center justify-center gap-5 px-6 text-center">
+          <div className="max-w-lg rounded-2xl border border-amber-200 bg-amber-50 p-8 shadow-sm dark:border-amber-900 dark:bg-amber-950/30">
+            <p className="text-2xl font-semibold">We&apos;re still working on this topic.</p>
+            <p className="mt-2 text-muted-foreground">
+              Please check again later.
+            </p>
+          </div>
+          <a href="/" className="text-blue-500 hover:underline">
+            Return to homepage.
+          </a>
+        </div>
+      );
+    }
+
     return (
       <div className="flex min-h-screen flex-col items-center justify-center text-3xl">
         <p>{error}</p>
