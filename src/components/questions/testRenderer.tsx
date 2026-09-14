@@ -225,6 +225,16 @@ export default function DigitalTestingPage({
                 "mx-auto max-w-4xl",
             )}
           >
+            {!submitted && !calculatorAllowed && (
+              <div
+                role="status"
+                aria-label="No calculator allowed"
+                className="flex min-h-10 items-center justify-center gap-2 bg-[#e7b0d1] px-4 py-2 text-center text-sm font-bold uppercase tracking-wide text-gray-900"
+              >
+                <Calculator size={17} strokeWidth={2.5} aria-hidden="true" />
+                <span>No calculator allowed</span>
+              </div>
+            )}
             <div className="flex h-9 items-center gap-2 bg-gray-200">
               <p className="flex h-full items-center bg-black px-3.5 text-lg font-bold tabular-nums text-white">
                 {currentQuestionIndex + 1}
