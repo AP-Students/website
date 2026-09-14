@@ -66,6 +66,10 @@ export function CaptionRichTextEditor({
   const [linkDraft, setLinkDraft] = useState("");
   const [linkError, setLinkError] = useState<string | null>(null);
   const lastExternalValue = useRef<RichCaption>(value);
+  // A URL input necessarily takes the browser selection away from the
+  // contenteditable. Keep a separate copy of the caption range so opening
+  // the link popover cannot lose (or accidentally replace) the selected text.
+  const savedCaptionRange = useRef<Range | null>(null);
 
   // Re-render DOM content only when value changes from outside (initial load,
   // undo, redo). While focused we treat the contentEditable as source of truth.
@@ -109,6 +113,7 @@ export function CaptionRichTextEditor({
       setSelection(EMPTY_SELECTION);
       return;
     }
+    savedCaptionRange.current = range.cloneRange();
     let rect: DOMRect = range.getBoundingClientRect();
     if (rect.width === 0 && rect.height === 0) {
       const rects = range.getClientRects();
@@ -218,6 +223,9 @@ export function CaptionRichTextEditor({
   );
 
   const toggleLink = useCallback(() => {
+    if (selection.range) {
+      savedCaptionRange.current = selection.range.cloneRange();
+    }
     setLinkError(null);
     setLinkDraft(selection.linkMark?.href ?? "");
     setLinkPopoverOpen(true);
@@ -234,7 +242,8 @@ export function CaptionRichTextEditor({
       setLinkError("Enter a valid http(s):// or mailto: URL.");
       return;
     }
-    if (!selection.range || selection.range.collapsed) {
+    const captionRange = selection.range ?? savedCaptionRange.current;
+    if (!captionRange || captionRange.collapsed) {
       setLinkError("Select some text to link first.");
       return;
     }
@@ -242,7 +251,7 @@ export function CaptionRichTextEditor({
     editorRef.current?.focus();
     const sel = window.getSelection();
     sel?.removeAllRanges();
-    sel?.addRange(selection.range);
+    sel?.addRange(captionRange);
 
     document.execCommand("createLink", false, url);
     const root = editorRef.current;
@@ -258,6 +267,7 @@ export function CaptionRichTextEditor({
     }
     setLinkPopoverOpen(false);
     setLinkDraft("");
+    savedCaptionRange.current = null;
     commit();
     refreshSelectionState();
   }, [linkDraft, selection.range, commit, refreshSelectionState]);
