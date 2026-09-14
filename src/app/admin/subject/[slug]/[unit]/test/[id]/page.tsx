@@ -40,7 +40,9 @@ const Page = () => {
   const [directions, setDirections] = useState("");
   const [testName, setTestName] = useState<string>("");
   const [calculatorDefault, setCalculatorDefault] =
-    useState<CalculatorPermission>("not-allowed");
+    useState<CalculatorPermission>("inherit");
+  const [calculatorCourseDefault, setCalculatorCourseDefault] =
+    useState<CalculatorPermission>();
   const [calculatorType, setCalculatorType] =
     useState<CalculatorType>("graphing");
   const [subjectReferenceSheets, setSubjectReferenceSheets] = useState<
@@ -95,7 +97,7 @@ const Page = () => {
         );
 
         setTestName(data.name ?? "");
-        setCalculatorDefault(data.calculatorDefault ?? "not-allowed");
+        setCalculatorDefault(data.calculatorDefault ?? "inherit");
         setCalculatorType(data.calculatorType ?? "graphing");
         if (questions) {
           setQuestions(questions);
@@ -107,6 +109,7 @@ const Page = () => {
         const subjectData = subjectSnap.exists()
           ? (subjectSnap.data() as Subject)
           : null;
+        setCalculatorCourseDefault(subjectData?.calculatorDefault);
         const availableSheets = subjectData?.referenceSheets ?? [];
 
         setSubjectReferenceSheets(availableSheets);
@@ -226,6 +229,7 @@ const Page = () => {
                 setUnsavedChanges(true);
               }}
             >
+              <option value="inherit">Inherit from course</option>
               <option value="not-allowed">Not allowed</option>
               <option value="allowed">Allowed</option>
             </select>
@@ -325,6 +329,7 @@ const Page = () => {
               inputQuestions={questions}
               adminMode={true}
               testName={testName}
+              calculatorCourseDefault={calculatorCourseDefault}
               calculatorDefault={calculatorDefault}
               calculatorType={calculatorType}
             />

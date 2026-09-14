@@ -191,6 +191,7 @@ const FRQTestRenderer = ({
   }, [timeRemaining, hasSubmitted]);
 
   const calculatorAllowed = resolveCalculatorPermission(
+    undefined,
     template?.calculatorDefault,
     questions[currentQuestionIndex]?.calculatorOverride,
   );

@@ -27,6 +27,7 @@ interface Props {
   adminMode?: boolean;
   directions?: string;
   testName: string;
+  calculatorCourseDefault?: CalculatorPermission;
   calculatorDefault?: CalculatorPermission;
   calculatorType?: CalculatorType;
   /** Whether this test has a reference sheet assigned, regardless of whether it loaded. */
@@ -82,6 +83,7 @@ export default function DigitalTestingPage({
   adminMode = false,
   directions,
   testName,
+  calculatorCourseDefault,
   calculatorDefault,
   calculatorType = "graphing",
   referenceSheetEnabled = false,
@@ -107,6 +109,7 @@ export default function DigitalTestingPage({
   const calculatorButtonRef = useRef<HTMLButtonElement>(null);
 
   const calculatorAllowed = resolveCalculatorPermission(
+    calculatorCourseDefault,
     calculatorDefault,
     questions[currentQuestionIndex]?.calculatorOverride,
   );
