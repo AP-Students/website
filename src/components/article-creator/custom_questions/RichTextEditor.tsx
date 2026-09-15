@@ -9,7 +9,12 @@ import React, {
   useState,
 } from "react";
 import { Bold, Highlighter, Italic, Underline } from "lucide-react";
-import { RICH_TEXT_LIST_CLASSES, sanitizeQuestionRichText } from "./richText";
+import {
+  HIGHLIGHT_COLOR,
+  RICH_TEXT_LIST_CLASSES,
+  sanitizePastedQuestionRichText,
+  sanitizeQuestionRichText,
+} from "./richText";
 
 interface Props {
   value: string;
@@ -244,7 +249,7 @@ const RichTextEditor = forwardRef<HTMLDivElement, Props>(
       document.execCommand(
         config.command,
         false,
-        format === "highlight" ? "#fef08a" : undefined,
+        format === "highlight" ? HIGHLIGHT_COLOR : undefined,
       );
       emitChange();
       editorRef.current?.focus();
@@ -305,10 +310,15 @@ const RichTextEditor = forwardRef<HTMLDivElement, Props>(
             event.stopPropagation();
             const html = event.clipboardData.getData("text/html");
             const text = event.clipboardData.getData("text/plain");
+            // Copied HTML carries the source's background and, on Windows, a
+            // CRLF-padded wrapper document, which came out as a highlight and
+            // empty lines around every paste.
             document.execCommand(
               "insertHTML",
               false,
-              sanitizeQuestionRichText(html || text),
+              html
+                ? sanitizePastedQuestionRichText(html)
+                : sanitizeQuestionRichText(text),
             );
             emitChange();
           }}
