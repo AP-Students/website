@@ -92,6 +92,68 @@ export function sanitizeQuestionRichText(value: string): string {
   });
 }
 
+/**
+ * The one highlight colour: `RichTextEditor` applies it with `hiliteColor`, and
+ * it is Tailwind's `yellow-200`, which every surface paints a `mark` with.
+ */
+export const HIGHLIGHT_COLOR = "#fef08a";
+
+const FRAGMENT_START = "<!--StartFragment-->";
+const FRAGMENT_END = "<!--EndFragment-->";
+
+/**
+ * On Windows the clipboard hands a page its HTML as a whole document —
+ * `<html>\r\n<body>\r\n<!--StartFragment-->…<!--EndFragment-->\r\n</body>\r\n</html>`.
+ * Only the part between the markers was copied. The line breaks around it
+ * belong to the wrapper, and the editor's `white-space: pre-wrap` showed each
+ * one as an empty line around the pasted text.
+ */
+export function extractClipboardFragment(html: string): string {
+  const start = html.indexOf(FRAGMENT_START);
+  const end = html.lastIndexOf(FRAGMENT_END);
+  if (start === -1 || end < start) return html;
+  return html.slice(start + FRAGMENT_START.length, end);
+}
+
+/** Whether a CSS colour (hex, `rgb()` or `rgba()`) is `HIGHLIGHT_COLOR`. */
+export function isHighlightColor(value: string): boolean {
+  const color = value.trim().toLowerCase();
+  if (color === HIGHLIGHT_COLOR) return true;
+  const channels = color.match(
+    /^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)(?:\s*[,/]\s*([\d.]+%?))?\s*\)$/,
+  );
+  if (!channels) return false;
+  if (channels[4] !== undefined && parseFloat(channels[4]) === 0) return false;
+  const hex = channels
+    .slice(1, 4)
+    .map((channel) => Number(channel).toString(16).padStart(2, "0"))
+    .join("");
+  return `#${hex}` === HIGHLIGHT_COLOR;
+}
+
+/**
+ * Sanitizes HTML from a paste. A copy serializes the source text's *computed*
+ * style onto a span, including the background of whatever it sat on, and
+ * `sanitizeQuestionRichText` reads any span background as a highlight. That is
+ * right for this editor's own `hiliteColor` output but wrong for a copy: text
+ * copied off any white surface — another question box included — was pasted
+ * back highlighted. Only a background in the highlight colour survives here, so
+ * highlighted text still keeps its highlight when copied between boxes.
+ */
+export function sanitizePastedQuestionRichText(html: string): string {
+  const fragment = extractClipboardFragment(html);
+  if (typeof window === "undefined") return sanitizeQuestionRichText(fragment);
+
+  const template = document.createElement("template");
+  template.innerHTML = fragment;
+  template.content.querySelectorAll<HTMLElement>("[style]").forEach((node) => {
+    if (isHighlightColor(node.style.backgroundColor)) return;
+    node.style.removeProperty("background");
+    node.style.removeProperty("background-color");
+  });
+  return sanitizeQuestionRichText(template.innerHTML);
+}
+
 export function richTextToPlainText(value: string): string {
   if (typeof window === "undefined") return value.replace(/<[^>]*>/g, "");
   const template = document.createElement("template");
