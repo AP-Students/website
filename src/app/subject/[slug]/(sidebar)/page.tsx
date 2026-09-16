@@ -132,7 +132,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
   if (error ?? !subject) {
     if (isComingSoon) {
       return (
-        <div className="flex min-h-screen flex-col items-center justify-center gap-5 px-6 text-center">
+        <div className="flex min-h-screen w-full grow flex-col items-center justify-center gap-5 px-6 text-center">
           <div className="max-w-lg rounded-2xl border border-amber-200 bg-amber-50 p-8 shadow-sm dark:border-amber-900 dark:bg-amber-950/30">
             <p className="text-2xl font-semibold">We&apos;re still working on this topic.</p>
             <p className="mt-2 text-muted-foreground">
