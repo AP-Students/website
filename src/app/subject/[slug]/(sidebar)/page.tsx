@@ -8,6 +8,7 @@ import SubjectBreadcrumb from "@/components/subject/subject-breadcrumb";
 import TableOfContents from "@/components/subject/table-of-contents";
 import UnitAccordion from "@/components/subject/unit-accordion";
 import { useEffect, useState } from "react";
+import { notFound } from "next/navigation";
 import usePathname from "@/components/client/pathname";
 import { useUser } from "@/components/hooks/UserContext";
 import {
@@ -26,6 +27,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isComingSoon, setIsComingSoon] = useState(false);
+  const [isSubjectMissing, setIsSubjectMissing] = useState(false);
   const { user } = useUser();
 
   useEffect(() => {
@@ -105,7 +107,7 @@ const Page = ({ params }: { params: { slug: string } }) => {
             units: unitsWithFrqs,
           });
         } else {
-          setIsComingSoon(true);
+          setIsSubjectMissing(true);
         }
       } catch (error) {
         console.error("Error fetching subject data:", error);
@@ -130,6 +132,10 @@ const Page = ({ params }: { params: { slug: string } }) => {
     );
   }
   if (error ?? !subject) {
+    if (isSubjectMissing) {
+      notFound();
+    }
+
     if (isComingSoon) {
       return (
         <div className="flex min-h-screen w-full grow flex-col items-center justify-center gap-5 px-6 text-center">
