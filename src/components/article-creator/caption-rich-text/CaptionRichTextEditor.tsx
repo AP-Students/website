@@ -229,7 +229,7 @@ export function CaptionRichTextEditor({
     setLinkError(null);
     setLinkDraft(selection.linkMark?.href ?? "");
     setLinkPopoverOpen(true);
-  }, [selection.linkMark]);
+  }, [selection.range, selection.linkMark]);
 
   const confirmLink = useCallback(() => {
     setLinkError(null);
