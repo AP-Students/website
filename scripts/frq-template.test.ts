@@ -317,3 +317,51 @@ test("a legacy document with a stray non-object entry keeps its parts", () => {
     ["p1"],
   );
 });
+
+test("a criterion's images are normalized like any other file list", () => {
+  const out = normalizeFrqTemplate(
+    {
+      questions: [
+        {
+          id: "p1",
+          criteria: [
+            {
+              id: "c1",
+              description: "Sketches the correct curve",
+              descriptionFiles: [
+                {
+                  key: "image-model.png",
+                  name: "model.png",
+                  url: "https://example.test/model.png",
+                  alt: "Model answer",
+                  order: 0,
+                },
+                // No key, so nothing could ever load it.
+                { name: "orphan.png" },
+                "junk",
+              ],
+              points: 2,
+            },
+            // A rubric line authored before criteria could carry images.
+            { id: "c2", description: "Labels both axes", points: 1 },
+          ],
+        },
+      ],
+    },
+    { id: "t1", subject: "calc", unitId: "u1" },
+  );
+
+  const criteria = out.questions[0]?.parts[0]?.criteria ?? [];
+
+  assert.deepEqual(
+    criteria[0]?.descriptionFiles?.map((file) => file.key),
+    ["image-model.png"],
+    "entries with no key are dropped rather than rendered blank",
+  );
+  assert.equal(criteria[0]?.descriptionFiles?.[0]?.alt, "Model answer");
+  assert.deepEqual(
+    criteria[1]?.descriptionFiles,
+    [],
+    "a criterion that predates images reads back with an empty list, not undefined",
+  );
+});

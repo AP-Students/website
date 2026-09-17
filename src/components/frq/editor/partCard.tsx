@@ -20,10 +20,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Textarea } from "@/components/ui/textarea";
 import type { EditorPart } from "@/lib/frq/editorState";
-import { formatPoints, getEditorPartPoints } from "@/lib/frq/editorState";
-import { makeId } from "@/lib/frq/template";
+import {
+  createEditorCriterion,
+  formatPoints,
+  getEditorPartPoints,
+} from "@/lib/frq/editorState";
+import type { QuestionFormat } from "@/types/questions";
 import { ChevronDown, ChevronUp, Info, Plus, Trash2 } from "lucide-react";
 
 /**
@@ -60,16 +63,20 @@ const PartCard = ({
   const addCriterion = () => {
     onChange((current) => ({
       ...current,
-      criteria: [
-        ...current.criteria,
-        { id: makeId("criterion"), description: "", points: 1 },
-      ],
+      criteria: [...current.criteria, createEditorCriterion()],
     }));
   };
 
+  /**
+   * Addressed by criterion id and applied through the part's own functional
+   * updater, for the reason `updatePartById` is addressed by part id: a file
+   * upload resolves long after it began, and the author may have added or
+   * removed a rubric line in between. Routing by index would land the returned
+   * download URL on whichever criterion now sits at that position.
+   */
   const updateCriterion = (
     criterionId: string,
-    changes: { description?: string; points?: number },
+    changes: { description?: QuestionFormat; points?: number },
   ) => {
     onChange((current) => ({
       ...current,
@@ -227,7 +234,9 @@ const PartCard = ({
 
             <PopoverContent align="start" className="w-72 text-sm">
               A part&apos;s point total is calculated from its grading criteria.
-              Graders award points against these exact lines.
+              Graders award points against these exact lines. A criterion can
+              carry images as well as text, so a graph or sketch question can
+              show the model answer it is scored against.
             </PopoverContent>
           </Popover>
 
@@ -282,50 +291,57 @@ const PartCard = ({
             part.criteria.map((criterion, criterionIndex) => (
               <div
                 key={criterion.id}
-                className="grid gap-3 rounded-md border bg-muted/20 p-4 md:grid-cols-[minmax(0,1fr)_7rem_auto]"
+                className="space-y-3 rounded-md border bg-muted/20 p-4"
               >
-                <div>
+                {/* Points and delete sit above the description rather than
+                    beside it: the description is the same rich editor the
+                    prompts use, so it carries file cards under the text box
+                    and has no fixed height to align a side column against. */}
+                <div className="flex flex-wrap items-end justify-between gap-3">
                   <label className="text-sm font-medium">
                     Criterion {criterionIndex + 1}
                   </label>
-                  <Textarea
-                    value={criterion.description}
-                    onChange={(event) =>
-                      updateCriterion(criterion.id, {
-                        description: event.target.value,
-                      })
-                    }
-                    placeholder="Describe what earns these points."
-                    className="mt-2 min-h-24"
-                  />
+
+                  <div className="flex items-end gap-3">
+                    <div>
+                      <label className="text-sm font-medium">Points</label>
+                      <Input
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={criterion.points}
+                        onChange={(event) =>
+                          updateCriterion(criterion.id, {
+                            points: Math.max(
+                              0,
+                              Number(event.target.value) || 0,
+                            ),
+                          })
+                        }
+                        className="mt-2 w-28"
+                      />
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => deleteCriterion(criterion.id)}
+                      title="Delete criterion"
+                      aria-label={`Delete criterion ${criterionIndex + 1}`}
+                      className="size-10 shrink-0 p-0 text-destructive"
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium">Points</label>
-                  <Input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={criterion.points}
-                    onChange={(event) =>
-                      updateCriterion(criterion.id, {
-                        points: Math.max(0, Number(event.target.value) || 0),
-                      })
-                    }
-                    className="mt-2"
-                  />
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => deleteCriterion(criterion.id)}
-                  title="Delete criterion"
-                  aria-label={`Delete criterion ${criterionIndex + 1}`}
-                  className="mt-7 size-10 p-0 text-destructive"
-                >
-                  <Trash2 className="size-4" />
-                </Button>
+                <RichPromptEditor
+                  value={criterion.description}
+                  onChange={(description) =>
+                    updateCriterion(criterion.id, { description })
+                  }
+                  placeholder="Describe what earns these points. Use Add file to attach a model graph or sketch."
+                />
               </div>
             ))
           )}

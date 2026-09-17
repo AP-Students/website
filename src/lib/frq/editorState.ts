@@ -23,6 +23,19 @@ import {
  * meant the test could keep passing after the real save format drifted.
  */
 
+/**
+ * One rubric line as the editor holds it. Its description is a rich-text
+ * buffer for the same reason a part's prompt is: a criterion can carry the
+ * model graph it is scored against, and that upload goes through the same
+ * AdvancedTextbox the prompt fields use.
+ */
+export interface EditorCriterion {
+  id: string;
+  /** Description text and files, in the shape AdvancedTextbox reads and writes. */
+  description: QuestionFormat;
+  points: number;
+}
+
 /** One part as the editor holds it: stored fields plus its rich-text buffer. */
 export interface EditorPart {
   id: string;
@@ -30,7 +43,7 @@ export interface EditorPart {
   prompt: QuestionFormat;
   status: FRQQuestionStatus;
   answerType: FRQAnswerType;
-  criteria: FRQGradingCriterion[];
+  criteria: EditorCriterion[];
 }
 
 /** One numbered question: its own stimulus plus the parts hanging off it. */
@@ -79,6 +92,35 @@ const createQuestionData = (
   topic: "",
 });
 
+export const createEditorCriterion = (): EditorCriterion => ({
+  id: makeId("criterion"),
+  description: createQuestionData(),
+  points: 1,
+});
+
+const toEditorCriterion = (
+  criterion: FRQGradingCriterion,
+): EditorCriterion => ({
+  id: criterion.id,
+  description: createQuestionData(
+    toQuestionInput(criterion.description, criterion.descriptionFiles),
+  ),
+  points: criterion.points,
+});
+
+/**
+ * A rubric line in the shape the document stores. Shared by the save payload
+ * and the point tallies so a criterion is only ever converted back one way.
+ */
+const toStoredCriterion = (
+  criterion: EditorCriterion,
+): FRQGradingCriterion => ({
+  id: criterion.id,
+  description: criterion.description.question.value,
+  descriptionFiles: criterion.description.question.files,
+  points: criterion.points,
+});
+
 export const createEditorPart = (): EditorPart => ({
   id: makeId("part"),
   prompt: createQuestionData(),
@@ -104,7 +146,7 @@ const toEditorPart = (part: FRQTemplatePart): EditorPart => ({
   prompt: createQuestionData(toQuestionInput(part.prompt, part.promptFiles)),
   status: part.status ?? "public",
   answerType: part.answerType ?? "text",
-  criteria: part.criteria ?? [],
+  criteria: (part.criteria ?? []).map(toEditorCriterion),
 });
 
 const toEditorQuestion = (question: FRQTemplateQuestion): EditorQuestion => ({
@@ -175,7 +217,7 @@ export const buildTemplatePayload = (state: EditorState) => ({
       promptFiles: part.prompt.question.files,
       answerType: part.answerType,
       status: part.status,
-      criteria: part.criteria,
+      criteria: part.criteria.map(toStoredCriterion),
     })),
   })),
 });
@@ -187,7 +229,11 @@ export const buildTemplatePayload = (state: EditorState) => ({
  * than at every call site.
  */
 export const getEditorPartPoints = (part: EditorPart) =>
-  getPartPoints({ id: part.id, title: "", criteria: part.criteria });
+  getPartPoints({
+    id: part.id,
+    title: "",
+    criteria: part.criteria.map(toStoredCriterion),
+  });
 
 export const getEditorQuestionPoints = (question: EditorQuestion) =>
   question.parts.reduce((total, part) => total + getEditorPartPoints(part), 0);

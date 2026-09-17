@@ -37,7 +37,14 @@ const legacyDocument = {
       prompt: "<p>Find the acceleration.</p>",
       answerType: "text",
       status: "public",
-      criteria: [{ id: "crit-1", description: "Correct value", points: 2 }],
+      criteria: [
+        {
+          id: "crit-1",
+          description: "Correct value",
+          descriptionFiles: [{ key: "image-model.png", name: "model.png" }],
+          points: 2,
+        },
+      ],
     },
     {
       id: "part-def456",
@@ -123,4 +130,30 @@ test("a saved document is read back as nested, not re-wrapped as legacy", () => 
   assert.equal(reloaded.questions.length, 1);
   assert.equal(reloaded.questions[0]?.id, LEGACY_QUESTION_ID);
   assert.equal(reloaded.questions[0]?.parts.length, 3);
+});
+
+test("round trip: a criterion keeps its rubric text and model image", () => {
+  const loaded = normalizeFrqTemplate(legacyDocument, identity);
+  const reloaded = normalizeFrqTemplate(simulateEditorSave(loaded), identity);
+
+  const criteria = getAllParts(reloaded).flatMap((part) => part.criteria ?? []);
+
+  assert.deepEqual(
+    criteria.map((criterion) => criterion.id),
+    ["crit-1", "crit-2"],
+    "criterion ids must survive the round trip, since grades resolve through them",
+  );
+  assert.deepEqual(
+    criteria.map((criterion) => criterion.description),
+    ["Correct value", "Valid reasoning"],
+  );
+  // The picture a graph part is scored against has to come back out of the
+  // editor. Dropping it here would leave the file in Storage and the rubric
+  // line describing an image nobody can see.
+  assert.deepEqual(
+    criteria.map((criterion) =>
+      (criterion.descriptionFiles ?? []).map((file) => file.key),
+    ),
+    [["image-model.png"], []],
+  );
 });

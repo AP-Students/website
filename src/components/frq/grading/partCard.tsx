@@ -3,7 +3,11 @@
 import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
 import { getPartEarnedPoints } from "@/lib/frq/gradingView";
 import type { PartGrade } from "@/lib/frq/gradingView";
-import { getPartPoints, toQuestionInput } from "@/lib/frq/template";
+import {
+  getPartPoints,
+  stripResponseHtml,
+  toQuestionInput,
+} from "@/lib/frq/template";
 import type { FRQTemplatePart } from "@/types/frq";
 
 /**
@@ -94,37 +98,61 @@ const GradingPartCard = ({
             criteria in the FRQ editor.
           </p>
         ) : (
-          criteria.map((criterion) => (
-            <div key={criterion.id} className="flex min-h-9 items-center gap-2">
-              <div className="min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm">
-                <span className="block">
-                  {criterion.description || "Untitled criterion"}
-                </span>
-              </div>
+          criteria.map((criterion) => {
+            // What the grader marks against. On a graph or sketch part this is
+            // where the model answer lives, so it is rendered rather than
+            // printed: the description is authored in the same rich editor the
+            // prompts use, and printing it raw would show `<div>` to the one
+            // reader who has to compare it against the student's work.
+            const hasDescription =
+              stripResponseHtml(criterion.description).length > 0 ||
+              (criterion.descriptionFiles?.length ?? 0) > 0;
 
-              <div className="flex shrink-0 items-center gap-1">
-                <input
-                  type="number"
-                  min={0}
-                  max={criterion.points}
-                  step={1}
-                  aria-label={`Points for ${
-                    criterion.description || "criterion"
-                  }`}
-                  value={grade?.criteria[criterion.id] ?? 0}
-                  onChange={(event) =>
-                    onCriterionPointsChange(
-                      criterion.id,
-                      Number(event.target.value),
-                    )
-                  }
-                  className="h-8 w-16 rounded-md border border-gray-300 px-2 text-center"
-                />
-                <span>/</span>
-                <span className="tabular-nums">{criterion.points}</span>
+            return (
+              <div
+                key={criterion.id}
+                className="flex min-h-9 items-start gap-2"
+              >
+                {/* RenderContent's root carries its own vertical margin, which
+                    would loosen every existing text-only rubric. */}
+                <div className="min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm [&>div]:my-0">
+                  {hasDescription ? (
+                    <RenderContent
+                      content={toQuestionInput(
+                        criterion.description,
+                        criterion.descriptionFiles,
+                      )}
+                      origin="question"
+                    />
+                  ) : (
+                    <span className="block">Untitled criterion</span>
+                  )}
+                </div>
+
+                <div className="flex shrink-0 items-center gap-1">
+                  <input
+                    type="number"
+                    min={0}
+                    max={criterion.points}
+                    step={1}
+                    aria-label={`Points for ${
+                      stripResponseHtml(criterion.description) || "criterion"
+                    }`}
+                    value={grade?.criteria[criterion.id] ?? 0}
+                    onChange={(event) =>
+                      onCriterionPointsChange(
+                        criterion.id,
+                        Number(event.target.value),
+                      )
+                    }
+                    className="h-8 w-16 rounded-md border border-gray-300 px-2 text-center"
+                  />
+                  <span>/</span>
+                  <span className="tabular-nums">{criterion.points}</span>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
