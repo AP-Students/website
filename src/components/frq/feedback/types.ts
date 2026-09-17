@@ -1,5 +1,5 @@
 import type { FRQAnswerType } from "@/types/frq";
-import type { QuestionInput } from "@/types/questions";
+import type { QuestionFile, QuestionInput } from "@/types/questions";
 
 export interface RubricScore {
   criterionId: string;
@@ -34,6 +34,12 @@ export interface FRQResponse {
 export interface GradingCriterion {
   id: string;
   text: string;
+  /**
+   * Images the rubric line carries, mirroring the template's
+   * `descriptionFiles`. A student marked against a model graph is shown the
+   * same picture the grader scored them against.
+   */
+  files: QuestionFile[];
   points: number;
 }
 

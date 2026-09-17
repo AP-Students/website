@@ -4,6 +4,7 @@ import {
   buildInitialState,
   buildTemplatePayload,
   canMovePart,
+  createEditorCriterion,
   deletePartById,
   movePart,
   updatePartById,
@@ -120,11 +121,26 @@ test("a part edit finds the part after it moved to another question", () => {
   const { questions } = openEditor(nestedDocument);
 
   // The M1 scenario: an upload starts against part-a in question 1, the author
-  // moves part-a into question 2, and only then does the upload resolve.
+  // moves part-a into question 2, and only then does the upload resolve. The
+  // upload lands on a rubric line here, which is where a model graph for a
+  // draw-the-curve part goes.
   const moved = movePart(questions, "part-a", 1);
+  const blank = createEditorCriterion();
   const edited = updatePartById(moved, "part-a", (part) => ({
     ...part,
-    criteria: [{ id: "c9", description: "Uploaded", points: 5 }],
+    criteria: [
+      {
+        ...blank,
+        description: {
+          ...blank.description,
+          question: {
+            value: "Uploaded",
+            files: [{ key: "image-model.png", name: "model.png" }],
+          },
+        },
+        points: 5,
+      },
+    ],
   }));
 
   const landed = edited
@@ -135,6 +151,13 @@ test("a part edit finds the part after it moved to another question", () => {
     landed?.criteria.map((criterion) => criterion.points),
     [5],
     "an edit addressed by part id must land wherever the part now lives",
+  );
+  assert.deepEqual(
+    landed?.criteria.flatMap((criterion) =>
+      criterion.description.question.files.map((file) => file.key),
+    ),
+    ["image-model.png"],
+    "a criterion's image must survive the part changing question",
   );
 
   // Questions holding no matching part keep their identity, so one part's

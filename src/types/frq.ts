@@ -20,6 +20,13 @@ export type FRQQuestionStatus = "public" | "legacy";
 export interface FRQGradingCriterion {
   id: string;
   description: string;
+  /**
+   * Images attached to this rubric line, in the same shape as a part's
+   * `promptFiles`. A graph or sketch is scored against a model answer that no
+   * sentence can stand in for, so the picture belongs on the line the grader
+   * awards against rather than in the prompt the student already answered.
+   */
+  descriptionFiles?: QuestionFile[];
   points: number;
 }
 

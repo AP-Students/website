@@ -276,3 +276,61 @@ test("a part authored as an equation is not reported as text", () => {
   assert.equal(parts?.find((part) => part.id === "p1")?.answerType, "text");
   assert.equal(parts?.find((part) => part.id === "p2")?.answerType, "equation");
 });
+
+test("a criterion's model image reaches the student's rubric", () => {
+  const template = normalizeFrqTemplate(
+    {
+      title: "Graphing FRQ",
+      questions: [
+        {
+          id: "q1",
+          parts: [
+            {
+              id: "p1",
+              title: "Part one",
+              criteria: [
+                {
+                  id: "c1",
+                  description: "Sketches the correct curve",
+                  descriptionFiles: [
+                    { key: "image-model.png", name: "model.png" },
+                  ],
+                  points: 2,
+                },
+                { id: "c2", description: "Labels both axes", points: 1 },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    identity,
+  );
+
+  const document = buildFeedbackDocument(
+    {
+      ...gradedSubmission(),
+      grades: [
+        {
+          questionId: "p1",
+          feedback: "curve is off",
+          criteria: [{ criterionId: "c1", points: 0 }],
+        },
+      ],
+    },
+    template,
+  );
+
+  const rubric = document.frqs[0]?.questions[0]?.gradingCriteria ?? [];
+
+  // A student who lost the point has the most reason to see the model answer,
+  // so the image is carried by the rubric line itself rather than by the score.
+  assert.deepEqual(
+    rubric.map((line) => line.files.map((file) => file.key)),
+    [["image-model.png"], []],
+  );
+  assert.deepEqual(
+    rubric.map((line) => line.text),
+    ["Sketches the correct curve", "Labels both axes"],
+  );
+});

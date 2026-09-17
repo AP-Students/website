@@ -83,6 +83,7 @@ const normalizeCriteria = (value: unknown): FRQGradingCriterion[] => {
       {
         id: asString(record.id) || `criterion-${index}`,
         description: asString(record.description),
+        descriptionFiles: normalizeFiles(record.descriptionFiles),
         // A criterion worth a fraction of a point would make the "x/y points"
         // summaries on three separate pages disagree, so clamp to whole points.
         points: Number.isFinite(points) ? Math.max(0, Math.round(points)) : 0,

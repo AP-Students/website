@@ -120,6 +120,9 @@ export const buildFeedbackDocument = (
         gradingCriteria: (part.criteria ?? []).map((criterion) => ({
           id: criterion.id,
           text: criterion.description,
+          // Carried through so the rubric a student reads is the one the
+          // grader marked against, model graph included.
+          files: criterion.descriptionFiles ?? [],
           points: criterion.points,
         })),
       })),
