@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import usePathname from "@/components/client/pathname";
 import { submitBugReport } from "@/lib/feedback/submitBugReport";
+import { useCookieBannerMetrics } from "@/components/global/CookieBannerContext";
 
 export default function ReportErrorButton() {
   const pathname = usePathname();
@@ -26,6 +27,8 @@ export default function ReportErrorButton() {
   const [status, setStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
+  const { visible: bannerVisible, height: bannerHeight } = useCookieBannerMetrics();
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,7 +74,10 @@ export default function ReportErrorButton() {
       <DialogTrigger asChild>
         <Button
           type="button"
-          className="fixed bottom-16 right-4 z-40 bg-yellow-500 shadow-lg hover:bg-yellow-600"
+          style={bannerVisible ? { bottom: bannerHeight + 16 } : undefined}
+          className={`fixed right-4 z-40 bg-yellow-500 shadow-lg hover:bg-yellow-600 ${
+            bannerVisible ? "" : "bottom-16"
+          }`}
         >
           <Bug className="opacity-70" />
           <span className="hidden sm:inline">Report an Error</span>
