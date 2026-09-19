@@ -7,6 +7,7 @@ import { storage } from '@/lib/firebase';
 import { db } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { submitBugReport } from '@/lib/feedback/submitBugReport';
 
 export default function FeedbackPage() {
   const [featureProblem, setFeatureProblem] = useState('');
@@ -74,61 +75,60 @@ export default function FeedbackPage() {
 
     setStatus('loading');
     try {
-      interface NewFeedback {
-        type: string;
-        message: string;
-        title: string;
-        email: string;
-        // Firestore server timestamp field
-        createdAt: Timestamp;
-        bugType?: string;
-        bugUrl?: string;
-        attachedImage?: string;
-        // Feature request fields
-        featureProblem?: string;
-        featureAlternatives?: string;
-        featureSolution?: string;
-        featureContextUrl?: string;
-      }
+      let docId: string;
 
-      // Build the base payload
-      const feedbackPayload: NewFeedback = {
-        type,
-        message: type === 'feature' ? trimmedFeatureSolution : trimmedMessage,
-        title: trimmedTitle,
-        email: trimmedEmail || 'anonymous',
-        createdAt: serverTimestamp() as Timestamp,
-      };
-
-      // Conditionally append the precise details if it's a bug report
       if (type === 'bug') {
-        feedbackPayload.bugType = bugType;
-        feedbackPayload.bugUrl = trimmedBugUrl;
-      }
-      // Add feature request specific fields
-      if (type === 'feature') {
-        feedbackPayload.featureProblem = trimmedFeatureProblem;
-        feedbackPayload.featureAlternatives = trimmedFeatureAlternatives;
-        feedbackPayload.featureSolution = trimmedFeatureSolution;
-        feedbackPayload.featureContextUrl = trimmedFeatureContextUrl;
+        docId = await submitBugReport({
+          title: trimmedTitle,
+          bugType,
+          bugUrl: trimmedBugUrl,
+          message: trimmedMessage,
+          email: trimmedEmail,
+          attachedImage,
+        });
+      } else {
+        interface NewFeedback {
+          type: string;
+          message: string;
+          title: string;
+          email: string;
+          createdAt: Timestamp;
+          attachedImage?: string;
+          featureProblem?: string;
+          featureAlternatives?: string;
+          featureSolution?: string;
+          featureContextUrl?: string;
+        }
+
+        const feedbackPayload: NewFeedback = {
+          type,
+          message: type === 'feature' ? trimmedFeatureSolution : trimmedMessage,
+          title: trimmedTitle,
+          email: trimmedEmail || 'anonymous',
+          createdAt: serverTimestamp() as Timestamp,
+        };
+
+        if (type === 'feature') {
+          feedbackPayload.featureProblem = trimmedFeatureProblem;
+          feedbackPayload.featureAlternatives = trimmedFeatureAlternatives;
+          feedbackPayload.featureSolution = trimmedFeatureSolution;
+          feedbackPayload.featureContextUrl = trimmedFeatureContextUrl;
+        }
+
+        if (attachedImage && type !== 'general') {
+          const imageRef = ref(storage, `feedbackImages/${Date.now()}-${attachedImage.name}`);
+          await uploadBytes(imageRef, attachedImage);
+          feedbackPayload.attachedImage = await getDownloadURL(imageRef);
+        }
+
+        const docRef = await addDoc(collection(db, 'feedback'), feedbackPayload);
+        docId = docRef.id;
       }
 
-      // If an image was attached, upload it to Firebase Storage first
-      if (attachedImage && type !== 'general') {
-        const imageRef = ref(
-          storage,
-          `feedbackImages/${Date.now()}-${attachedImage.name}`
-        );
-        await uploadBytes(imageRef, attachedImage);
-        feedbackPayload.attachedImage = await getDownloadURL(imageRef);
-      }
-
-      // Add feedback document with image URL (if any) included
-      const docRef = await addDoc(collection(db, 'feedback'), feedbackPayload);
-      // Mark as submitted so UI shows success view
       setSubmitted(true);
       setStatus('success');
-      console.log('Feedback document created with ID:', docRef.id);
+      console.log('Feedback document created with ID:', docId);
+
 
       // Clear form fields
       setMessage('');

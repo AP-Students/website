@@ -3,6 +3,8 @@
 import { UserProvider } from "@/components/hooks/UserContext";
 import CookieBanner from "@/components/global/CookieBanner";
 import React from "react";
+import ReportErrorButton from "@/components/global/ReportErrorButton";
+import { CookieBannerProvider } from "@/components/global/CookieBannerContext";
 
 export default function RootLayoutClient({
   children,
@@ -12,7 +14,10 @@ export default function RootLayoutClient({
   return (
     <UserProvider>
       {children}
+      <CookieBannerProvider>
       <CookieBanner />
+      <ReportErrorButton />
+      </CookieBannerProvider>
     </UserProvider>
   );
 }

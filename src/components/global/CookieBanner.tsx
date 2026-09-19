@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useCookieBannerMetrics } from "./CookieBannerContext";
 
 const COOKIE_CONSENT_KEY = "fivehive-cookie-consent";
 
 export default function CookieBanner() {
   const [visible, setVisible] = useState(false);
+  const bannerRef = useRef<HTMLDivElement>(null);
+  const { setMetrics } = useCookieBannerMetrics();
 
   useEffect(() => {
     try {
@@ -17,6 +20,24 @@ export default function CookieBanner() {
       setVisible(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (!visible) {
+      setMetrics({ visible: false, height: 0 });
+      return;
+    }
+    const el = bannerRef.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) {
+        setMetrics({ visible: true, height: entry.contentRect.height });
+      }
+    });
+    observer.observe(el);
+
+    return () => observer.disconnect();
+  }, [visible, setMetrics]);
 
   const accept = () => {
     try {
@@ -31,6 +52,7 @@ export default function CookieBanner() {
 
   return (
     <div
+      ref={bannerRef}
       role="dialog"
       aria-label="Cookie consent"
       className="fixed bottom-0 left-0 right-0 z-50 border-t border-primary/20 bg-primary-foreground/95 p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] backdrop-blur-sm sm:px-6"
