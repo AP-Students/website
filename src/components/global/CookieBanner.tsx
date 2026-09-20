@@ -29,10 +29,8 @@ export default function CookieBanner() {
     const el = bannerRef.current;
     if (!el) return;
 
-    const observer = new ResizeObserver(([entry]) => {
-      if (entry) {
-        setMetrics({ visible: true, height: entry.contentRect.height });
-      }
+    const observer = new ResizeObserver(() => {
+      setMetrics({ visible: true, height: el.getBoundingClientRect().height });
     });
     observer.observe(el);
 
