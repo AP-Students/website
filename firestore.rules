@@ -24,6 +24,60 @@ service cloud.firestore {
       return isAuthenticated() && (accessLevel == "admin" || accessLevel == "member" || accessLevel == "grader");
     }
 
+    // Week 1 activity data is written only by trusted server code.  Clients
+    // can read only documents belonging to their authenticated account.
+    match /userStats/{userId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    match /activityEvents/{eventId} {
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+    }
+
+    // Calendar document IDs are namespaced as "{uid}_{year}".
+    match /activityCalendar/{calendarId} {
+      allow read: if isAuthenticated()
+        && calendarId.matches('^' + request.auth.uid + '_[0-9]{4}$');
+    }
+
+    match /notifications/{userId}/items/{notificationId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      // Notifications are server-created. A recipient may only acknowledge or
+      // adjust expiry on an existing notification; no other fields may change.
+      allow update: if isAuthenticated()
+        && request.auth.uid == userId
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['readAt', 'expiresAt']);
+    }
+
+    // Root-level user content must carry an immutable owner UID. This supports
+    // saved and in-progress documents addressed by arbitrary document IDs.
+    match /savedItems/{itemId} {
+      allow read, delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update: if isAuthenticated()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == resource.data.uid;
+    }
+
+    match /inProgressItems/{itemId} {
+      allow read, delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update: if isAuthenticated()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == resource.data.uid;
+    }
+
+    // Also support user-scoped saved/in-progress collections without requiring
+    // a duplicated uid field on every document.
+    match /users/{userId}/savedItems/{itemId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/inProgressItems/{itemId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
     // Allow read/write access to users for their own user data
     match /users/{userId} {
       allow read: if isAuthenticated() && request.auth.uid == userId;
