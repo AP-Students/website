@@ -196,3 +196,16 @@ export async function deleteAccount(): Promise<void> {
     throw mapAuthError(error);
   }
 }
+
+/**
+ * Saves the subjects the user has added to their dashboard.
+ * @param uid - the user's unique identifier
+ * @param mySubjects - subject slugs (ex. ["physics-2", "calculus-ab"])
+ */
+export async function updateMySubjects(
+  uid: string,
+  mySubjects: string[],
+): Promise<void>{
+  await updateDoc(doc(db, "users", uid), { mySubjects });
+}
+
