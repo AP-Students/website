@@ -1,8 +1,7 @@
-export default function ExperienceCard() {
+export default function ExperienceCard({level, xpIntoLevel, xpNeededForLevel}: {level: number, xpIntoLevel:number, xpNeededForLevel:number}) {
 //place holder values
-  const level = 51;
-  const xpToNextLevel = 2103;
-  const progressPercent = 70;
+  const xpRemaining = xpNeededForLevel - xpIntoLevel;
+  const progressPercent = xpNeededForLevel > 0 ? Math.min(100, (xpIntoLevel / xpNeededForLevel) * 100) : 0;
 
   return (
     <section>
@@ -17,7 +16,7 @@ export default function ExperienceCard() {
           <div className="px-4 font-semibold">
             <p>Level {level}</p>
             <p>
-              {xpToNextLevel} XP until level {level + 1}
+              {xpRemaining.toLocaleString()} XP until level {level + 1}
             </p>
           </div>
         </div>
