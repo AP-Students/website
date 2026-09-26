@@ -42,6 +42,31 @@ service cloud.firestore {
       match /chapterData/{document=**} {
         allow read, write: if isAuthenticated() && request.auth.uid == userId;
       }
+
+      // Finished MCQ tests, counted by the activity calendar, streaks and XP.
+      // Append-only: a student may record an attempt as it happens but never
+      // rewrite or backdate one, since each is worth credit.
+      match /testAttempts/{attemptId} {
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+
+        allow create: if isAuthenticated() && request.auth.uid == userId
+          && request.resource.data.keys().hasOnly([
+            'subject',
+            'unitId',
+            'testId',
+            'correct',
+            'total',
+            'completedAt'
+          ])
+          && request.resource.data.subject is string
+          && request.resource.data.unitId is string
+          && request.resource.data.testId is string
+          && request.resource.data.total is int
+          && request.resource.data.correct is int
+          && request.resource.data.correct >= 0
+          && request.resource.data.correct <= request.resource.data.total
+          && request.resource.data.completedAt == request.time;
+      }
     }
 
     function canSubmitFrqResponse() {
