@@ -9,7 +9,7 @@ import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import MyClasses from "@/components/dashboard/MyClasses"
 import GlobalStats from "@/components/dashboard/GlobalStats";
 import StreakBar from "@/components/dashboard/StreakBar";
-import { FIXTURE_CALENDAR, FIXTURE_STATS, FIXTURE_EVENTS, FIXTURE_IN_PROGRESS, FIXTURE_SAVED, FIXTURE_IN_PROGRESS_READINGS } from "@/lib/dashboard/fixtures";
+import { FIXTURE_CALENDAR, FIXTURE_STATS, FIXTURE_EVENTS, FIXTURE_IN_PROGRESS, FIXTURE_SAVED, FIXTURE_IN_PROGRESS_READINGS, FIXTURE_NOTIFICATIONS } from "@/lib/dashboard/fixtures";
 import AchievementsCard from "@/components/dashboard/AchievementsCard";
 import { checkAchievements } from "@/lib/achievements/checkAchievements";
 import RecentActivity from "@/components/dashboard/RecentActivity";
@@ -42,7 +42,7 @@ export default function Dashboard() {
     return (
     <div>
         <Navbar />
-        <DashboardHeader user={user} />
+        <DashboardHeader user={user} notifications={FIXTURE_NOTIFICATIONS} />
 
         <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-8 py-10 md:grid-cols-2">
         {/* Left column */}
