@@ -1,7 +1,7 @@
-export default function ExperienceCard({level, xpIntoLevel, xpNeededForLevel}: {level: number, xpIntoLevel:number, xpNeededForLevel:number}) {
+export default function ExperienceCard({level, xpIntoLevel, xpForNextLevel}: {level: number, xpIntoLevel:number, xpForNextLevel:number}) {
 //place holder values
-  const xpRemaining = xpNeededForLevel - xpIntoLevel;
-  const progressPercent = xpNeededForLevel > 0 ? Math.min(100, (xpIntoLevel / xpNeededForLevel) * 100) : 0;
+  const xpRemaining = xpForNextLevel - xpIntoLevel;
+  const progressPercent = xpForNextLevel > 0 ? Math.min(100, (xpIntoLevel / xpForNextLevel) * 100) : 0;
 
   return (
     <section>

@@ -148,17 +148,3 @@ export interface ActivityAwardResponse {
 }
 
 
-
-// TEMPORARY: the dashboard UI still uses this. Remove it once the
-// components switch to UserStats (next step after the merge).
-export interface DashboardStats {
-  totalXp: number;
-  level: number;
-  xpIntoLevel: number;
-  xpNeededForLevel: number;
-  problemsSolved: number;
-  subjectsCompleted: number;
-  currentStreak: number;
-  lastActiveDay: string | null;
-}
-

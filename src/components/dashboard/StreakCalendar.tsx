@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight, Flame } from "lucide-react";
 interface StreakCalendarProps {
   activeDays: Set<string>;
   streakDays: Set<string>;
+  today: Date;
 }
 
 
@@ -16,8 +17,7 @@ const WEEKDAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 const navButtonClass =
   "rounded p-1 transition-colors hover:bg-orange-100 disabled:opacity-30 disabled:hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
 
-export default function StreakCalendar({ activeDays, streakDays }: StreakCalendarProps) {
-  const today = new Date();
+export default function StreakCalendar({ activeDays, streakDays, today }: StreakCalendarProps) {
   const todayKey = toDateKey(today);
 
   const [view, setView] = useState({ year: today.getFullYear(), month: today.getMonth() });

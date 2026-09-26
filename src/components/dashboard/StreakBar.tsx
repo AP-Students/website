@@ -9,12 +9,19 @@ import { getStreakDayKeys, getDisplayStreak } from "@/lib/dashboard/dates";
 interface StreakBarProps {
   currentStreak: number;
   lastActiveDay: string | null;
-  activeDays: string[];
+  calendarDays: Record<string, number>;
+  today?: Date;
 }
 
-export default function StreakBar({ currentStreak, lastActiveDay, activeDays }: StreakBarProps) {
+export default function StreakBar({ currentStreak, lastActiveDay, calendarDays, today = new Date() }: StreakBarProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const streak = getDisplayStreak(currentStreak, lastActiveDay, new Date());
+  const streak = getDisplayStreak(currentStreak, lastActiveDay, today);
+  const activeDays = new Set<string>();
+  for (const [day, count] of Object.entries(calendarDays)) {
+    if (count > 0) {
+      activeDays.add(day);
+    }
+  }
 
   return (
     <section>
@@ -49,6 +56,7 @@ export default function StreakBar({ currentStreak, lastActiveDay, activeDays }: 
           <StreakCalendar
             activeDays={new Set(activeDays)}
             streakDays={getStreakDayKeys(lastActiveDay, streak)}
+            today={today}
           />
         </div>
       )}

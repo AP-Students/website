@@ -8,29 +8,13 @@ import ExperienceCard from "@/components/dashboard/ExperienceCard";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import MyClasses from "@/components/dashboard/MyClasses"
 import GlobalStats from "@/components/dashboard/GlobalStats";
-import type { DashboardStats } from "@/types/dashboard";
 import StreakBar from "@/components/dashboard/StreakBar";
-import { toDateKey } from "@/lib/dashboard/dates"
+import { FIXTURE_CALENDAR, FIXTURE_STATS } from "@/lib/dashboard/fixtures";
 
-const daysAgo = (n: number) => {
-  const d = new Date();
-  return toDateKey(new Date(d.getFullYear(), d.getMonth(), d.getDate() - n));
-};
+// TEMPORARY: the fixtures pretend today is Sept 20, 2026. Remove this (and the
+// `today` prop below) once the dashboard reads real data.
+const FIXTURE_TODAY = new Date(2026, 8, 20);
 
-const MOCK_ACTIVE_DAYS = [0, 1, 2, 3, 4, 7, 9, 15, 16, 30, 33].map(daysAgo);
-
-
-// TEMPORARY: fake numbers until the real userStats exists (chunk 8)
-const MOCK_STATS: DashboardStats = {
-  totalXp: 12000,
-  level: 51,
-  xpIntoLevel: 4897,
-  xpNeededForLevel: 7000,
-  problemsSolved: 432,
-  subjectsCompleted: 5,
-  currentStreak: 5,
-  lastActiveDay: daysAgo(0),
-};
 
 
 export default function Dashboard() {
@@ -55,19 +39,20 @@ export default function Dashboard() {
         {/* Left column */}
         <div className="flex flex-col gap-8">
         <ExperienceCard
-        level={MOCK_STATS.level}
-        xpIntoLevel={MOCK_STATS.xpIntoLevel}
-        xpNeededForLevel={MOCK_STATS.xpNeededForLevel}
+          level={FIXTURE_STATS.level}
+          xpIntoLevel={FIXTURE_STATS.xpIntoLevel}
+          xpForNextLevel={FIXTURE_STATS.xpForNextLevel}
         />
         <StreakBar
-        currentStreak={MOCK_STATS.currentStreak}
-        lastActiveDay={MOCK_STATS.lastActiveDay}
-        activeDays={MOCK_ACTIVE_DAYS}
+          currentStreak={FIXTURE_STATS.currentStreak}
+          lastActiveDay={FIXTURE_STATS.lastActiveDay}
+          calendarDays={FIXTURE_CALENDAR.days}
+          today={FIXTURE_TODAY}
         />
         <GlobalStats
-        problemsSolved={MOCK_STATS.problemsSolved}
-        subjectsCompleted={MOCK_STATS.subjectsCompleted}
-        totalXp={MOCK_STATS.totalXp}
+          problemsSolved={FIXTURE_STATS.problemsSolved}
+          subjectsCompleted={FIXTURE_STATS.subjectsCompleted}
+          totalXp={FIXTURE_STATS.xp}
         />
         <p>Recent Activity (placeholder)</p>
         </div>
