@@ -10,10 +10,17 @@ import MyClasses from "@/components/dashboard/MyClasses"
 import GlobalStats from "@/components/dashboard/GlobalStats";
 import StreakBar from "@/components/dashboard/StreakBar";
 import { FIXTURE_CALENDAR, FIXTURE_STATS } from "@/lib/dashboard/fixtures";
+import AchievementsCard from "@/components/dashboard/AchievementsCard";
+import { checkAchievements } from "@/lib/achievements/checkAchievements";
 
 // TEMPORARY: the fixtures pretend today is Sept 20, 2026. Remove this (and the
 // `today` prop below) once the dashboard reads real data.
 const FIXTURE_TODAY = new Date(2026, 8, 20);
+// TEMPORARY: pretend the fixture user has earned everything their stats qualify
+// for, until earned achievements are read from users/{uid}/achievements.
+const FIXTURE_EARNED = new Set(
+  checkAchievements(FIXTURE_STATS, new Set()).map((achievement) => achievement.id),
+);
 
 
 
@@ -59,7 +66,7 @@ export default function Dashboard() {
 
         {/* Right column */}
         <div className="flex flex-col gap-8">
-            <p>Achievements (placeholder)</p>
+            <AchievementsCard stats={FIXTURE_STATS} earnedIds={FIXTURE_EARNED} />
             <MyClasses uid={user.uid} subjectSlugs={user.mySubjects ?? []} />
             <p>Saved Pages (placeholder)</p>
         </div>
