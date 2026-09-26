@@ -1,7 +1,3 @@
-/**
- * TEMPORARY: replace with phew's date function once it exists, so the
- * dashboard and the server always agree on what "today" is.
- */
 export function toDateKey(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -9,11 +5,6 @@ export function toDateKey(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-/**
- * Builds the cells for a Monday-first month calendar.
- * Returns empty slots (null) before the 1st, then one Date per day.
- * Example: September 2026 starts on a Tuesday, so it returns [null, Sep 1, Sep 2, ...].
- */
 export function getMonthGrid(year: number, month: number): (Date | null)[] {
   const firstDay = new Date(year, month, 1);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -29,7 +20,6 @@ export function getMonthGrid(year: number, month: number): (Date | null)[] {
   return cells;
 }
 
-/** Turns a "YYYY-MM-DD" key back into a local Date. */
 export function parseDateKey(key: string): Date {
   const [year = 0, month = 1, day = 1] = key.split("-").map(Number);
   return new Date(year, month - 1, day);
@@ -61,6 +51,12 @@ export function getDisplayStreak(currentStreak: number, lastActiveDay: string | 
   return lastActiveDay === todayKey || lastActiveDay === yesterdayKey ? currentStreak : 0;
 }
 
-//export function getDisplayStreak({currentStreak, lastActiveDay, today}: {currentStreak: number, lastActiveDay: string | null, today: Date}): number {
+export function intensityLevel(count: number): number {
+  if (count >= 10) return 4;
+  if (count >= 6) return 3;
+  if (count >= 3) return 2;
+  if (count >= 1) return 1;
+  return 0;
+}
 
 

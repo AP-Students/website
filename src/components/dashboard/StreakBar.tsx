@@ -5,6 +5,8 @@ import { ChevronDown, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 import StreakCalendar from "@/components/dashboard/StreakCalendar";
 import { getStreakDayKeys, getDisplayStreak } from "@/lib/dashboard/dates";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import { usePrefersReducedMotion } from "@/components/hooks/usePrefersReducedMotion";
 
 interface StreakBarProps {
   currentStreak: number;
@@ -16,12 +18,7 @@ interface StreakBarProps {
 export default function StreakBar({ currentStreak, lastActiveDay, calendarDays, today = new Date() }: StreakBarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const streak = getDisplayStreak(currentStreak, lastActiveDay, today);
-  const activeDays = new Set<string>();
-  for (const [day, count] of Object.entries(calendarDays)) {
-    if (count > 0) {
-      activeDays.add(day);
-    }
-  }
+  const reduceMotion = usePrefersReducedMotion();
 
   return (
     <section>
@@ -36,12 +33,23 @@ export default function StreakBar({ currentStreak, lastActiveDay, calendarDays, 
         
       }
       >
-        {/* Placeholder: replaced by the animated Lottie fire in step 4b */}
-        <Flame className="h-10 w-10 fill-orange-500 text-orange-500" />
+        {streak > 0 && !reduceMotion ? (
+          <DotLottieReact src="/Fire.lottie" loop autoplay className="h-12 w-12 shrink-0" aria-hidden="true"/>) : (
+          <Flame
+            aria-hidden="true"
+            className={cn(
+              "h-10 w-10 shrink-0",
+              streak > 0 ? "fill-orange-500 text-orange-500" : "fill-gray-300 text-gray-400",
+            )}
+          />
+        )}
 
-        <span className="text-3xl font-semibold">
+
+        <span className="translate-y-1.5 text-3xl font-semibold">
+          <span className="sr-only">Current streak: </span>
           {streak} {streak === 1 ? "Day" : "Days"}
         </span>
+
 
         <ChevronDown
           className={cn(
@@ -54,7 +62,7 @@ export default function StreakBar({ currentStreak, lastActiveDay, calendarDays, 
       {isOpen && (
         <div className="rounded-b-lg border border-t-0 border-orange-300 bg-orange-50 p-4 shadow">
           <StreakCalendar
-            activeDays={new Set(activeDays)}
+            calendarDays={calendarDays}
             streakDays={getStreakDayKeys(lastActiveDay, streak)}
             today={today}
           />

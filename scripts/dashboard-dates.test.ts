@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { getMonthGrid, getStreakDayKeys, toDateKey, getDisplayStreak } from "../src/lib/dashboard/dates.ts";
+import { getMonthGrid, getStreakDayKeys, toDateKey, getDisplayStreak, intensityLevel } from "../src/lib/dashboard/dates.ts";
 
 
 test("toDateKey pads month and day", () => {
@@ -53,5 +53,9 @@ test("a streak older than yesterday is broken and shows 0", () => {
 test("yesterday works across a month boundary", () => {
   const today = new Date(2026, 9, 1); // Oct 1
   assert.equal(getDisplayStreak(3, "2026-09-30", today), 3);
+});
+
+test("intensity levels match the 1/3/6/10 thresholds", () => {
+  assert.deepEqual([0, 1, 2, 3, 5, 6, 9, 10, 25].map(intensityLevel), [0, 1, 1, 2, 2, 3, 3, 4, 4]);
 });
 
