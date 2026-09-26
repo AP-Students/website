@@ -40,7 +40,7 @@ export default function SubjectBookmark({ slug }: { slug: string }) {
       aria-label={isSaved ? "Remove from My Classes" : "Add to My Classes"}
       aria-pressed={isSaved}
       title={isSaved ? "Remove from My Classes" : "Add to My Classes"}
-      className="shrink-0 transition-opacity disabled:opacity-50"
+      className="focus-visible:outline-none shrink-0 transition-opacity focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
     >
       <Bookmark
         strokeWidth={1.5}

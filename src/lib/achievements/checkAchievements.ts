@@ -1,4 +1,8 @@
-import { ACHIEVEMENTS,type AchievementDefinition,type AchievementStats } from "./definitions.ts";
+import {
+  ACHIEVEMENTS,
+  type AchievementDefinition,
+  type AchievementStats,
+} from "./definitions.ts";
 
 export function checkAchievements(
   stats: AchievementStats,

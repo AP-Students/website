@@ -1,10 +1,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { getMonthGrid, getStreakDayKeys, toDateKey, getDisplayStreak, intensityLevel } from "../src/lib/dashboard/dates.ts";
-
+import {
+  getMonthGrid,
+  getStreakDayKeys,
+  toDateKey,
+  getDisplayStreak,
+  intensityLevel,
+} from "../src/lib/dashboard/dates.ts";
 
 test("toDateKey pads month and day", () => {
-  assert.equal(toDateKey(new Date(2026, 8, 4)), "2026-09-04"); 
+  assert.equal(toDateKey(new Date(2026, 8, 4)), "2026-09-04");
 });
 
 test("September 2026 starts on Tuesday, so one blank cell", () => {
@@ -21,7 +26,10 @@ test("February in a leap year has 29 days", () => {
 
 test("a month starting on Sunday gets 6 blanks", () => {
   const grid = getMonthGrid(2026, 1); // Feb 1, 2026 is a Sunday
-  assert.equal(grid.slice(0, 6).every((cell) => cell === null), true);
+  assert.equal(
+    grid.slice(0, 6).every((cell) => cell === null),
+    true,
+  );
   assert.equal(grid[6]?.getDate(), 1);
 });
 
@@ -56,6 +64,8 @@ test("yesterday works across a month boundary", () => {
 });
 
 test("intensity levels match the 1/3/6/10 thresholds", () => {
-  assert.deepEqual([0, 1, 2, 3, 5, 6, 9, 10, 25].map(intensityLevel), [0, 1, 1, 2, 2, 3, 3, 4, 4]);
+  assert.deepEqual(
+    [0, 1, 2, 3, 5, 6, 9, 10, 25].map(intensityLevel),
+    [0, 1, 1, 2, 2, 3, 3, 4, 4],
+  );
 });
-

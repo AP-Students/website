@@ -146,5 +146,3 @@ export interface ActivityAwardResponse {
   newlyUnlocked: string[]; // achievement ids
   alreadyRecorded: boolean; // true on idempotent replay
 }
-
-

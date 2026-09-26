@@ -1,11 +1,29 @@
 "use client";
 
 import { useState, type CSSProperties } from "react";
-import { BookOpen, ClipboardCheck, Flame, PenLine, Lock, Sparkles, Target, Trophy, Star, type LucideIcon } from "lucide-react";
-import { ACHIEVEMENTS, type AchievementDefinition, type AchievementIcon, type AchievementStats} from "@/lib/achievements/definitions";
+import {
+  BookOpen,
+  ClipboardCheck,
+  Flame,
+  PenLine,
+  Lock,
+  Sparkles,
+  Target,
+  Trophy,
+  Star,
+  type LucideIcon,
+} from "lucide-react";
+import {
+  ACHIEVEMENTS,
+  type AchievementDefinition,
+  type AchievementIcon,
+  type AchievementStats,
+} from "@/lib/achievements/definitions";
 import { cn } from "@/lib/utils";
-import { BADGE_STYLES, DEFAULT_BADGE_STYLE } from "@/components/dashboard/AchievementStyles";
-
+import {
+  BADGE_STYLES,
+  DEFAULT_BADGE_STYLE,
+} from "@/components/dashboard/AchievementStyles";
 
 const ICONS: Record<AchievementIcon, LucideIcon> = {
   book: BookOpen,
@@ -28,11 +46,15 @@ interface AchievementsCardProps {
   earnedIds: ReadonlySet<string>;
 }
 
-export default function AchievementsCard({ stats, earnedIds }: AchievementsCardProps) {
+export default function AchievementsCard({
+  stats,
+  earnedIds,
+}: AchievementsCardProps) {
   const [showAll, setShowAll] = useState(false);
 
   const progressOf = (achievement: AchievementDefinition) =>
-    Math.min(stats[achievement.stat], achievement.threshold) / achievement.threshold;
+    Math.min(stats[achievement.stat], achievement.threshold) /
+    achievement.threshold;
 
   const sorted = [...ACHIEVEMENTS].sort((a, b) => {
     const aEarned = earnedIds.has(a.id);
@@ -56,10 +78,16 @@ export default function AchievementsCard({ stats, earnedIds }: AchievementsCardP
           const Icon = ICONS[achievement.icon];
           const earned = earnedIds.has(achievement.id);
           const style = BADGE_STYLES[achievement.id] ?? DEFAULT_BADGE_STYLE;
-          const current = Math.min(stats[achievement.stat], achievement.threshold);
+          const current = Math.min(
+            stats[achievement.stat],
+            achievement.threshold,
+          );
 
           return (
-            <li key={achievement.id} className="flex flex-col items-center text-center">
+            <li
+              key={achievement.id}
+              className="flex flex-col items-center text-center"
+            >
               <div
                 aria-hidden="true"
                 className={cn(
@@ -79,10 +107,17 @@ export default function AchievementsCard({ stats, earnedIds }: AchievementsCardP
                     className={cn(
                       "flex items-center justify-center bg-gradient-to-br",
                       earned ? style.fill : "from-gray-100 to-gray-200",
-                      earned && style.premium ? "h-[80px] w-[92px]" : "h-[84px] w-[97px]",
+                      earned && style.premium
+                        ? "h-[80px] w-[92px]"
+                        : "h-[84px] w-[97px]",
                     )}
                   >
-                    <Icon className={cn("h-9 w-9", earned ? style.icon : "text-gray-400")} />
+                    <Icon
+                      className={cn(
+                        "h-9 w-9",
+                        earned ? style.icon : "text-gray-400",
+                      )}
+                    />
                   </div>
                 </div>
 
@@ -97,7 +132,9 @@ export default function AchievementsCard({ stats, earnedIds }: AchievementsCardP
               </div>
 
               <p className="mt-2 text-xs font-semibold">{achievement.title}</p>
-              <p className="text-[11px] leading-tight text-gray-500">{achievement.description}</p>
+              <p className="text-[11px] leading-tight text-gray-500">
+                {achievement.description}
+              </p>
               <span className="sr-only">{earned ? "Earned" : "Locked"}</span>
 
               {!earned && (
@@ -112,7 +149,9 @@ export default function AchievementsCard({ stats, earnedIds }: AchievementsCardP
                   >
                     <div
                       className="h-full rounded-full bg-gray-500"
-                      style={{ width: `${(current / achievement.threshold) * 100}%` }}
+                      style={{
+                        width: `${(current / achievement.threshold) * 100}%`,
+                      }}
                     />
                   </div>
                   <p className="mt-0.5 text-[10px] text-gray-500">

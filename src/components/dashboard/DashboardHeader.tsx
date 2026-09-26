@@ -2,7 +2,13 @@ import type { User } from "@/types/user";
 import NotificationBell from "@/components/dashboard/NotificationBell";
 import type { AppNotification } from "@/types/dashboard";
 
-export default function DashboardHeader({ user, notifications }: { user: User, notifications: AppNotification[] }) {
+export default function DashboardHeader({
+  user,
+  notifications,
+}: {
+  user: User;
+  notifications: AppNotification[];
+}) {
   return (
     <div className="border-b border-orange-200 bg-orange-50">
       <div className="mx-auto flex max-w-6xl items-center gap-6 px-8 py-10">

@@ -25,8 +25,6 @@ export function parseDateKey(key: string): Date {
   return new Date(year, month - 1, day);
 }
 
-
-
 export function getStreakDayKeys(
   lastActiveDay: string | null,
   currentStreak: number,
@@ -36,19 +34,31 @@ export function getStreakDayKeys(
 
   const last = parseDateKey(lastActiveDay);
   for (let i = 0; i < currentStreak; i++) {
-    const day = new Date(last.getFullYear(), last.getMonth(), last.getDate() - i);
+    const day = new Date(
+      last.getFullYear(),
+      last.getMonth(),
+      last.getDate() - i,
+    );
     keys.add(toDateKey(day));
   }
   return keys;
 }
 
-export function getDisplayStreak(currentStreak: number, lastActiveDay: string | null, today: Date): number {
+export function getDisplayStreak(
+  currentStreak: number,
+  lastActiveDay: string | null,
+  today: Date,
+): number {
   if (!lastActiveDay) return 0;
 
   const todayKey = toDateKey(today);
-  const yesterdayKey = toDateKey(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1),);
+  const yesterdayKey = toDateKey(
+    new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1),
+  );
 
-  return lastActiveDay === todayKey || lastActiveDay === yesterdayKey ? currentStreak : 0;
+  return lastActiveDay === todayKey || lastActiveDay === yesterdayKey
+    ? currentStreak
+    : 0;
 }
 
 export function intensityLevel(count: number): number {
@@ -58,5 +68,3 @@ export function intensityLevel(count: number): number {
   if (count >= 1) return 1;
   return 0;
 }
-
-

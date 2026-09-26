@@ -1,13 +1,29 @@
 import Link from "next/link";
-import { BookOpen, ChevronRight, CircleHelp, ClipboardList, PenLine, type LucideIcon,} from "lucide-react";
-import type { InProgressItem, InProgressReading, SavedItem } from "@/types/dashboard";
+import {
+  BookOpen,
+  ChevronRight,
+  CircleHelp,
+  ClipboardList,
+  PenLine,
+  type LucideIcon,
+} from "lucide-react";
+import type {
+  InProgressItem,
+  InProgressReading,
+  SavedItem,
+} from "@/types/dashboard";
 import { findCourse } from "@/lib/dashboard/subjects";
 
 const MAX_ROWS = 4;
 
 type RowKind = "mcq_test" | "frq" | "reading" | "question";
 
-const KIND_ICONS: Record<RowKind, LucideIcon> = {mcq_test: ClipboardList, frq: PenLine, reading: BookOpen, question: CircleHelp};
+const KIND_ICONS: Record<RowKind, LucideIcon> = {
+  mcq_test: ClipboardList,
+  frq: PenLine,
+  reading: BookOpen,
+  question: CircleHelp,
+};
 
 interface Row {
   id: string;
@@ -32,30 +48,53 @@ function inProgressDetail(item: InProgressItem): string {
   return "Draft saved";
 }
 
-function ItemList({ title, rows, empty }: { title: string; rows: Row[]; empty: string }) {
+function ItemList({
+  title,
+  rows,
+  empty,
+}: {
+  title: string;
+  rows: Row[];
+  empty: string;
+}) {
   return (
     <section>
       <h2 className="mb-3 text-2xl font-bold">{title}</h2>
       {rows.length === 0 ? (
-        <p className="text-gray-500">{empty}</p>) : (
+        <p className="text-gray-500">{empty}</p>
+      ) : (
         <ul className="flex flex-col gap-3">
           {rows.slice(0, MAX_ROWS).map((row) => {
             const Icon = KIND_ICONS[row.kind];
             const subjectName = findCourse(row.subject)?.name ?? row.subject;
-            const context = [subjectName, unitLabel(row.unitId)].filter(Boolean).join(" | ");
+            const context = [subjectName, unitLabel(row.unitId)]
+              .filter(Boolean)
+              .join(" | ");
 
             return (
               <li key={row.id}>
-                <Link href={row.href} className="flex items-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-3 shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                <Link
+                  href={row.href}
+                  className="flex items-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-3 shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-100 text-orange-700">
                     <Icon className="h-5 w-5" aria-hidden="true" />
                   </span>
                   <span className="min-w-0 grow">
-                    <span className="block truncate text-xs text-gray-500">{context}</span>
-                    <span className="block truncate font-semibold">{row.label}</span>
-                    <span className="block truncate text-sm text-gray-600">{row.detail}</span>
+                    <span className="block truncate text-xs text-gray-500">
+                      {context}
+                    </span>
+                    <span className="block truncate font-semibold">
+                      {row.label}
+                    </span>
+                    <span className="block truncate text-sm text-gray-600">
+                      {row.detail}
+                    </span>
                   </span>
-                  <ChevronRight className="h-5 w-5 shrink-0 text-gray-400" aria-hidden="true" />
+                  <ChevronRight
+                    className="h-5 w-5 shrink-0 text-gray-400"
+                    aria-hidden="true"
+                  />
                 </Link>
               </li>
             );
@@ -72,7 +111,11 @@ interface SavedAndInProgressProps {
   inProgressReadings: InProgressReading[];
 }
 
-export default function SavedAndInProgress({saved, inProgress, inProgressReadings}: SavedAndInProgressProps) {
+export default function SavedAndInProgress({
+  saved,
+  inProgress,
+  inProgressReadings,
+}: SavedAndInProgressProps) {
   const inProgressRows: Row[] = [
     ...inProgress.map((item) => ({
       id: item.id,
@@ -101,7 +144,9 @@ export default function SavedAndInProgress({saved, inProgress, inProgressReading
     unitId: item.unitId,
     label: item.label,
     href: item.href,
-    detail: item.topic ?? (item.kind === "reading" ? "Saved reading" : "Saved question"),
+    detail:
+      item.topic ??
+      (item.kind === "reading" ? "Saved reading" : "Saved question"),
   }));
 
   return (

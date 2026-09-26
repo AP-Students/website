@@ -1,7 +1,7 @@
+"use client";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { sectionData } from "@/components/landingPage/APLibrary";
-import { formatSlug } from "@/lib/utils";
 import { useState } from "react";
 import { updateMySubjects } from "@/lib/manageUser";
 import { clearUserCache } from "@/components/hooks/users";
@@ -9,8 +9,13 @@ import { useUser } from "@/components/hooks/UserContext";
 import { Button } from "@/components/ui/button";
 import { findCourse, toSlug } from "@/lib/dashboard/subjects";
 
-
-export default function MyClasses({ uid, subjectSlugs }: { uid:string; subjectSlugs: string[] }) {
+export default function MyClasses({
+  uid,
+  subjectSlugs,
+}: {
+  uid: string;
+  subjectSlugs: string[];
+}) {
   const { updateUser } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
@@ -18,7 +23,7 @@ export default function MyClasses({ uid, subjectSlugs }: { uid:string; subjectSl
   const [error, setError] = useState<string | null>(null);
 
   const startEditing = () => {
-    setSelected(subjectSlugs); 
+    setSelected(subjectSlugs);
     setError(null);
     setIsEditing(true);
   };
@@ -42,12 +47,12 @@ export default function MyClasses({ uid, subjectSlugs }: { uid:string; subjectSl
     } finally {
       setSaving(false);
     }
-  };  
-  
+  };
+
   return (
     <section>
       <div className="mb-3 flex items-center justify-between">
-      <h2 className="mb-3 text-2xl font-bold">My Classes:</h2>
+        <h2 className="text-2xl font-bold">My Classes:</h2>
         {!isEditing && (
           <Button variant="outline" size="sm" onClick={startEditing}>
             Edit
@@ -73,11 +78,18 @@ export default function MyClasses({ uid, subjectSlugs }: { uid:string; subjectSl
                       key={slug}
                       type="button"
                       onClick={() => toggle(slug)}
-                      className="rounded-full border px-3 py-1 text-sm transition-colors"
+                      className="focus-visible:outline-none rounded-full border px-3 py-1 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-primary"
                       style={
                         isOn
-                          ? { backgroundColor: section.borderColor, borderColor: section.borderColor, color: "white" }
-                          : { borderColor: `${section.borderColor}80`, color: section.borderColor }
+                          ? {
+                              backgroundColor: section.borderColor,
+                              borderColor: section.borderColor,
+                              color: "white",
+                            }
+                          : {
+                              borderColor: `${section.borderColor}80`,
+                              color: section.borderColor,
+                            }
                       }
                     >
                       {course}
@@ -91,7 +103,11 @@ export default function MyClasses({ uid, subjectSlugs }: { uid:string; subjectSl
           {error && <p className="text-sm text-red-600">{error}</p>}
 
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsEditing(false)} disabled={saving}>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditing(false)}
+              disabled={saving}
+            >
               Cancel
             </Button>
             <Button onClick={save} disabled={saving}>
@@ -111,8 +127,11 @@ export default function MyClasses({ uid, subjectSlugs }: { uid:string; subjectSl
               <Link
                 key={slug}
                 href={`/subject/${slug}`}
-                className="flex items-center justify-between rounded-lg border bg-white px-4 py-3 text-lg font-bold transition-shadow hover:shadow-md"
-                style={{ color: course.color, borderColor: `${course.color}80` }}
+                className="focus-visible:outline-none flex items-center justify-between rounded-lg border bg-white px-4 py-3 text-lg font-bold transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary"
+                style={{
+                  color: course.color,
+                  borderColor: `${course.color}80`,
+                }}
               >
                 {course.name}
                 <ChevronRight />

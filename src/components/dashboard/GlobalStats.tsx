@@ -1,4 +1,12 @@
-export default function GlobalStats({problemsSolved,subjectsCompleted,totalXp}: {problemsSolved: number, subjectsCompleted: number, totalXp: number }) {
+export default function GlobalStats({
+  problemsSolved,
+  subjectsCompleted,
+  totalXp,
+}: {
+  problemsSolved: number;
+  subjectsCompleted: number;
+  totalXp: number;
+}) {
   const rows = [
     { label: "Problems Solved", value: problemsSolved },
     { label: "Subjects Completed", value: subjectsCompleted },

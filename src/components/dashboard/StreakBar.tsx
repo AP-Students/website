@@ -15,7 +15,12 @@ interface StreakBarProps {
   today?: Date;
 }
 
-export default function StreakBar({ currentStreak, lastActiveDay, calendarDays, today = new Date() }: StreakBarProps) {
+export default function StreakBar({
+  currentStreak,
+  lastActiveDay,
+  calendarDays,
+  today = new Date(),
+}: StreakBarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const streak = getDisplayStreak(currentStreak, lastActiveDay, today);
   const reduceMotion = usePrefersReducedMotion();
@@ -29,27 +34,32 @@ export default function StreakBar({ currentStreak, lastActiveDay, calendarDays, 
         className={cn(
           "flex w-full items-center gap-4 border border-orange-300 bg-amber-100 px-4 py-2 text-left shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
           isOpen ? "rounded-t-lg" : "rounded-lg",
-        )
-        
-      }
+        )}
       >
         {streak > 0 && !reduceMotion ? (
-          <DotLottieReact src="/Fire.lottie" loop autoplay className="h-12 w-12 shrink-0" aria-hidden="true"/>) : (
+          <DotLottieReact
+            src="/Fire.lottie"
+            loop
+            autoplay
+            className="h-12 w-12 shrink-0"
+            aria-hidden="true"
+          />
+        ) : (
           <Flame
             aria-hidden="true"
             className={cn(
               "h-10 w-10 shrink-0",
-              streak > 0 ? "fill-orange-500 text-orange-500" : "fill-gray-300 text-gray-400",
+              streak > 0
+                ? "fill-orange-500 text-orange-500"
+                : "fill-gray-300 text-gray-400",
             )}
           />
         )}
-
 
         <span className="translate-y-1.5 text-3xl font-semibold">
           <span className="sr-only">Current streak: </span>
           {streak} {streak === 1 ? "Day" : "Days"}
         </span>
-
 
         <ChevronDown
           className={cn(

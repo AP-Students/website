@@ -20,7 +20,10 @@ test("a brand-new user has earned nothing", () => {
 });
 
 test("reaching a threshold exactly earns the achievement", () => {
-  const earned = checkAchievements({ ...zeroStats, readingsCompleted: 5 }, new Set());
+  const earned = checkAchievements(
+    { ...zeroStats, readingsCompleted: 5 },
+    new Set(),
+  );
   assert.deepEqual(ids(earned), ["reading-1", "reading-5"]);
 });
 
@@ -33,6 +36,9 @@ test("achievements already earned are not returned again", () => {
 });
 
 test("one jump in stats can earn several achievements at once", () => {
-  const earned = checkAchievements({ ...zeroStats, longestStreak: 30 }, new Set());
+  const earned = checkAchievements(
+    { ...zeroStats, longestStreak: 30 },
+    new Set(),
+  );
   assert.deepEqual(ids(earned), ["streak-3", "streak-7", "streak-30"]);
 });
