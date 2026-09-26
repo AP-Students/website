@@ -9,9 +9,11 @@ import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import MyClasses from "@/components/dashboard/MyClasses"
 import GlobalStats from "@/components/dashboard/GlobalStats";
 import StreakBar from "@/components/dashboard/StreakBar";
-import { FIXTURE_CALENDAR, FIXTURE_STATS } from "@/lib/dashboard/fixtures";
+import { FIXTURE_CALENDAR, FIXTURE_STATS, FIXTURE_EVENTS, FIXTURE_IN_PROGRESS, FIXTURE_SAVED, FIXTURE_IN_PROGRESS_READINGS } from "@/lib/dashboard/fixtures";
 import AchievementsCard from "@/components/dashboard/AchievementsCard";
 import { checkAchievements } from "@/lib/achievements/checkAchievements";
+import RecentActivity from "@/components/dashboard/RecentActivity";
+import SavedAndInProgress from "@/components/dashboard/SavedAndInProgress";
 
 // TEMPORARY: the fixtures pretend today is Sept 20, 2026. Remove this (and the
 // `today` prop below) once the dashboard reads real data.
@@ -61,14 +63,19 @@ export default function Dashboard() {
           subjectsCompleted={FIXTURE_STATS.subjectsCompleted}
           totalXp={FIXTURE_STATS.xp}
         />
-        <p>Recent Activity (placeholder)</p>
+        <RecentActivity events={FIXTURE_EVENTS} />
         </div>
 
         {/* Right column */}
         <div className="flex flex-col gap-8">
             <AchievementsCard stats={FIXTURE_STATS} earnedIds={FIXTURE_EARNED} />
             <MyClasses uid={user.uid} subjectSlugs={user.mySubjects ?? []} />
-            <p>Saved Pages (placeholder)</p>
+            <SavedAndInProgress
+            saved={FIXTURE_SAVED}
+            inProgress={FIXTURE_IN_PROGRESS}
+            inProgressReadings={FIXTURE_IN_PROGRESS_READINGS}
+          />
+
         </div>
         </div>
 
