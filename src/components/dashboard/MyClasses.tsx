@@ -7,20 +7,8 @@ import { updateMySubjects } from "@/lib/manageUser";
 import { clearUserCache } from "@/components/hooks/users";
 import { useUser } from "@/components/hooks/UserContext";
 import { Button } from "@/components/ui/button";
+import { findCourse, toSlug } from "@/lib/dashboard/subjects";
 
-const toSlug = (course: string) => formatSlug(course.replace(/AP /g, ""));
-
-
-function findCourse(slug: string) {
-  for (const section of sectionData) {
-    for (const course of section.courses) {
-      if (toSlug(course) === slug) {
-        return { name: course, color: section.borderColor };
-      }
-    }
-  }
-  return null;
-}
 
 export default function MyClasses({ uid, subjectSlugs }: { uid:string; subjectSlugs: string[] }) {
   const { updateUser } = useUser();
