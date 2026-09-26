@@ -23,11 +23,7 @@ import { checkAchievements } from "@/lib/achievements/checkAchievements";
 import RecentActivity from "@/components/dashboard/RecentActivity";
 import SavedAndInProgress from "@/components/dashboard/SavedAndInProgress";
 
-// TEMPORARY: the fixtures pretend today is Sept 20, 2026. Remove this (and the
-// `today` prop below) once the dashboard reads real data.
 const FIXTURE_TODAY = new Date(2026, 8, 20);
-// TEMPORARY: pretend the fixture user has earned everything their stats qualify
-// for, until earned achievements are read from users/{uid}/achievements.
 const FIXTURE_EARNED = new Set(
   checkAchievements(FIXTURE_STATS, new Set()).map(
     (achievement) => achievement.id,
@@ -45,8 +41,19 @@ export default function Dashboard() {
   }, [loading, user, router]);
 
   if (loading || !user) {
-    return <div>Loading…</div>;
+    return (
+      <div>
+        <Navbar />
+        <div
+          role="status"
+          className="flex min-h-[60vh] items-center justify-center text-gray-500"
+        >
+          Loading your dashboard…
+        </div>
+      </div>
+    );
   }
+
   return (
     <div>
       <Navbar />

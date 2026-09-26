@@ -25,7 +25,7 @@ export default function DashboardHeader({
 
         <div>
           <h1 className="text-4xl font-extrabold">{user.displayName}</h1>
-          <p className="text-gray-500">Subtitle goes here</p>
+          <p className="text-gray-500">Something</p>
         </div>
         <div className="ml-auto">
           <NotificationBell notifications={notifications} />
