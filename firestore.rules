@@ -42,6 +42,21 @@ service cloud.firestore {
       match /chapterData/{document=**} {
         allow read, write: if isAuthenticated() && request.auth.uid == userId;
       }
+
+      // Saved readings and problems, listed on the account page.
+      match /savedItems/{itemId} {
+        allow read, delete: if isAuthenticated() && request.auth.uid == userId;
+        allow create, update: if isAuthenticated() && request.auth.uid == userId
+          && request.resource.data.keys().hasOnly(['kind', 'title', 'path', 'savedAt'])
+          && request.resource.data.kind in ['reading', 'problem']
+          && request.resource.data.title is string
+          && request.resource.data.title.size() > 0
+          && request.resource.data.title.size() <= 200
+          && request.resource.data.path is string
+          && request.resource.data.path.size() <= 500
+          && request.resource.data.path.matches('^/subject/[^\\s]*$')
+          && request.resource.data.savedAt == request.time;
+      }
     }
 
     function canSubmitFrqResponse() {

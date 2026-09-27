@@ -17,6 +17,7 @@ import {
   type CalculatorPermission,
   type CalculatorType,
 } from "@/lib/calculator";
+import SaveButton from "@/components/subject/save-button";
 import clsx from "clsx";
 import { cn } from "@/lib/utils";
 import "katex/dist/katex.min.css";
@@ -27,6 +28,8 @@ interface Props {
   adminMode?: boolean;
   directions?: string;
   testName: string;
+  /** Enables the Save button. Omitted in admin preview. */
+  testId?: string;
   calculatorCourseDefault?: CalculatorPermission;
   calculatorDefault?: CalculatorPermission;
   calculatorType?: CalculatorType;
@@ -83,6 +86,7 @@ export default function DigitalTestingPage({
   adminMode = false,
   directions,
   testName,
+  testId,
   calculatorCourseDefault,
   calculatorDefault,
   calculatorType = "graphing",
@@ -263,6 +267,16 @@ export default function DigitalTestingPage({
                 <Check className="stroke-green-500 stroke-[3px]" />
               ) : (
                 <X className="stroke-red-500 stroke-[3px]" />
+              )}
+
+              {testId && !adminMode && questions.length > 0 && (
+                <SaveButton
+                  key={currentQuestionIndex}
+                  id={`test_${testId}_${currentQuestionIndex}`}
+                  kind="problem"
+                  title={`${testName} – Question ${currentQuestionIndex + 1}`}
+                  className="py-0.5"
+                />
               )}
 
               {submitted && questions[currentQuestionIndex]!.topic && (

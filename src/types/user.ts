@@ -21,3 +21,12 @@ export interface UserChapterData {
     | "Need Review"
     | "Skipped";
 }
+
+/** A reading or practice problem the user saved. Stored at users/{uid}/savedItems/{id}. */
+export interface SavedItem {
+  kind: "reading" | "problem";
+  title: string;
+  /** App-relative link back to the saved content. */
+  path: string;
+  savedAt: Timestamp;
+}
