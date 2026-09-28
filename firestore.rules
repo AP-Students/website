@@ -24,12 +24,36 @@ service cloud.firestore {
       return isAuthenticated() && (accessLevel == "admin" || accessLevel == "member" || accessLevel == "grader");
     }
 
+    // These legacy fields may still exist on /users/{uid}, but all dashboard
+    // progress now lives in the subdocuments below and is server-maintained.
+    function doesNotChangeDerivedDashboardFields() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+        'xp', 'level', 'xpIntoLevel', 'xpForNextLevel', 'currentStreak',
+        'longestStreak', 'lastActiveDay', 'readingsCompleted',
+        'mcqTestsCompleted', 'problemsSolved', 'frqsSubmitted',
+        'subjectsCompleted', 'perSubject', 'updatedAt'
+      ]);
+    }
+
+    function doesNotSetDerivedDashboardFields() {
+      return !request.resource.data.keys().hasAny([
+        'xp', 'level', 'xpIntoLevel', 'xpForNextLevel', 'currentStreak',
+        'longestStreak', 'lastActiveDay', 'readingsCompleted',
+        'mcqTestsCompleted', 'problemsSolved', 'frqsSubmitted',
+        'subjectsCompleted', 'perSubject', 'updatedAt'
+      ]);
+    }
+
     // Allow read/write access to users for their own user data
     match /users/{userId} {
       allow read: if isAuthenticated() && request.auth.uid == userId;
 
-      allow create: if isAuthenticated() && request.auth.uid == userId && request.resource.data.access == "user";
-      allow update: if isAuthenticated() && request.auth.uid == userId && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['access', 'uid']));
+      allow create: if isAuthenticated() && request.auth.uid == userId
+        && request.resource.data.access == "user"
+        && doesNotSetDerivedDashboardFields();
+      allow update: if isAuthenticated() && request.auth.uid == userId
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['access', 'uid'])
+        && doesNotChangeDerivedDashboardFields();
       allow delete: if isAuthenticated() && request.auth.uid == userId;
 
       match /frqResponses/{document=**} {
@@ -39,21 +63,33 @@ service cloud.firestore {
         allow update: if isGraderOrMemberOrAdmin() && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['feedback', 'grade', 'gradedAt', 'gradedBy', 'status']));
       }
 
-      match /chapterData/{document=**} {
-        allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      // A client may track its reading progress, but it cannot set or reset an
+      // XP-award marker. Trusted server code records awards in /activity.
+      match /chapterData/{chapterId} {
+        allow read, delete: if isAuthenticated() && request.auth.uid == userId;
+        allow create: if isAuthenticated() && request.auth.uid == userId
+          && request.resource.data.keys().hasOnly(['progress'])
+          && request.resource.data.progress is string;
+        allow update: if isAuthenticated() && request.auth.uid == userId
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['progress'])
+          && request.resource.data.progress is string;
       }
 
-      // Dashboard progress is awarded and maintained by trusted server code.
-      // Students may view their own derived data, but may not alter it directly.
-      match /stats/{document=**} {
+      // Canonical Week 1 dashboard schema. All records in these locations are
+      // written by trusted API routes/Cloud Functions through the Admin SDK.
+      // Firestore rules intentionally contain no client write permission.
+      match /stats/summary {
         allow read: if isAuthenticated() && request.auth.uid == userId;
       }
 
-      match /activity/{document=**} {
+      // Immutable activity ledger; document id is the idempotency key, e.g.
+      // "{uid}_reading_{chapterId}" or "{uid}_mcq_test_{testId}".
+      match /activity/{eventId} {
         allow read: if isAuthenticated() && request.auth.uid == userId;
       }
 
-      match /calendar/{document=**} {
+      match /calendar/{year} {
         allow read: if isAuthenticated() && request.auth.uid == userId;
       }
 
@@ -68,11 +104,11 @@ service cloud.firestore {
       }
 
       // These records are user-managed dashboard state.
-      match /saved/{document=**} {
+      match /savedItems/{itemId} {
         allow read, write: if isAuthenticated() && request.auth.uid == userId;
       }
 
-      match /inProgress/{document=**} {
+      match /inProgress/{itemId} {
         allow read, write: if isAuthenticated() && request.auth.uid == userId;
       }
     }
