@@ -1,212 +1,167 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { FieldValue } from "firebase-admin/firestore";
+import { adminAuth, adminDb, hasExplicitAdminCredentials } from "@/lib/firebase-admin";
+import type { ActivityAwardResponse } from "@/types/dashboard";
 
-// Keep the base award aligned with a completed reading. Every correctly
-// answered gradable question earns this amount again.
 const BASE_TEST_XP = 10;
 const CORRECT_ANSWER_XP = 10;
 
-type FirestoreValue = {
-  stringValue?: string;
-  booleanValue?: boolean;
-  integerValue?: string;
-  arrayValue?: { values?: FirestoreValue[] };
-  mapValue?: { fields?: Record<string, FirestoreValue> };
-};
-
-type FirestoreDocument = {
-  name: string;
-  fields?: Record<string, FirestoreValue>;
-};
-
 type SubmittedAnswers = Record<number, string[]>;
+type StoredQuestion = { type?: unknown; answers?: unknown; topic?: unknown };
 
 const isDocumentId = (value: unknown): value is string =>
   typeof value === "string" && value.trim().length > 0 && !value.includes("/");
 
-const integerField = (document: FirestoreDocument | undefined, field: string) => {
-  const value = document?.fields?.[field]?.integerValue;
-  return value === undefined ? 0 : Number.parseInt(value, 10) || 0;
-};
-
-const stringArray = (value: FirestoreValue | undefined) =>
-  (value?.arrayValue?.values ?? [])
-    .map((entry) => entry.stringValue)
-    .filter((entry): entry is string => typeof entry === "string");
+const asStringArray = (value: unknown): string[] =>
+  Array.isArray(value) && value.every((entry) => typeof entry === "string")
+    ? value
+    : [];
 
 const sameOptionIds = (submitted: string[], official: string[]) => {
   const submittedIds = new Set(submitted);
   const officialIds = new Set(official);
-  return (
-    submittedIds.size === submitted.length &&
-    submittedIds.size === officialIds.size &&
-    [...submittedIds].every((id) => officialIds.has(id))
-  );
+  return submittedIds.size === submitted.length && submittedIds.size === officialIds.size &&
+    [...submittedIds].every((id) => officialIds.has(id));
 };
 
 function parseAnswers(value: unknown): SubmittedAnswers | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-
-  const result: SubmittedAnswers = {};
+  const answers: SubmittedAnswers = {};
   for (const [index, answerIds] of Object.entries(value)) {
     if (!/^\d+$/.test(index) || !Array.isArray(answerIds)) return null;
-    const parsedAnswerIds: string[] = [];
+    const parsed: string[] = [];
     for (const answerId of answerIds) {
       if (typeof answerId !== "string" || answerId.length === 0) return null;
-      parsedAnswerIds.push(answerId);
+      parsed.push(answerId);
     }
-    result[Number(index)] = parsedAnswerIds;
+    answers[Number(index)] = parsed;
   }
-  return result;
+  return answers;
 }
 
-async function getAuthenticatedUid(idToken: string, apiKey: string) {
-  const response = await fetch(
-    `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(apiKey)}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idToken }),
-    },
-  );
+const dayKeyFor = (date: Date, timeZone: string) =>
+  new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
 
-  if (!response.ok) return null;
-  const body = (await response.json()) as { users?: Array<{ localId?: string }> };
-  return body.users?.[0]?.localId ?? null;
-}
-
-async function transactionDocuments(
-  projectId: string,
-  idToken: string,
-  transaction: string,
-  names: string[],
-) {
-  const response = await fetch(
-    `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:batchGet`,
-    {
-      method: "POST",
-      headers: { Authorization: `Bearer ${idToken}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ documents: names, transaction }),
-    },
-  );
-  if (!response.ok) throw new Error("Unable to read activity data");
-
-  const documents = new Map<string, FirestoreDocument>();
-  for (const line of (await response.text()).split("\n")) {
-    if (!line) continue;
-    const result = JSON.parse(line) as { found?: FirestoreDocument };
-    if (result.found) documents.set(result.found.name, result.found);
-  }
-  return documents;
-}
+const awardResponse = (
+  xpAwarded: number,
+  totalXp: number,
+  level: number,
+  currentStreak: number,
+  alreadyRecorded: boolean,
+): ActivityAwardResponse => ({
+  xpAwarded,
+  totalXp,
+  level,
+  leveledUp: false,
+  currentStreak,
+  newlyUnlocked: [],
+  alreadyRecorded,
+});
 
 /** Grades a published MCQ test on the server and awards its one-time XP. */
 export async function POST(request: NextRequest) {
   const idToken = request.headers.get("authorization")?.match(/^Bearer (.+)$/i)?.[1];
-  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
   if (!idToken) return NextResponse.json({ error: "Missing authorization token" }, { status: 401 });
-  if (!projectId || !apiKey) return NextResponse.json({ error: "Firebase is not configured" }, { status: 500 });
 
   const body = (await request.json().catch(() => null)) as {
-    subject?: unknown;
-    unitId?: unknown;
-    testId?: unknown;
-    answers?: unknown;
+    subject?: unknown; unitId?: unknown; testId?: unknown; answers?: unknown;
   } | null;
   const { subject, unitId, testId } = body ?? {};
   const answers = parseAnswers(body?.answers);
   if (!isDocumentId(subject) || !isDocumentId(unitId) || !isDocumentId(testId) || !answers) {
-    return NextResponse.json(
-      { error: "subject, unitId, testId, and answers must be valid" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "subject, unitId, testId, and answers must be valid" }, { status: 400 });
   }
 
-  const uid = await getAuthenticatedUid(idToken, apiKey);
-  if (!uid) return NextResponse.json({ error: "Invalid authorization token" }, { status: 401 });
+  let uid: string;
+  try {
+    uid = (await adminAuth.verifyIdToken(idToken)).uid;
+  } catch (error) {
+    console.error("Unable to verify MCQ activity token", error);
+    return NextResponse.json({ error: "Invalid authorization token" }, { status: 401 });
+  }
 
-  const baseUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents`;
-  const testPath = `subjects/${encodeURIComponent(subject)}/units/${encodeURIComponent(unitId)}/tests/${encodeURIComponent(testId)}`;
-  const testResponse = await fetch(`${baseUrl}/${testPath}`, {
-    headers: { Authorization: `Bearer ${idToken}` },
-  });
-  if (testResponse.status === 404) return NextResponse.json({ error: "Test not found" }, { status: 404 });
-  if (!testResponse.ok) return NextResponse.json({ error: "Not authorized to access this test" }, { status: 403 });
+  const testRef = adminDb.collection("subjects").doc(subject).collection("units").doc(unitId)
+    .collection("tests").doc(testId);
+  let test;
+  try {
+    test = await testRef.get();
+  } catch (error) {
+    console.error("Unable to read MCQ test with Admin SDK", error);
+    return NextResponse.json(
+      {
+        error: hasExplicitAdminCredentials
+          ? "Unable to read test"
+          : "Server-side Firebase credentials are not configured",
+      },
+      { status: 503 },
+    );
+  }
+  if (!test.exists) return NextResponse.json({ error: "Test not found" }, { status: 404 });
 
-  const test = (await testResponse.json()) as FirestoreDocument;
-  const questions = test.fields?.questions?.arrayValue?.values ?? [];
-  const gradedQuestions = questions.map((question, index) => {
-    const fields = question.mapValue?.fields;
-    const type = fields?.type?.stringValue;
-    const officialAnswers = stringArray(fields?.answers);
-    const gradable = (type === "mcq" || type === "multi-answer") && officialAnswers.length > 0;
-    return gradable && sameOptionIds(answers[index] ?? [], officialAnswers);
+  const testData = test.data();
+  const questions = Array.isArray(testData?.questions) ? testData.questions as StoredQuestion[] : [];
+  const results = questions.map((question, index) => {
+    const officialAnswers = asStringArray(question.answers);
+    const gradable = (question.type === "mcq" || question.type === "multi-answer") && officialAnswers.length > 0;
+    return { gradable, correct: gradable && sameOptionIds(answers[index] ?? [], officialAnswers), topic: typeof question.topic === "string" ? question.topic : "" };
   });
-  const total = gradedQuestions.filter((_, index) => {
-    const fields = questions[index]?.mapValue?.fields;
-    return (fields?.type?.stringValue === "mcq" || fields?.type?.stringValue === "multi-answer") && stringArray(fields?.answers).length > 0;
-  }).length;
+  const total = results.filter((result) => result.gradable).length;
   if (total === 0) return NextResponse.json({ error: "Test has no gradable questions" }, { status: 400 });
 
-  const correct = gradedQuestions.filter(Boolean).length;
+  const correct = results.filter((result) => result.correct).length;
   const xpAwarded = BASE_TEST_XP + correct * CORRECT_ANSWER_XP;
-  const beginResponse = await fetch(`${baseUrl}:beginTransaction`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${idToken}`, "Content-Type": "application/json" },
-    body: JSON.stringify({}),
-  });
-  if (!beginResponse.ok) return NextResponse.json({ error: "Unable to begin activity transaction" }, { status: 500 });
-  const { transaction } = (await beginResponse.json()) as { transaction?: string };
-  if (!transaction) return NextResponse.json({ error: "Unable to begin activity transaction" }, { status: 500 });
+  const eventRef = adminDb.collection("activityEvents").doc(`${uid}_mcq_test_${testId}`);
+  const statsRef = adminDb.collection("userStats").doc(uid);
 
-  const userName = `projects/${projectId}/databases/(default)/documents/users/${uid}`;
-  const testDataName = `${userName}/testData/${testId}`;
   try {
-    const documents = await transactionDocuments(projectId, idToken, transaction, [userName, testDataName]);
-    const totalXp = integerField(documents.get(userName), "xp");
-    const existingAttempt = documents.get(testDataName);
-    if (existingAttempt?.fields?.xpAwarded?.booleanValue === true) {
-      return NextResponse.json({
-        xpAwarded: 0,
-        totalXp,
-        correct: integerField(existingAttempt, "correct"),
-        total: integerField(existingAttempt, "total"),
-        alreadyRecorded: true,
-      });
-    }
+    const result = await adminDb.runTransaction(async (transaction) => {
+      const [event, stats] = await transaction.getAll(eventRef, statsRef);
+      const statsData = stats.data() ?? {};
+      const totalXp = typeof statsData.xp === "number" ? statsData.xp : 0;
+      const level = typeof statsData.level === "number" ? statsData.level : 1;
+      const currentStreak = typeof statsData.currentStreak === "number" ? statsData.currentStreak : 0;
+      if (event.exists) return awardResponse(0, totalXp, level, currentStreak, true);
 
-    const commitResponse = await fetch(`${baseUrl}:commit`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${idToken}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        transaction,
-        writes: [
-          {
-            update: {
-              name: testDataName,
-              fields: {
-                subject: { stringValue: subject },
-                unitId: { stringValue: unitId },
-                correct: { integerValue: String(correct) },
-                total: { integerValue: String(total) },
-                xpAwarded: { booleanValue: true },
-              },
-            },
-            updateMask: { fieldPaths: ["subject", "unitId", "correct", "total", "xpAwarded"] },
-            updateTransforms: [{ fieldPath: "completedAt", setToServerValue: "REQUEST_TIME" }],
-          },
-          {
-            transform: {
-              document: userName,
-              fieldTransforms: [{ fieldPath: "xp", increment: { integerValue: String(xpAwarded) } }],
-            },
-          },
-        ],
-      }),
+      const timeZone = typeof statsData.timeZone === "string" ? statsData.timeZone : "UTC";
+      const dayKey = dayKeyFor(new Date(), timeZone);
+      const year = dayKey.slice(0, 4);
+      const calendarRef = adminDb.collection("activityCalendar").doc(`${uid}_${year}`);
+      const calendar = await transaction.get(calendarRef);
+      const calendarDays = (calendar.data()?.days ?? {}) as Record<string, unknown>;
+      const currentDayCount = typeof calendarDays[dayKey] === "number" ? calendarDays[dayKey] : 0;
+
+      transaction.set(eventRef, {
+        userId: uid, type: "mcq_test", subject, unitId, sourceId: testId,
+        label: typeof testData?.name === "string" ? testData.name : "Unit Test",
+        href: `/subject/${subject}/${unitId}/test/${testId}`,
+        occurredAt: FieldValue.serverTimestamp(), dayKey, xpAwarded, gradeStatus: "none",
+        score: { correct, total },
+        questions: results.map((question, index) => ({ index, topic: question.topic, correct: question.correct })),
+      });
+      transaction.set(statsRef, {
+        uid, xp: totalXp + xpAwarded, level,
+        xpIntoLevel: typeof statsData.xpIntoLevel === "number" ? statsData.xpIntoLevel + xpAwarded : totalXp + xpAwarded,
+        xpForNextLevel: typeof statsData.xpForNextLevel === "number" ? statsData.xpForNextLevel : 100,
+        currentStreak, longestStreak: typeof statsData.longestStreak === "number" ? statsData.longestStreak : currentStreak,
+        lastActiveDay: dayKey, timeZone,
+        readingsCompleted: typeof statsData.readingsCompleted === "number" ? statsData.readingsCompleted : 0,
+        mcqTestsCompleted: (typeof statsData.mcqTestsCompleted === "number" ? statsData.mcqTestsCompleted : 0) + 1,
+        problemsSolved: (typeof statsData.problemsSolved === "number" ? statsData.problemsSolved : 0) + correct,
+        frqsSubmitted: typeof statsData.frqsSubmitted === "number" ? statsData.frqsSubmitted : 0,
+        subjectsCompleted: typeof statsData.subjectsCompleted === "number" ? statsData.subjectsCompleted : 0,
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+      transaction.set(calendarRef, { uid, year: Number(year), days: { ...calendarDays, [dayKey]: currentDayCount + 1 }, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      return awardResponse(xpAwarded, totalXp + xpAwarded, level, currentStreak, false);
     });
-    if (!commitResponse.ok) return NextResponse.json({ error: "Unable to record completed test" }, { status: 500 });
-    return NextResponse.json({ xpAwarded, totalXp: totalXp + xpAwarded, correct, total, alreadyRecorded: false });
-  } catch {
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error("Unable to record completed MCQ test", error);
     return NextResponse.json({ error: "Unable to record completed test" }, { status: 500 });
   }
 }
