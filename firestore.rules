@@ -29,7 +29,9 @@ service cloud.firestore {
       allow read: if isAuthenticated() && request.auth.uid == userId;
 
       allow create: if isAuthenticated() && request.auth.uid == userId && request.resource.data.access == "user";
-      allow update: if isAuthenticated() && request.auth.uid == userId && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['access', 'uid']));
+      // XP is awarded only by trusted server-side activity endpoints. Letting
+      // clients update it directly makes every completion reward farmable.
+      allow update: if isAuthenticated() && request.auth.uid == userId && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['access', 'uid', 'xp']));
       allow delete: if isAuthenticated() && request.auth.uid == userId;
 
       match /frqResponses/{document=**} {
@@ -40,7 +42,15 @@ service cloud.firestore {
       }
 
       match /chapterData/{document=**} {
-        allow read, write: if isAuthenticated() && request.auth.uid == userId;
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+        // Progress remains user-controlled, but the award receipt is server
+        // owned and cannot be removed or reset to earn XP a second time.
+        allow create: if isAuthenticated() && request.auth.uid == userId
+          && request.resource.data.keys().hasOnly(['progress']);
+        allow update: if isAuthenticated() && request.auth.uid == userId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['progress']);
+        allow delete: if isAuthenticated() && request.auth.uid == userId
+          && !('readingXpAwarded' in resource.data);
       }
     }
 
