@@ -4,7 +4,7 @@ import {
   deleteUser,
   updatePassword as firebaseUpdatePassword,
 } from "firebase/auth";
-import { doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { arrayRemove, arrayUnion, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 /**
@@ -209,3 +209,10 @@ export async function updateMySubjects(
   await updateDoc(doc(db, "users", uid), { mySubjects });
 }
 
+export async function addMySubject(uid: string, slug: string): Promise<void> {
+  await updateDoc(doc(db, "users", uid), { mySubjects: arrayUnion(slug) });
+}
+
+export async function removeMySubject(uid: string, slug: string): Promise<void> {
+  await updateDoc(doc(db, "users", uid), { mySubjects: arrayRemove(slug) });
+}

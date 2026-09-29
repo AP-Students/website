@@ -1,30 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bookmark } from "lucide-react";
+import { doc, onSnapshot } from "firebase/firestore";
 import { useUser } from "@/components/hooks/UserContext";
-import { clearUserCache } from "@/components/hooks/users";
-import { updateMySubjects } from "@/lib/manageUser";
+import { db } from "@/lib/firebase";
+import { addMySubject, removeMySubject } from "@/lib/manageUser";
 import { cn } from "@/lib/utils";
 
 export default function SubjectBookmark({ slug }: { slug: string }) {
-  const { user, updateUser } = useUser();
+  const { user } = useUser();
   const [saving, setSaving] = useState(false);
+  const [mySubjects, setMySubjects] = useState<string[] | null>(null);
+  const uid = user?.uid;
+
+  useEffect(() => {
+    if (!uid) return;
+    setMySubjects(null);
+    return onSnapshot(
+      doc(db, "users", uid),
+      (snapshot) => {
+        setMySubjects(
+          (snapshot.data()?.mySubjects as string[] | undefined) ?? [],
+        );
+      },
+      (error) => console.error("Error loading classes:", error),
+    );
+  }, [uid]);
 
   if (!user) return null;
 
-  const mySubjects = user.mySubjects ?? [];
-  const isSaved = mySubjects.includes(slug);
+  const isSaved = mySubjects?.includes(slug) ?? false;
 
   const toggleSaved = async () => {
     setSaving(true);
     try {
-      const updated = isSaved
-        ? mySubjects.filter((s) => s !== slug)
-        : [...mySubjects, slug];
-      await updateMySubjects(user.uid, updated);
-      clearUserCache();
-      await updateUser();
+      if (isSaved) {
+        await removeMySubject(user.uid, slug);
+      } else {
+        await addMySubject(user.uid, slug);
+      }
     } catch (error) {
       console.error("Error saving class:", error);
     } finally {
@@ -36,11 +51,11 @@ export default function SubjectBookmark({ slug }: { slug: string }) {
     <button
       type="button"
       onClick={toggleSaved}
-      disabled={saving}
+      disabled={saving || mySubjects === null}
       aria-label={isSaved ? "Remove from My Classes" : "Add to My Classes"}
       aria-pressed={isSaved}
       title={isSaved ? "Remove from My Classes" : "Add to My Classes"}
-      className="focus-visible:outline-none shrink-0 transition-opacity focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
+      className="shrink-0 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
     >
       <Bookmark
         strokeWidth={1.5}

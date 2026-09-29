@@ -3,7 +3,6 @@ import Navbar from "@/components/global/navbar";
 import Footer from "@/components/global/footer";
 import { useUser } from "@/components/hooks/UserContext";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import ExperienceCard from "@/components/dashboard/ExperienceCard";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import MyClasses from "@/components/dashboard/MyClasses";
@@ -22,6 +21,11 @@ import AchievementsCard from "@/components/dashboard/AchievementsCard";
 import { checkAchievements } from "@/lib/achievements/checkAchievements";
 import RecentActivity from "@/components/dashboard/RecentActivity";
 import SavedAndInProgress from "@/components/dashboard/SavedAndInProgress";
+import { useEffect, useState } from "react";
+import { doc, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import type { User } from "@/types/user";
+
 
 const FIXTURE_TODAY = new Date(2026, 8, 20);
 const FIXTURE_EARNED = new Set(
@@ -40,6 +44,28 @@ export default function Dashboard() {
     }
   }, [loading, user, router]);
 
+  const [userDoc, setUserDoc] = useState<User | null | undefined>(undefined);
+  const uid = user?.uid;
+
+  useEffect(() => {
+    if (!uid) return;
+    setUserDoc(undefined);
+    return onSnapshot(
+      doc(db, "users", uid),
+      (snapshot) => {
+        setUserDoc(
+          snapshot.exists()
+            ? { ...(snapshot.data() as Omit<User, "uid">), uid: snapshot.id }
+            : null,
+        );
+      },
+      (error) => {
+        console.error("Error loading user:", error);
+        setUserDoc(null);
+      },
+    );
+  }, [uid]);
+
   if (loading || !user) {
     return (
       <div>
@@ -57,7 +83,7 @@ export default function Dashboard() {
   return (
     <div>
       <Navbar />
-      <DashboardHeader user={user} notifications={FIXTURE_NOTIFICATIONS} />
+      <DashboardHeader user={userDoc ?? user} notifications={FIXTURE_NOTIFICATIONS} />
 
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-8 py-10 md:grid-cols-2">
         {/* Left column */}
@@ -84,7 +110,11 @@ export default function Dashboard() {
         {/* Right column */}
         <div className="flex flex-col gap-8">
           <AchievementsCard stats={FIXTURE_STATS} earnedIds={FIXTURE_EARNED} />
-          <MyClasses uid={user.uid} subjectSlugs={user.mySubjects ?? []} />
+          {userDoc === undefined ? (
+            <p className="text-gray-500">Loading your classes…</p>
+          ) : (
+            <MyClasses uid={user.uid} subjectSlugs={userDoc?.mySubjects ?? []} />
+          )}
           <SavedAndInProgress
             saved={FIXTURE_SAVED}
             inProgress={FIXTURE_IN_PROGRESS}

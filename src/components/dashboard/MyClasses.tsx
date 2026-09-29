@@ -4,8 +4,6 @@ import { ChevronRight } from "lucide-react";
 import { sectionData } from "@/components/landingPage/APLibrary";
 import { useState } from "react";
 import { updateMySubjects } from "@/lib/manageUser";
-import { clearUserCache } from "@/components/hooks/users";
-import { useUser } from "@/components/hooks/UserContext";
 import { Button } from "@/components/ui/button";
 import { findCourse, toSlug } from "@/lib/dashboard/subjects";
 
@@ -16,7 +14,6 @@ export default function MyClasses({
   uid: string;
   subjectSlugs: string[];
 }) {
-  const { updateUser } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -39,8 +36,6 @@ export default function MyClasses({
     setError(null);
     try {
       await updateMySubjects(uid, selected);
-      clearUserCache();
-      await updateUser();
       setIsEditing(false);
     } catch {
       setError("Couldn't save your classes. Please try again.");
@@ -82,14 +77,14 @@ export default function MyClasses({
                       style={
                         isOn
                           ? {
-                              backgroundColor: section.borderColor,
-                              borderColor: section.borderColor,
-                              color: "white",
-                            }
+                            backgroundColor: section.borderColor,
+                            borderColor: section.borderColor,
+                            color: "white",
+                          }
                           : {
-                              borderColor: `${section.borderColor}80`,
-                              color: section.borderColor,
-                            }
+                            borderColor: `${section.borderColor}80`,
+                            color: section.borderColor,
+                          }
                       }
                     >
                       {course}

@@ -139,7 +139,6 @@ export const getUser = async (): Promise<User | null> => {
                 createdWith: userData.createdWith ?? getUserAuthProvider(),
                 createdAt: userData.createdAt ?? new Date(0),
                 lastFrqResponseAt: userData.lastFrqResponseAt,
-                mySubjects: userData.mySubjects ?? [],
               };
 
               // Cache in memory
