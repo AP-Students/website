@@ -67,6 +67,10 @@ service cloud.firestore {
       allow update: if isAuthenticated() && request.auth.uid == userId && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['access', 'uid']));
       allow delete: if isAuthenticated() && request.auth.uid == userId;
 
+      match /achievements/{achievementId} {
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+      }
+
       match /frqResponses/{document=**} {
         allow read: if isAuthenticated() && request.auth.uid == userId;
 
