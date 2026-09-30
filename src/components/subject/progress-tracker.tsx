@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 
 import ConfettiExplosion from "react-confetti-explosion";
 import { useUser } from "../hooks/UserContext";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import type { UserChapterData } from "@/types/user";
 
@@ -34,7 +34,15 @@ const dropdownLabels: string[] = [
   "Skipped",
 ];
 
-export default function ProgressTracker({ chapterId }: { chapterId: string }) {
+export default function ProgressTracker({
+  subject,
+  unitId,
+  chapterId,
+}: {
+  subject: string;
+  unitId: string;
+  chapterId: string;
+}) {
   const { user } = useUser();
 
   useEffect(() => {
@@ -64,11 +72,36 @@ export default function ProgressTracker({ chapterId }: { chapterId: string }) {
     if (!user) return;
 
     try {
-      const chapterDataRef = doc(
-        db,
-        `users/${user.uid}/chapterData/${chapterId}`,
-      );
-      await setDoc(chapterDataRef, { progress: newProgress }, { merge: true });
+      if (newProgress === "Complete") {
+        const idToken = await auth.currentUser?.getIdToken();
+        if (!idToken)
+          throw new Error("You must be signed in to complete a chapter.");
+
+        const response = await fetch("/api/activity/reading", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({ subject, unitId, chapterId }),
+        });
+        if (!response.ok) {
+          const body = (await response.json().catch(() => null)) as {
+            error?: string;
+          } | null;
+          throw new Error(body?.error ?? "Failed to record completed reading.");
+        }
+      } else {
+        const chapterDataRef = doc(
+          db,
+          `users/${user.uid}/chapterData/${chapterId}`,
+        );
+        await setDoc(
+          chapterDataRef,
+          { progress: newProgress },
+          { merge: true },
+        );
+      }
 
       if (newProgress === "Complete" && !showConfetti) {
         setShowConfetti(true);

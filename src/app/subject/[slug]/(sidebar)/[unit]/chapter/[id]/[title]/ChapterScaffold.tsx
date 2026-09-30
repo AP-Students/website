@@ -17,6 +17,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
  */
 export default function ChapterScaffold({
   subjectTitle,
+  subjectSlug,
   units,
   unitIndex,
   chapterIndex,
@@ -28,6 +29,7 @@ export default function ChapterScaffold({
   hasUnit0,
 }: {
   subjectTitle: string;
+  subjectSlug: string;
   units: Unit[];
   unitIndex: number;
   chapterIndex: number;
@@ -49,7 +51,8 @@ export default function ChapterScaffold({
           />
 
           <h1 className="my-2 text-balance text-center text-5xl font-extrabold">
-            {hasUnit0 ? unitIndex : unitIndex + 1}.{chapterIndex + 1} - {chapterTitle}
+            {hasUnit0 ? unitIndex : unitIndex + 1}.{chapterIndex + 1} -{" "}
+            {chapterTitle}
           </h1>
           <p>{author}</p>
           <div className="my-4 flex items-center justify-center gap-2">

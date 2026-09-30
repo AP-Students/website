@@ -22,7 +22,7 @@ const parseUnitId = (unitSegment: string | undefined) => {
 };
 
 const Page = () => {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
 
   const pathParts = pathname.split("/").filter(Boolean).slice(-4);
   const subject = pathParts[0] ?? "";
