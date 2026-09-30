@@ -64,7 +64,7 @@ service cloud.firestore {
       allow read: if isAuthenticated() && request.auth.uid == userId;
 
       allow create: if isAuthenticated() && request.auth.uid == userId && request.resource.data.access == "user";
-      allow update: if isAuthenticated() && request.auth.uid == userId && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['access', 'uid']));
+      allow update: if isAuthenticated() && request.auth.uid == userId && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['access', 'uid', 'xp']));
       allow delete: if isAuthenticated() && request.auth.uid == userId;
 
       match /achievements/{achievementId} {
@@ -81,6 +81,7 @@ service cloud.firestore {
       match /chapterData/{document=**} {
         allow read, write: if isAuthenticated() && request.auth.uid == userId;
       }
+
     }
 
     function canSubmitFrqResponse() {
