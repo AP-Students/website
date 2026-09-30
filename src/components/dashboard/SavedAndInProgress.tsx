@@ -5,6 +5,7 @@ import {
   CircleHelp,
   ClipboardList,
   PenLine,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import type {
@@ -52,10 +53,13 @@ function ItemList({
   title,
   rows,
   empty,
+  onRemove,
 }: {
   title: string;
   rows: Row[];
   empty: string;
+  /** When set, each row gets a remove button. */
+  onRemove?: (id: string) => void;
 }) {
   return (
     <section>
@@ -72,10 +76,10 @@ function ItemList({
               .join(" | ");
 
             return (
-              <li key={row.id}>
+              <li key={row.id} className="flex gap-2">
                 <Link
                   href={row.href}
-                  className="flex items-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-3 shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  className="flex min-w-0 grow items-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-3 shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-100 text-orange-700">
                     <Icon className="h-5 w-5" aria-hidden="true" />
@@ -96,6 +100,17 @@ function ItemList({
                     aria-hidden="true"
                   />
                 </Link>
+                {onRemove && (
+                  <button
+                    type="button"
+                    onClick={() => onRemove(row.id)}
+                    aria-label={`Remove "${row.label}" from saved`}
+                    title="Remove from saved"
+                    className="flex shrink-0 items-center rounded-lg border border-gray-300 bg-white px-3 text-gray-500 shadow-sm transition-colors hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <X className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                )}
               </li>
             );
           })}
@@ -109,12 +124,15 @@ interface SavedAndInProgressProps {
   saved: SavedItem[];
   inProgress: InProgressItem[];
   inProgressReadings: InProgressReading[];
+  /** Removes a saved item by id. Saved rows show a remove button when set. */
+  onRemoveSaved?: (id: string) => void;
 }
 
 export default function SavedAndInProgress({
   saved,
   inProgress,
   inProgressReadings,
+  onRemoveSaved,
 }: SavedAndInProgressProps) {
   const inProgressRows: Row[] = [
     ...inProgress.map((item) => ({
@@ -160,6 +178,7 @@ export default function SavedAndInProgress({
         title="Saved:"
         rows={savedRows}
         empty="No saved items yet. Bookmark a question or reading to find it here."
+        onRemove={onRemoveSaved}
       />
     </div>
   );

@@ -4,14 +4,20 @@ import { ChevronRight, ChevronLeft } from "lucide-react";
 import type { QuestionFormat } from "@/types/questions";
 import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
 import { Textarea } from "@/components/ui/textarea";
+import SaveButton, { questionTitle } from "@/components/subject/save-button";
 
 interface QuizRendererProps {
   questions: QuestionFormat[];
+  /** Question block id; enables the Save button. */
+  instanceId?: string;
 }
 
 type Answers = Record<number, string[]>;
 
-const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
+const QuizRenderer: React.FC<QuizRendererProps> = ({
+  questions,
+  instanceId,
+}) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [answers, setAnswers] = useState<Answers>({});
   const [showResults, setShowResults] = useState<boolean>(false);
@@ -84,8 +90,19 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({ questions }) => {
             ? `Score: ${score}/${gradableCount} (${((score / gradableCount) * 100).toFixed(2)}%)`
             : "Answers revealed")}
       </div>
-      <div className="markdown text-xl text-foreground">
-        <RenderContent content={questionInstance.question} origin="question" />
+      <div className="flex items-start gap-2">
+        <div className="markdown flex-1 text-xl text-foreground">
+          <RenderContent content={questionInstance.question} origin="question" />
+        </div>
+        {instanceId && (
+          <SaveButton
+            key={currentQuestionIndex}
+            id={`question_${instanceId}_${currentQuestionIndex}`}
+            kind="question"
+            questionIndex={currentQuestionIndex}
+            title={questionTitle(questionInstance.question.value)}
+          />
+        )}
       </div>
 
       {isFrq ? (
