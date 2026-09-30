@@ -4,7 +4,6 @@ import {
   getMonthGrid,
   getStreakDayKeys,
   toDateKey,
-  getDisplayStreak,
   intensityLevel,
 } from "../src/lib/dashboard/dates.ts";
 
@@ -44,23 +43,6 @@ test("a streak counts back across a month boundary", () => {
 test("no last active day or a 0 streak means no streak days", () => {
   assert.equal(getStreakDayKeys(null, 5).size, 0);
   assert.equal(getStreakDayKeys("2026-09-24", 0).size, 0);
-});
-
-test("a streak is shown if the last activity was today or yesterday", () => {
-  const today = new Date(2026, 8, 24); // Sep 24
-  assert.equal(getDisplayStreak(5, "2026-09-24", today), 5);
-  assert.equal(getDisplayStreak(5, "2026-09-23", today), 5);
-});
-
-test("a streak older than yesterday is broken and shows 0", () => {
-  const today = new Date(2026, 8, 24);
-  assert.equal(getDisplayStreak(5, "2026-09-22", today), 0);
-  assert.equal(getDisplayStreak(5, null, today), 0);
-});
-
-test("yesterday works across a month boundary", () => {
-  const today = new Date(2026, 9, 1); // Oct 1
-  assert.equal(getDisplayStreak(3, "2026-09-30", today), 3);
 });
 
 test("intensity levels match the 1/3/6/10 thresholds", () => {

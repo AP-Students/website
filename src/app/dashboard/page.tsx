@@ -9,7 +9,6 @@ import MyClasses from "@/components/dashboard/MyClasses";
 import GlobalStats from "@/components/dashboard/GlobalStats";
 import StreakBar from "@/components/dashboard/StreakBar";
 import {
-  FIXTURE_CALENDAR,
   FIXTURE_STATS,
   FIXTURE_EVENTS,
   FIXTURE_IN_PROGRESS,
@@ -27,8 +26,8 @@ import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { User } from "@/types/user";
 import type { SavedItem } from "@/types/dashboard";
+import { useStudyStreak } from "@/components/hooks/useStudyStreak";
 
-const FIXTURE_TODAY = new Date(2026, 8, 20);
 const FIXTURE_EARNED = new Set(
   checkAchievements(FIXTURE_STATS, new Set()).map(
     (achievement) => achievement.id,
@@ -47,6 +46,7 @@ export default function Dashboard() {
 
   const [userDoc, setUserDoc] = useState<User | null | undefined>(undefined);
   const uid = user?.uid;
+  const studyStreak = useStudyStreak(uid);
 
   useEffect(() => {
     if (!uid) return;
@@ -129,12 +129,15 @@ export default function Dashboard() {
             xpIntoLevel={FIXTURE_STATS.xpIntoLevel}
             xpForNextLevel={FIXTURE_STATS.xpForNextLevel}
           />
-          <StreakBar
-            currentStreak={FIXTURE_STATS.currentStreak}
-            lastActiveDay={FIXTURE_STATS.lastActiveDay}
-            calendarDays={FIXTURE_CALENDAR.days}
-            today={FIXTURE_TODAY}
-          />
+          {studyStreak ? (
+            <StreakBar
+              streak={studyStreak.streak}
+              timeZone={studyStreak.timeZone}
+              calendarDays={studyStreak.calendarDays}
+            />
+          ) : (
+            <p className="text-gray-500">Loading your streak…</p>
+          )}
           <GlobalStats
             problemsSolved={FIXTURE_STATS.problemsSolved}
             subjectsCompleted={FIXTURE_STATS.subjectsCompleted}
