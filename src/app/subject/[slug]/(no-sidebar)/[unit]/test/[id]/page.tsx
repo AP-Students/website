@@ -14,7 +14,7 @@ import usePathname from "@/components/client/pathname";
 import type { CalculatorPermission, CalculatorType } from "@/lib/calculator";
 
 const Page = () => {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
 
   const basePath = pathname.split("/").slice(-4).join("_");
   const subject = basePath.split("_")[0]!;

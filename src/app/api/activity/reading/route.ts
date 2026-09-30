@@ -14,6 +14,11 @@ const nonNegativeNumber = (value: unknown, fallback: number) =>
     ? value
     : fallback;
 
+const record = (value: unknown): Record<string, unknown> =>
+  typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)
+    : {};
+
 const dayKeyFor = (timeZone: unknown) => {
   const resolvedTimeZone = typeof timeZone === "string" ? timeZone : "UTC";
 
@@ -77,8 +82,6 @@ export async function POST(request: NextRequest) {
 
   const subjectRef = adminDb.collection("subjects").doc(subject);
   const chapterRef = subjectRef
-    .collection("subjects")
-    .doc(subject)
     .collection("units")
     .doc(unitId)
     .collection("chapters")
@@ -91,20 +94,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Chapter not found" }, { status: 404 });
   }
 
+  const chapterTitleValue = record(chapterSnapshot.data() as unknown).title;
   const chapterTitle =
-    typeof chapterSnapshot.data()?.title === "string"
-      ? chapterSnapshot.data()!.title
-      : chapterId;
-  const subjectData = subjectSnapshot.data();
-  const units = Array.isArray(subjectData?.units) ? subjectData.units : [];
-  const unitIndex = units.findIndex(
-    (unit) =>
-      typeof unit === "object" &&
-      unit !== null &&
-      "id" in unit &&
-      unit.id === unitId,
-  );
-  const displayUnit = subjectData?.hasUnit0 ? unitIndex : unitIndex + 1;
+    typeof chapterTitleValue === "string" ? chapterTitleValue : chapterId;
+  const subjectData = record(subjectSnapshot.data() as unknown);
+  const units = Array.isArray(subjectData.units)
+    ? subjectData.units.map(record)
+    : [];
+  const unitIndex = units.findIndex((unit) => unit.id === unitId);
+  const displayUnit = subjectData.hasUnit0 === true ? unitIndex : unitIndex + 1;
   const href =
     unitIndex >= 0
       ? `/subject/${subject}/unit-${displayUnit}-${unitId}/chapter/${chapterId}/${formatSlug(chapterTitle)}`
@@ -117,14 +115,11 @@ export async function POST(request: NextRequest) {
       const activityRef = adminDb
         .collection("activityEvents")
         .doc(`${uid}_reading_${chapterId}`);
-      const snapshots = await transaction.getAll(
-        userRef,
-        chapterDataRef,
-        activityRef,
-      );
-      const user = snapshots[0]!;
-      const chapterData = snapshots[1]!;
-      const activity = snapshots[2]!;
+      const [user, chapterData, activity] = await Promise.all([
+        transaction.get(userRef),
+        transaction.get(chapterDataRef),
+        transaction.get(activityRef),
+      ]);
       const userData = user.data();
       const totalXp = nonNegativeNumber(userData?.xp, 0);
       const level = nonNegativeNumber(userData?.level, 1);
