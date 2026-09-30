@@ -125,7 +125,8 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await adminDb.runTransaction(async (transaction) => {
-      const [event, stats] = await transaction.getAll(eventRef, statsRef);
+      const event = await transaction.get(eventRef);
+      const stats = await transaction.get(statsRef);
       const statsData = stats.data() ?? {};
       const totalXp = typeof statsData.xp === "number" ? statsData.xp : 0;
       const level = typeof statsData.level === "number" ? statsData.level : 1;
