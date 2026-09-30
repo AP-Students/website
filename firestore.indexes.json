@@ -1,8 +1,8 @@
 {
   "indexes": [
     {
-      "collectionGroup": "activity",
-      "queryScope": "COLLECTION_GROUP",
+      "collectionGroup": "activityEvents", "activity",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "occurredAt", "order": "DESCENDING" }

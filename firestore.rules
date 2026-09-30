@@ -42,6 +42,39 @@ service cloud.firestore {
         'mcqTestsCompleted', 'problemsSolved', 'frqsSubmitted',
         'subjectsCompleted', 'perSubject', 'updatedAt'
       ]);
+    // Week 1 activity data is written only by trusted server code.  Clients
+    // can read only documents belonging to their authenticated account.
+    match /userStats/{userId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    match /activityEvents/{eventId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // Calendar document IDs are namespaced as "{uid}_{year}".
+    match /activityCalendar/{calendarId} {
+      allow read: if isAuthenticated()
+        && calendarId.matches('^' + request.auth.uid + '_[0-9]{4}$');
+    }
+
+    match /notifications/{userId}/items/{notificationId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      // Notifications are server-created. A recipient may only acknowledge or
+      // adjust expiry on an existing notification; no other fields may change.
+      allow update: if isAuthenticated()
+        && request.auth.uid == userId
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['readAt', 'expiresAt']);
+    }
+
+    // User-managed dashboard items live under the owning user document.
+    match /users/{userId}/savedItems/{itemId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/inProgress/{itemId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
     }
 
     // Allow read/write access to users for their own user data
@@ -55,6 +88,10 @@ service cloud.firestore {
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['access', 'uid'])
         && doesNotChangeDerivedDashboardFields();
       allow delete: if isAuthenticated() && request.auth.uid == userId;
+
+      match /achievements/{achievementId} {
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+      }
 
       match /frqResponses/{document=**} {
         allow read: if isAuthenticated() && request.auth.uid == userId;
