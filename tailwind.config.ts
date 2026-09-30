@@ -75,11 +75,18 @@ const config = {
           from: { opacity: "1" },
           to: { opacity: "0", width: "0" },
         },
+        flicker: {
+          "0%, 100%": { transform: "scale(1) rotate(-3deg)" },
+          "25%": { transform: "scale(1.03, 1.06) rotate(1deg)" },
+          "50%": { transform: "scale(0.97, 1.02) rotate(-1deg)" },
+          "75%": { transform: "scale(1.04, 1.05) rotate(1.2deg)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         hide: "hide 0.15s ease-in-out forwards",
+        flicker: "flicker 1.2s ease-in-out infinite",
       },
     },
   },

@@ -52,7 +52,7 @@ export default function ChapterScaffold({
             {hasUnit0 ? unitIndex : unitIndex + 1}.{chapterIndex + 1} - {chapterTitle}
           </h1>
           <p>{author}</p>
-          <div className="my-4 flex items-center gap-2">
+          <div className="my-4 flex items-center justify-center gap-2">
             <ProgressTracker chapterId={chapterId} />
             <SaveButton
               key={chapterId}

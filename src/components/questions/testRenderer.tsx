@@ -28,7 +28,7 @@ interface Props {
   adminMode?: boolean;
   directions?: string;
   testName: string;
-  /** Enables the Save button. Omitted in admin preview. */
+  /** Enables the Save button. Omitted in admin previews. */
   testId?: string;
   calculatorCourseDefault?: CalculatorPermission;
   calculatorDefault?: CalculatorPermission;
@@ -273,7 +273,8 @@ export default function DigitalTestingPage({
                 <SaveButton
                   key={currentQuestionIndex}
                   id={`test_${testId}_${currentQuestionIndex}`}
-                  kind="problem"
+                  kind="question"
+                  questionIndex={currentQuestionIndex}
                   title={`${testName} – Question ${currentQuestionIndex + 1}`}
                   className="py-0.5"
                 />

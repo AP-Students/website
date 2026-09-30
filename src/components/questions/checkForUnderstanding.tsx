@@ -74,7 +74,8 @@ const CheckForUnderstanding: React.FC<Props> = ({
         {instanceId && (
           <SaveButton
             id={`question_${instanceId}_0`}
-            kind="problem"
+            kind="question"
+            questionIndex={0}
             title={questionTitle(questionInstance.question.value)}
           />
         )}

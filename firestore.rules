@@ -24,6 +24,56 @@ service cloud.firestore {
       return isAuthenticated() && (accessLevel == "admin" || accessLevel == "member" || accessLevel == "grader");
     }
 
+    // Week 1 activity data is written only by trusted server code.  Clients
+    // can read only documents belonging to their authenticated account.
+    match /userStats/{userId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    match /activityEvents/{eventId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // Calendar document IDs are namespaced as "{uid}_{year}".
+    match /activityCalendar/{calendarId} {
+      allow read: if isAuthenticated()
+        && calendarId.matches('^' + request.auth.uid + '_[0-9]{4}$');
+    }
+
+    match /notifications/{userId}/items/{notificationId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      // Notifications are server-created. A recipient may only acknowledge or
+      // adjust expiry on an existing notification; no other fields may change.
+      allow update: if isAuthenticated()
+        && request.auth.uid == userId
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['readAt', 'expiresAt']);
+    }
+
+    // Saved readings/problems reuse the dashboard SavedItem contract:
+    // kind, subject, unitId, refId, label, href (+ optional questionIndex),
+    // with savedAt stamped server-side. Readable and removable by the owner.
+    match /users/{userId}/savedItems/{itemId} {
+      allow read, delete: if isAuthenticated() && request.auth.uid == userId;
+      allow create, update: if isAuthenticated() && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['kind', 'subject', 'unitId', 'refId', 'questionIndex', 'label', 'href', 'savedAt'])
+        && request.resource.data.kind in ['reading', 'question']
+        && request.resource.data.subject is string && request.resource.data.subject.size() > 0
+        && request.resource.data.unitId is string && request.resource.data.unitId.size() > 0
+        && request.resource.data.refId is string && request.resource.data.refId.size() > 0
+        && request.resource.data.label is string && request.resource.data.label.size() > 0
+        && request.resource.data.label.size() <= 200
+        && request.resource.data.href is string && request.resource.data.href.size() <= 500
+        && request.resource.data.href.matches('^/subject/[^\\s]*$')
+        && (!('questionIndex' in request.resource.data)
+          || (request.resource.data.questionIndex is int && request.resource.data.questionIndex >= 0))
+        && request.resource.data.savedAt == request.time;
+    }
+
+    match /users/{userId}/inProgress/{itemId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
     // Allow read/write access to users for their own user data
     match /users/{userId} {
       allow read: if isAuthenticated() && request.auth.uid == userId;
@@ -31,6 +81,10 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.auth.uid == userId && request.resource.data.access == "user";
       allow update: if isAuthenticated() && request.auth.uid == userId && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['access', 'uid']));
       allow delete: if isAuthenticated() && request.auth.uid == userId;
+
+      match /achievements/{achievementId} {
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+      }
 
       match /frqResponses/{document=**} {
         allow read: if isAuthenticated() && request.auth.uid == userId;
@@ -41,21 +95,6 @@ service cloud.firestore {
 
       match /chapterData/{document=**} {
         allow read, write: if isAuthenticated() && request.auth.uid == userId;
-      }
-
-      // Saved readings and problems, listed on the account page.
-      match /savedItems/{itemId} {
-        allow read, delete: if isAuthenticated() && request.auth.uid == userId;
-        allow create, update: if isAuthenticated() && request.auth.uid == userId
-          && request.resource.data.keys().hasOnly(['kind', 'title', 'path', 'savedAt'])
-          && request.resource.data.kind in ['reading', 'problem']
-          && request.resource.data.title is string
-          && request.resource.data.title.size() > 0
-          && request.resource.data.title.size() <= 200
-          && request.resource.data.path is string
-          && request.resource.data.path.size() <= 500
-          && request.resource.data.path.matches('^/subject/[^\\s]*$')
-          && request.resource.data.savedAt == request.time;
       }
     }
 

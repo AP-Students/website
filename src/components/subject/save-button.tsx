@@ -6,7 +6,8 @@ import { Bookmark } from "lucide-react";
 import { toast } from "sonner";
 import { auth } from "@/lib/firebase";
 import { isSaved, saveItem, unsaveItem } from "@/lib/savedItems";
-import type { SavedItem } from "@/types/user";
+import { buildSavedItem, pathContext } from "@/lib/savedItemPayload";
+import type { SavedItem } from "@/types/dashboard";
 import { cn } from "@/lib/utils";
 import { richTextToPlainText } from "@/components/article-creator/custom_questions/richText";
 
@@ -29,20 +30,24 @@ export function questionTitle(value: string): string {
 /**
  * Save/unsave toggle for a reading or problem. Reads the signed-in user from
  * Firebase Auth directly rather than UserContext, because quiz blocks are
- * mounted as separate React roots where that context isn't available.
+ * mounted as separate React roots where that context isn't available. For the
+ * same reason the page context (subject, unit, chapter or test id) comes from
+ * the URL, not props: see `pathContext`.
  *
- * Hidden when logged out and outside the public `/subject/...` pages (e.g. the
- * admin editor's preview). Give it `key={id}` wherever `id` can change.
+ * Hidden when logged out and outside chapter and test pages (e.g. the admin
+ * editor's preview). Give it `key={id}` wherever `id` can change.
  */
 export default function SaveButton({
   id,
   kind,
   title,
+  questionIndex,
   className,
 }: {
   id: string;
   kind: SavedItem["kind"];
   title: string;
+  questionIndex?: number;
   className?: string;
 }) {
   const [uid, setUid] = useState<string | null>(null);
@@ -76,8 +81,8 @@ export default function SaveButton({
   }, [uid, id]);
 
   if (!uid || typeof window === "undefined") return null;
-  const path = window.location.pathname;
-  if (!path.startsWith("/subject/")) return null;
+  const context = pathContext(window.location.pathname);
+  if (!context) return null;
 
   const toggle = async () => {
     const wasSaved = saved === true;
@@ -87,11 +92,17 @@ export default function SaveButton({
       if (wasSaved) {
         await unsaveItem(uid, id);
       } else {
-        await saveItem(uid, id, {
-          kind,
-          title: (title.trim() || "Untitled").slice(0, 200),
-          path,
-        });
+        await saveItem(
+          uid,
+          id,
+          buildSavedItem({
+            kind,
+            context,
+            questionIndex,
+            label: title,
+            href: window.location.pathname,
+          }),
+        );
       }
       toast.success(wasSaved ? "Removed from saved." : "Saved.");
     } catch (error) {
@@ -111,7 +122,7 @@ export default function SaveButton({
       aria-pressed={saved ?? false}
       title={saved ? "Remove from saved" : "Save"}
       className={cn(
-        "flex shrink-0 items-center gap-1 rounded border bg-white px-2 py-1 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60",
+        "flex items-center gap-1 rounded border bg-white px-2 py-1 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60",
         className,
       )}
     >

@@ -20,7 +20,6 @@ import {
   uploadProfilePhoto,
 } from "@/lib/manageUser";
 import ReauthenticateModal from "@/components/auth/ReauthenticateModal";
-import SavedItemsList from "@/components/account/saved-items-list";
 import { useUser } from "@/components/hooks/UserContext";
 import { ArrowLeft, Upload, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -374,12 +373,6 @@ export default function UserManagementPage() {
               )}
             </Button>
           </form>
-
-          {/* Saved readings and problems */}
-          <div className="mt-8">
-            <h2 className="mb-2 text-lg font-semibold text-gray-800">Saved</h2>
-            <SavedItemsList uid={user.uid} />
-          </div>
 
           {/* Delete Account */}
           <div className="mt-8">

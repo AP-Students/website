@@ -98,7 +98,8 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({
           <SaveButton
             key={currentQuestionIndex}
             id={`question_${instanceId}_${currentQuestionIndex}`}
-            kind="problem"
+            kind="question"
+            questionIndex={currentQuestionIndex}
             title={questionTitle(questionInstance.question.value)}
           />
         )}
