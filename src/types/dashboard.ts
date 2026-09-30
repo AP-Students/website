@@ -10,6 +10,27 @@ import type { Timestamp } from "firebase/firestore";
 export type ActivityType = "reading" | "mcq_test" | "frq";
 export type GradeStatus = "none" | "pending" | "graded" | "self_graded";
 
+/**
+ * Canonical Firestore document locations for the Week 1 dashboard.
+ *
+ * `activity` is an immutable, Admin-SDK-written ledger. Its event ID is the
+ * idempotency/replay-protection key for an XP award. User-owned saved items
+ * are deliberately stored at `users/{uid}/savedItems/{itemId}`.
+ */
+export const dashboardDocumentPaths = {
+  stats: (uid: string) => `users/${uid}/stats/summary`,
+  activity: (uid: string, eventId: string) =>
+    `users/${uid}/activity/${eventId}`,
+  calendar: (uid: string, year: number | string) =>
+    `users/${uid}/calendar/${year}`,
+  notification: (uid: string, notificationId: string) =>
+    `users/${uid}/notifications/${notificationId}`,
+  savedItem: (uid: string, itemId: string) =>
+    `users/${uid}/savedItems/${itemId}`,
+  inProgress: (uid: string, itemId: string) =>
+    `users/${uid}/inProgress/${itemId}`,
+} as const;
+
 export interface ActivityEvent {
   id: string; // `${uid}_${type}_${sourceId}` — the idempotency key
   userId: string;

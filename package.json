@@ -29,6 +29,7 @@
     "@editorjs/underline": "^1.1.0",
     "@formkit/auto-animate": "^0.8.2",
     "@hookform/resolvers": "^3.9.0",
+    "@lottiefiles/dotlottie-react": "^0.19.16",
     "@monaco-editor/react": "^4.7.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-dialog": "^1.1.14",

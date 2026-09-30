@@ -4,7 +4,7 @@ import {
   deleteUser,
   updatePassword as firebaseUpdatePassword,
 } from "firebase/auth";
-import { doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { arrayRemove, arrayUnion, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 /**
@@ -195,4 +195,24 @@ export async function deleteAccount(): Promise<void> {
   } catch (error: unknown) {
     throw mapAuthError(error);
   }
+}
+
+/**
+ * Saves the subjects the user has added to their dashboard.
+ * @param uid - the user's unique identifier
+ * @param mySubjects - subject slugs (ex. ["physics-2", "calculus-ab"])
+ */
+export async function updateMySubjects(
+  uid: string,
+  mySubjects: string[],
+): Promise<void>{
+  await updateDoc(doc(db, "users", uid), { mySubjects });
+}
+
+export async function addMySubject(uid: string, slug: string): Promise<void> {
+  await updateDoc(doc(db, "users", uid), { mySubjects: arrayUnion(slug) });
+}
+
+export async function removeMySubject(uid: string, slug: string): Promise<void> {
+  await updateDoc(doc(db, "users", uid), { mySubjects: arrayRemove(slug) });
 }

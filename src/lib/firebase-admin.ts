@@ -1,18 +1,18 @@
-import {
-  applicationDefault,
-  cert,
-  getApps,
-  initializeApp,
-} from "firebase-admin/app";
+import { applicationDefault, cert, getApps, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 
-const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(
-  /\\n/g,
-  "\n",
-);
+const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, "\n");
 const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
+
+/**
+ * Cloud runtimes can use Application Default Credentials. Local development
+ * needs either those credentials or the three FIREBASE_ADMIN_* variables.
+ */
+export const hasExplicitAdminCredentials = Boolean(
+  projectId && clientEmail && privateKey,
+);
 
 const app =
   getApps()[0] ??

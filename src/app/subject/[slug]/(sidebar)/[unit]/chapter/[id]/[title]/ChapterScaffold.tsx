@@ -2,6 +2,7 @@ import Footer from "@/components/global/footer";
 import Navbar from "@/components/global/navbar";
 import SubjectBreadcrumb from "@/components/subject/subject-breadcrumb";
 import ProgressTracker from "@/components/subject/progress-tracker";
+import SaveButton from "@/components/subject/save-button";
 import Link from "next/link";
 import type { Unit } from "@/types/firestore";
 import { buttonVariants } from "@/components/ui/button";
@@ -54,11 +55,13 @@ export default function ChapterScaffold({
             {chapterTitle}
           </h1>
           <p>{author}</p>
-          <div className="my-4">
-            <ProgressTracker
-              subject={subjectSlug}
-              unitId={units[unitIndex]!.id}
-              chapterId={chapterId}
+          <div className="my-4 flex items-center justify-center gap-2">
+            <ProgressTracker chapterId={chapterId} />
+            <SaveButton
+              key={chapterId}
+              id={`reading_${chapterId}`}
+              kind="reading"
+              title={chapterTitle}
             />
           </div>
 

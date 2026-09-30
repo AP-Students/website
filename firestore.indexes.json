@@ -1,6 +1,22 @@
 {
   "indexes": [
     {
+      "collectionGroup": "activityEvents", "activity",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "occurredAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "stats",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "xp", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "graded-frqs",
       "queryScope": "COLLECTION",
       "fields": [
