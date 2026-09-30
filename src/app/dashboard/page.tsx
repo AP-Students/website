@@ -13,7 +13,6 @@ import {
   FIXTURE_STATS,
   FIXTURE_EVENTS,
   FIXTURE_IN_PROGRESS,
-  FIXTURE_SAVED,
   FIXTURE_IN_PROGRESS_READINGS,
   FIXTURE_NOTIFICATIONS,
 } from "@/lib/dashboard/fixtures";
@@ -21,11 +20,13 @@ import AchievementsCard from "@/components/dashboard/AchievementsCard";
 import { checkAchievements } from "@/lib/achievements/checkAchievements";
 import RecentActivity from "@/components/dashboard/RecentActivity";
 import SavedAndInProgress from "@/components/dashboard/SavedAndInProgress";
+import { listSavedItems, unsaveItem } from "@/lib/savedItems";
+import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { User } from "@/types/user";
-
+import type { SavedItem } from "@/types/dashboard";
 
 const FIXTURE_TODAY = new Date(2026, 8, 20);
 const FIXTURE_EARNED = new Set(
@@ -66,6 +67,38 @@ export default function Dashboard() {
     );
   }, [uid]);
 
+  // The user's actual saved readings/problems — reuse the dashboard SavedItem
+  // contract instead of a separate model or a fixture.
+  const [savedItems, setSavedItems] = useState<SavedItem[]>([]);
+  useEffect(() => {
+    if (!uid) return;
+    let cancelled = false;
+    listSavedItems(uid)
+      .then((items) => {
+        if (!cancelled) setSavedItems(items);
+      })
+      .catch((error) => {
+        console.error("Error loading saved items:", error);
+        if (!cancelled) setSavedItems([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [uid]);
+
+  // Waits for the delete before dropping the row, so a failed delete never
+  // leaves an item that looks removed but comes back on the next load.
+  const removeSaved = async (id: string) => {
+    if (!uid) return;
+    try {
+      await unsaveItem(uid, id);
+      setSavedItems((items) => items.filter((item) => item.id !== id));
+    } catch (error) {
+      console.error("Error removing saved item:", error);
+      toast.error("Couldn't remove this item. Please try again.");
+    }
+  };
+
   if (loading || !user) {
     return (
       <div>
@@ -83,7 +116,10 @@ export default function Dashboard() {
   return (
     <div>
       <Navbar />
-      <DashboardHeader user={userDoc ?? user} notifications={FIXTURE_NOTIFICATIONS} />
+      <DashboardHeader
+        user={userDoc ?? user}
+        notifications={FIXTURE_NOTIFICATIONS}
+      />
 
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-8 py-10 md:grid-cols-2">
         {/* Left column */}
@@ -113,12 +149,16 @@ export default function Dashboard() {
           {userDoc === undefined ? (
             <p className="text-gray-500">Loading your classes…</p>
           ) : (
-            <MyClasses uid={user.uid} subjectSlugs={userDoc?.mySubjects ?? []} />
+            <MyClasses
+              uid={user.uid}
+              subjectSlugs={userDoc?.mySubjects ?? []}
+            />
           )}
           <SavedAndInProgress
-            saved={FIXTURE_SAVED}
+            saved={savedItems}
             inProgress={FIXTURE_IN_PROGRESS}
             inProgressReadings={FIXTURE_IN_PROGRESS_READINGS}
+            onRemoveSaved={(id) => void removeSaved(id)}
           />
         </div>
       </div>
