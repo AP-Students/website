@@ -1,11 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
+import type { ActivityAwardResponse } from "@/types/dashboard";
 
 const READING_XP = 10;
 
 const isDocumentId = (value: unknown): value is string =>
   typeof value === "string" && value.trim().length > 0 && !value.includes("/");
+
+const nonNegativeNumber = (value: unknown, fallback: number) =>
+  typeof value === "number" && Number.isFinite(value) && value >= 0
+    ? value
+    : fallback;
 
 /** Records a completed chapter and awards its one-time 10 XP reading bonus. */
 export async function POST(request: NextRequest) {
@@ -66,10 +72,21 @@ export async function POST(request: NextRequest) {
         userRef,
         chapterDataRef,
       );
-      const totalXp = (user.data()?.xp as number | undefined) ?? 0;
+      const userData = user.data();
+      const totalXp = nonNegativeNumber(userData?.xp, 0);
+      const level = nonNegativeNumber(userData?.level, 1);
+      const currentStreak = nonNegativeNumber(userData?.currentStreak, 0);
 
       if (chapterData.data()?.readingXpAwarded === true) {
-        return { xpAwarded: 0, totalXp, alreadyRecorded: true };
+        return {
+          xpAwarded: 0,
+          totalXp,
+          level,
+          leveledUp: false,
+          currentStreak,
+          newlyUnlocked: [],
+          alreadyRecorded: true,
+        } satisfies ActivityAwardResponse;
       }
 
       transaction.set(
@@ -86,8 +103,12 @@ export async function POST(request: NextRequest) {
       return {
         xpAwarded: READING_XP,
         totalXp: totalXp + READING_XP,
+        level,
+        leveledUp: false,
+        currentStreak,
+        newlyUnlocked: [],
         alreadyRecorded: false,
-      };
+      } satisfies ActivityAwardResponse;
     });
 
     return NextResponse.json(result);
