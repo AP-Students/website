@@ -50,9 +50,24 @@ service cloud.firestore {
           .hasOnly(['readAt', 'expiresAt']);
     }
 
-    // User-managed dashboard items live under the owning user document.
+    // Saved readings/problems reuse the dashboard SavedItem contract:
+    // kind, subject, unitId, refId, label, href (+ optional questionIndex),
+    // with savedAt stamped server-side. Readable and removable by the owner.
     match /users/{userId}/savedItems/{itemId} {
-      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      allow read, delete: if isAuthenticated() && request.auth.uid == userId;
+      allow create, update: if isAuthenticated() && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['kind', 'subject', 'unitId', 'refId', 'questionIndex', 'label', 'href', 'savedAt'])
+        && request.resource.data.kind in ['reading', 'question']
+        && request.resource.data.subject is string && request.resource.data.subject.size() > 0
+        && request.resource.data.unitId is string && request.resource.data.unitId.size() > 0
+        && request.resource.data.refId is string && request.resource.data.refId.size() > 0
+        && request.resource.data.label is string && request.resource.data.label.size() > 0
+        && request.resource.data.label.size() <= 200
+        && request.resource.data.href is string && request.resource.data.href.size() <= 500
+        && request.resource.data.href.matches('^/subject/[^\\s]*$')
+        && (!('questionIndex' in request.resource.data)
+          || (request.resource.data.questionIndex is int && request.resource.data.questionIndex >= 0))
+        && request.resource.data.savedAt == request.time;
     }
 
     match /users/{userId}/inProgress/{itemId} {
