@@ -104,6 +104,11 @@ export async function POST(request: NextRequest) {
   if (!test.exists) return NextResponse.json({ error: "Test not found" }, { status: 404 });
 
   const testData = test.data();
+  // The Admin SDK bypasses Firestore rules, so preserve the publication
+  // boundary before reading answers or awarding any XP.
+  if (testData?.isPublic !== true) {
+    return NextResponse.json({ error: "Test is not published" }, { status: 403 });
+  }
   const questions = Array.isArray(testData?.questions) ? testData.questions as StoredQuestion[] : [];
   const results = questions.map((question, index) => {
     const officialAnswers = asStringArray(question.answers);
