@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { adminAuth, adminDb, hasExplicitAdminCredentials } from "@/lib/firebase-admin";
 import type { ActivityAwardResponse } from "@/types/dashboard";
+import { addDays, resolveTimeZone, toDayKey } from "@/lib/gamification/calendarDay";
 
 const BASE_TEST_XP = 10;
 const CORRECT_ANSWER_XP = 10;
@@ -38,14 +39,6 @@ function parseAnswers(value: unknown): SubmittedAnswers | null {
   }
   return answers;
 }
-
-const dayKeyFor = (date: Date, timeZone: string) =>
-  new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
 
 const awardResponse = (
   xpAwarded: number,
@@ -109,6 +102,15 @@ export async function POST(request: NextRequest) {
   if (testData?.isPublic !== true) {
     return NextResponse.json({ error: "Test is not published" }, { status: 403 });
   }
+  const subjectData = (await adminDb.collection("subjects").doc(subject).get()).data();
+  const units = Array.isArray(subjectData?.units) ? subjectData.units as Array<{ id?: unknown; chapters?: unknown }> : [];
+  const unitIndex = units.findIndex((unit) => unit.id === unitId);
+  if (unitIndex < 0) {
+    return NextResponse.json({ error: "Unit not found in subject" }, { status: 404 });
+  }
+  const unitNumber = subjectData?.hasUnit0 === true ? unitIndex : unitIndex + 1;
+  const href = `/subject/${subject}/unit-${unitNumber}-${unitId}/test/${testId}`;
+  const totalReadings = units.reduce((count, unit) => count + (Array.isArray(unit.chapters) ? unit.chapters.length : 0), 0);
   const questions = Array.isArray(testData?.questions) ? testData.questions as StoredQuestion[] : [];
   const results = questions.map((question, index) => {
     const officialAnswers = asStringArray(question.answers);
@@ -133,37 +135,60 @@ export async function POST(request: NextRequest) {
       const currentStreak = typeof statsData.currentStreak === "number" ? statsData.currentStreak : 0;
       if (event.exists) return awardResponse(0, totalXp, level, currentStreak, true);
 
-      const timeZone = typeof statsData.timeZone === "string" ? statsData.timeZone : "UTC";
-      const dayKey = dayKeyFor(new Date(), timeZone);
+      const timeZone = resolveTimeZone(typeof statsData.timeZone === "string" ? statsData.timeZone : null);
+      const dayKey = toDayKey(new Date(), timeZone);
+      const previousDay = addDays(dayKey, -1);
+      const lastActiveDay = typeof statsData.lastActiveDay === "string" ? statsData.lastActiveDay : null;
+      const nextStreak = lastActiveDay === dayKey ? currentStreak : lastActiveDay === previousDay ? currentStreak + 1 : 1;
+      const longestStreak = Math.max(typeof statsData.longestStreak === "number" ? statsData.longestStreak : 0, nextStreak);
       const year = dayKey.slice(0, 4);
       const calendarRef = adminDb.collection("activityCalendar").doc(`${uid}_${year}`);
       const calendar = await transaction.get(calendarRef);
       const calendarDays = (calendar.data()?.days ?? {}) as Record<string, unknown>;
       const currentDayCount = typeof calendarDays[dayKey] === "number" ? calendarDays[dayKey] : 0;
+      const perSubject = typeof statsData.perSubject === "object" && statsData.perSubject !== null
+        ? statsData.perSubject as Record<string, Record<string, unknown>>
+        : {};
+      const subjectProgress = perSubject[subject] ?? {};
 
       transaction.set(eventRef, {
+        id: eventRef.id,
         userId: uid, type: "mcq_test", subject, unitId, sourceId: testId,
         label: typeof testData?.name === "string" ? testData.name : "Unit Test",
-        href: `/subject/${subject}/${unitId}/test/${testId}`,
+        href,
         occurredAt: FieldValue.serverTimestamp(), dayKey, xpAwarded, gradeStatus: "none",
         score: { correct, total },
-        questions: results.map((question, index) => ({ index, topic: question.topic, correct: question.correct })),
+        questions: results.flatMap((question, index) => question.gradable
+          ? [{ index: index + 1, topic: question.topic, correct: question.correct }]
+          : []),
       });
       transaction.set(statsRef, {
         uid, xp: totalXp + xpAwarded, level,
         xpIntoLevel: typeof statsData.xpIntoLevel === "number" ? statsData.xpIntoLevel + xpAwarded : totalXp + xpAwarded,
         xpForNextLevel: typeof statsData.xpForNextLevel === "number" ? statsData.xpForNextLevel : 100,
-        currentStreak, longestStreak: typeof statsData.longestStreak === "number" ? statsData.longestStreak : currentStreak,
+        currentStreak: nextStreak, longestStreak,
         lastActiveDay: dayKey, timeZone,
         readingsCompleted: typeof statsData.readingsCompleted === "number" ? statsData.readingsCompleted : 0,
         mcqTestsCompleted: (typeof statsData.mcqTestsCompleted === "number" ? statsData.mcqTestsCompleted : 0) + 1,
         problemsSolved: (typeof statsData.problemsSolved === "number" ? statsData.problemsSolved : 0) + correct,
         frqsSubmitted: typeof statsData.frqsSubmitted === "number" ? statsData.frqsSubmitted : 0,
         subjectsCompleted: typeof statsData.subjectsCompleted === "number" ? statsData.subjectsCompleted : 0,
+        perSubject: {
+          ...perSubject,
+          [subject]: {
+            ...subjectProgress,
+            subjectSlug: subject,
+            attempted: (typeof subjectProgress.attempted === "number" ? subjectProgress.attempted : 0) + total,
+            correct: (typeof subjectProgress.correct === "number" ? subjectProgress.correct : 0) + correct,
+            readingsCompleted: typeof subjectProgress.readingsCompleted === "number" ? subjectProgress.readingsCompleted : 0,
+            totalReadings,
+            lastActiveAt: FieldValue.serverTimestamp(),
+          },
+        },
         updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true });
       transaction.set(calendarRef, { uid, year: Number(year), days: { ...calendarDays, [dayKey]: currentDayCount + 1 }, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-      return awardResponse(xpAwarded, totalXp + xpAwarded, level, currentStreak, false);
+      return awardResponse(xpAwarded, totalXp + xpAwarded, level, nextStreak, false);
     });
     return NextResponse.json(result);
   } catch (error) {

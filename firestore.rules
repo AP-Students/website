@@ -24,9 +24,6 @@ service cloud.firestore {
       return isAuthenticated() && (accessLevel == "admin" || accessLevel == "member" || accessLevel == "grader");
     }
 
-    // Activity awards and their idempotency records are written exclusively by
-    // trusted server code (the Admin SDK bypasses these rules). Students may
-    // only read their own dashboard data.
     // Week 1 activity data is written only by trusted server code.  Clients
     // can read only documents belonging to their authenticated account.
     match /userStats/{userId} {
@@ -85,14 +82,6 @@ service cloud.firestore {
         allow read, write: if isAuthenticated() && request.auth.uid == userId;
       }
 
-      // Test results are written by the server endpoint with the student's ID
-      // token, just like chapter progress. The endpoint derives score and XP
-      // from the published test; clients only submit option IDs.
-      match /testData/{document=**} {
-        // Legacy receipts remain readable, but client writes cannot create or
-        // reset an award receipt. New MCQ receipts live in activityEvents.
-        allow read: if isAuthenticated() && request.auth.uid == userId;
-      }
     }
 
     function canSubmitFrqResponse() {
