@@ -10,6 +10,7 @@ export interface User {
   createdWith: "email" | "google";
   createdAt: Date;
   lastFrqResponseAt: Timestamp;
+  mySubjects?: string[];
 }
 
 export interface UserChapterData {

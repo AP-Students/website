@@ -19,6 +19,7 @@ import {
   query,
   where,
 } from "firebase/firestore";
+import SubjectBookmark from "@/components/subject/subject-bookmark";
 
 const Page = ({ params }: { params: { slug: string } }) => {
   const pathname = usePathname();
@@ -170,9 +171,12 @@ const Page = ({ params }: { params: { slug: string } }) => {
         <div className="grow">
           <SubjectBreadcrumb locations={[subject.title]} />
 
-          <h1 className="mb-4 mt-1 text-balance text-left text-5xl font-extrabold sm:text-6xl">
-            {subject.title}
-          </h1>
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="mb-4 mt-1 text-balance text-left text-5xl font-extrabold sm:text-6xl">
+              {subject.title}
+            </h1>
+            <SubjectBookmark slug={params.slug} />
+          </div>
 
           <Accordion
             className="w-full"
