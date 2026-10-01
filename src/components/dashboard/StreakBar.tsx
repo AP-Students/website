@@ -27,7 +27,8 @@ export default function StreakBar({
   today = new Date(),
 }: StreakBarProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const streak = streakAsOf(storedStreak, toDayKey(today, timeZone));
+  const todayKey = toDayKey(today, timeZone);
+  const streak = streakAsOf(storedStreak, todayKey);
   const reduceMotion = usePrefersReducedMotion();
 
   return (
@@ -84,7 +85,7 @@ export default function StreakBar({
           <StreakCalendar
             calendarDays={calendarDays}
             streakDays={getStreakDayKeys(storedStreak.lastActiveDay, streak)}
-            today={today}
+            todayKey={todayKey}
           />
         </div>
       )}

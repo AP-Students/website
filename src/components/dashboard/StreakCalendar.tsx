@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { getMonthGrid, toDateKey, intensityLevel } from "@/lib/dashboard/dates";
+import {
+  getMonthGrid,
+  parseDateKey,
+  toDateKey,
+  intensityLevel,
+} from "@/lib/dashboard/dates";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, Flame } from "lucide-react";
 import {
@@ -13,7 +18,11 @@ import {
 interface StreakCalendarProps {
   calendarDays: Record<string, number>;
   streakDays: Set<string>;
-  today: Date;
+  /**
+   * Today in the zone the streak is counted in ("YYYY-MM-DD"), not the
+   * device's, so the highlighted day always matches the streak's today.
+   */
+  todayKey: string;
 }
 
 const WEEKDAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
@@ -32,9 +41,9 @@ const navButtonClass =
 export default function StreakCalendar({
   calendarDays,
   streakDays,
-  today,
+  todayKey,
 }: StreakCalendarProps) {
-  const todayKey = toDateKey(today);
+  const today = parseDateKey(todayKey);
 
   const [view, setView] = useState({
     year: today.getFullYear(),
