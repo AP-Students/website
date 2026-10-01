@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminAuth, getAdminDb, hasExplicitAdminCredentials } from "@/lib/firebase-admin";
 import type { ActivityAwardResponse } from "@/types/dashboard";
-import { addDays, resolveTimeZone, toDayKey } from "@/lib/gamification/calendarDay";
+import { readStreakState, recordActiveDay, resolveActivityDay } from "@/lib/gamification/streak";
 
 const BASE_TEST_XP = 10;
 const CORRECT_ANSWER_XP = 10;
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
   if (!idToken) return NextResponse.json({ error: "Missing authorization token" }, { status: 401 });
 
   const body = (await request.json().catch(() => null)) as {
-    subject?: unknown; unitId?: unknown; testId?: unknown; answers?: unknown;
+    subject?: unknown; unitId?: unknown; testId?: unknown; answers?: unknown; timeZone?: unknown;
   } | null;
   const { subject, unitId, testId } = body ?? {};
   const answers = parseAnswers(body?.answers);
@@ -137,12 +137,9 @@ export async function POST(request: NextRequest) {
       const currentStreak = typeof statsData.currentStreak === "number" ? statsData.currentStreak : 0;
       if (event.exists) return awardResponse(0, totalXp, level, currentStreak, true);
 
-      const timeZone = resolveTimeZone(typeof statsData.timeZone === "string" ? statsData.timeZone : null);
-      const dayKey = toDayKey(new Date(), timeZone);
-      const previousDay = addDays(dayKey, -1);
-      const lastActiveDay = typeof statsData.lastActiveDay === "string" ? statsData.lastActiveDay : null;
-      const nextStreak = lastActiveDay === dayKey ? currentStreak : lastActiveDay === previousDay ? currentStreak + 1 : 1;
-      const longestStreak = Math.max(typeof statsData.longestStreak === "number" ? statsData.longestStreak : 0, nextStreak);
+      // Shared with the FRQ route so both count days, and keep streaks, alike.
+      const { day: dayKey, timeZone } = resolveActivityDay(new Date(), statsData.timeZone, body?.timeZone);
+      const streak = recordActiveDay(readStreakState(statsData), dayKey);
       const year = dayKey.slice(0, 4);
       const calendarRef = adminDb.collection("activityCalendar").doc(`${uid}_${year}`);
       const calendar = await transaction.get(calendarRef);
@@ -168,8 +165,8 @@ export async function POST(request: NextRequest) {
         uid, xp: totalXp + xpAwarded, level,
         xpIntoLevel: typeof statsData.xpIntoLevel === "number" ? statsData.xpIntoLevel + xpAwarded : totalXp + xpAwarded,
         xpForNextLevel: typeof statsData.xpForNextLevel === "number" ? statsData.xpForNextLevel : 100,
-        currentStreak: nextStreak, longestStreak,
-        lastActiveDay: dayKey, timeZone,
+        currentStreak: streak.currentStreak, longestStreak: streak.longestStreak,
+        lastActiveDay: streak.lastActiveDay, timeZone,
         readingsCompleted: typeof statsData.readingsCompleted === "number" ? statsData.readingsCompleted : 0,
         mcqTestsCompleted: (typeof statsData.mcqTestsCompleted === "number" ? statsData.mcqTestsCompleted : 0) + 1,
         problemsSolved: (typeof statsData.problemsSolved === "number" ? statsData.problemsSolved : 0) + correct,
@@ -190,7 +187,7 @@ export async function POST(request: NextRequest) {
         updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true });
       transaction.set(calendarRef, { uid, year: Number(year), days: { ...calendarDays, [dayKey]: currentDayCount + 1 }, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-      return awardResponse(xpAwarded, totalXp + xpAwarded, level, nextStreak, false);
+      return awardResponse(xpAwarded, totalXp + xpAwarded, level, streak.currentStreak, false);
     });
     return NextResponse.json(result);
   } catch (error) {
