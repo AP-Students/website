@@ -18,6 +18,7 @@ import {
   type CalculatorType,
 } from "@/lib/calculator";
 import SaveButton from "@/components/subject/save-button";
+import { auth } from "@/lib/firebase";
 import clsx from "clsx";
 import { cn } from "@/lib/utils";
 import "katex/dist/katex.min.css";
@@ -30,6 +31,9 @@ interface Props {
   testName: string;
   /** Enables the Save button. Omitted in admin previews. */
   testId?: string;
+  /** Required to submit a published test for server-side grading and XP. */
+  subject?: string;
+  unitId?: string;
   calculatorCourseDefault?: CalculatorPermission;
   calculatorDefault?: CalculatorPermission;
   calculatorType?: CalculatorType;
@@ -87,6 +91,8 @@ export default function DigitalTestingPage({
   directions,
   testName,
   testId,
+  subject,
+  unitId,
   calculatorCourseDefault,
   calculatorDefault,
   calculatorType = "graphing",
@@ -109,6 +115,7 @@ export default function DigitalTestingPage({
   const [submitted, setSubmitted] = useState(false);
   const [showReviewPage, setShowReviewPage] = useState(false);
   const [showCompletionPage, setShowCompletionPage] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
   const calculatorButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -130,13 +137,60 @@ export default function DigitalTestingPage({
     setQuestions(inputQuestions);
   }, [inputQuestions]);
 
+  const submitTest = async () => {
+    if (submitted || submitting) return;
+
+    if (!subject || !unitId || !testId) {
+      window.alert("This test is missing its subject or unit information.");
+      return;
+    }
+
+    const idToken = await auth.currentUser?.getIdToken();
+    if (!idToken) {
+      window.alert("Please sign in before submitting this test.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const response = await fetch("/api/activity/mcq", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ subject, unitId, testId, answers: selectedAnswers }),
+      });
+      const body = (await response.json().catch(() => null)) as {
+        error?: string;
+      } | null;
+      if (!response.ok) {
+        throw new Error(body?.error ?? "Unable to submit this test.");
+      }
+
+      setSubmitted(true);
+      setShowCompletionPage(true);
+    } catch (error) {
+      console.error("Error submitting MCQ test:", error);
+      window.alert(
+        error instanceof Error ? error.message : "Unable to submit this test.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleSetSubmitted = (value: boolean) => {
     // Header unmounts while the completion page is up, so continuing on to the
     // results remounts it with a fresh countdown. Ignore repeat submits so that
     // restarted timer can't drag the user back to the completion page.
     if (value && submitted) return;
+    if (value && !adminMode) {
+      void submitTest();
+      return;
+    }
     setSubmitted(value);
-    if (value && !adminMode) setShowCompletionPage(true);
+    if (value) setShowCompletionPage(true);
   };
 
   // Track highlights for all --- uses index as key to corrospond to question, and array to hold highlights (might need to move to Highlighter file)
@@ -382,6 +436,7 @@ export default function DigitalTestingPage({
         submitted={submitted}
         adminMode={adminMode}
         testName={testName}
+        submitting={submitting}
       />
       <CalculatorPanel
         open={showCalculator && calculatorAllowed}

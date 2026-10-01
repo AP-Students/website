@@ -20,6 +20,7 @@ interface FooterProps {
   submitted: boolean;
   adminMode: boolean;
   testName: string;
+  submitting?: boolean;
 }
 
 export default function Footer({
@@ -34,6 +35,7 @@ export default function Footer({
   submitted,
   adminMode,
   testName,
+  submitting = false,
 }: FooterProps) {
   const router = useRouter();
   const pathname = usePathname() ?? "";
@@ -129,13 +131,16 @@ export default function Footer({
           Back
         </button>
         <button
+          disabled={submitting}
           className="ml-3 rounded-full bg-[#294ad1] px-6 py-2 font-bold text-white hover:bg-[#2a47bb]"
           onClick={handleNext}
         >
           {showReviewPage
             ? submitted
               ? "Exit"
-              : "Submit"
+              : submitting
+                ? "Submitting..."
+                : "Submit"
             : currentQuestionIndex === questions.length - 1
               ? "Review"
               : "Next"}

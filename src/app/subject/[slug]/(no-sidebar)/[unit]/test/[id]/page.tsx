@@ -136,6 +136,8 @@ const Page = () => {
         directions={directions}
         testName={testName}
         testId={testId}
+        subject={subject}
+        unitId={unitId}
         calculatorCourseDefault={calculatorCourseDefault}
         calculatorDefault={calculatorDefault}
         calculatorType={calculatorType}
