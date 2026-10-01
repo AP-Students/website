@@ -104,6 +104,17 @@ function parseDayKey(key: DayKey): {
   return { year, month, day };
 }
 
+/** Whether `value` is a real calendar day written as "YYYY-MM-DD". */
+export function isDayKey(value: unknown): value is DayKey {
+  if (typeof value !== "string") return false;
+  try {
+    parseDayKey(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // UTC has no daylight saving, so it is a safe scratchpad for pure calendar
 // arithmetic: midnight UTC on a date plus N whole days is always that date + N.
 function dayKeyToUtcMs(key: DayKey): number {

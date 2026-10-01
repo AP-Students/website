@@ -42,6 +42,8 @@ service cloud.firestore {
         'mcqTestsCompleted', 'problemsSolved', 'frqsSubmitted',
         'subjectsCompleted', 'perSubject', 'updatedAt'
       ]);
+    }
+
     // Week 1 activity data is written only by trusted server code.  Clients
     // can read only documents belonging to their authenticated account.
     match /userStats/{userId} {
@@ -125,6 +127,8 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['progress']);
         allow delete: if isAuthenticated() && request.auth.uid == userId
           && !('readingXpAwarded' in resource.data);
+      }
+
       // A client may track its reading progress, but it cannot set or reset an
       // XP-award marker. Trusted server code records awards in /activity.
       match /chapterData/{chapterId} {

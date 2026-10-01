@@ -4,25 +4,31 @@ import { useState } from "react";
 import { ChevronDown, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 import StreakCalendar from "@/components/dashboard/StreakCalendar";
-import { getStreakDayKeys, getDisplayStreak } from "@/lib/dashboard/dates";
+import { getStreakDayKeys } from "@/lib/dashboard/dates";
+import { toDayKey } from "@/lib/gamification/calendarDay";
+import { streakAsOf, type StreakState } from "@/lib/gamification/streak";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { usePrefersReducedMotion } from "@/components/hooks/usePrefersReducedMotion";
 
 interface StreakBarProps {
-  currentStreak: number;
-  lastActiveDay: string | null;
+  streak: StreakState;
+  /** The zone the streak's days are counted in. */
+  timeZone: string;
   calendarDays: Record<string, number>;
   today?: Date;
 }
 
+const formatDays = (days: number) => `${days} ${days === 1 ? "Day" : "Days"}`;
+
 export default function StreakBar({
-  currentStreak,
-  lastActiveDay,
+  streak: storedStreak,
+  timeZone,
   calendarDays,
   today = new Date(),
 }: StreakBarProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const streak = getDisplayStreak(currentStreak, lastActiveDay, today);
+  const todayKey = toDayKey(today, timeZone);
+  const streak = streakAsOf(storedStreak, todayKey);
   const reduceMotion = usePrefersReducedMotion();
 
   return (
@@ -56,14 +62,19 @@ export default function StreakBar({
           />
         )}
 
-        <span className="translate-y-1.5 text-3xl font-semibold">
-          <span className="sr-only">Current streak: </span>
-          {streak} {streak === 1 ? "Day" : "Days"}
+        <span className="flex flex-col">
+          <span className="text-3xl font-semibold">
+            <span className="sr-only">Current streak: </span>
+            {formatDays(streak)}
+          </span>
+          <span className="text-sm font-medium text-gray-700">
+            Best streak: {formatDays(storedStreak.longestStreak)}
+          </span>
         </span>
 
         <ChevronDown
           className={cn(
-            "ml-auto h-6 w-6 transition-transform",
+            "ml-auto h-6 w-6 shrink-0 transition-transform",
             isOpen && "rotate-180",
           )}
         />
@@ -73,8 +84,8 @@ export default function StreakBar({
         <div className="rounded-b-lg border border-t-0 border-orange-300 bg-orange-50 p-4 shadow">
           <StreakCalendar
             calendarDays={calendarDays}
-            streakDays={getStreakDayKeys(lastActiveDay, streak)}
-            today={today}
+            streakDays={getStreakDayKeys(storedStreak.lastActiveDay, streak)}
+            todayKey={todayKey}
           />
         </div>
       )}
