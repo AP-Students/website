@@ -11,6 +11,8 @@ import {
   recordActiveDay,
   resolveActivityDay,
 } from "@/lib/gamification/streak";
+import { addXp, readXpTotal, streakXp } from "@/lib/gamification/xp";
+import { loadXpConfig } from "@/lib/gamification/loadXpConfig";
 
 /**
  * How long after submitting an FRQ it can still be recorded. The browser
@@ -36,12 +38,15 @@ const nonNegativeNumber = (value: unknown, fallback: number) =>
     ? value
     : fallback;
 
-/** The FRQ's title and a link back to it, for the dashboard's activity list. */
+/**
+ * The FRQ's title and a link back to it, for the dashboard's activity list,
+ * and whether it is published.
+ */
 async function describeFrq(
   subject: string,
   unitId: string,
   templateId: string,
-): Promise<{ label: string; href: string }> {
+): Promise<{ label: string; href: string; isPublic: boolean }> {
   const adminDb = getAdminDb();
   const [subjectSnapshot, templateSnapshot] = await adminDb.getAll(
     adminDb.collection("subjects").doc(subject),
@@ -54,7 +59,8 @@ async function describeFrq(
       .doc(templateId),
   );
 
-  const title: unknown = templateSnapshot?.data()?.title;
+  const template = templateSnapshot?.data();
+  const title: unknown = template?.title;
   const subjectData = subjectSnapshot?.data();
   const units: unknown[] = Array.isArray(subjectData?.units)
     ? subjectData.units
@@ -74,13 +80,20 @@ async function describeFrq(
       unitIndex >= 0
         ? `/subject/${subject}/unit-${unitNumber}-${unitId}/frq/${templateId}`
         : `/subject/${subject}`,
+    isPublic: template?.isPublic === true,
   };
 }
 
 /**
  * Records a submitted FRQ as study activity: it counts toward the student's
- * daily streak and their activity calendar. The submission is re-read here
- * rather than trusted from the request, and each one is only counted once.
+ * daily streak and their activity calendar, and earns XP. The submission is
+ * re-read here rather than trusted from the request, and each one is only
+ * counted once.
+ *
+ * Submission XP is paid once per FRQ, not per submission: nothing limits how
+ * often a student can resubmit, so paying every time would let them farm XP
+ * by submitting the same FRQ over and over. Only published FRQs earn it,
+ * matching the MCQ route. A resubmission still counts toward the streak.
  */
 export async function POST(request: NextRequest) {
   const adminAuth = getAdminAuth();
@@ -178,17 +191,30 @@ export async function POST(request: NextRequest) {
     .collection("activityEvents")
     .doc(`${uid}_frq_${submissionId}`);
   const statsRef = adminDb.collection("userStats").doc(uid);
+  // A server-only receipt: its existence means this student has already been
+  // paid for submitting this FRQ.
+  const xpAwardRef = adminDb
+    .collection("xpAwards")
+    .doc(`${uid}_frq_${templateId}`);
 
   try {
-    const { label, href } = await describeFrq(subject, unitId, templateId);
+    const [{ label, href, isPublic }, xpConfig] = await Promise.all([
+      describeFrq(subject, unitId, templateId),
+      loadXpConfig(),
+    ]);
 
     const result = await adminDb.runTransaction(async (transaction) => {
-      const [event, stats] = await transaction.getAll(eventRef, statsRef);
+      const [event, stats, xpAward] = await transaction.getAll(
+        eventRef,
+        statsRef,
+        xpAwardRef,
+      );
       const statsData = stats?.data();
       const streak = readStreakState(statsData);
+      const totalXp = readXpTotal(statsData);
       const response: ActivityAwardResponse = {
         xpAwarded: 0,
-        totalXp: nonNegativeNumber(statsData?.xp, 0),
+        totalXp,
         level: nonNegativeNumber(statsData?.level, 1),
         leveledUp: false,
         currentStreak: streak.currentStreak,
@@ -208,6 +234,25 @@ export async function POST(request: NextRequest) {
         .collection("activityCalendar")
         .doc(`${uid}_${year}`);
 
+      const paysSubmissionXp = isPublic && !xpAward?.exists;
+      const xpAwarded =
+        (paysSubmissionXp ? xpConfig.frqSubmission : 0) +
+        streakXp(streak, next, xpConfig);
+      const progress = addXp(totalXp, xpAwarded, xpConfig);
+
+      if (paysSubmissionXp) {
+        transaction.create(xpAwardRef, {
+          userId: uid,
+          type: "frq",
+          subject,
+          unitId,
+          sourceId: templateId,
+          submissionId,
+          xpAwarded: xpConfig.frqSubmission,
+          awardedAt: FieldValue.serverTimestamp(),
+        });
+      }
+
       transaction.create(eventRef, {
         id: eventRef.id,
         userId: uid,
@@ -219,14 +264,17 @@ export async function POST(request: NextRequest) {
         href,
         occurredAt: FieldValue.serverTimestamp(),
         dayKey: day,
-        // XP for FRQs belongs to the XP system (#263); this records the day.
-        xpAwarded: 0,
+        xpAwarded,
         gradeStatus,
       });
       transaction.set(
         statsRef,
         {
           uid,
+          xp: progress.xp,
+          level: progress.level,
+          xpIntoLevel: progress.xpIntoLevel,
+          xpForNextLevel: progress.xpForNextLevel,
           currentStreak: next.currentStreak,
           longestStreak: next.longestStreak,
           lastActiveDay: next.lastActiveDay,
@@ -249,6 +297,10 @@ export async function POST(request: NextRequest) {
 
       return {
         ...response,
+        xpAwarded,
+        totalXp: progress.xp,
+        level: progress.level,
+        leveledUp: progress.leveledUp,
         currentStreak: next.currentStreak,
         alreadyRecorded: false,
       };

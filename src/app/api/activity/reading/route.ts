@@ -3,8 +3,8 @@ import { FieldValue } from "firebase-admin/firestore";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
 import { formatSlug } from "@/lib/utils";
 import type { ActivityAwardResponse } from "@/types/dashboard";
-
-const READING_XP = 10;
+import { addXp, readXpTotal } from "@/lib/gamification/xp";
+import { loadXpConfig } from "@/lib/gamification/loadXpConfig";
 
 const isDocumentId = (value: unknown): value is string =>
   typeof value === "string" && value.trim().length > 0 && !value.includes("/");
@@ -40,7 +40,10 @@ const dayKeyFor = (timeZone: unknown) => {
   }
 };
 
-/** Records a completed chapter and awards its one-time 10 XP reading bonus. */
+/**
+ * Records a completed chapter and awards its one-time reading XP. Readings
+ * don't count toward a streak (#264), so they earn no streak bonus.
+ */
 export async function POST(request: NextRequest) {
   const adminAuth = getAdminAuth();
   const adminDb = getAdminDb();
@@ -88,9 +91,10 @@ export async function POST(request: NextRequest) {
     .doc(unitId)
     .collection("chapters")
     .doc(chapterId);
-  const [subjectSnapshot, chapterSnapshot] = await Promise.all([
+  const [subjectSnapshot, chapterSnapshot, xpConfig] = await Promise.all([
     subjectRef.get(),
     chapterRef.get(),
+    loadXpConfig(),
   ]);
   if (!chapterSnapshot.exists) {
     return NextResponse.json({ error: "Chapter not found" }, { status: 404 });
@@ -109,23 +113,32 @@ export async function POST(request: NextRequest) {
     unitIndex >= 0
       ? `/subject/${subject}/unit-${displayUnit}-${unitId}/chapter/${chapterId}/${formatSlug(chapterTitle)}`
       : `/subject/${subject}`;
+  const totalReadings = units.reduce(
+    (count, unit) =>
+      count + (Array.isArray(unit.chapters) ? unit.chapters.length : 0),
+    0,
+  );
 
   try {
     const result = await adminDb.runTransaction(async (transaction) => {
-      const userRef = adminDb.collection("users").doc(uid);
-      const chapterDataRef = userRef.collection("chapterData").doc(chapterId);
+      const chapterDataRef = adminDb
+        .collection("users")
+        .doc(uid)
+        .collection("chapterData")
+        .doc(chapterId);
+      const statsRef = adminDb.collection("userStats").doc(uid);
       const activityRef = adminDb
         .collection("activityEvents")
         .doc(`${uid}_reading_${chapterId}`);
-      const [user, chapterData, activity] = await Promise.all([
-        transaction.get(userRef),
+      const [stats, chapterData, activity] = await Promise.all([
+        transaction.get(statsRef),
         transaction.get(chapterDataRef),
         transaction.get(activityRef),
       ]);
-      const userData = user.data();
-      const totalXp = nonNegativeNumber(userData?.xp, 0);
-      const level = nonNegativeNumber(userData?.level, 1);
-      const currentStreak = nonNegativeNumber(userData?.currentStreak, 0);
+      const statsData = stats.data();
+      const totalXp = readXpTotal(statsData);
+      const level = nonNegativeNumber(statsData?.level, 1);
+      const currentStreak = nonNegativeNumber(statsData?.currentStreak, 0);
 
       if (chapterData.data()?.readingXpAwarded === true) {
         // Writes omitted by a prior deployment are safely backfilled without
@@ -141,8 +154,8 @@ export async function POST(request: NextRequest) {
             label: chapterTitle,
             href,
             occurredAt: FieldValue.serverTimestamp(),
-            dayKey: dayKeyFor(userData?.timeZone),
-            xpAwarded: READING_XP,
+            dayKey: dayKeyFor(statsData?.timeZone),
+            xpAwarded: xpConfig.readingComplete,
             gradeStatus: "none",
           });
         }
@@ -157,6 +170,9 @@ export async function POST(request: NextRequest) {
         } satisfies ActivityAwardResponse;
       }
 
+      const xpAwarded = xpConfig.readingComplete;
+      const progress = addXp(totalXp, xpAwarded, xpConfig);
+
       transaction.set(
         chapterDataRef,
         {
@@ -166,7 +182,29 @@ export async function POST(request: NextRequest) {
         },
         { merge: true },
       );
-      transaction.update(userRef, { xp: FieldValue.increment(READING_XP) });
+      // The dashboard reads XP from userStats, like the MCQ and FRQ routes
+      // write it, so a reading's XP has to land there too.
+      transaction.set(
+        statsRef,
+        {
+          uid,
+          xp: progress.xp,
+          level: progress.level,
+          xpIntoLevel: progress.xpIntoLevel,
+          xpForNextLevel: progress.xpForNextLevel,
+          readingsCompleted: FieldValue.increment(1),
+          perSubject: {
+            [subject]: {
+              subjectSlug: subject,
+              readingsCompleted: FieldValue.increment(1),
+              totalReadings,
+              lastActiveAt: FieldValue.serverTimestamp(),
+            },
+          },
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
       transaction.create(activityRef, {
         id: activityRef.id,
         userId: uid,
@@ -177,16 +215,16 @@ export async function POST(request: NextRequest) {
         label: chapterTitle,
         href,
         occurredAt: FieldValue.serverTimestamp(),
-        dayKey: dayKeyFor(userData?.timeZone),
-        xpAwarded: READING_XP,
+        dayKey: dayKeyFor(statsData?.timeZone),
+        xpAwarded,
         gradeStatus: "none",
       });
 
       return {
-        xpAwarded: READING_XP,
-        totalXp: totalXp + READING_XP,
-        level,
-        leveledUp: false,
+        xpAwarded,
+        totalXp: progress.xp,
+        level: progress.level,
+        leveledUp: progress.leveledUp,
         currentStreak,
         newlyUnlocked: [],
         alreadyRecorded: false,

@@ -2,12 +2,15 @@ export default function ExperienceCard({
   level,
   xpIntoLevel,
   xpForNextLevel,
+  totalXp,
 }: {
   level: number;
   xpIntoLevel: number;
   xpForNextLevel: number;
+  /** Shown under the bar where no other card lists the total. */
+  totalXp?: number;
 }) {
-  const xpRemaining = xpForNextLevel - xpIntoLevel;
+  const xpRemaining = Math.max(0, xpForNextLevel - xpIntoLevel);
   const progressPercent =
     xpForNextLevel > 0
       ? Math.min(100, (xpIntoLevel / xpForNextLevel) * 100)
@@ -31,12 +34,24 @@ export default function ExperienceCard({
         </div>
 
         <div className="p-3">
-          <div className="h-4 w-full rounded-full bg-gray-200">
+          <div
+            className="h-4 w-full rounded-full bg-gray-200"
+            role="progressbar"
+            aria-label={`Progress to level ${level + 1}`}
+            aria-valuemin={0}
+            aria-valuemax={xpForNextLevel}
+            aria-valuenow={xpIntoLevel}
+          >
             <div
               className="h-full rounded-full bg-red-600"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
+          {totalXp !== undefined && (
+            <p className="mt-2 text-sm font-semibold text-gray-600">
+              {totalXp.toLocaleString()} XP total
+            </p>
+          )}
         </div>
       </div>
     </section>

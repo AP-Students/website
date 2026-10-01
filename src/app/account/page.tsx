@@ -21,6 +21,8 @@ import {
 } from "@/lib/manageUser";
 import ReauthenticateModal from "@/components/auth/ReauthenticateModal";
 import { useUser } from "@/components/hooks/UserContext";
+import { useXpProgress } from "@/components/hooks/useXpProgress";
+import ExperienceCard from "@/components/dashboard/ExperienceCard";
 import { ArrowLeft, Upload, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -53,6 +55,7 @@ export default function UserManagementPage() {
   const [tempPassword, setTempPassword] = useState<string>("");
   const photoObjectUrlRef = useRef<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
+  const xpProgress = useXpProgress(user?.uid);
 
   useEffect(() => {
     async function fetchUser() {
@@ -266,6 +269,17 @@ export default function UserManagementPage() {
           FiveHive Account
         </h1>
         <p className="mb-6 text-gray-600">Manage your account details below.</p>
+
+        {xpProgress && (
+          <div className="mb-6">
+            <ExperienceCard
+              level={xpProgress.level}
+              xpIntoLevel={xpProgress.xpIntoLevel}
+              xpForNextLevel={xpProgress.xpForNextLevel}
+              totalXp={xpProgress.xp}
+            />
+          </div>
+        )}
 
         {errorMessage && (
           <div className="mb-4 rounded-md bg-red-100 p-4 text-red-700">

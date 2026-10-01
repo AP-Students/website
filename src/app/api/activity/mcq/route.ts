@@ -3,9 +3,8 @@ import { FieldValue } from "firebase-admin/firestore";
 import { getAdminAuth, getAdminDb, hasExplicitAdminCredentials } from "@/lib/firebase-admin";
 import type { ActivityAwardResponse } from "@/types/dashboard";
 import { readStreakState, recordActiveDay, resolveActivityDay } from "@/lib/gamification/streak";
-
-const BASE_TEST_XP = 10;
-const CORRECT_ANSWER_XP = 10;
+import { addXp, readXpTotal, streakXp, type XpConfig } from "@/lib/gamification/xp";
+import { loadXpConfig } from "@/lib/gamification/loadXpConfig";
 
 type SubmittedAnswers = Record<number, string[]>;
 type StoredQuestion = { type?: unknown; answers?: unknown; topic?: unknown };
@@ -44,13 +43,14 @@ const awardResponse = (
   xpAwarded: number,
   totalXp: number,
   level: number,
+  leveledUp: boolean,
   currentStreak: number,
   alreadyRecorded: boolean,
 ): ActivityAwardResponse => ({
   xpAwarded,
   totalXp,
   level,
-  leveledUp: false,
+  leveledUp,
   currentStreak,
   newlyUnlocked: [],
   alreadyRecorded,
@@ -83,8 +83,9 @@ export async function POST(request: NextRequest) {
   const testRef = adminDb.collection("subjects").doc(subject).collection("units").doc(unitId)
     .collection("tests").doc(testId);
   let test;
+  let xpConfig: XpConfig;
   try {
-    test = await testRef.get();
+    [test, xpConfig] = await Promise.all([testRef.get(), loadXpConfig()]);
   } catch (error) {
     console.error("Unable to read MCQ test with Admin SDK", error);
     return NextResponse.json(
@@ -123,7 +124,7 @@ export async function POST(request: NextRequest) {
   if (total === 0) return NextResponse.json({ error: "Test has no gradable questions" }, { status: 400 });
 
   const correct = results.filter((result) => result.correct).length;
-  const xpAwarded = BASE_TEST_XP + correct * CORRECT_ANSWER_XP;
+  const testXp = xpConfig.mcqTestComplete + correct * xpConfig.mcqCorrectAnswer;
   const eventRef = adminDb.collection("activityEvents").doc(`${uid}_mcq_test_${testId}`);
   const statsRef = adminDb.collection("userStats").doc(uid);
 
@@ -132,14 +133,16 @@ export async function POST(request: NextRequest) {
       const event = await transaction.get(eventRef);
       const stats = await transaction.get(statsRef);
       const statsData = stats.data() ?? {};
-      const totalXp = typeof statsData.xp === "number" ? statsData.xp : 0;
+      const totalXp = readXpTotal(statsData);
       const level = typeof statsData.level === "number" ? statsData.level : 1;
-      const currentStreak = typeof statsData.currentStreak === "number" ? statsData.currentStreak : 0;
-      if (event.exists) return awardResponse(0, totalXp, level, currentStreak, true);
+      const previousStreak = readStreakState(statsData);
+      if (event.exists) return awardResponse(0, totalXp, level, false, previousStreak.currentStreak, true);
 
       // Shared with the FRQ route so both count days, and keep streaks, alike.
       const { day: dayKey, timeZone } = resolveActivityDay(new Date(), statsData.timeZone, body?.timeZone);
-      const streak = recordActiveDay(readStreakState(statsData), dayKey);
+      const streak = recordActiveDay(previousStreak, dayKey);
+      const xpAwarded = testXp + streakXp(previousStreak, streak, xpConfig);
+      const progress = addXp(totalXp, xpAwarded, xpConfig);
       const year = dayKey.slice(0, 4);
       const calendarRef = adminDb.collection("activityCalendar").doc(`${uid}_${year}`);
       const calendar = await transaction.get(calendarRef);
@@ -162,9 +165,9 @@ export async function POST(request: NextRequest) {
           : []),
       });
       transaction.set(statsRef, {
-        uid, xp: totalXp + xpAwarded, level,
-        xpIntoLevel: typeof statsData.xpIntoLevel === "number" ? statsData.xpIntoLevel + xpAwarded : totalXp + xpAwarded,
-        xpForNextLevel: typeof statsData.xpForNextLevel === "number" ? statsData.xpForNextLevel : 100,
+        uid, xp: progress.xp, level: progress.level,
+        xpIntoLevel: progress.xpIntoLevel,
+        xpForNextLevel: progress.xpForNextLevel,
         currentStreak: streak.currentStreak, longestStreak: streak.longestStreak,
         lastActiveDay: streak.lastActiveDay, timeZone,
         readingsCompleted: typeof statsData.readingsCompleted === "number" ? statsData.readingsCompleted : 0,
@@ -187,7 +190,7 @@ export async function POST(request: NextRequest) {
         updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true });
       transaction.set(calendarRef, { uid, year: Number(year), days: { ...calendarDays, [dayKey]: currentDayCount + 1 }, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-      return awardResponse(xpAwarded, totalXp + xpAwarded, level, streak.currentStreak, false);
+      return awardResponse(xpAwarded, progress.xp, progress.level, progress.leveledUp, streak.currentStreak, false);
     });
     return NextResponse.json(result);
   } catch (error) {
