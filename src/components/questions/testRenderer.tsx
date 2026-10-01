@@ -19,6 +19,7 @@ import {
 } from "@/lib/calculator";
 import SaveButton from "@/components/subject/save-button";
 import { auth } from "@/lib/firebase";
+import { reportMcqTest } from "@/lib/gamification/reportActivity";
 import clsx from "clsx";
 import { cn } from "@/lib/utils";
 import "katex/dist/katex.min.css";
@@ -41,6 +42,8 @@ interface Props {
   referenceSheetEnabled?: boolean;
   /** The resolved sheet, or null if enabled but unavailable (deleted, fetch error). */
   referenceSheet?: ReferenceSheet | null;
+  /** Where this test lives; when set, a finished test counts toward the streak. */
+  attemptSource?: { subject: string; unitId: string; testId: string };
 }
 
 const initialQuestions: QuestionFormat[] = [
@@ -98,6 +101,7 @@ export default function DigitalTestingPage({
   calculatorType = "graphing",
   referenceSheetEnabled = false,
   referenceSheet,
+  attemptSource,
 }: Props) {
   const [questions, setQuestions] = useState<QuestionFormat[]>(
     inputQuestions || initialQuestions,
@@ -191,6 +195,18 @@ export default function DigitalTestingPage({
     }
     setSubmitted(value);
     if (value) setShowCompletionPage(true);
+    if (value && !adminMode) {
+      setShowCompletionPage(true);
+      // The results are already on screen, so a failure here is logged
+      // rather than shown: it only costs the day on the student's streak.
+      if (attemptSource) {
+        reportMcqTest({ ...attemptSource, answers: selectedAnswers }).catch(
+          (error) => {
+            console.error("Error recording MCQ test:", error);
+          },
+        );
+      }
+    }
   };
 
   // Track highlights for all --- uses index as key to corrospond to question, and array to hold highlights (might need to move to Highlighter file)

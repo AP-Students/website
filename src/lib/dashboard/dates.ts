@@ -44,23 +44,6 @@ export function getStreakDayKeys(
   return keys;
 }
 
-export function getDisplayStreak(
-  currentStreak: number,
-  lastActiveDay: string | null,
-  today: Date,
-): number {
-  if (!lastActiveDay) return 0;
-
-  const todayKey = toDateKey(today);
-  const yesterdayKey = toDateKey(
-    new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1),
-  );
-
-  return lastActiveDay === todayKey || lastActiveDay === yesterdayKey
-    ? currentStreak
-    : 0;
-}
-
 export function intensityLevel(count: number): number {
   if (count >= 10) return 4;
   if (count >= 6) return 3;
