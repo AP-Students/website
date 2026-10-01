@@ -56,7 +56,11 @@ export default function ChapterScaffold({
           </h1>
           <p>{author}</p>
           <div className="my-4 flex items-center justify-center gap-2">
-            <ProgressTracker chapterId={chapterId} />
+            <ProgressTracker
+              subject={subjectSlug}
+              unitId={units[unitIndex]!.id}
+              chapterId={chapterId}
+            />
             <SaveButton
               key={chapterId}
               id={`reading_${chapterId}`}
