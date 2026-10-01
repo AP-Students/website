@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
-import { adminAuth, adminDb, hasExplicitAdminCredentials } from "@/lib/firebase-admin";
+import { getAdminAuth, getAdminDb, hasExplicitAdminCredentials } from "@/lib/firebase-admin";
 import type { ActivityAwardResponse } from "@/types/dashboard";
 import { addDays, resolveTimeZone, toDayKey } from "@/lib/gamification/calendarDay";
 
@@ -58,6 +58,8 @@ const awardResponse = (
 
 /** Grades a published MCQ test on the server and awards its one-time XP. */
 export async function POST(request: NextRequest) {
+  const adminAuth = getAdminAuth();
+  const adminDb = getAdminDb();
   const idToken = request.headers.get("authorization")?.match(/^Bearer (.+)$/i)?.[1];
   if (!idToken) return NextResponse.json({ error: "Missing authorization token" }, { status: 401 });
 

@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import {
-  adminAuth,
-  adminDb,
+  getAdminAuth,
+  getAdminDb,
   hasExplicitAdminCredentials,
 } from "@/lib/firebase-admin";
 import type { ActivityAwardResponse, GradeStatus } from "@/types/dashboard";
@@ -42,6 +42,7 @@ async function describeFrq(
   unitId: string,
   templateId: string,
 ): Promise<{ label: string; href: string }> {
+  const adminDb = getAdminDb();
   const [subjectSnapshot, templateSnapshot] = await adminDb.getAll(
     adminDb.collection("subjects").doc(subject),
     adminDb
@@ -82,6 +83,8 @@ async function describeFrq(
  * rather than trusted from the request, and each one is only counted once.
  */
 export async function POST(request: NextRequest) {
+  const adminAuth = getAdminAuth();
+  const adminDb = getAdminDb();
   const idToken = request.headers
     .get("authorization")
     ?.match(/^Bearer (.+)$/i)?.[1];

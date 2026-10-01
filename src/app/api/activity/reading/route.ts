@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
-import { adminAuth, adminDb } from "@/lib/firebase-admin";
+import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
 import { formatSlug } from "@/lib/utils";
 import type { ActivityAwardResponse } from "@/types/dashboard";
 
@@ -42,6 +42,8 @@ const dayKeyFor = (timeZone: unknown) => {
 
 /** Records a completed chapter and awards its one-time 10 XP reading bonus. */
 export async function POST(request: NextRequest) {
+  const adminAuth = getAdminAuth();
+  const adminDb = getAdminDb();
   const idToken = request.headers
     .get("authorization")
     ?.match(/^Bearer (.+)$/i)?.[1];
