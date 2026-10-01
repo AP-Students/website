@@ -60,6 +60,40 @@ service cloud.firestore {
         && calendarId.matches('^' + request.auth.uid + '_[0-9]{4}$');
     }
 
+    // XP amounts for every activity (src/lib/gamification/xp.ts). They aren't
+    // secret, so anyone may read them. Only admins may change them, and only
+    // to whole numbers the activity routes can use; the routes still check
+    // each value and fall back to its default if one is ever unusable.
+    function isXpAmount(value) {
+      return value is int && value >= 0 && value <= 100000;
+    }
+
+    match /config/xp {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'readingComplete', 'mcqTestComplete', 'mcqCorrectAnswer',
+          'frqSubmission', 'streakDay', 'streakMilestones',
+          'levelBaseXp', 'levelStepXp', 'updatedAt', 'updatedBy'
+        ])
+        && isXpAmount(request.resource.data.readingComplete)
+        && isXpAmount(request.resource.data.mcqTestComplete)
+        && isXpAmount(request.resource.data.mcqCorrectAnswer)
+        && isXpAmount(request.resource.data.frqSubmission)
+        && isXpAmount(request.resource.data.streakDay)
+        && isXpAmount(request.resource.data.levelBaseXp)
+        && request.resource.data.levelBaseXp >= 1
+        && isXpAmount(request.resource.data.levelStepXp)
+        && request.resource.data.streakMilestones is map
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isAdmin();
+    }
+
+    // /xpAwards holds server-written receipts for one-time XP, such as the
+    // first submission of each FRQ. It deliberately has no rules: clients can
+    // neither read nor forge one.
+
     match /notifications/{userId}/items/{notificationId} {
       allow read: if isAuthenticated() && request.auth.uid == userId;
       // Notifications are server-created. A recipient may only acknowledge or

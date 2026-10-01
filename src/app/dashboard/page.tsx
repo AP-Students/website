@@ -27,6 +27,7 @@ import { db } from "@/lib/firebase";
 import type { User } from "@/types/user";
 import type { SavedItem } from "@/types/dashboard";
 import { useStudyStreak } from "@/components/hooks/useStudyStreak";
+import { useXpProgress } from "@/components/hooks/useXpProgress";
 
 const FIXTURE_EARNED = new Set(
   checkAchievements(FIXTURE_STATS, new Set()).map(
@@ -47,6 +48,7 @@ export default function Dashboard() {
   const [userDoc, setUserDoc] = useState<User | null | undefined>(undefined);
   const uid = user?.uid;
   const studyStreak = useStudyStreak(uid);
+  const xpProgress = useXpProgress(uid);
 
   useEffect(() => {
     if (!uid) return;
@@ -124,11 +126,15 @@ export default function Dashboard() {
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-8 py-10 md:grid-cols-2">
         {/* Left column */}
         <div className="flex flex-col gap-8">
-          <ExperienceCard
-            level={FIXTURE_STATS.level}
-            xpIntoLevel={FIXTURE_STATS.xpIntoLevel}
-            xpForNextLevel={FIXTURE_STATS.xpForNextLevel}
-          />
+          {xpProgress ? (
+            <ExperienceCard
+              level={xpProgress.level}
+              xpIntoLevel={xpProgress.xpIntoLevel}
+              xpForNextLevel={xpProgress.xpForNextLevel}
+            />
+          ) : (
+            <p className="text-gray-500">Loading your XP…</p>
+          )}
           {studyStreak ? (
             <StreakBar
               streak={studyStreak.streak}
@@ -141,7 +147,7 @@ export default function Dashboard() {
           <GlobalStats
             problemsSolved={FIXTURE_STATS.problemsSolved}
             subjectsCompleted={FIXTURE_STATS.subjectsCompleted}
-            totalXp={FIXTURE_STATS.xp}
+            totalXp={xpProgress?.xp ?? 0}
           />
           <RecentActivity events={FIXTURE_EVENTS} />
         </div>
