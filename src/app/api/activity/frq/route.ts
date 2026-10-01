@@ -1,11 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
+import { getAdminDb, hasExplicitAdminCredentials } from "@/lib/firebase-admin";
 import {
-  getAdminAuth,
-  getAdminDb,
-  hasExplicitAdminCredentials,
-} from "@/lib/firebase-admin";
-import type { ActivityAwardResponse, GradeStatus } from "@/types/dashboard";
+  dashboardDocumentPaths,
+  type ActivityAwardResponse,
+  type GradeStatus,
+} from "@/types/dashboard";
 import {
   readStreakState,
   recordActiveDay,
@@ -13,6 +13,7 @@ import {
 } from "@/lib/gamification/streak";
 import { addXp, readXpTotal, streakXp } from "@/lib/gamification/xp";
 import { loadXpConfig } from "@/lib/gamification/loadXpConfig";
+import { isDocumentId, requireUser } from "@/lib/server/activityRequest";
 
 /**
  * How long after submitting an FRQ it can still be recorded. The browser
@@ -29,9 +30,6 @@ const SUBMISSION_COLLECTIONS: [string, GradeStatus][] = [
   ["self-graded-frqs", "self_graded"],
   ["graded-frqs", "graded"],
 ];
-
-const isDocumentId = (value: unknown): value is string =>
-  typeof value === "string" && value.trim().length > 0 && !value.includes("/");
 
 const nonNegativeNumber = (value: unknown, fallback: number) =>
   typeof value === "number" && Number.isFinite(value) && value >= 0
@@ -92,21 +90,15 @@ async function describeFrq(
  *
  * Submission XP is paid once per FRQ, not per submission: nothing limits how
  * often a student can resubmit, so paying every time would let them farm XP
- * by submitting the same FRQ over and over. Only published FRQs earn it,
- * matching the MCQ route. A resubmission still counts toward the streak.
+ * by submitting the same FRQ over and over. A resubmission still counts
+ * toward the streak. An unpublished FRQ isn't recorded at all, matching the
+ * MCQ route, so staff previewing a draft earn nothing from it.
  */
 export async function POST(request: NextRequest) {
-  const adminAuth = getAdminAuth();
+  const caller = await requireUser(request);
+  if ("error" in caller) return caller.error;
+  const { uid } = caller;
   const adminDb = getAdminDb();
-  const idToken = request.headers
-    .get("authorization")
-    ?.match(/^Bearer (.+)$/i)?.[1];
-  if (!idToken) {
-    return NextResponse.json(
-      { error: "Missing authorization token" },
-      { status: 401 },
-    );
-  }
 
   const body = (await request.json().catch(() => null)) as {
     submissionId?: unknown;
@@ -117,17 +109,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: "submissionId must be a valid document ID" },
       { status: 400 },
-    );
-  }
-
-  let uid: string;
-  try {
-    uid = (await adminAuth.verifyIdToken(idToken)).uid;
-  } catch (error) {
-    console.error("Unable to verify FRQ activity token", error);
-    return NextResponse.json(
-      { error: "Invalid authorization token" },
-      { status: 401 },
     );
   }
 
@@ -187,10 +168,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const eventRef = adminDb
-    .collection("activityEvents")
-    .doc(`${uid}_frq_${submissionId}`);
-  const statsRef = adminDb.collection("userStats").doc(uid);
+  const eventRef = adminDb.doc(
+    dashboardDocumentPaths.activity(`${uid}_frq_${submissionId}`),
+  );
+  const statsRef = adminDb.doc(dashboardDocumentPaths.stats(uid));
   // A server-only receipt: its existence means this student has already been
   // paid for submitting this FRQ.
   const xpAwardRef = adminDb
@@ -202,6 +183,14 @@ export async function POST(request: NextRequest) {
       describeFrq(subject, unitId, templateId),
       loadXpConfig(),
     ]);
+    // The Admin SDK bypasses Firestore rules, so the publication boundary has
+    // to be checked here, as the MCQ route does.
+    if (!isPublic) {
+      return NextResponse.json(
+        { error: "FRQ is not published" },
+        { status: 403 },
+      );
+    }
 
     const result = await adminDb.runTransaction(async (transaction) => {
       const [event, stats, xpAward] = await transaction.getAll(
@@ -230,15 +219,15 @@ export async function POST(request: NextRequest) {
       );
       const next = recordActiveDay(streak, day);
       const year = day.slice(0, 4);
-      const calendarRef = adminDb
-        .collection("activityCalendar")
-        .doc(`${uid}_${year}`);
+      const calendarRef = adminDb.doc(
+        dashboardDocumentPaths.calendar(uid, year),
+      );
 
-      const paysSubmissionXp = isPublic && !xpAward?.exists;
+      const paysSubmissionXp = !xpAward?.exists;
       const xpAwarded =
         (paysSubmissionXp ? xpConfig.frqSubmission : 0) +
         streakXp(streak, next, xpConfig);
-      const progress = addXp(totalXp, xpAwarded, xpConfig);
+      const progress = addXp(totalXp, xpAwarded);
 
       if (paysSubmissionXp) {
         transaction.create(xpAwardRef, {

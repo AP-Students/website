@@ -55,7 +55,9 @@ export default function UserManagementPage() {
   const [tempPassword, setTempPassword] = useState<string>("");
   const photoObjectUrlRef = useRef<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
-  const xpProgress = useXpProgress(user?.uid);
+  // On a read error the card is simply left out; this page is about the
+  // account, and the dashboard is where a failed load is reported.
+  const { progress: xpProgress } = useXpProgress(user?.uid);
 
   useEffect(() => {
     async function fetchUser() {

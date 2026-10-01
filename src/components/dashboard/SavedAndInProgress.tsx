@@ -54,12 +54,15 @@ function ItemList({
   rows,
   empty,
   onRemove,
+  limit = MAX_ROWS,
 }: {
   title: string;
   rows: Row[];
   empty: string;
   /** When set, each row gets a remove button. */
   onRemove?: (id: string) => void;
+  /** How many rows to show. The overview card shows a few; a tab shows all. */
+  limit?: number;
 }) {
   return (
     <section>
@@ -68,7 +71,7 @@ function ItemList({
         <p className="text-gray-500">{empty}</p>
       ) : (
         <ul className="flex flex-col gap-3">
-          {rows.slice(0, MAX_ROWS).map((row) => {
+          {rows.slice(0, limit).map((row) => {
             const Icon = KIND_ICONS[row.kind];
             const subjectName = findCourse(row.subject)?.name ?? row.subject;
             const context = [subjectName, unitLabel(row.unitId)]
@@ -120,21 +123,16 @@ function ItemList({
   );
 }
 
-interface SavedAndInProgressProps {
-  saved: SavedItem[];
-  inProgress: InProgressItem[];
-  inProgressReadings: InProgressReading[];
-  /** Removes a saved item by id. Saved rows show a remove button when set. */
-  onRemoveSaved?: (id: string) => void;
-}
-
-export default function SavedAndInProgress({
-  saved,
+export function InProgressList({
   inProgress,
   inProgressReadings,
-  onRemoveSaved,
-}: SavedAndInProgressProps) {
-  const inProgressRows: Row[] = [
+  limit,
+}: {
+  inProgress: InProgressItem[];
+  inProgressReadings: InProgressReading[];
+  limit?: number;
+}) {
+  const rows: Row[] = [
     ...inProgress.map((item) => ({
       id: item.id,
       kind: item.kind,
@@ -155,7 +153,27 @@ export default function SavedAndInProgress({
     })),
   ];
 
-  const savedRows: Row[] = saved.map((item) => ({
+  return (
+    <ItemList
+      title="In Progress:"
+      rows={rows}
+      empty="Nothing in progress. Start a practice test or reading to pick it up here later."
+      limit={limit}
+    />
+  );
+}
+
+export function SavedList({
+  saved,
+  onRemove,
+  limit,
+}: {
+  saved: SavedItem[];
+  /** Removes a saved item by id. Rows show a remove button when set. */
+  onRemove?: (id: string) => void;
+  limit?: number;
+}) {
+  const rows: Row[] = saved.map((item) => ({
     id: item.id,
     kind: item.kind,
     subject: item.subject,
@@ -168,18 +186,37 @@ export default function SavedAndInProgress({
   }));
 
   return (
+    <ItemList
+      title="Saved:"
+      rows={rows}
+      empty="No saved items yet. Bookmark a question or reading to find it here."
+      onRemove={onRemove}
+      limit={limit}
+    />
+  );
+}
+
+interface SavedAndInProgressProps {
+  saved: SavedItem[];
+  inProgress: InProgressItem[];
+  inProgressReadings: InProgressReading[];
+  /** Removes a saved item by id. Saved rows show a remove button when set. */
+  onRemoveSaved?: (id: string) => void;
+}
+
+export default function SavedAndInProgress({
+  saved,
+  inProgress,
+  inProgressReadings,
+  onRemoveSaved,
+}: SavedAndInProgressProps) {
+  return (
     <div className="flex flex-col gap-8">
-      <ItemList
-        title="In Progress:"
-        rows={inProgressRows}
-        empty="Nothing in progress. Start a practice test or reading to pick it up here later."
+      <InProgressList
+        inProgress={inProgress}
+        inProgressReadings={inProgressReadings}
       />
-      <ItemList
-        title="Saved:"
-        rows={savedRows}
-        empty="No saved items yet. Bookmark a question or reading to find it here."
-        onRemove={onRemoveSaved}
-      />
+      <SavedList saved={saved} onRemove={onRemoveSaved} />
     </div>
   );
 }

@@ -55,10 +55,11 @@ test("an unusable value falls back to its own default only", () => {
   assert.equal(config.streakDay, 7);
 });
 
-test("a level can't cost 0 XP, or levels would never end", () => {
-  assert.equal(
-    parseXpConfig({ levelBaseXp: 0 }).levelBaseXp,
-    DEFAULT_XP_CONFIG.levelBaseXp,
+test("a level curve stored in config/xp is ignored", () => {
+  // Configs saved before the curve moved into code still carry these fields.
+  assert.deepEqual(
+    parseXpConfig({ levelBaseXp: 1000, levelStepXp: 0 }),
+    DEFAULT_XP_CONFIG,
   );
 });
 
@@ -77,7 +78,7 @@ test("parsing never mutates the defaults", () => {
 });
 
 test("everyone starts at level 1", () => {
-  assert.deepEqual(levelForXp(0, DEFAULT_XP_CONFIG), {
+  assert.deepEqual(levelForXp(0), {
     xp: 0,
     level: 1,
     xpIntoLevel: 0,
@@ -86,19 +87,19 @@ test("everyone starts at level 1", () => {
 });
 
 test("each level costs the base plus one more step than the last", () => {
-  assert.deepEqual(levelForXp(99, DEFAULT_XP_CONFIG), {
+  assert.deepEqual(levelForXp(99), {
     xp: 99,
     level: 1,
     xpIntoLevel: 99,
     xpForNextLevel: 100,
   });
-  assert.deepEqual(levelForXp(100, DEFAULT_XP_CONFIG), {
+  assert.deepEqual(levelForXp(100), {
     xp: 100,
     level: 2,
     xpIntoLevel: 0,
     xpForNextLevel: 150,
   });
-  assert.deepEqual(levelForXp(260, DEFAULT_XP_CONFIG), {
+  assert.deepEqual(levelForXp(260), {
     xp: 260,
     level: 3,
     xpIntoLevel: 10,
@@ -106,15 +107,18 @@ test("each level costs the base plus one more step than the last", () => {
   });
 });
 
-test("a flat curve makes every level cost the same", () => {
-  const flat = { levelBaseXp: 50, levelStepXp: 0 };
-  assert.equal(levelForXp(500, flat).level, 11);
-  assert.equal(levelForXp(500, flat).xpForNextLevel, 50);
+test("levels only go up as XP grows", () => {
+  let previous = levelForXp(0);
+  for (let xp = 1; xp <= 20_000; xp += 7) {
+    const current = levelForXp(xp);
+    assert.ok(current.level >= previous.level, `level fell at ${xp} XP`);
+    previous = current;
+  }
 });
 
 test("negative or broken totals read as 0 XP", () => {
-  assert.equal(levelForXp(-20, DEFAULT_XP_CONFIG).xp, 0);
-  assert.equal(levelForXp(Number.NaN, DEFAULT_XP_CONFIG).xp, 0);
+  assert.equal(levelForXp(-20).xp, 0);
+  assert.equal(levelForXp(Number.NaN).xp, 0);
   assert.equal(readXpTotal({ xp: -3 }), 0);
   assert.equal(readXpTotal({ xp: "12" }), 0);
   assert.equal(readXpTotal(undefined), 0);
@@ -123,24 +127,34 @@ test("negative or broken totals read as 0 XP", () => {
 
 test("the XP to reach a level matches where that total lands", () => {
   for (const level of [1, 2, 3, 10, 50]) {
-    const total = totalXpForLevel(level, DEFAULT_XP_CONFIG);
-    assert.equal(levelForXp(total, DEFAULT_XP_CONFIG).level, level);
-    assert.equal(levelForXp(total - 1, DEFAULT_XP_CONFIG).level, Math.max(1, level - 1));
+    const total = totalXpForLevel(level);
+    assert.equal(levelForXp(total).level, level);
+    assert.equal(levelForXp(total - 1).level, Math.max(1, level - 1));
   }
 });
 
 test("adding XP reports a level-up only when one happens", () => {
-  assert.deepEqual(addXp(90, 5, DEFAULT_XP_CONFIG), {
+  assert.deepEqual(addXp(90, 5), {
     xp: 95,
     level: 1,
     xpIntoLevel: 95,
     xpForNextLevel: 100,
     leveledUp: false,
   });
-  const leveled = addXp(90, 20, DEFAULT_XP_CONFIG);
+  const leveled = addXp(90, 20);
   assert.equal(leveled.level, 2);
   assert.equal(leveled.xpIntoLevel, 10);
   assert.equal(leveled.leveledUp, true);
+});
+
+test("changing the XP settings never moves a student's level down", () => {
+  // The #421 regression: with the curve in config/xp, raising the XP for
+  // level 2 to 1,000 dropped this student from level 3 to 1 on their next
+  // award. Whatever admins save now, earning XP can only keep or raise it.
+  assert.equal(levelForXp(305).level, 3);
+  const after = addXp(305, 30);
+  assert.equal(after.level, 3);
+  assert.equal(after.leveledUp, false);
 });
 
 test("the first day of a streak earns no streak bonus", () => {
@@ -176,23 +190,29 @@ test("a streak that restarts after a missed day earns nothing that day", () => {
   assert.equal(streakXp(before, after, DEFAULT_XP_CONFIG), 0);
 });
 
-test("stored stats show their level when it adds up", () => {
+test("stored stats show the level their total reaches", () => {
   assert.deepEqual(
     readXpProgress({ xp: 260, level: 3, xpIntoLevel: 10, xpForNextLevel: 200 }),
     { xp: 260, level: 3, xpIntoLevel: 10, xpForNextLevel: 200 },
   );
 });
 
-test("a new student is level 1 on the default curve", () => {
-  assert.deepEqual(readXpProgress(undefined), levelForXp(0, DEFAULT_XP_CONFIG));
+test("a new student is level 1", () => {
+  assert.deepEqual(readXpProgress(undefined), levelForXp(0));
 });
 
-test("stats whose level doesn't add up are placed on the default curve", () => {
+test("a stored level that doesn't match the total is recomputed", () => {
   // What the MCQ route wrote before levels were tracked: progress that grew
   // past the size of the level without the level ever moving.
   assert.deepEqual(
     readXpProgress({ xp: 260, level: 1, xpIntoLevel: 260, xpForNextLevel: 100 }),
-    levelForXp(260, DEFAULT_XP_CONFIG),
+    levelForXp(260),
+  );
+  // A level written under an admin-edited curve looks self-consistent, but two
+  // students with the same XP must still show the same level.
+  assert.deepEqual(
+    readXpProgress({ xp: 335, level: 1, xpIntoLevel: 335, xpForNextLevel: 1000 }),
+    levelForXp(335),
   );
 });
 
@@ -221,15 +241,6 @@ test("the admin form rejects amounts that aren't whole numbers", () => {
     );
     assert.ok("error" in result, `expected "${bad}" to be rejected`);
   }
-});
-
-test("the admin form rejects a level that costs 0 XP", () => {
-  const form = toXpForm(DEFAULT_XP_CONFIG);
-  const result = parseXpForm(
-    { ...form, amounts: { ...form.amounts, levelBaseXp: "0" } },
-    LABELS,
-  );
-  assert.ok("error" in result);
 });
 
 test("the admin form skips blank milestone rows and rejects bad ones", () => {

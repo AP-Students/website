@@ -1,16 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
-import { getAdminAuth, getAdminDb, hasExplicitAdminCredentials } from "@/lib/firebase-admin";
-import type { ActivityAwardResponse } from "@/types/dashboard";
+import { getAdminDb, hasExplicitAdminCredentials } from "@/lib/firebase-admin";
+import { dashboardDocumentPaths, type ActivityAwardResponse } from "@/types/dashboard";
 import { readStreakState, recordActiveDay, resolveActivityDay } from "@/lib/gamification/streak";
 import { addXp, readXpTotal, streakXp, type XpConfig } from "@/lib/gamification/xp";
 import { loadXpConfig } from "@/lib/gamification/loadXpConfig";
+import { isDocumentId, requireUser } from "@/lib/server/activityRequest";
 
 type SubmittedAnswers = Record<number, string[]>;
 type StoredQuestion = { type?: unknown; answers?: unknown; topic?: unknown };
-
-const isDocumentId = (value: unknown): value is string =>
-  typeof value === "string" && value.trim().length > 0 && !value.includes("/");
 
 const asStringArray = (value: unknown): string[] =>
   Array.isArray(value) && value.every((entry) => typeof entry === "string")
@@ -58,10 +56,10 @@ const awardResponse = (
 
 /** Grades a published MCQ test on the server and awards its one-time XP. */
 export async function POST(request: NextRequest) {
-  const adminAuth = getAdminAuth();
+  const caller = await requireUser(request);
+  if ("error" in caller) return caller.error;
+  const { uid } = caller;
   const adminDb = getAdminDb();
-  const idToken = request.headers.get("authorization")?.match(/^Bearer (.+)$/i)?.[1];
-  if (!idToken) return NextResponse.json({ error: "Missing authorization token" }, { status: 401 });
 
   const body = (await request.json().catch(() => null)) as {
     subject?: unknown; unitId?: unknown; testId?: unknown; answers?: unknown; timeZone?: unknown;
@@ -70,14 +68,6 @@ export async function POST(request: NextRequest) {
   const answers = parseAnswers(body?.answers);
   if (!isDocumentId(subject) || !isDocumentId(unitId) || !isDocumentId(testId) || !answers) {
     return NextResponse.json({ error: "subject, unitId, testId, and answers must be valid" }, { status: 400 });
-  }
-
-  let uid: string;
-  try {
-    uid = (await adminAuth.verifyIdToken(idToken)).uid;
-  } catch (error) {
-    console.error("Unable to verify MCQ activity token", error);
-    return NextResponse.json({ error: "Invalid authorization token" }, { status: 401 });
   }
 
   const testRef = adminDb.collection("subjects").doc(subject).collection("units").doc(unitId)
@@ -125,8 +115,8 @@ export async function POST(request: NextRequest) {
 
   const correct = results.filter((result) => result.correct).length;
   const testXp = xpConfig.mcqTestComplete + correct * xpConfig.mcqCorrectAnswer;
-  const eventRef = adminDb.collection("activityEvents").doc(`${uid}_mcq_test_${testId}`);
-  const statsRef = adminDb.collection("userStats").doc(uid);
+  const eventRef = adminDb.doc(dashboardDocumentPaths.activity(`${uid}_mcq_test_${testId}`));
+  const statsRef = adminDb.doc(dashboardDocumentPaths.stats(uid));
 
   try {
     const result = await adminDb.runTransaction(async (transaction) => {
@@ -142,9 +132,9 @@ export async function POST(request: NextRequest) {
       const { day: dayKey, timeZone } = resolveActivityDay(new Date(), statsData.timeZone, body?.timeZone);
       const streak = recordActiveDay(previousStreak, dayKey);
       const xpAwarded = testXp + streakXp(previousStreak, streak, xpConfig);
-      const progress = addXp(totalXp, xpAwarded, xpConfig);
+      const progress = addXp(totalXp, xpAwarded);
       const year = dayKey.slice(0, 4);
-      const calendarRef = adminDb.collection("activityCalendar").doc(`${uid}_${year}`);
+      const calendarRef = adminDb.doc(dashboardDocumentPaths.calendar(uid, year));
       const calendar = await transaction.get(calendarRef);
       const calendarDays = (calendar.data()?.days ?? {}) as Record<string, unknown>;
       const currentDayCount = typeof calendarDays[dayKey] === "number" ? calendarDays[dayKey] : 0;
