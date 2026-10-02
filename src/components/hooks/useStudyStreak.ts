@@ -5,11 +5,8 @@ import {
   getDeviceTimeZone,
   isValidTimeZone,
 } from "@/lib/gamification/calendarDay";
-import {
-  NO_STREAK,
-  readStreakState,
-  type StreakState,
-} from "@/lib/gamification/streak";
+import { readStreakState, type StreakState } from "@/lib/gamification/streak";
+import { dashboardDocumentPaths } from "@/types/dashboard";
 
 export interface StudyStreak {
   streak: StreakState;
@@ -19,24 +16,34 @@ export interface StudyStreak {
   calendarDays: Record<string, number>;
 }
 
+export interface StudyStreakState {
+  /** Undefined while loading, and after a read error. */
+  studyStreak?: StudyStreak;
+  /**
+   * Set when the streak or calendar couldn't be read. Kept separate so a
+   * failure is never shown as a real streak of 0 with no activity.
+   */
+  error?: Error;
+}
+
 /**
  * The signed-in student's streak and activity calendar, kept live as the
- * server records new activity. Undefined until the streak has loaded.
+ * server records new activity.
  */
-export function useStudyStreak(
-  uid: string | undefined,
-): StudyStreak | undefined {
+export function useStudyStreak(uid: string | undefined): StudyStreakState {
   const [stats, setStats] = useState<Omit<StudyStreak, "calendarDays">>();
   const [calendars, setCalendars] = useState<
     Record<number, Record<string, number>>
   >({});
+  const [error, setError] = useState<Error>();
 
   useEffect(() => {
     setStats(undefined);
+    setError(undefined);
     if (!uid) return;
 
     return onSnapshot(
-      doc(db, "userStats", uid),
+      doc(db, dashboardDocumentPaths.stats(uid)),
       (snapshot) => {
         const data = snapshot.data();
         const timeZone: unknown = data?.timeZone;
@@ -49,9 +56,9 @@ export function useStudyStreak(
               : getDeviceTimeZone(),
         });
       },
-      (error) => {
-        console.error("Error loading streak:", error);
-        setStats({ streak: NO_STREAK, timeZone: getDeviceTimeZone() });
+      (streakError) => {
+        console.error("Error loading streak:", streakError);
+        setError(streakError);
       },
     );
   }, [uid]);
@@ -65,12 +72,15 @@ export function useStudyStreak(
     const thisYear = new Date().getFullYear();
     const unsubscribes = [thisYear - 1, thisYear].map((year) =>
       onSnapshot(
-        doc(db, "activityCalendar", `${uid}_${year}`),
+        doc(db, dashboardDocumentPaths.calendar(uid, year)),
         (snapshot) => {
           const days = (snapshot.data()?.days ?? {}) as Record<string, number>;
           setCalendars((previous) => ({ ...previous, [year]: days }));
         },
-        (error) => console.error(`Error loading ${year} activity:`, error),
+        (calendarError) => {
+          console.error(`Error loading ${year} activity:`, calendarError);
+          setError(calendarError);
+        },
       ),
     );
     return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
@@ -85,5 +95,6 @@ export function useStudyStreak(
     [calendars],
   );
 
-  return stats && { ...stats, calendarDays };
+  if (error) return { error };
+  return { studyStreak: stats && { ...stats, calendarDays } };
 }

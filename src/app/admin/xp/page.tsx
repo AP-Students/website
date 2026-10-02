@@ -14,6 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   DEFAULT_XP_CONFIG,
+  LEVEL_CURVE,
+  XP_AMOUNT_FIELDS,
   XP_CONFIG_COLLECTION,
   XP_CONFIG_DOC,
   parseXpConfig,
@@ -45,28 +47,12 @@ const FIELDS: Record<XpAmountField, { label: string; help: string }> = {
     label: "Daily streak bonus",
     help: "The first FRQ or MCQ test of each day, once the streak is 2 days or longer.",
   },
-  levelBaseXp: {
-    label: "XP to reach level 2",
-    help: "How much XP level 1 takes. At least 1.",
-  },
-  levelStepXp: {
-    label: "Extra XP per level",
-    help: "How much more each level takes than the one before it.",
-  },
 };
 
 const LABELS = Object.fromEntries(
   Object.entries(FIELDS).map(([field, { label }]) => [field, label]),
 ) as Record<XpAmountField, string>;
 
-const AWARD_FIELDS: XpAmountField[] = [
-  "readingComplete",
-  "mcqTestComplete",
-  "mcqCorrectAnswer",
-  "frqSubmission",
-  "streakDay",
-];
-const LEVEL_FIELDS: XpAmountField[] = ["levelBaseXp", "levelStepXp"];
 const PREVIEW_LEVELS = [2, 5, 10, 25, 50];
 
 export default function XpSettingsPage() {
@@ -154,10 +140,6 @@ export default function XpSettingsPage() {
     }
   };
 
-  const parsedPreview = form ? parseXpForm(form, LABELS) : undefined;
-  const levelPreview =
-    parsedPreview && "config" in parsedPreview ? parsedPreview.config : null;
-
   const amountInput = (field: XpAmountField) => (
     <div key={field} className="flex flex-col gap-1">
       <Label htmlFor={field}>{FIELDS[field].label}</Label>
@@ -198,7 +180,7 @@ export default function XpSettingsPage() {
           <form className="flex flex-col gap-8" onSubmit={save}>
             <section className="flex flex-col gap-4 rounded-lg border p-4 shadow-sm">
               <h2 className="text-2xl font-bold">Activities</h2>
-              {AWARD_FIELDS.map(amountInput)}
+              {XP_AMOUNT_FIELDS.map(amountInput)}
             </section>
 
             <section className="flex flex-col gap-4 rounded-lg border p-4 shadow-sm">
@@ -280,19 +262,24 @@ export default function XpSettingsPage() {
               </Button>
             </section>
 
-            <section className="flex flex-col gap-4 rounded-lg border p-4 shadow-sm">
+            <section className="flex flex-col gap-2 rounded-lg border p-4 shadow-sm">
               <h2 className="text-2xl font-bold">Levels</h2>
-              {LEVEL_FIELDS.map(amountInput)}
-              {levelPreview && (
-                <p className="text-sm text-gray-600">
-                  Total XP needed:{" "}
-                  {PREVIEW_LEVELS.map(
-                    (level) =>
-                      `level ${level} at ${totalXpForLevel(level, levelPreview).toLocaleString()}`,
-                  ).join(", ")}
-                  .
-                </p>
-              )}
+              <p className="text-sm text-gray-600">
+                Level 2 takes {LEVEL_CURVE.baseXp.toLocaleString()} XP, and
+                each level after that takes{" "}
+                {LEVEL_CURVE.stepXp.toLocaleString()} XP more than the one
+                before. Total XP needed:{" "}
+                {PREVIEW_LEVELS.map(
+                  (level) =>
+                    `level ${level} at ${totalXpForLevel(level).toLocaleString()}`,
+                ).join(", ")}
+                .
+              </p>
+              <p className="text-sm text-gray-600">
+                Levels can&apos;t be changed here. Every award recalculates a
+                student&apos;s level from their total XP, so a steeper curve
+                would move students who already reached a level back down.
+              </p>
             </section>
 
             {error && (

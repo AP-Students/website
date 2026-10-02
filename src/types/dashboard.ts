@@ -11,20 +11,21 @@ export type ActivityType = "reading" | "mcq_test" | "frq";
 export type GradeStatus = "none" | "pending" | "graded" | "self_graded";
 
 /**
- * Canonical Firestore document locations for the Week 1 dashboard.
+ * Canonical Firestore document locations for the dashboard.
  *
- * `activity` is an immutable, Admin-SDK-written ledger. Its event ID is the
- * idempotency/replay-protection key for an XP award. User-owned saved items
- * are deliberately stored at `users/{uid}/savedItems/{itemId}`.
+ * Stats, activity events and calendars are top-level collections that only
+ * the /api/activity routes write, through the Admin SDK. An event's ID,
+ * `${uid}_${type}_${sourceId}`, is the idempotency key for its XP award.
+ * Saved and in-progress items are client-owned, so they live under the
+ * user's own document.
  */
 export const dashboardDocumentPaths = {
-  stats: (uid: string) => `users/${uid}/stats/summary`,
-  activity: (uid: string, eventId: string) =>
-    `users/${uid}/activity/${eventId}`,
+  stats: (uid: string) => `userStats/${uid}`,
+  activity: (eventId: string) => `activityEvents/${eventId}`,
   calendar: (uid: string, year: number | string) =>
-    `users/${uid}/calendar/${year}`,
+    `activityCalendar/${uid}_${year}`,
   notification: (uid: string, notificationId: string) =>
-    `users/${uid}/notifications/${notificationId}`,
+    `notifications/${uid}/items/${notificationId}`,
   savedItem: (uid: string, itemId: string) =>
     `users/${uid}/savedItems/${itemId}`,
   inProgress: (uid: string, itemId: string) =>

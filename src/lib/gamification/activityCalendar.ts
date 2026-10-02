@@ -10,11 +10,12 @@ import {
  * The shape of the activity calendar: which calendar days a student was
  * active on, and how dark each day's square should be.
  *
- * Intensity uses fixed thresholds rather than scaling to the student's own
- * busiest day (as GitHub does). Scaling would make a student's first ever
- * question paint a full-intensity square, and would quietly fade every old
- * day the first time they have a big one — neither says anything true about
- * how much they studied.
+ * Intensity uses fixed thresholds by default rather than scaling to the
+ * student's own busiest day (as GitHub does). Scaling makes a student's first
+ * ever question paint a full-intensity square, and quietly fades every old
+ * day the first time they have a big one. The year calendar on the dashboard
+ * scales anyway, by design, so its ramp always uses all four shades;
+ * `thresholdsForMax` builds those thresholds from the year's busiest day.
  */
 
 /** 0 = no activity, 4 = the most. */
@@ -37,6 +38,21 @@ export function intensityLevel(
     if (count >= minimum) level = (i + 1) as IntensityLevel;
   });
   return level;
+}
+
+/**
+ * Thresholds that scale to the busiest day in view: that day is always level
+ * 4, one completion is always at least level 1, and the levels between split
+ * the range evenly. When a new busiest day appears, earlier days shift down a
+ * shade. Pass the largest count in the window being drawn.
+ */
+export function thresholdsForMax(maxInWindow: number): IntensityThresholds {
+  const max = Number.isFinite(maxInWindow)
+    ? Math.max(1, Math.floor(maxInWindow))
+    : 1;
+  const minimumFor = (level: number) =>
+    1 + Math.ceil(((level - 1) * (max - 1)) / 3);
+  return [minimumFor(1), minimumFor(2), minimumFor(3), minimumFor(4)];
 }
 
 /** Tallies instants into per-day counts in the student's time zone. */

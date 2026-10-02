@@ -4,6 +4,7 @@ import {
   buildCalendarWeeks,
   countByDay,
   intensityLevel,
+  thresholdsForMax,
 } from "../src/lib/gamification/activityCalendar.ts";
 
 test("intensity levels follow the default thresholds", () => {
@@ -19,6 +20,38 @@ test("intensity levels follow the default thresholds", () => {
 test("intensity thresholds are configurable", () => {
   assert.equal(intensityLevel(2, [1, 2, 3, 4]), 2);
   assert.equal(intensityLevel(4, [1, 2, 3, 4]), 4);
+});
+
+test("[1,5] -> 6: a new busiest day takes the top level and earlier days shift down", () => {
+  const before = thresholdsForMax(5);
+  assert.equal(intensityLevel(1, before), 1);
+  assert.equal(intensityLevel(5, before), 4);
+
+  const after = thresholdsForMax(6);
+  assert.equal(intensityLevel(6, after), 4);
+  assert.equal(intensityLevel(5, after), 3);
+  assert.equal(intensityLevel(1, after), 1);
+});
+
+test("relative intensity: a day with no activity is level 0 whatever the max", () => {
+  assert.equal(intensityLevel(0, thresholdsForMax(0)), 0);
+  assert.equal(intensityLevel(0, thresholdsForMax(1)), 0);
+  assert.equal(intensityLevel(0, thresholdsForMax(40)), 0);
+});
+
+test("relative intensity: any activity shows, and the busiest day is level 4", () => {
+  for (let max = 1; max <= 60; max++) {
+    const thresholds = thresholdsForMax(max);
+    assert.ok(intensityLevel(1, thresholds) >= 1, `1 hidden at max ${max}`);
+    assert.equal(intensityLevel(max, thresholds), 4, `max ${max}`);
+    for (let count = 1; count < max; count++) {
+      assert.ok(
+        intensityLevel(count, thresholds) <=
+          intensityLevel(count + 1, thresholds),
+        `level fell from ${count} to ${count + 1} at max ${max}`,
+      );
+    }
+  }
 });
 
 test("countByDay buckets by the student's day, not UTC's", () => {

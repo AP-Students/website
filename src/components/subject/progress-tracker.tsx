@@ -16,6 +16,7 @@ import { useUser } from "../hooks/UserContext";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import type { UserChapterData } from "@/types/user";
+import { getDeviceTimeZone } from "@/lib/gamification/calendarDay";
 
 const dropdownIcons: Record<string, React.ReactNode> = {
   Reading: <BookOpen className="size-5 stroke-yellow-500" />,
@@ -83,7 +84,12 @@ export default function ProgressTracker({
             "Content-Type": "application/json",
             Authorization: `Bearer ${idToken}`,
           },
-          body: JSON.stringify({ subject, unitId, chapterId }),
+          body: JSON.stringify({
+            subject,
+            unitId,
+            chapterId,
+            timeZone: getDeviceTimeZone(),
+          }),
         });
         if (!response.ok) {
           const body = (await response.json().catch(() => null)) as {

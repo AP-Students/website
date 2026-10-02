@@ -10,6 +10,9 @@ import type { StreakState } from "./streak.ts";
  *
  * XP is only ever awarded by server code, and a student's total, level, and
  * progress into that level are stored together on `userStats/{uid}`.
+ *
+ * The level curve is the exception: it is fixed here, in `LEVEL_CURVE`, not
+ * in the config. See that constant for why.
  */
 
 export interface XpConfig {
@@ -25,10 +28,6 @@ export interface XpConfig {
   streakDay: number;
   /** One-off bonuses for reaching a streak length, keyed by days, e.g. "7". */
   streakMilestones: Record<string, number>;
-  /** XP needed to go from level 1 to level 2. */
-  levelBaseXp: number;
-  /** How much more XP each level needs than the one before it. */
-  levelStepXp: number;
 }
 
 export const XP_CONFIG_COLLECTION = "config";
@@ -41,9 +40,20 @@ export const DEFAULT_XP_CONFIG: XpConfig = {
   frqSubmission: 25,
   streakDay: 5,
   streakMilestones: { "3": 25, "7": 50, "30": 150, "100": 500 },
-  levelBaseXp: 100,
-  levelStepXp: 50,
 };
+
+/**
+ * Level 1 to 2 takes `baseXp`, and each level after that takes `stepXp` more
+ * than the one before it.
+ *
+ * This is deliberately not admin-editable. A level is recomputed from the
+ * student's total on every award, so a steeper curve would demote whoever
+ * earned XP next (level 3 to level 1, measured) while students who earned
+ * nothing kept their old level, leaving equal XP showing different levels.
+ * Editing these numbers in code does the same to everyone, so treat them as
+ * permanent.
+ */
+export const LEVEL_CURVE = { baseXp: 100, stepXp: 50 } as const;
 
 /** The scalar fields, in the order the admin form shows them. */
 export const XP_AMOUNT_FIELDS = [
@@ -52,8 +62,6 @@ export const XP_AMOUNT_FIELDS = [
   "mcqCorrectAnswer",
   "frqSubmission",
   "streakDay",
-  "levelBaseXp",
-  "levelStepXp",
 ] as const satisfies readonly (keyof XpConfig)[];
 
 export type XpAmountField = (typeof XP_AMOUNT_FIELDS)[number];
@@ -75,7 +83,7 @@ const isStreakLength = (key: string) => /^[1-9]\d{0,4}$/.test(key);
 /**
  * The config stored in Firestore, laid over the defaults. Each field is
  * checked on its own, so one bad value falls back without discarding the
- * rest. A level must cost at least 1 XP, or levels would never end.
+ * rest. Fields it doesn't know, such as an old saved level curve, are ignored.
  */
 export function parseXpConfig(data: unknown): XpConfig {
   const stored =
@@ -91,7 +99,6 @@ export function parseXpConfig(data: unknown): XpConfig {
     const value = stored[field];
     if (isAmount(value)) config[field] = value;
   }
-  if (config.levelBaseXp < 1) config.levelBaseXp = DEFAULT_XP_CONFIG.levelBaseXp;
 
   const milestones = stored.streakMilestones;
   if (
@@ -151,9 +158,6 @@ export function parseXpForm(
     }
     amounts[field] = value;
   }
-  if (amounts.levelBaseXp < 1) {
-    return { error: `${labels.levelBaseXp} must be at least 1.` };
-  }
 
   const streakMilestones: Record<string, number> = {};
   for (const row of form.milestones) {
@@ -178,21 +182,15 @@ export function parseXpForm(
 }
 
 /** XP needed to go from `level` to the next one. */
-export function xpToAdvance(
-  level: number,
-  config: Pick<XpConfig, "levelBaseXp" | "levelStepXp">,
-): number {
-  return config.levelBaseXp + (level - 1) * config.levelStepXp;
+export function xpToAdvance(level: number): number {
+  return LEVEL_CURVE.baseXp + (level - 1) * LEVEL_CURVE.stepXp;
 }
 
 /** Total XP a student needs to reach `level`. */
-export function totalXpForLevel(
-  level: number,
-  config: Pick<XpConfig, "levelBaseXp" | "levelStepXp">,
-): number {
+export function totalXpForLevel(level: number): number {
   let total = 0;
   for (let reached = 1; reached < level; reached++) {
-    total += xpToAdvance(reached, config);
+    total += xpToAdvance(reached);
   }
   return total;
 }
@@ -207,18 +205,15 @@ export interface XpProgress {
 }
 
 /** Where a total of `xp` lands on the level curve. Everyone starts at level 1. */
-export function levelForXp(
-  xp: number,
-  config: Pick<XpConfig, "levelBaseXp" | "levelStepXp">,
-): XpProgress {
+export function levelForXp(xp: number): XpProgress {
   const total = Number.isFinite(xp) ? Math.max(0, Math.floor(xp)) : 0;
   let level = 1;
   let remaining = total;
-  let needed = xpToAdvance(level, config);
+  let needed = xpToAdvance(level);
   while (remaining >= needed && level < MAX_LEVEL) {
     remaining -= needed;
     level += 1;
-    needed = xpToAdvance(level, config);
+    needed = xpToAdvance(level);
   }
   return { xp: total, level, xpIntoLevel: remaining, xpForNextLevel: needed };
 }
@@ -232,17 +227,15 @@ export function readXpTotal(data: Record<string, unknown> | undefined): number {
 }
 
 /**
- * The new total and level after earning `gained` XP. Both sides are placed on
- * the current curve, so a level-up is reported against the config in force
- * now, even if admins have changed the curve since the student's last award.
+ * The new total and level after earning `gained` XP. The curve is fixed, so
+ * earning XP can only keep a student's level or raise it.
  */
 export function addXp(
   currentXp: number,
   gained: number,
-  config: XpConfig,
 ): XpProgress & { leveledUp: boolean } {
-  const before = levelForXp(currentXp, config);
-  const after = levelForXp(before.xp + Math.max(0, gained), config);
+  const before = levelForXp(currentXp);
+  const after = levelForXp(before.xp + Math.max(0, gained));
   return { ...after, leveledUp: after.level > before.level };
 }
 
@@ -264,27 +257,13 @@ export function streakXp(
 }
 
 /**
- * The level shown for stored stats. The server writes the level alongside the
- * total, so that is used while it is coherent. Stats from before levels were
- * tracked, or none at all for a new student, are placed on the default curve.
+ * The level shown for stored stats, always worked out from the total. The
+ * stored level can be stale (written before levels were tracked, or under a
+ * curve admins used to be able to edit), and two students with the same XP
+ * must show the same level.
  */
 export function readXpProgress(
   data: Record<string, unknown> | undefined,
 ): XpProgress {
-  const xp = readXpTotal(data);
-  const { level, xpIntoLevel, xpForNextLevel } = data ?? {};
-  const isCount = (value: unknown): value is number =>
-    typeof value === "number" && Number.isInteger(value) && value >= 0;
-
-  if (
-    isCount(level) &&
-    level >= 1 &&
-    isCount(xpIntoLevel) &&
-    isCount(xpForNextLevel) &&
-    xpIntoLevel < xpForNextLevel &&
-    xpIntoLevel <= xp
-  ) {
-    return { xp, level, xpIntoLevel, xpForNextLevel };
-  }
-  return levelForXp(xp, DEFAULT_XP_CONFIG);
+  return levelForXp(readXpTotal(data));
 }

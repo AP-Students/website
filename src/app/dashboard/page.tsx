@@ -1,10 +1,14 @@
 "use client";
+import Link from "next/link";
 import Navbar from "@/components/global/navbar";
 import Footer from "@/components/global/footer";
 import { useUser } from "@/components/hooks/UserContext";
 import { useRouter } from "next/navigation";
 import ExperienceCard from "@/components/dashboard/ExperienceCard";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import DashboardTabs, {
+  TabPlaceholder,
+} from "@/components/dashboard/DashboardTabs";
 import MyClasses from "@/components/dashboard/MyClasses";
 import GlobalStats from "@/components/dashboard/GlobalStats";
 import StreakBar from "@/components/dashboard/StreakBar";
@@ -18,7 +22,11 @@ import {
 import AchievementsCard from "@/components/dashboard/AchievementsCard";
 import { checkAchievements } from "@/lib/achievements/checkAchievements";
 import RecentActivity from "@/components/dashboard/RecentActivity";
-import SavedAndInProgress from "@/components/dashboard/SavedAndInProgress";
+import SubmissionHistory from "@/components/dashboard/SubmissionHistory";
+import SavedAndInProgress, {
+  InProgressList,
+  SavedList,
+} from "@/components/dashboard/SavedAndInProgress";
 import { listSavedItems, unsaveItem } from "@/lib/savedItems";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
@@ -35,6 +43,14 @@ const FIXTURE_EARNED = new Set(
   ),
 );
 
+function LoadError({ children }: { children: string }) {
+  return (
+    <p role="alert" className="rounded-md bg-red-100 p-4 text-red-700">
+      {children}
+    </p>
+  );
+}
+
 export default function Dashboard() {
   const { user, loading } = useUser();
   const router = useRouter();
@@ -47,8 +63,8 @@ export default function Dashboard() {
 
   const [userDoc, setUserDoc] = useState<User | null | undefined>(undefined);
   const uid = user?.uid;
-  const studyStreak = useStudyStreak(uid);
-  const xpProgress = useXpProgress(uid);
+  const { studyStreak, error: streakError } = useStudyStreak(uid);
+  const { progress: xpProgress, error: xpError } = useXpProgress(uid);
 
   useEffect(() => {
     if (!uid) return;
@@ -115,6 +131,62 @@ export default function Dashboard() {
     );
   }
 
+  const overview = (
+    <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
+      {/* Left column */}
+      <div className="flex flex-col gap-8">
+        {xpProgress ? (
+          <ExperienceCard
+            level={xpProgress.level}
+            xpIntoLevel={xpProgress.xpIntoLevel}
+            xpForNextLevel={xpProgress.xpForNextLevel}
+          />
+        ) : xpError ? (
+          <LoadError>
+            Couldn&apos;t load your XP. Refresh to try again.
+          </LoadError>
+        ) : (
+          <p className="text-gray-500">Loading your XP…</p>
+        )}
+        {studyStreak ? (
+          <StreakBar
+            streak={studyStreak.streak}
+            timeZone={studyStreak.timeZone}
+            calendarDays={studyStreak.calendarDays}
+          />
+        ) : streakError ? (
+          <LoadError>
+            Couldn&apos;t load your streak. Refresh to try again.
+          </LoadError>
+        ) : (
+          <p className="text-gray-500">Loading your streak…</p>
+        )}
+        <GlobalStats
+          problemsSolved={FIXTURE_STATS.problemsSolved}
+          subjectsCompleted={FIXTURE_STATS.subjectsCompleted}
+          totalXp={xpProgress?.xp ?? null}
+        />
+        <RecentActivity events={FIXTURE_EVENTS} />
+      </div>
+
+      {/* Right column */}
+      <div className="flex flex-col gap-8">
+        <AchievementsCard stats={FIXTURE_STATS} earnedIds={FIXTURE_EARNED} />
+        {userDoc === undefined ? (
+          <p className="text-gray-500">Loading your classes…</p>
+        ) : (
+          <MyClasses uid={user.uid} subjectSlugs={userDoc?.mySubjects ?? []} />
+        )}
+        <SavedAndInProgress
+          saved={savedItems}
+          inProgress={FIXTURE_IN_PROGRESS}
+          inProgressReadings={FIXTURE_IN_PROGRESS_READINGS}
+          onRemoveSaved={(id) => void removeSaved(id)}
+        />
+      </div>
+    </div>
+  );
+
   return (
     <div>
       <Navbar />
@@ -123,53 +195,53 @@ export default function Dashboard() {
         notifications={FIXTURE_NOTIFICATIONS}
       />
 
-      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-8 py-10 md:grid-cols-2">
-        {/* Left column */}
-        <div className="flex flex-col gap-8">
-          {xpProgress ? (
-            <ExperienceCard
-              level={xpProgress.level}
-              xpIntoLevel={xpProgress.xpIntoLevel}
-              xpForNextLevel={xpProgress.xpForNextLevel}
-            />
-          ) : (
-            <p className="text-gray-500">Loading your XP…</p>
-          )}
-          {studyStreak ? (
-            <StreakBar
-              streak={studyStreak.streak}
-              timeZone={studyStreak.timeZone}
-              calendarDays={studyStreak.calendarDays}
-            />
-          ) : (
-            <p className="text-gray-500">Loading your streak…</p>
-          )}
-          <GlobalStats
-            problemsSolved={FIXTURE_STATS.problemsSolved}
-            subjectsCompleted={FIXTURE_STATS.subjectsCompleted}
-            totalXp={xpProgress?.xp ?? 0}
-          />
-          <RecentActivity events={FIXTURE_EVENTS} />
-        </div>
-
-        {/* Right column */}
-        <div className="flex flex-col gap-8">
-          <AchievementsCard stats={FIXTURE_STATS} earnedIds={FIXTURE_EARNED} />
-          {userDoc === undefined ? (
-            <p className="text-gray-500">Loading your classes…</p>
-          ) : (
-            <MyClasses
-              uid={user.uid}
-              subjectSlugs={userDoc?.mySubjects ?? []}
-            />
-          )}
-          <SavedAndInProgress
-            saved={savedItems}
-            inProgress={FIXTURE_IN_PROGRESS}
-            inProgressReadings={FIXTURE_IN_PROGRESS_READINGS}
-            onRemoveSaved={(id) => void removeSaved(id)}
-          />
-        </div>
+      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-8">
+        <DashboardTabs
+          panels={{
+            overview,
+            history: <SubmissionHistory events={FIXTURE_EVENTS} />,
+            calendar: (
+              <TabPlaceholder title="Activity Calendar">
+                Your full-year activity calendar is on its way. Until then, your
+                streak and this month&apos;s calendar are on the{" "}
+                <a href="#overview" className="font-semibold underline">
+                  Overview
+                </a>{" "}
+                tab.
+              </TabPlaceholder>
+            ),
+            saved: (
+              <SavedList
+                saved={savedItems}
+                onRemove={(id) => void removeSaved(id)}
+                limit={Infinity}
+              />
+            ),
+            "in-progress": (
+              <InProgressList
+                inProgress={FIXTURE_IN_PROGRESS}
+                inProgressReadings={FIXTURE_IN_PROGRESS_READINGS}
+                limit={Infinity}
+              />
+            ),
+            achievements: (
+              <AchievementsCard
+                stats={FIXTURE_STATS}
+                earnedIds={FIXTURE_EARNED}
+              />
+            ),
+            profile: (
+              <TabPlaceholder title="Profile">
+                Public profiles are coming soon. You can change your name, email
+                and photo on your{" "}
+                <Link href="/account" className="font-semibold underline">
+                  account page
+                </Link>
+                .
+              </TabPlaceholder>
+            ),
+          }}
+        />
       </div>
 
       <Footer />
