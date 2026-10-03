@@ -203,7 +203,11 @@ export default function Dashboard() {
   return (
     <div>
       <Navbar />
-      <DashboardHeader user={userDoc ?? user} notifications={notifications} />
+      <DashboardHeader
+        user={userDoc ?? user}
+        notifications={notifications}
+        markRead={markRead}
+      />
 
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-8">
         {notificationError && (
@@ -240,7 +244,11 @@ export default function Dashboard() {
                 limit={Infinity}
               />
             ),
-            achievements: (
+            achievements: achievementError ? (
+              <LoadError>
+                Couldn&apos;t load your achievements. Refresh to try again.
+              </LoadError>
+            ) : (
               <AchievementsCard
                 stats={achievementStats}
                 earnedIds={earnedIds}

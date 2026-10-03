@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { toast } from "sonner";
 import Link from "next/link";
 import {
   Award,
@@ -25,18 +25,31 @@ const TYPE_ICONS: Record<NotificationType, LucideIcon> = {
 
 export default function NotificationBell({
   notifications,
+  markRead,
 }: {
   notifications: AppNotification[];
+  markRead: (id: string) => Promise<void>;
 }) {
-  const [readIds, setReadIds] = useState<Set<string>>(
-    () =>
-      new Set(notifications.filter((n) => n.readAt !== null).map((n) => n.id)),
-  );
   const isUnread = (notification: AppNotification) =>
-    notification.readAt === null && !readIds.has(notification.id);
+    notification.readAt === null;
   const unreadCount = notifications.filter(isUnread).length;
-  const markRead = (id: string) => setReadIds((prev) => new Set(prev).add(id));
-  const markAllRead = () => setReadIds(new Set(notifications.map((n) => n.id)));
+  const acknowledge = async (id: string) => {
+    try {
+      await markRead(id);
+    } catch {
+      toast.error("Couldn't mark this notification as read. Please try again.");
+    }
+  };
+  const markAllRead = async () => {
+    const results = await Promise.allSettled(
+      notifications
+        .filter(isUnread)
+        .map((notification) => markRead(notification.id)),
+    );
+    if (results.some((result) => result.status === "rejected")) {
+      toast.error("Couldn't mark all notifications as read. Please try again.");
+    }
+  };
 
   return (
     <Popover>
@@ -68,7 +81,7 @@ export default function NotificationBell({
           {unreadCount > 0 && (
             <button
               type="button"
-              onClick={markAllRead}
+              onClick={() => void markAllRead()}
               className="text-xs font-semibold text-orange-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               Mark all as read
@@ -90,7 +103,9 @@ export default function NotificationBell({
                 <li key={notification.id}>
                   <Link
                     href={notification.href}
-                    onClick={() => markRead(notification.id)}
+                    onClick={() => {
+                      if (unread) void acknowledge(notification.id);
+                    }}
                     className={cn(
                       "flex gap-3 px-4 py-3 transition-colors hover:bg-gray-50 focus-visible:bg-orange-50 focus-visible:outline-none",
                       unread && "bg-orange-50/60",

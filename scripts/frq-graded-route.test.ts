@@ -3,16 +3,23 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
+import { isValidElement, type ReactElement } from "react";
+import * as jsxRuntime from "react/jsx-runtime";
 import { FrqGradeAwardError } from "../src/lib/server/awardFrqGrade.ts";
 
 // Execute the actual route/auth source with module-boundary doubles. This keeps
 // Node's existing test runner independent of Next's alias loader and credentials.
-function moduleExports(path: string, dependencies: Record<string, unknown>) {
+function moduleExports(
+  path: string,
+  dependencies: Record<string, unknown>,
+  globals: Record<string, unknown> = {},
+) {
   const source = readFileSync(new URL(path, import.meta.url), "utf8");
   const output = ts.transpileModule(source, {
     compilerOptions: {
       module: ts.ModuleKind.CommonJS,
       target: ts.ScriptTarget.ES2022,
+      jsx: ts.JsxEmit.ReactJSX,
     },
   }).outputText;
   const exports: Record<string, unknown> = {};
@@ -22,8 +29,8 @@ function moduleExports(path: string, dependencies: Record<string, unknown>) {
   };
   runInNewContext(
     output,
-    { require, exports, console },
-    { filename: path, timeout: 1000 },
+    { require, exports, console, ...globals },
+    { filename: path, timeout: 5000 },
   );
   return exports;
 }
@@ -36,6 +43,184 @@ const next = {
       }),
   },
 };
+
+function elements(node: unknown): ReactElement<Record<string, unknown>>[] {
+  if (Array.isArray(node))
+    return node.flatMap((child: unknown) => elements(child));
+  if (!isValidElement<Record<string, unknown>>(node)) return [];
+  return [node, ...elements(node.props.children)];
+}
+const settle = () => new Promise<void>((resolve) => setImmediate(resolve));
+
+void test("notification bell persists individual and bulk acknowledgements and reports failures", async () => {
+  const calls: string[] = [];
+  const errors: string[] = [];
+  const componentModule = moduleExports(
+    "../src/components/dashboard/NotificationBell.tsx",
+    {
+      "react/jsx-runtime": jsxRuntime,
+      "next/link": { default: "a" },
+      sonner: { toast: { error: (message: string) => errors.push(message) } },
+      "lucide-react": {
+        Award: "svg",
+        Bell: "svg",
+        PenLine: "svg",
+        TrendingUp: "svg",
+      },
+      "@/components/ui/popover": {
+        Popover: "div",
+        PopoverContent: "div",
+        PopoverTrigger: "div",
+      },
+      "@/lib/utils": { cn: () => "" },
+    },
+  );
+  const Bell = componentModule.default as (
+    props: Record<string, unknown>,
+  ) => unknown;
+  const notifications = ["one", "two", "read"].map((id) => ({
+    id,
+    type: "frq_graded",
+    title: id,
+    href: `/frq-feedback/${id}`,
+    readAt: id === "read" ? "timestamp" : null,
+    createdAt: { toDate: () => new Date() },
+  }));
+  const render = () =>
+    elements(
+      Bell({
+        notifications,
+        markRead: async (id: string) => {
+          calls.push(id);
+          if (id === "two") throw new Error("write failed");
+          notifications.find((item) => item.id === id)!.readAt = "timestamp";
+        },
+      }),
+    );
+  const link = render().find(
+    (item) => item.type === "a" && item.props.href === "/frq-feedback/one",
+  )!;
+  (link.props.onClick as () => void)();
+  await settle();
+  assert.deepEqual(calls, ["one"]);
+  const bulk = render().find(
+    (item) =>
+      item.type === "button" && item.props.children === "Mark all as read",
+  )!;
+  (bulk.props.onClick as () => void)();
+  await settle();
+  assert.deepEqual(calls, ["one", "two"]);
+  assert.equal(notifications[1]?.readAt, null);
+  assert.equal(errors.length, 1);
+});
+
+void test("saved FRQ processing can retry after failure without touching the queue or changing the grade", async () => {
+  const state: unknown[] = [];
+  let cursor = 0;
+  const calls: string[] = [];
+  let writes = 0;
+  const componentModule = moduleExports(
+    "../src/components/frq/gradingRenderer.tsx",
+    {
+      "react/jsx-runtime": jsxRuntime,
+      react: {
+        useMemo: (callback: () => unknown) => callback(),
+        useState: (initial: unknown) => {
+          const index = cursor++;
+          if (!(index in state))
+            state[index] =
+              typeof initial === "function"
+                ? (initial as () => unknown)()
+                : initial;
+          return [
+            state[index],
+            (value: unknown) => {
+              state[index] =
+                typeof value === "function"
+                  ? (value as (previous: unknown) => unknown)(state[index])
+                  : value;
+            },
+          ];
+        },
+      },
+      "@/components/article-creator/custom_questions/RenderAdvancedTextbox": {
+        RenderContent: "div",
+      },
+      "@/lib/firebase": { db: {} },
+      "@/lib/gamification/reportActivity": {
+        reportFrqGrade: async (id: string) => {
+          calls.push(id);
+          if (calls.length === 1) throw new Error("temporary outage");
+          return { xpAwarded: 25 };
+        },
+      },
+      "next/link": { default: "a" },
+      "next/navigation": { useRouter: () => ({ push: () => undefined }) },
+      "lucide-react": { LogOut: "svg" },
+      "firebase/firestore": {
+        runTransaction: () => {
+          writes++;
+          throw new Error("Must not resave grade");
+        },
+      },
+      "@/lib/firestore/frqRefs": {},
+      "@/components/frq/grading/gradingFooter": "div",
+      "@/components/frq/grading/partCard": {},
+      "@/components/frq/usePendingPartScroll": {
+        usePendingPartScroll: () => undefined,
+      },
+      "@/lib/frq/gradingView": {
+        getGradingParts: () => [],
+        createEmptyGrades: () => ({}),
+        getEarnedPoints: () => 0,
+        countGradedParts: () => 0,
+      },
+      "@/lib/frq/template": { getTemplatePoints: () => 0 },
+      "@/components/hooks/UserContext": {
+        useUser: () => ({ user: { uid: "staff" } }),
+      },
+    },
+    { window: { alert: () => undefined }, console: { error: () => undefined } },
+  );
+  const Renderer = componentModule.default as (
+    props: Record<string, unknown>,
+  ) => unknown;
+  const render = () => {
+    cursor = 0;
+    return elements(
+      Renderer({
+        submission: { id: "attempt" },
+        template: null,
+        savedGrade: true,
+      }),
+    );
+  };
+  const click = () => {
+    (
+      render().find((item) => item.type === "button")!.props
+        .onClick as () => void
+    )();
+  };
+  click();
+  await settle();
+  assert.ok(render().some((item) => item.props.role === "alert"));
+  assert.equal(
+    render().find((item) => item.type === "button")?.props.disabled,
+    false,
+  );
+  click();
+  await settle();
+  assert.deepEqual(calls, ["attempt", "attempt"]);
+  assert.equal(writes, 0);
+  assert.equal(
+    render().find((item) => item.type === "button")?.props.disabled,
+    true,
+  );
+  assert.equal(
+    render().some((item) => item.props.role === "alert"),
+    false,
+  );
+});
 type Caller = { uid: string } | { error: Response };
 function fixture() {
   const calls: unknown[][] = [];

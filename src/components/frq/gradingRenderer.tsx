@@ -51,6 +51,8 @@ type FRQGradingRendererProps = {
    * doing both at once.
    */
   canReturnToQueue?: boolean;
+  /** The queue entry is gone, but staff can retry processing its saved grade. */
+  savedGrade?: boolean;
 };
 
 const FRQGradingRenderer = ({
@@ -58,6 +60,7 @@ const FRQGradingRenderer = ({
   template,
   selfGrading = false,
   canReturnToQueue = !selfGrading,
+  savedGrade = false,
 }: FRQGradingRendererProps) => {
   const { user } = useUser();
   const router = useRouter();
@@ -76,6 +79,11 @@ const FRQGradingRenderer = ({
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [overallFeedback, setOverallFeedback] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [savedGradeId, setSavedGradeId] = useState<string | null>(
+    savedGrade ? (submission?.id ?? null) : null,
+  );
+  const [gradeProcessed, setGradeProcessed] = useState(false);
+  const [processingError, setProcessingError] = useState(false);
   const [showPrompt, setShowPrompt] = useState(true);
   // Keyed by part id, which is what the stored response map and every existing
   // grade are keyed by. Grouping parts under questions changes navigation and
@@ -147,7 +155,27 @@ const FRQGradingRenderer = ({
     setPendingScrollPartId(partId);
   };
 
+  const processSavedGrade = async (submissionId: string) => {
+    setIsSubmitting(true);
+    setProcessingError(false);
+    try {
+      const result = await reportFrqGrade(submissionId);
+      if (!result) throw new Error("Sign in to process this saved grade.");
+      setGradeProcessed(true);
+      window.alert("Grade report submitted.");
+    } catch (reportError) {
+      console.error("Unable to process saved FRQ grade", reportError);
+      setProcessingError(true);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const submitGradeReport = async () => {
+    if (savedGradeId) {
+      await processSavedGrade(savedGradeId);
+      return;
+    }
     if (!submission?.id || !user || !template) {
       return;
     }
@@ -215,16 +243,8 @@ const FRQGradingRenderer = ({
         return;
       }
 
-      try {
-        await reportFrqGrade(submission.id);
-      } catch (reportError) {
-        console.error("Unable to process saved FRQ grade", reportError);
-        window.alert(
-          "Grade report saved, but student XP and notification processing failed. Please retry processing this saved grade.",
-        );
-        return;
-      }
-      window.alert("Grade report submitted.");
+      setSavedGradeId(submission.id);
+      await processSavedGrade(submission.id);
     } catch (error) {
       console.error("Error submitting FRQ grade:", error);
 
@@ -240,6 +260,41 @@ const FRQGradingRenderer = ({
   };
 
   if (!submission) return <div className="p-8">FRQ submission not found.</div>;
+
+  if (savedGradeId) {
+    return (
+      <div className="flex flex-col items-start gap-4 p-8">
+        <h1 className="text-2xl font-semibold">Grade report saved</h1>
+        {processingError && (
+          <p role="alert">
+            Student XP and notification processing failed. Retry below; your
+            saved grade will stay unchanged.
+          </p>
+        )}
+        {gradeProcessed && (
+          <p>Student XP and notification processing completed.</p>
+        )}
+        <button
+          type="button"
+          disabled={isSubmitting || gradeProcessed}
+          onClick={() => void processSavedGrade(savedGradeId)}
+          className="rounded-md bg-black px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
+        >
+          {isSubmitting
+            ? "Processing..."
+            : gradeProcessed
+              ? "Processing Completed"
+              : "Retry XP and Notification Processing"}
+        </button>
+        <Link href={`/frq-feedback/${savedGradeId}`} className="underline">
+          View saved grade
+        </Link>
+        <Link href="/frq-grading" className="underline">
+          Return to grading queue
+        </Link>
+      </div>
+    );
+  }
 
   if (!template) {
     return (
