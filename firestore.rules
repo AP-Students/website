@@ -24,13 +24,124 @@ service cloud.firestore {
       return isAuthenticated() && (accessLevel == "admin" || accessLevel == "member" || accessLevel == "grader");
     }
 
+    // These legacy fields may still exist on /users/{uid}, but all dashboard
+    // progress now lives in /userStats/{uid} and is server-maintained.
+    function doesNotChangeDerivedDashboardFields() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+        'xp', 'level', 'xpIntoLevel', 'xpForNextLevel', 'currentStreak',
+        'longestStreak', 'lastActiveDay', 'readingsCompleted',
+        'mcqTestsCompleted', 'problemsSolved', 'frqsSubmitted',
+        'subjectsCompleted', 'perSubject', 'updatedAt'
+      ]);
+    }
+
+    function doesNotSetDerivedDashboardFields() {
+      return !request.resource.data.keys().hasAny([
+        'xp', 'level', 'xpIntoLevel', 'xpForNextLevel', 'currentStreak',
+        'longestStreak', 'lastActiveDay', 'readingsCompleted',
+        'mcqTestsCompleted', 'problemsSolved', 'frqsSubmitted',
+        'subjectsCompleted', 'perSubject', 'updatedAt'
+      ]);
+    }
+
+    // Week 1 activity data is written only by trusted server code.  Clients
+    // can read only documents belonging to their authenticated account.
+    match /userStats/{userId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    match /activityEvents/{eventId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // Calendar document IDs are namespaced as "{uid}_{year}".
+    match /activityCalendar/{calendarId} {
+      allow read: if isAuthenticated()
+        && calendarId.matches('^' + request.auth.uid + '_[0-9]{4}$');
+    }
+
+    // XP amounts for every activity (src/lib/gamification/xp.ts). They aren't
+    // secret, so anyone may read them. Only admins may change them, and only
+    // to whole numbers the activity routes can use; the routes still check
+    // each value and fall back to its default if one is ever unusable. The
+    // level curve is deliberately not here: it lives in code, because changing
+    // it would move students who already earned their level back down.
+    function isXpAmount(value) {
+      return value is int && value >= 0 && value <= 100000;
+    }
+
+    match /config/xp {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'readingComplete', 'mcqTestComplete', 'mcqCorrectAnswer',
+          'frqSubmission', 'streakDay', 'streakMilestones',
+          'updatedAt', 'updatedBy'
+        ])
+        && isXpAmount(request.resource.data.readingComplete)
+        && isXpAmount(request.resource.data.mcqTestComplete)
+        && isXpAmount(request.resource.data.mcqCorrectAnswer)
+        && isXpAmount(request.resource.data.frqSubmission)
+        && isXpAmount(request.resource.data.streakDay)
+        && request.resource.data.streakMilestones is map
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isAdmin();
+    }
+
+    // /xpAwards holds server-written receipts for one-time XP, such as the
+    // first submission of each FRQ. It deliberately has no rules: clients can
+    // neither read nor forge one.
+
+    match /notifications/{userId}/items/{notificationId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      // Notifications are server-created. A recipient may only acknowledge or
+      // adjust expiry on an existing notification; no other fields may change.
+      allow update: if isAuthenticated()
+        && request.auth.uid == userId
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['readAt', 'expiresAt']);
+    }
+
+    // Saved readings/problems reuse the dashboard SavedItem contract:
+    // kind, subject, unitId, refId, label, href (+ optional questionIndex),
+    // with savedAt stamped server-side. Readable and removable by the owner.
+    match /users/{userId}/savedItems/{itemId} {
+      allow read, delete: if isAuthenticated() && request.auth.uid == userId;
+      allow create, update: if isAuthenticated() && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['kind', 'subject', 'unitId', 'refId', 'questionIndex', 'label', 'href', 'savedAt'])
+        && request.resource.data.kind in ['reading', 'question']
+        && request.resource.data.subject is string && request.resource.data.subject.size() > 0
+        && request.resource.data.unitId is string && request.resource.data.unitId.size() > 0
+        && request.resource.data.refId is string && request.resource.data.refId.size() > 0
+        && request.resource.data.label is string && request.resource.data.label.size() > 0
+        && request.resource.data.label.size() <= 200
+        && request.resource.data.href is string && request.resource.data.href.size() <= 500
+        && request.resource.data.href.matches('^/subject/[^\\s]*$')
+        && (!('questionIndex' in request.resource.data)
+          || (request.resource.data.questionIndex is int && request.resource.data.questionIndex >= 0))
+        && request.resource.data.savedAt == request.time;
+    }
+
+    match /users/{userId}/inProgress/{itemId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
     // Allow read/write access to users for their own user data
     match /users/{userId} {
       allow read: if isAuthenticated() && request.auth.uid == userId;
 
-      allow create: if isAuthenticated() && request.auth.uid == userId && request.resource.data.access == "user";
-      allow update: if isAuthenticated() && request.auth.uid == userId && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['access', 'uid']));
+      allow create: if isAuthenticated() && request.auth.uid == userId
+        && request.resource.data.access == "user"
+        && doesNotSetDerivedDashboardFields();
+      allow update: if isAuthenticated() && request.auth.uid == userId
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['access', 'uid'])
+        && doesNotChangeDerivedDashboardFields();
       allow delete: if isAuthenticated() && request.auth.uid == userId;
+
+      match /achievements/{achievementId} {
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+      }
 
       match /frqResponses/{document=**} {
         allow read: if isAuthenticated() && request.auth.uid == userId;
@@ -39,9 +150,26 @@ service cloud.firestore {
         allow update: if isGraderOrMemberOrAdmin() && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['feedback', 'grade', 'gradedAt', 'gradedBy', 'status']));
       }
 
+      // Progress remains user-controlled, but the award receipt is server
+      // owned and cannot be removed or reset to earn XP a second time. This
+      // must stay the only chapterData match: Firestore allows a request if
+      // any matching rule does, so a looser duplicate would override it.
       match /chapterData/{document=**} {
-        allow read, write: if isAuthenticated() && request.auth.uid == userId;
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+        allow create: if isAuthenticated() && request.auth.uid == userId
+          && request.resource.data.keys().hasOnly(['progress'])
+          && request.resource.data.progress is string;
+        allow update: if isAuthenticated() && request.auth.uid == userId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['progress'])
+          && request.resource.data.progress is string;
+        allow delete: if isAuthenticated() && request.auth.uid == userId
+          && !('readingXpAwarded' in resource.data);
       }
+
+      // Dashboard stats, activity events and calendars are top-level
+      // collections (/userStats, /activityEvents, /activityCalendar above), and
+      // savedItems/inProgress are matched once each above. Don't re-match them
+      // here: a duplicate match with a looser rule silently wins.
     }
 
     function canSubmitFrqResponse() {
@@ -90,6 +218,9 @@ service cloud.firestore {
     && request.resource.data.unitId is string
     && request.resource.data.studentId == request.auth.uid
     && request.resource.data.responses is map
+    // The server's clock, not the browser's: /api/activity/frq only records
+    // a submission made in the last hour, which a forged time would defeat.
+    && request.resource.data.submittedAt == request.time
     && exists(
       /databases/$(database)/documents/subjects/$(request.resource.data.subject)/units/$(request.resource.data.unitId)/frqs/$(request.resource.data.templateId)
     );
@@ -221,9 +352,11 @@ service cloud.firestore {
       allow write: if isMemberOrAdmin();
     }
 
-    // Allow users to access and write to their own profiles
+    // Public profiles will be a server-written mirror of userStats (XP, level,
+    // streak) that feeds the leaderboard, so a student must not be able to
+    // write their own. Reads open up to everyone once that mirror exists.
     match /profiles/{userId} {
-      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      allow read: if isAuthenticated() && request.auth.uid == userId;
     }
 
     match /feedback/{feedbackId} {

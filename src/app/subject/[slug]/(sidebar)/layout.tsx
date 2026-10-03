@@ -7,7 +7,15 @@ import { useEffect, useState } from "react";
 import { type Subject } from "@/types/firestore";
 
 import { db } from "@/lib/firebase";
-import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  onSnapshot,
+  query,
+  where,
+} from "firebase/firestore";
 import { useUser } from "@/components/hooks/UserContext";
 
 export default function Layout({
@@ -22,13 +30,20 @@ export default function Layout({
   const { user } = useUser();
 
   const [subject, setSubject] = useState<Subject | null>(null);
+  const [completedChapterIds, setCompletedChapterIds] = useState<Set<string>>(
+    new Set(),
+  );
 
   useEffect(() => {
     if (user === undefined) return;
 
     const fetchSubject = async () => {
       try {
-        const isAuthorized = user && (user.access === "admin" || user.access === "member" || user.access === "grader");
+        const isAuthorized =
+          user &&
+          (user.access === "admin" ||
+            user.access === "member" ||
+            user.access === "grader");
         if (params.slug === "porting" && !isAuthorized) {
           return;
         }
@@ -91,6 +106,27 @@ export default function Layout({
     });
   }, [params.slug, user]);
 
+  useEffect(() => {
+    if (!user) {
+      setCompletedChapterIds(new Set());
+      return;
+    }
+
+    return onSnapshot(
+      collection(db, "users", user.uid, "chapterData"),
+      (chapterData) => {
+        setCompletedChapterIds(
+          new Set(
+            chapterData.docs
+              .filter((chapter) => chapter.data().progress === "Complete")
+              .map((chapter) => chapter.id),
+          ),
+        );
+      },
+      (error) => console.error("Unable to load completed chapters:", error),
+    );
+  }, [user]);
+
   // `{children}` must always render: this layout wraps server-rendered chapter
   // pages, and short-circuiting on the client `loading`/`error` state (which is
   // `loading === true` during SSR) would strip the chapter content and its
@@ -103,6 +139,7 @@ export default function Layout({
         <SubjectSidebar
           subject={subject}
           preview={user?.access === "member" || user?.access === "admin"}
+          completedChapterIds={completedChapterIds}
         />
       ) : null}
       {children}
