@@ -128,20 +128,21 @@ export async function POST(request: NextRequest) {
       const totalXp = readXpTotal(statsData);
       const level = typeof statsData.level === "number" ? statsData.level : 1;
       const previousStreak = readStreakState(statsData);
-      // A legacy event with a colliding ID must not become completion evidence
-      // for a different curriculum test. Preserve the existing XP replay rule.
+      // Legacy XP events use only testId. Completion receipts use the full
+      // curriculum identity, so an event collision must not skip a new test.
       const eventData = event.data();
-      if (event.exists && (eventData?.subject !== subject || eventData?.unitId !== unitId || eventData?.sourceId !== testId)) {
-        return awardResponse(0, totalXp, level, false, previousStreak.currentStreak, true);
-      }
+      const eventCollision = event.exists && (eventData?.subject !== subject || eventData?.unitId !== unitId || eventData?.sourceId !== testId);
       const completion = await prepareTestCompletion(transaction, adminDb, uid, { subject, unitId, testId });
       const subjectsCompleted = (typeof statsData.subjectsCompleted === "number" ? statsData.subjectsCompleted : 0) + (completion.subjectCompleted ? 1 : 0);
       if (event.exists || completion.alreadyCompleted) {
-        const newlyUnlocked = completion.subjectCompleted
-          ? await awardAchievements(transaction, adminDb, uid, { ...statsData, subjectsCompleted })
+        // Keep the legacy XP replay guard, while counting a distinct test once.
+        const newCompletion = eventCollision && !completion.alreadyCompleted;
+        const mcqTestsCompleted = (typeof statsData.mcqTestsCompleted === "number" ? statsData.mcqTestsCompleted : 0) + (newCompletion ? 1 : 0);
+        const newlyUnlocked = completion.subjectCompleted || newCompletion
+          ? await awardAchievements(transaction, adminDb, uid, { ...statsData, subjectsCompleted, mcqTestsCompleted })
           : [];
         completion.write();
-        if (completion.subjectCompleted) transaction.set(statsRef, { subjectsCompleted, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+        if (completion.subjectCompleted || newCompletion) transaction.set(statsRef, { subjectsCompleted, mcqTestsCompleted, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
         return { ...awardResponse(0, totalXp, level, false, previousStreak.currentStreak, true), newlyUnlocked };
       }
 
