@@ -26,6 +26,10 @@ export const dashboardDocumentPaths = {
     `activityCalendar/${uid}_${year}`,
   notification: (uid: string, notificationId: string) =>
     `notifications/${uid}/items/${notificationId}`,
+  completedTest: (uid: string, testKey: string) =>
+    `users/${uid}/completedTests/${testKey}`,
+  completedSubject: (uid: string, subject: string) =>
+    `users/${uid}/completedSubjects/${subject}`,
   savedItem: (uid: string, itemId: string) =>
     `users/${uid}/savedItems/${itemId}`,
   inProgress: (uid: string, itemId: string) =>
@@ -68,6 +72,21 @@ export interface UserStats {
   updatedAt: Timestamp;
 }
 
+export interface CompletedTest {
+  subject: string;
+  unitId: string;
+  testId: string;
+  testKey: string;
+  completedAt: Timestamp;
+}
+
+export interface CompletedSubject {
+  subject: string;
+  /** Curriculum snapshot when the subject was first completed. */
+  requiredTestKeys: string[];
+  completedAt: Timestamp;
+}
+
 export interface SubjectProgress {
   subjectSlug: string;
   attempted: number;
@@ -108,7 +127,7 @@ export interface AppNotification {
   href: string;
   createdAt: Timestamp;
   readAt: Timestamp | null;
-  expiresAt: Timestamp; // TTL policy deletes on this field
+  expiresAt: Timestamp | null; // Set a timestamp once retention is configured; TTL ignores null.
 }
 
 export interface SavedItem {

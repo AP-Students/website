@@ -5,9 +5,11 @@ import type { AppNotification } from "@/types/dashboard";
 export default function DashboardHeader({
   user,
   notifications,
+  markRead,
 }: {
   user: User;
   notifications: AppNotification[];
+  markRead: (id: string) => Promise<void>;
 }) {
   return (
     <div className="border-b border-orange-200 bg-orange-50">
@@ -28,7 +30,7 @@ export default function DashboardHeader({
           <p className="text-gray-500">Something</p>
         </div>
         <div className="ml-auto">
-          <NotificationBell notifications={notifications} />
+          <NotificationBell notifications={notifications} markRead={markRead} />
         </div>
       </div>
     </div>
