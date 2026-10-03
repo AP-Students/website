@@ -14,6 +14,7 @@ import {
 import { addXp, readXpTotal, streakXp } from "@/lib/gamification/xp";
 import { loadXpConfig } from "@/lib/gamification/loadXpConfig";
 import { isDocumentId, requireUser } from "@/lib/server/activityRequest";
+import { awardAchievements } from "@/lib/server/awardAchievements";
 
 /**
  * How long after submitting an FRQ it can still be recorded. The browser
@@ -228,6 +229,10 @@ export async function POST(request: NextRequest) {
         (paysSubmissionXp ? xpConfig.frqSubmission : 0) +
         streakXp(streak, next, xpConfig);
       const progress = addXp(totalXp, xpAwarded);
+      const newlyUnlocked = await awardAchievements(transaction, adminDb, uid, {
+        ...statsData, level: progress.level, longestStreak: next.longestStreak,
+        frqsSubmitted: nonNegativeNumber(statsData?.frqsSubmitted, 0) + 1,
+      });
 
       if (paysSubmissionXp) {
         transaction.create(xpAwardRef, {
@@ -290,6 +295,7 @@ export async function POST(request: NextRequest) {
         totalXp: progress.xp,
         level: progress.level,
         leveledUp: progress.leveledUp,
+        newlyUnlocked,
         currentStreak: next.currentStreak,
         alreadyRecorded: false,
       };

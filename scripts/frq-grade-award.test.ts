@@ -1,6 +1,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { Timestamp, type Firestore } from "firebase-admin/firestore";
+import {
+  Timestamp,
+  type Firestore,
+  type Transaction as AdminTransaction,
+} from "firebase-admin/firestore";
+import { awardAchievements } from "../src/lib/server/awardAchievements.ts";
+import {
+  checkAchievements,
+  readAchievementStats,
+} from "../src/lib/achievements/checkAchievements.ts";
 import {
   awardFrqGrade,
   FrqGradeAwardError,
@@ -99,6 +108,8 @@ function fixture(role = "grader") {
   const db = new MemoryDb();
   db.put("users/staff", { access: role });
   db.put(resultPath, grade);
+  // The submission already earned its achievement before grading.
+  db.put("users/student/achievements/frq-1", { id: "frq-1" });
   db.put(statsPath, {
     xp: 90,
     currentStreak: 4,
@@ -302,4 +313,84 @@ void test("a corrupt payout amount cannot reset a prior award", async () => {
     await assert.rejects(award(db), /receipt is inconsistent/);
     assert.deepEqual(db.writes, []);
   }
+});
+
+const awardBadges = (db: MemoryDb, stats: Data) =>
+  db.runTransaction((transaction) =>
+    awardAchievements(
+      transaction as unknown as AdminTransaction,
+      db as unknown as Firestore,
+      "student",
+      stats,
+    ),
+  );
+
+void test("pure achievement checks and ineligible stats never create notifications", async () => {
+  const db = new MemoryDb();
+  assert.equal(
+    checkAchievements(readAchievementStats({ frqsSubmitted: 1 }), new Set())
+      .length,
+    1,
+  );
+  assert.deepEqual(db.writes, []);
+  assert.deepEqual(await awardBadges(db, {}), []);
+  assert.deepEqual(db.writes, []);
+});
+
+void test("new achievements and their notifications commit together once under concurrency", async () => {
+  const db = new MemoryDb();
+  const results = await Promise.all([
+    awardBadges(db, { frqsSubmitted: 1 }),
+    awardBadges(db, { frqsSubmitted: 1 }),
+  ]);
+  assert.deepEqual(results.flat(), ["frq-1"]);
+  assert.ok(db.docs.get("users/student/achievements/frq-1")?.earnedAt);
+  const notification = db.docs.get(
+    "notifications/student/items/achievement_frq-1",
+  )!;
+  assert.equal(notification.title, "Free Thinker");
+  assert.equal(notification.type, "achievement");
+  assert.equal(notification.href, "/dashboard#achievements");
+  assert.equal(notification.expiresAt, null);
+  assert.equal(db.writes.length, 2);
+  assert.ok(db.retries > 0);
+  assert.deepEqual(await awardBadges(db, { frqsSubmitted: 1 }), []);
+  assert.equal(db.writes.length, 2);
+});
+
+void test("earned achievements never re-notify even after notification deletion", async () => {
+  const db = new MemoryDb();
+  await awardBadges(db, { frqsSubmitted: 1 });
+  db.docs.delete("notifications/student/items/achievement_frq-1");
+  assert.deepEqual(await awardBadges(db, { frqsSubmitted: 1 }), []);
+  assert.equal(
+    db.docs.has("notifications/student/items/achievement_frq-1"),
+    false,
+  );
+  assert.equal(db.writes.length, 2);
+});
+
+void test("previously earned achievements are not backfilled with notifications", async () => {
+  const db = fixture();
+  assert.deepEqual(await awardBadges(db, { frqsSubmitted: 1 }), []);
+  assert.deepEqual(db.writes, []);
+});
+
+void test("new thresholds award only the newly earned achievement", async () => {
+  const db = new MemoryDb();
+  await awardBadges(db, { frqsSubmitted: 1 });
+  assert.deepEqual(await awardBadges(db, { frqsSubmitted: 10 }), ["frq-10"]);
+  assert.deepEqual(await awardBadges(db, { frqsSubmitted: 10 }), []);
+  assert.equal(db.writes.length, 4);
+});
+
+void test("FRQ grade XP can unlock a level achievement for the student", async () => {
+  const db = fixture();
+  db.put(statsPath, { xp: 699, level: 4, frqsSubmitted: 1, currentStreak: 4 });
+  const result = await award(db);
+  assert.deepEqual(result.newlyUnlocked, ["level-5"]);
+  assert.ok(db.docs.has("users/student/achievements/level-5"));
+  assert.ok(db.docs.has("notifications/student/items/achievement_level-5"));
+  assert.equal(db.docs.get(statsPath)?.currentStreak, 4);
+  assert.equal((await award(db)).newlyUnlocked.length, 0);
 });

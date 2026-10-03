@@ -29,7 +29,7 @@ export default function LiveNotificationBanner() {
     const added = notifications.filter(
       (item) =>
         !seen.current!.has(item.id) &&
-        item.type === "frq_graded" &&
+        (item.type === "frq_graded" || item.type === "achievement") &&
         item.readAt === null,
     );
     notifications.forEach((item) => seen.current!.add(item.id));

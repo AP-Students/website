@@ -6,6 +6,7 @@ import { readStreakState, recordActiveDay, resolveActivityDay } from "@/lib/gami
 import { addXp, readXpTotal, streakXp, type XpConfig } from "@/lib/gamification/xp";
 import { loadXpConfig } from "@/lib/gamification/loadXpConfig";
 import { isDocumentId, requireUser } from "@/lib/server/activityRequest";
+import { awardAchievements } from "@/lib/server/awardAchievements";
 
 type SubmittedAnswers = Record<number, string[]>;
 type StoredQuestion = { type?: unknown; answers?: unknown; topic?: unknown };
@@ -142,6 +143,11 @@ export async function POST(request: NextRequest) {
         ? statsData.perSubject as Record<string, Record<string, unknown>>
         : {};
       const subjectProgress = perSubject[subject] ?? {};
+      const newlyUnlocked = await awardAchievements(transaction, adminDb, uid, {
+        ...statsData, level: progress.level, longestStreak: streak.longestStreak,
+        mcqTestsCompleted: (typeof statsData.mcqTestsCompleted === "number" ? statsData.mcqTestsCompleted : 0) + 1,
+        problemsSolved: (typeof statsData.problemsSolved === "number" ? statsData.problemsSolved : 0) + correct,
+      });
 
       transaction.set(eventRef, {
         id: eventRef.id,
@@ -180,7 +186,7 @@ export async function POST(request: NextRequest) {
         updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true });
       transaction.set(calendarRef, { uid, year: Number(year), days: { ...calendarDays, [dayKey]: currentDayCount + 1 }, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-      return awardResponse(xpAwarded, progress.xp, progress.level, progress.leveledUp, streak.currentStreak, false);
+      return { ...awardResponse(xpAwarded, progress.xp, progress.level, progress.leveledUp, streak.currentStreak, false), newlyUnlocked };
     });
     return NextResponse.json(result);
   } catch (error) {

@@ -10,6 +10,7 @@ import { addXp, readXpTotal } from "@/lib/gamification/xp";
 import { loadXpConfig } from "@/lib/gamification/loadXpConfig";
 import { resolveActivityDay } from "@/lib/gamification/streak";
 import { isDocumentId, requireUser } from "@/lib/server/activityRequest";
+import { awardAchievements } from "@/lib/server/awardAchievements";
 
 const nonNegativeNumber = (value: unknown, fallback: number) =>
   typeof value === "number" && Number.isFinite(value) && value >= 0
@@ -151,6 +152,10 @@ export async function POST(request: NextRequest) {
 
       const xpAwarded = xpConfig.readingComplete;
       const progress = addXp(totalXp, xpAwarded);
+      const newlyUnlocked = await awardAchievements(transaction, adminDb, uid, {
+        ...statsData, level: progress.level,
+        readingsCompleted: nonNegativeNumber(statsData?.readingsCompleted, 0) + 1,
+      });
 
       transaction.set(
         chapterDataRef,
@@ -192,7 +197,7 @@ export async function POST(request: NextRequest) {
         level: progress.level,
         leveledUp: progress.leveledUp,
         currentStreak,
-        newlyUnlocked: [],
+        newlyUnlocked,
         alreadyRecorded: false,
       } satisfies ActivityAwardResponse;
     });

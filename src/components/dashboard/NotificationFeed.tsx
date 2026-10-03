@@ -21,7 +21,11 @@ export default function NotificationFeed({
   return (
     <div className="mb-6 flex flex-col gap-3" aria-label="Notifications">
       {notifications
-        .filter((item) => item.type === "frq_graded" && item.readAt === null)
+        .filter(
+          (item) =>
+            (item.type === "frq_graded" || item.type === "achievement") &&
+            item.readAt === null,
+        )
         .map((item) => (
           <Link
             key={item.id}

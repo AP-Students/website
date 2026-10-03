@@ -19,7 +19,7 @@ import {
   FIXTURE_IN_PROGRESS_READINGS,
 } from "@/lib/dashboard/fixtures";
 import AchievementsCard from "@/components/dashboard/AchievementsCard";
-import { checkAchievements } from "@/lib/achievements/checkAchievements";
+import { useAchievements } from "@/components/hooks/useAchievements";
 import RecentActivity from "@/components/dashboard/RecentActivity";
 import SubmissionHistory from "@/components/dashboard/SubmissionHistory";
 import SavedAndInProgress, {
@@ -37,12 +37,6 @@ import { useStudyStreak } from "@/components/hooks/useStudyStreak";
 import { useXpProgress } from "@/components/hooks/useXpProgress";
 import { useNotifications } from "@/components/hooks/useNotifications";
 import NotificationFeed from "@/components/dashboard/NotificationFeed";
-
-const FIXTURE_EARNED = new Set(
-  checkAchievements(FIXTURE_STATS, new Set()).map(
-    (achievement) => achievement.id,
-  ),
-);
 
 function LoadError({ children }: { children: string }) {
   return (
@@ -66,6 +60,11 @@ export default function Dashboard() {
   const uid = user?.uid;
   const { studyStreak, error: streakError } = useStudyStreak(uid);
   const { progress: xpProgress, error: xpError } = useXpProgress(uid);
+  const {
+    stats: achievementStats,
+    earnedIds,
+    error: achievementError,
+  } = useAchievements(uid);
   const {
     notifications,
     error: notificationError,
@@ -177,7 +176,13 @@ export default function Dashboard() {
 
       {/* Right column */}
       <div className="flex flex-col gap-8">
-        <AchievementsCard stats={FIXTURE_STATS} earnedIds={FIXTURE_EARNED} />
+        {achievementError ? (
+          <LoadError>
+            Couldn&apos;t load your achievements. Refresh to try again.
+          </LoadError>
+        ) : (
+          <AchievementsCard stats={achievementStats} earnedIds={earnedIds} />
+        )}
         {userDoc === undefined ? (
           <p className="text-gray-500">Loading your classes…</p>
         ) : (
@@ -235,8 +240,8 @@ export default function Dashboard() {
             ),
             achievements: (
               <AchievementsCard
-                stats={FIXTURE_STATS}
-                earnedIds={FIXTURE_EARNED}
+                stats={achievementStats}
+                earnedIds={earnedIds}
               />
             ),
             profile: (

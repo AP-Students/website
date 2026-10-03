@@ -4,6 +4,7 @@ import {
   type Firestore,
 } from "firebase-admin/firestore";
 import { createNotification } from "./createNotification.ts";
+import { awardAchievements } from "./awardAchievements.ts";
 import {
   dashboardDocumentPaths,
   type ActivityAwardResponse,
@@ -155,6 +156,14 @@ export async function awardFrqGrade(
     )
       return response;
 
+    const next = addXp(progress.xp, xpAwarded);
+    const newlyUnlocked =
+      xpAwarded > 0
+        ? await awardAchievements(transaction, db, studentId, {
+            ...statsData,
+            level: next.level,
+          })
+        : [];
     if (shouldNotify) {
       createNotification(transaction, notificationRef, {
         type: "frq_graded",
@@ -164,7 +173,6 @@ export async function awardFrqGrade(
       });
     }
 
-    const next = addXp(progress.xp, xpAwarded);
     transaction.set(receiptRef, {
       userId: studentId,
       type: "frq_grade",
@@ -200,6 +208,7 @@ export async function awardFrqGrade(
       totalXp: next.xp,
       level: next.level,
       leveledUp: next.leveledUp,
+      newlyUnlocked,
       alreadyRecorded: false,
     };
   });
