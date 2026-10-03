@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { Firestore } from "firebase-admin/firestore";
+import { Timestamp, type Firestore } from "firebase-admin/firestore";
 import {
   awardFrqGrade,
   FrqGradeAwardError,
@@ -8,10 +8,12 @@ import {
 } from "../src/lib/server/awardFrqGrade.ts";
 
 type Data = Record<string, unknown>;
-type Ref = { path: string };
+type Ref = { path: string; id: string };
 type Snapshot = { exists: boolean; data: () => Data | undefined };
 type Transaction = {
+  get: (ref: Ref) => Promise<Snapshot>;
   getAll: (...refs: Ref[]) => Promise<Snapshot[]>;
+  create: (ref: Ref, data: Data) => void;
   set: (ref: Ref, data: Data, options?: { merge: boolean }) => void;
 };
 
@@ -23,7 +25,7 @@ class MemoryDb {
   retries = 0;
 
   doc(path: string): Ref {
-    return { path };
+    return { path, id: path.split("/").at(-1)! };
   }
   collection(path: string) {
     return { doc: (id: string) => this.doc(`${path}/${id}`) };
@@ -40,6 +42,14 @@ class MemoryDb {
       const reads = new Map<string, number>();
       const pending: { ref: Ref; data: Data; merge?: boolean }[] = [];
       const transaction: Transaction = {
+        get: async (ref) => {
+          reads.set(ref.path, this.versions.get(ref.path) ?? 0);
+          const data = this.docs.get(ref.path);
+          return { exists: data !== undefined, data: () => data };
+        },
+        create: (ref, data) => {
+          pending.push({ ref, data });
+        },
         getAll: async (...refs) =>
           refs.map((ref) => {
             reads.set(ref.path, this.versions.get(ref.path) ?? 0);
@@ -74,6 +84,7 @@ class MemoryDb {
 const resultPath = "graded-frqs/attempt";
 const receiptPath = "xpAwards/frq_grade_attempt";
 const statsPath = "userStats/student";
+const notificationPath = "notifications/student/items/frq_graded_attempt";
 const grade: Data = {
   studentId: "student",
   graderId: "staff",
@@ -82,6 +93,7 @@ const grade: Data = {
   unitId: "unit",
   templateId: "template",
   score: "4/6",
+  gradedAt: Timestamp.fromMillis(1_000),
 };
 function fixture(role = "grader") {
   const db = new MemoryDb();
@@ -128,7 +140,10 @@ void test("pays the student, updates levels, and leaves streak/calendar untouche
   assert.equal(db.docs.get(statsPath)?.currentStreak, 4);
   assert.equal(db.docs.get(statsPath)?.lastActiveDay, "2026-10-01");
   assert.equal(db.docs.get(statsPath)?.frqsSubmitted, 1);
-  assert.deepEqual(db.writes.sort(), [statsPath, receiptPath].sort());
+  assert.deepEqual(
+    db.writes.sort(),
+    [statsPath, receiptPath, notificationPath].sort(),
+  );
   assert.equal(db.docs.has("userStats/staff"), false);
   assert.equal(db.docs.get(receiptPath)?.xpAwarded, 17);
 });
@@ -167,7 +182,7 @@ void test("uses configured bonus and saved score, including a disabled bonus", a
   assert.equal((await award(fixture(), 60)).xpAwarded, 40);
   const db = fixture();
   assert.equal((await award(db, 0)).xpAwarded, 0);
-  assert.deepEqual(db.writes, []);
+  assert.deepEqual(db.writes.sort(), [receiptPath, notificationPath].sort());
 });
 
 void test("both self-grade collections and an official self-grade earn zero", async () => {
@@ -219,6 +234,59 @@ void test("proportional score rounding and clamping", () => {
   assert.equal(gradeXpForScore("-1/6", 25), 0);
   assert.equal(gradeXpForScore("0/6", 25), 0);
   assert.equal(gradeXpForScore("1.5/3", 25), 13);
+});
+
+void test("notification uses trusted grade content and is created once under concurrency", async () => {
+  const db = fixture();
+  await Promise.all([award(db), award(db)]);
+  const notification = db.docs.get(notificationPath)!;
+  assert.equal(notification.id, "frq_graded_attempt");
+  assert.equal(notification.type, "frq_graded");
+  assert.equal(notification.href, "/frq-feedback/attempt");
+  assert.match(notification.body as string, /4\/6/);
+  assert.equal(notification.readAt, null);
+  assert.equal(notification.expiresAt, null);
+  assert.ok(notification.createdAt);
+  assert.equal(db.writes.filter((path) => path === notificationPath).length, 1);
+  db.put(notificationPath, {
+    ...notification,
+    readAt: Timestamp.fromMillis(2_000),
+  });
+  db.put(resultPath, { ...grade, score: "6/6" });
+  assert.equal((await award(db)).xpAwarded, 8);
+  assert.equal(
+    (db.docs.get(notificationPath)?.readAt as Timestamp).toMillis(),
+    2_000,
+  );
+  assert.equal(db.writes.filter((path) => path === notificationPath).length, 1);
+});
+
+void test("expired/deleted notifications cannot be recreated by retries", async () => {
+  const db = fixture();
+  await award(db);
+  db.docs.delete(notificationPath);
+  await award(db);
+  assert.equal(db.docs.has(notificationPath), false);
+  db.put(resultPath, { ...grade, score: "6/6" });
+  assert.equal((await award(db)).xpAwarded, 8);
+  assert.equal(db.docs.has(notificationPath), false);
+});
+
+void test("zero scores notify without updating XP or streak", async () => {
+  const db = fixture();
+  db.put(resultPath, { ...grade, score: "0/6" });
+  await award(db);
+  assert.equal(db.docs.get(statsPath)?.xp, 90);
+  assert.equal(db.docs.get(receiptPath)?.xpAwarded, 0);
+  assert.ok(db.docs.has(notificationPath));
+  assert.equal(db.writes.includes(statsPath), false);
+});
+
+void test("grades without a valid saved grading timestamp cannot notify", async () => {
+  const db = fixture();
+  db.put(resultPath, { ...grade, gradedAt: null });
+  await assert.rejects(award(db), /grading timestamp/);
+  assert.deepEqual(db.writes, []);
 });
 
 void test("a corrupt payout amount cannot reset a prior award", async () => {

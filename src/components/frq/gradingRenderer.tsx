@@ -2,6 +2,7 @@
 
 import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
 import { db } from "@/lib/firebase";
+import { reportFrqGrade } from "@/lib/gamification/reportActivity";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -214,6 +215,15 @@ const FRQGradingRenderer = ({
         return;
       }
 
+      try {
+        await reportFrqGrade(submission.id);
+      } catch (reportError) {
+        console.error("Unable to process saved FRQ grade", reportError);
+        window.alert(
+          "Grade report saved, but student XP and notification processing failed. Please retry processing this saved grade.",
+        );
+        return;
+      }
       window.alert("Grade report submitted.");
     } catch (error) {
       console.error("Error submitting FRQ grade:", error);

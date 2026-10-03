@@ -17,7 +17,6 @@ import {
   FIXTURE_EVENTS,
   FIXTURE_IN_PROGRESS,
   FIXTURE_IN_PROGRESS_READINGS,
-  FIXTURE_NOTIFICATIONS,
 } from "@/lib/dashboard/fixtures";
 import AchievementsCard from "@/components/dashboard/AchievementsCard";
 import { checkAchievements } from "@/lib/achievements/checkAchievements";
@@ -36,6 +35,8 @@ import type { User } from "@/types/user";
 import type { SavedItem } from "@/types/dashboard";
 import { useStudyStreak } from "@/components/hooks/useStudyStreak";
 import { useXpProgress } from "@/components/hooks/useXpProgress";
+import { useNotifications } from "@/components/hooks/useNotifications";
+import NotificationFeed from "@/components/dashboard/NotificationFeed";
 
 const FIXTURE_EARNED = new Set(
   checkAchievements(FIXTURE_STATS, new Set()).map(
@@ -65,6 +66,11 @@ export default function Dashboard() {
   const uid = user?.uid;
   const { studyStreak, error: streakError } = useStudyStreak(uid);
   const { progress: xpProgress, error: xpError } = useXpProgress(uid);
+  const {
+    notifications,
+    error: notificationError,
+    markRead,
+  } = useNotifications(uid);
 
   useEffect(() => {
     if (!uid) return;
@@ -190,12 +196,15 @@ export default function Dashboard() {
   return (
     <div>
       <Navbar />
-      <DashboardHeader
-        user={userDoc ?? user}
-        notifications={FIXTURE_NOTIFICATIONS}
-      />
+      <DashboardHeader user={userDoc ?? user} notifications={notifications} />
 
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-8">
+        {notificationError && (
+          <LoadError>
+            Couldn&apos;t load your notifications. Refresh to try again.
+          </LoadError>
+        )}
+        <NotificationFeed notifications={notifications} markRead={markRead} />
         <DashboardTabs
           panels={{
             overview,

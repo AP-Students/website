@@ -1,4 +1,9 @@
-import { FieldValue, type Firestore } from "firebase-admin/firestore";
+import {
+  FieldValue,
+  Timestamp,
+  type Firestore,
+} from "firebase-admin/firestore";
+import { createNotification } from "./createNotification.ts";
 import {
   dashboardDocumentPaths,
   type ActivityAwardResponse,
@@ -110,6 +115,13 @@ export async function awardFrqGrade(
     // Collection membership and ownership both identify self-assessments.
     if (!official?.exists || graderId === studentId) return response;
 
+    if (!(grade.gradedAt instanceof Timestamp)) {
+      throw new FrqGradeAwardError(
+        "Saved grade has no valid grading timestamp",
+        422,
+      );
+    }
+
     const entitledXp = gradeXpForScore(grade.score, config.frqGradeBonus);
     const previous = receipt?.data() as Record<string, unknown> | undefined;
     const paid = receipt?.exists ? previous?.xpAwarded : 0;
@@ -127,7 +139,30 @@ export async function awardFrqGrade(
       throw new FrqGradeAwardError("Grade payout receipt is inconsistent", 409);
     }
     const xpAwarded = Math.max(0, entitledXp - paid);
-    if (xpAwarded === 0) return response;
+    const notificationRef = db.doc(
+      dashboardDocumentPaths.notification(
+        studentId,
+        `frq_graded_${submissionId}`,
+      ),
+    );
+    const notification = await transaction.get(notificationRef);
+    const shouldNotify =
+      previous?.notificationCreated !== true && !notification.exists;
+    if (
+      xpAwarded === 0 &&
+      !shouldNotify &&
+      previous?.notificationCreated === true
+    )
+      return response;
+
+    if (shouldNotify) {
+      createNotification(transaction, notificationRef, {
+        type: "frq_graded",
+        title: "FRQ graded",
+        body: `Your FRQ was graded: ${grade.score as string}. View your feedback.`,
+        href: `/frq-feedback/${submissionId}`,
+      });
+    }
 
     const next = addXp(progress.xp, xpAwarded);
     transaction.set(receiptRef, {
@@ -141,21 +176,24 @@ export async function awardFrqGrade(
       graderId,
       score: grade.score as string,
       gradeBonus: config.frqGradeBonus,
-      xpAwarded: entitledXp,
+      xpAwarded: paid + xpAwarded,
+      // Kept even after TTL deletes the notification, so replay cannot recreate it.
+      notificationCreated: true,
       awardedAt: FieldValue.serverTimestamp(),
     });
-    transaction.set(
-      statsRef,
-      {
-        uid: studentId,
-        xp: next.xp,
-        level: next.level,
-        xpIntoLevel: next.xpIntoLevel,
-        xpForNextLevel: next.xpForNextLevel,
-        updatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true },
-    );
+    if (xpAwarded > 0)
+      transaction.set(
+        statsRef,
+        {
+          uid: studentId,
+          xp: next.xp,
+          level: next.level,
+          xpIntoLevel: next.xpIntoLevel,
+          xpForNextLevel: next.xpForNextLevel,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
     return {
       ...response,
       xpAwarded,

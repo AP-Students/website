@@ -33,7 +33,7 @@ export default function NotificationBell({
       new Set(notifications.filter((n) => n.readAt !== null).map((n) => n.id)),
   );
   const isUnread = (notification: AppNotification) =>
-    !readIds.has(notification.id);
+    notification.readAt === null && !readIds.has(notification.id);
   const unreadCount = notifications.filter(isUnread).length;
   const markRead = (id: string) => setReadIds((prev) => new Set(prev).add(id));
   const markAllRead = () => setReadIds(new Set(notifications.map((n) => n.id)));

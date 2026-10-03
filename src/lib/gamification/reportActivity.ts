@@ -42,6 +42,13 @@ export function reportFrqSubmission(
   return reportActivity("/api/activity/frq", { submissionId });
 }
 
+/** Processes the saved staff grade; the server reads its score and student. */
+export function reportFrqGrade(
+  submissionId: string,
+): Promise<ActivityAwardResponse | null> {
+  return reportActivity("/api/activity/frq-graded", { submissionId });
+}
+
 /**
  * Counts a finished MCQ test toward the student's daily streak. The server
  * grades `answers` (selected option ids by question index) against the

@@ -108,7 +108,7 @@ export interface AppNotification {
   href: string;
   createdAt: Timestamp;
   readAt: Timestamp | null;
-  expiresAt: Timestamp; // TTL policy deletes on this field
+  expiresAt: Timestamp | null; // Set a timestamp once retention is configured; TTL ignores null.
 }
 
 export interface SavedItem {
