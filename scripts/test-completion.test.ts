@@ -52,6 +52,11 @@ class CompletionDb {
       const reads = new Map<string, number>();
       const pending: { path: string; data: Data; merge?: boolean }[] = [];
       const read = (ref: Ref) => {
+        assert.equal(
+          pending.length,
+          0,
+          "Firestore requires reads before writes",
+        );
         const key = ref.field ? `query:${ref.path}` : ref.path;
         reads.set(key, this.versions.get(key) ?? 0);
         return ref.field
@@ -182,6 +187,27 @@ void test("the final required test completes a subject once", async () => {
     db.writes.some((path) => path.startsWith("activityCalendar/")),
     false,
   );
+});
+
+void test("a legacy event from another subject is not evidence of a required test's completion", async () => {
+  const db = fixture();
+  db.put("activityEvents/student_mcq_test_b", {
+    type: "mcq_test",
+    userId: "student",
+    subject: "other-subject",
+    unitId: "unit",
+    sourceId: "b",
+  });
+  assert.equal((await complete(db, identity("a"))).subjectAdded, false);
+  assert.equal(db.docs.get("userStats/student")?.subjectsCompleted, 0);
+  assert.equal(
+    db.docs.has(
+      `users/student/completedTests/${completedTestKey(identity("b"))}`,
+    ),
+    false,
+  );
+  assert.equal((await complete(db, identity("b"))).subjectAdded, true);
+  assert.equal(db.docs.get("userStats/student")?.subjectsCompleted, 1);
 });
 
 void test("concurrent different tests and duplicate final tests count exactly once", async () => {

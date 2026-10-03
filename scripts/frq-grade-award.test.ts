@@ -52,6 +52,11 @@ class MemoryDb {
       const pending: { ref: Ref; data: Data; merge?: boolean }[] = [];
       const transaction: Transaction = {
         get: async (ref) => {
+          assert.equal(
+            pending.length,
+            0,
+            "Firestore requires reads before writes",
+          );
           reads.set(ref.path, this.versions.get(ref.path) ?? 0);
           const data = this.docs.get(ref.path);
           return { exists: data !== undefined, data: () => data };
@@ -59,12 +64,18 @@ class MemoryDb {
         create: (ref, data) => {
           pending.push({ ref, data });
         },
-        getAll: async (...refs) =>
-          refs.map((ref) => {
+        getAll: async (...refs) => {
+          assert.equal(
+            pending.length,
+            0,
+            "Firestore requires reads before writes",
+          );
+          return refs.map((ref) => {
             reads.set(ref.path, this.versions.get(ref.path) ?? 0);
             const data = this.docs.get(ref.path);
             return { exists: data !== undefined, data: () => data };
-          }),
+          });
+        },
         set: (ref, data, options) => {
           pending.push({ ref, data, merge: options?.merge });
         },
@@ -194,6 +205,20 @@ void test("uses configured bonus and saved score, including a disabled bonus", a
   const db = fixture();
   assert.equal((await award(db, 0)).xpAwarded, 0);
   assert.deepEqual(db.writes.sort(), [receiptPath, notificationPath].sort());
+});
+
+void test("full, partial, and zero scores use a non-default configured maximum", async () => {
+  for (const [score, expected] of [
+    ["6/6", 73],
+    ["3/6", 37],
+    ["0/6", 0],
+  ] as const) {
+    const db = fixture();
+    db.put(resultPath, { ...grade, score });
+    assert.equal((await award(db, 73)).xpAwarded, expected);
+    assert.equal(db.docs.get(statsPath)?.xp, 90 + expected);
+    assert.equal(db.docs.get(receiptPath)?.gradeBonus, 73);
+  }
 });
 
 void test("both self-grade collections and an official self-grade earn zero", async () => {
