@@ -75,13 +75,14 @@ service cloud.firestore {
       allow create, update: if isAdmin()
         && request.resource.data.keys().hasOnly([
           'readingComplete', 'mcqTestComplete', 'mcqCorrectAnswer',
-          'frqSubmission', 'streakDay', 'streakMilestones',
+          'frqSubmission', 'frqGradeBonus', 'streakDay', 'streakMilestones',
           'updatedAt', 'updatedBy'
         ])
         && isXpAmount(request.resource.data.readingComplete)
         && isXpAmount(request.resource.data.mcqTestComplete)
         && isXpAmount(request.resource.data.mcqCorrectAnswer)
         && isXpAmount(request.resource.data.frqSubmission)
+        && isXpAmount(request.resource.data.frqGradeBonus)
         && isXpAmount(request.resource.data.streakDay)
         && request.resource.data.streakMilestones is map
         && request.resource.data.updatedBy == request.auth.uid

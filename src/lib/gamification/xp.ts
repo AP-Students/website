@@ -24,6 +24,8 @@ export interface XpConfig {
   mcqCorrectAnswer: number;
   /** Submitting an FRQ, the first time for each FRQ. */
   frqSubmission: number;
+  /** Maximum XP available from an FRQ grade, separate from submission XP. */
+  frqGradeBonus: number;
   /** The first FRQ or MCQ test of each day that keeps a 2+ day streak going. */
   streakDay: number;
   /** One-off bonuses for reaching a streak length, keyed by days, e.g. "7". */
@@ -38,6 +40,7 @@ export const DEFAULT_XP_CONFIG: XpConfig = {
   mcqTestComplete: 10,
   mcqCorrectAnswer: 10,
   frqSubmission: 25,
+  frqGradeBonus: 25,
   streakDay: 5,
   streakMilestones: { "3": 25, "7": 50, "30": 150, "100": 500 },
 };
@@ -61,6 +64,7 @@ export const XP_AMOUNT_FIELDS = [
   "mcqTestComplete",
   "mcqCorrectAnswer",
   "frqSubmission",
+  "frqGradeBonus",
   "streakDay",
 ] as const satisfies readonly (keyof XpConfig)[];
 
