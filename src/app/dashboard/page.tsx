@@ -168,7 +168,9 @@ export default function Dashboard() {
         )}
         <GlobalStats
           problemsSolved={FIXTURE_STATS.problemsSolved}
-          subjectsCompleted={FIXTURE_STATS.subjectsCompleted}
+          subjectsCompleted={
+            achievementError ? null : achievementStats.subjectsCompleted
+          }
           totalXp={xpProgress?.xp ?? null}
         />
         <RecentActivity events={FIXTURE_EVENTS} />

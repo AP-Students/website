@@ -7,6 +7,7 @@ import { addXp, readXpTotal, streakXp, type XpConfig } from "@/lib/gamification/
 import { loadXpConfig } from "@/lib/gamification/loadXpConfig";
 import { isDocumentId, requireUser } from "@/lib/server/activityRequest";
 import { awardAchievements } from "@/lib/server/awardAchievements";
+import { prepareTestCompletion } from "@/lib/server/testCompletion";
 
 type SubmittedAnswers = Record<number, string[]>;
 type StoredQuestion = { type?: unknown; answers?: unknown; topic?: unknown };
@@ -127,7 +128,22 @@ export async function POST(request: NextRequest) {
       const totalXp = readXpTotal(statsData);
       const level = typeof statsData.level === "number" ? statsData.level : 1;
       const previousStreak = readStreakState(statsData);
-      if (event.exists) return awardResponse(0, totalXp, level, false, previousStreak.currentStreak, true);
+      // A legacy event with a colliding ID must not become completion evidence
+      // for a different curriculum test. Preserve the existing XP replay rule.
+      const eventData = event.data();
+      if (event.exists && (eventData?.subject !== subject || eventData?.unitId !== unitId || eventData?.sourceId !== testId)) {
+        return awardResponse(0, totalXp, level, false, previousStreak.currentStreak, true);
+      }
+      const completion = await prepareTestCompletion(transaction, adminDb, uid, { subject, unitId, testId });
+      const subjectsCompleted = (typeof statsData.subjectsCompleted === "number" ? statsData.subjectsCompleted : 0) + (completion.subjectCompleted ? 1 : 0);
+      if (event.exists || completion.alreadyCompleted) {
+        const newlyUnlocked = completion.subjectCompleted
+          ? await awardAchievements(transaction, adminDb, uid, { ...statsData, subjectsCompleted })
+          : [];
+        completion.write();
+        if (completion.subjectCompleted) transaction.set(statsRef, { subjectsCompleted, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+        return { ...awardResponse(0, totalXp, level, false, previousStreak.currentStreak, true), newlyUnlocked };
+      }
 
       // Shared with the FRQ route so both count days, and keep streaks, alike.
       const { day: dayKey, timeZone } = resolveActivityDay(new Date(), statsData.timeZone, body?.timeZone);
@@ -147,7 +163,9 @@ export async function POST(request: NextRequest) {
         ...statsData, level: progress.level, longestStreak: streak.longestStreak,
         mcqTestsCompleted: (typeof statsData.mcqTestsCompleted === "number" ? statsData.mcqTestsCompleted : 0) + 1,
         problemsSolved: (typeof statsData.problemsSolved === "number" ? statsData.problemsSolved : 0) + correct,
+        subjectsCompleted,
       });
+      completion.write();
 
       transaction.set(eventRef, {
         id: eventRef.id,
@@ -170,7 +188,7 @@ export async function POST(request: NextRequest) {
         mcqTestsCompleted: (typeof statsData.mcqTestsCompleted === "number" ? statsData.mcqTestsCompleted : 0) + 1,
         problemsSolved: (typeof statsData.problemsSolved === "number" ? statsData.problemsSolved : 0) + correct,
         frqsSubmitted: typeof statsData.frqsSubmitted === "number" ? statsData.frqsSubmitted : 0,
-        subjectsCompleted: typeof statsData.subjectsCompleted === "number" ? statsData.subjectsCompleted : 0,
+        subjectsCompleted,
         perSubject: {
           ...perSubject,
           [subject]: {

@@ -144,6 +144,14 @@ service cloud.firestore {
         allow read: if isAuthenticated() && request.auth.uid == userId;
       }
 
+      // Completion receipts are maintained only by the trusted activity API.
+      match /completedTests/{testId} {
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+      }
+      match /completedSubjects/{subjectId} {
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+      }
+
       match /frqResponses/{document=**} {
         allow read: if isAuthenticated() && request.auth.uid == userId;
 
