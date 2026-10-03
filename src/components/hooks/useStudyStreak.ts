@@ -1,11 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import {
-  getDeviceTimeZone,
-  isValidTimeZone,
-} from "@/lib/gamification/calendarDay";
-import { readStreakState, type StreakState } from "@/lib/gamification/streak";
+import { useLiveStats } from "@/components/hooks/useLiveStats";
+import type { StreakState } from "@/lib/gamification/streak";
 import { dashboardDocumentPaths } from "@/types/dashboard";
 
 export interface StudyStreak {
@@ -31,40 +28,15 @@ export interface StudyStreakState {
  * server records new activity.
  */
 export function useStudyStreak(uid: string | undefined): StudyStreakState {
-  const [stats, setStats] = useState<Omit<StudyStreak, "calendarDays">>();
+  const { stats, error: statsError } = useLiveStats(uid);
   const [calendars, setCalendars] = useState<
     Record<number, Record<string, number>>
   >({});
-  const [error, setError] = useState<Error>();
-
-  useEffect(() => {
-    setStats(undefined);
-    setError(undefined);
-    if (!uid) return;
-
-    return onSnapshot(
-      doc(db, dashboardDocumentPaths.stats(uid)),
-      (snapshot) => {
-        const data = snapshot.data();
-        const timeZone: unknown = data?.timeZone;
-        setStats({
-          streak: readStreakState(data),
-          // No zone on file means nothing recorded yet, so any zone will do.
-          timeZone:
-            typeof timeZone === "string" && isValidTimeZone(timeZone)
-              ? timeZone
-              : getDeviceTimeZone(),
-        });
-      },
-      (streakError) => {
-        console.error("Error loading streak:", streakError);
-        setError(streakError);
-      },
-    );
-  }, [uid]);
+  const [calendarError, setCalendarError] = useState<Error>();
 
   useEffect(() => {
     setCalendars({});
+    setCalendarError(undefined);
     if (!uid) return;
 
     // Calendar documents are per year, and the month view can step back
@@ -77,9 +49,9 @@ export function useStudyStreak(uid: string | undefined): StudyStreakState {
           const days = (snapshot.data()?.days ?? {}) as Record<string, number>;
           setCalendars((previous) => ({ ...previous, [year]: days }));
         },
-        (calendarError) => {
-          console.error(`Error loading ${year} activity:`, calendarError);
-          setError(calendarError);
+        (error) => {
+          console.error(`Error loading ${year} activity:`, error);
+          setCalendarError(error);
         },
       ),
     );
@@ -95,6 +67,13 @@ export function useStudyStreak(uid: string | undefined): StudyStreakState {
     [calendars],
   );
 
+  const error = statsError ?? calendarError;
   if (error) return { error };
-  return { studyStreak: stats && { ...stats, calendarDays } };
+  return {
+    studyStreak: stats && {
+      streak: stats.streak,
+      timeZone: stats.timeZone,
+      calendarDays,
+    },
+  };
 }
