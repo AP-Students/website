@@ -96,12 +96,13 @@ service cloud.firestore {
 
     match /notifications/{userId}/items/{notificationId} {
       allow read: if isAuthenticated() && request.auth.uid == userId;
-      // Notifications are server-created. A recipient may only acknowledge or
-      // adjust expiry on an existing notification; no other fields may change.
+      // Notifications and their TTL are server-controlled. Recipients may only
+      // acknowledge an existing notification using the server's clock.
       allow update: if isAuthenticated()
         && request.auth.uid == userId
         && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['readAt', 'expiresAt']);
+          .hasOnly(['readAt'])
+        && request.resource.data.readAt == request.time;
     }
 
     // Saved readings/problems reuse the dashboard SavedItem contract:
