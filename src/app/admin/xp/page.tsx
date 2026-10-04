@@ -43,6 +43,10 @@ const FIELDS: Record<XpAmountField, { label: string; help: string }> = {
     label: "FRQ submitted",
     help: "The first time a student submits each published FRQ. Resubmitting the same FRQ earns nothing more.",
   },
+  frqGradeBonus: {
+    label: "FRQ grade bonus (maximum XP)",
+    help: "Maximum XP available from an FRQ grade. Separate from the XP earned for submitting the FRQ.",
+  },
   streakDay: {
     label: "Daily streak bonus",
     help: "The first FRQ or MCQ test of each day, once the streak is 2 days or longer.",

@@ -17,10 +17,9 @@ import {
   FIXTURE_EVENTS,
   FIXTURE_IN_PROGRESS,
   FIXTURE_IN_PROGRESS_READINGS,
-  FIXTURE_NOTIFICATIONS,
 } from "@/lib/dashboard/fixtures";
 import AchievementsCard from "@/components/dashboard/AchievementsCard";
-import { checkAchievements } from "@/lib/achievements/checkAchievements";
+import { useAchievements } from "@/components/hooks/useAchievements";
 import RecentActivity from "@/components/dashboard/RecentActivity";
 import SubmissionHistory from "@/components/dashboard/SubmissionHistory";
 import SavedAndInProgress, {
@@ -36,12 +35,8 @@ import type { User } from "@/types/user";
 import type { SavedItem } from "@/types/dashboard";
 import { useStudyStreak } from "@/components/hooks/useStudyStreak";
 import { useXpProgress } from "@/components/hooks/useXpProgress";
-
-const FIXTURE_EARNED = new Set(
-  checkAchievements(FIXTURE_STATS, new Set()).map(
-    (achievement) => achievement.id,
-  ),
-);
+import { useNotifications } from "@/components/hooks/useNotifications";
+import NotificationFeed from "@/components/dashboard/NotificationFeed";
 
 function LoadError({ children }: { children: string }) {
   return (
@@ -65,6 +60,16 @@ export default function Dashboard() {
   const uid = user?.uid;
   const { studyStreak, error: streakError } = useStudyStreak(uid);
   const { progress: xpProgress, error: xpError } = useXpProgress(uid);
+  const {
+    stats: achievementStats,
+    earnedIds,
+    error: achievementError,
+  } = useAchievements(uid);
+  const {
+    notifications,
+    error: notificationError,
+    markRead,
+  } = useNotifications(uid);
 
   useEffect(() => {
     if (!uid) return;
@@ -163,7 +168,9 @@ export default function Dashboard() {
         )}
         <GlobalStats
           problemsSolved={FIXTURE_STATS.problemsSolved}
-          subjectsCompleted={FIXTURE_STATS.subjectsCompleted}
+          subjectsCompleted={
+            achievementError ? null : achievementStats.subjectsCompleted
+          }
           totalXp={xpProgress?.xp ?? null}
         />
         <RecentActivity events={FIXTURE_EVENTS} />
@@ -171,7 +178,13 @@ export default function Dashboard() {
 
       {/* Right column */}
       <div className="flex flex-col gap-8">
-        <AchievementsCard stats={FIXTURE_STATS} earnedIds={FIXTURE_EARNED} />
+        {achievementError ? (
+          <LoadError>
+            Couldn&apos;t load your achievements. Refresh to try again.
+          </LoadError>
+        ) : (
+          <AchievementsCard stats={achievementStats} earnedIds={earnedIds} />
+        )}
         {userDoc === undefined ? (
           <p className="text-gray-500">Loading your classes…</p>
         ) : (
@@ -192,10 +205,17 @@ export default function Dashboard() {
       <Navbar />
       <DashboardHeader
         user={userDoc ?? user}
-        notifications={FIXTURE_NOTIFICATIONS}
+        notifications={notifications}
+        markRead={markRead}
       />
 
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-8">
+        {notificationError && (
+          <LoadError>
+            Couldn&apos;t load your notifications. Refresh to try again.
+          </LoadError>
+        )}
+        <NotificationFeed notifications={notifications} markRead={markRead} />
         <DashboardTabs
           panels={{
             overview,
@@ -224,10 +244,14 @@ export default function Dashboard() {
                 limit={Infinity}
               />
             ),
-            achievements: (
+            achievements: achievementError ? (
+              <LoadError>
+                Couldn&apos;t load your achievements. Refresh to try again.
+              </LoadError>
+            ) : (
               <AchievementsCard
-                stats={FIXTURE_STATS}
-                earnedIds={FIXTURE_EARNED}
+                stats={achievementStats}
+                earnedIds={earnedIds}
               />
             ),
             profile: (

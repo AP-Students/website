@@ -40,6 +40,37 @@ test("stored values override the defaults field by field", () => {
   assert.equal(config.mcqTestComplete, DEFAULT_XP_CONFIG.mcqTestComplete);
 });
 
+test("older configs default the grade bonus without changing submission XP", () => {
+  const config = parseXpConfig({ frqSubmission: 40 });
+  assert.equal(config.frqGradeBonus, 25);
+  assert.equal(config.frqSubmission, 40);
+});
+
+test("the grade bonus is independently configurable, including zero", () => {
+  for (const bonus of [0, 60, 100_000]) {
+    const config = parseXpConfig({ frqSubmission: 40, frqGradeBonus: bonus });
+    assert.equal(config.frqGradeBonus, bonus);
+    const parsed = parseXpForm(toXpForm(config), LABELS);
+    assert.deepEqual(parsed, { config });
+    assert.equal(config.frqSubmission, 40);
+  }
+});
+
+test("invalid stored grade bonuses fall back and invalid form amounts are rejected", () => {
+  for (const bonus of [-1, 1.5, 100_001, "60", null, NaN, Infinity]) {
+    const config = parseXpConfig({ frqGradeBonus: bonus });
+    assert.equal(config.frqGradeBonus, 25);
+  }
+  const form = toXpForm(DEFAULT_XP_CONFIG);
+  for (const bonus of ["-1", "1.5", "100001", "", "ten"]) {
+    const parsed = parseXpForm(
+      { ...form, amounts: { ...form.amounts, frqGradeBonus: bonus } },
+      LABELS,
+    );
+    assert.ok("error" in parsed);
+  }
+});
+
 test("an unusable value falls back to its own default only", () => {
   const config = parseXpConfig({
     readingComplete: -5,

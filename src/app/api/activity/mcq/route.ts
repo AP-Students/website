@@ -6,6 +6,8 @@ import { readStreakState, recordActiveDay, resolveActivityDay } from "@/lib/gami
 import { addXp, readXpTotal, streakXp, type XpConfig } from "@/lib/gamification/xp";
 import { loadXpConfig } from "@/lib/gamification/loadXpConfig";
 import { isDocumentId, requireUser } from "@/lib/server/activityRequest";
+import { awardAchievements } from "@/lib/server/awardAchievements";
+import { prepareTestCompletion } from "@/lib/server/testCompletion";
 
 type SubmittedAnswers = Record<number, string[]>;
 type StoredQuestion = { type?: unknown; answers?: unknown; topic?: unknown };
@@ -126,7 +128,23 @@ export async function POST(request: NextRequest) {
       const totalXp = readXpTotal(statsData);
       const level = typeof statsData.level === "number" ? statsData.level : 1;
       const previousStreak = readStreakState(statsData);
-      if (event.exists) return awardResponse(0, totalXp, level, false, previousStreak.currentStreak, true);
+      // Legacy XP events use only testId. Completion receipts use the full
+      // curriculum identity, so an event collision must not skip a new test.
+      const eventData = event.data();
+      const eventCollision = event.exists && (eventData?.subject !== subject || eventData?.unitId !== unitId || eventData?.sourceId !== testId);
+      const completion = await prepareTestCompletion(transaction, adminDb, uid, { subject, unitId, testId }, statsData);
+      const subjectsCompleted = (typeof statsData.subjectsCompleted === "number" ? statsData.subjectsCompleted : 0) + (completion.subjectCompleted ? 1 : 0);
+      if (event.exists || completion.alreadyCompleted) {
+        // Keep the legacy XP replay guard, while counting a distinct test once.
+        const newCompletion = eventCollision && !completion.alreadyCompleted;
+        const mcqTestsCompleted = (typeof statsData.mcqTestsCompleted === "number" ? statsData.mcqTestsCompleted : 0) + (newCompletion ? 1 : 0);
+        const newlyUnlocked = completion.subjectCompleted || newCompletion
+          ? await awardAchievements(transaction, adminDb, uid, { ...statsData, subjectsCompleted, mcqTestsCompleted })
+          : [];
+        completion.write();
+        if (completion.subjectCompleted || newCompletion) transaction.set(statsRef, { subjectsCompleted, mcqTestsCompleted, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+        return { ...awardResponse(0, totalXp, level, false, previousStreak.currentStreak, true), newlyUnlocked };
+      }
 
       // Shared with the FRQ route so both count days, and keep streaks, alike.
       const { day: dayKey, timeZone } = resolveActivityDay(new Date(), statsData.timeZone, body?.timeZone);
@@ -142,6 +160,13 @@ export async function POST(request: NextRequest) {
         ? statsData.perSubject as Record<string, Record<string, unknown>>
         : {};
       const subjectProgress = perSubject[subject] ?? {};
+      const newlyUnlocked = await awardAchievements(transaction, adminDb, uid, {
+        ...statsData, level: progress.level, longestStreak: streak.longestStreak,
+        mcqTestsCompleted: (typeof statsData.mcqTestsCompleted === "number" ? statsData.mcqTestsCompleted : 0) + 1,
+        problemsSolved: (typeof statsData.problemsSolved === "number" ? statsData.problemsSolved : 0) + correct,
+        subjectsCompleted,
+      });
+      completion.write();
 
       transaction.set(eventRef, {
         id: eventRef.id,
@@ -164,7 +189,7 @@ export async function POST(request: NextRequest) {
         mcqTestsCompleted: (typeof statsData.mcqTestsCompleted === "number" ? statsData.mcqTestsCompleted : 0) + 1,
         problemsSolved: (typeof statsData.problemsSolved === "number" ? statsData.problemsSolved : 0) + correct,
         frqsSubmitted: typeof statsData.frqsSubmitted === "number" ? statsData.frqsSubmitted : 0,
-        subjectsCompleted: typeof statsData.subjectsCompleted === "number" ? statsData.subjectsCompleted : 0,
+        subjectsCompleted,
         perSubject: {
           ...perSubject,
           [subject]: {
@@ -180,7 +205,7 @@ export async function POST(request: NextRequest) {
         updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true });
       transaction.set(calendarRef, { uid, year: Number(year), days: { ...calendarDays, [dayKey]: currentDayCount + 1 }, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-      return awardResponse(xpAwarded, progress.xp, progress.level, progress.leveledUp, streak.currentStreak, false);
+      return { ...awardResponse(xpAwarded, progress.xp, progress.level, progress.leveledUp, streak.currentStreak, false), newlyUnlocked };
     });
     return NextResponse.json(result);
   } catch (error) {

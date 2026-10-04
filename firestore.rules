@@ -75,13 +75,14 @@ service cloud.firestore {
       allow create, update: if isAdmin()
         && request.resource.data.keys().hasOnly([
           'readingComplete', 'mcqTestComplete', 'mcqCorrectAnswer',
-          'frqSubmission', 'streakDay', 'streakMilestones',
+          'frqSubmission', 'frqGradeBonus', 'streakDay', 'streakMilestones',
           'updatedAt', 'updatedBy'
         ])
         && isXpAmount(request.resource.data.readingComplete)
         && isXpAmount(request.resource.data.mcqTestComplete)
         && isXpAmount(request.resource.data.mcqCorrectAnswer)
         && isXpAmount(request.resource.data.frqSubmission)
+        && isXpAmount(request.resource.data.frqGradeBonus)
         && isXpAmount(request.resource.data.streakDay)
         && request.resource.data.streakMilestones is map
         && request.resource.data.updatedBy == request.auth.uid
@@ -95,12 +96,13 @@ service cloud.firestore {
 
     match /notifications/{userId}/items/{notificationId} {
       allow read: if isAuthenticated() && request.auth.uid == userId;
-      // Notifications are server-created. A recipient may only acknowledge or
-      // adjust expiry on an existing notification; no other fields may change.
+      // Notifications and their TTL are server-controlled. Recipients may only
+      // acknowledge an existing notification using the server's clock.
       allow update: if isAuthenticated()
         && request.auth.uid == userId
         && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['readAt', 'expiresAt']);
+          .hasOnly(['readAt'])
+        && request.resource.data.readAt == request.time;
     }
 
     // Saved readings/problems reuse the dashboard SavedItem contract:
@@ -140,6 +142,14 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && request.auth.uid == userId;
 
       match /achievements/{achievementId} {
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+      }
+
+      // Completion receipts are maintained only by the trusted activity API.
+      match /completedTests/{testId} {
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+      }
+      match /completedSubjects/{subjectId} {
         allow read: if isAuthenticated() && request.auth.uid == userId;
       }
 
@@ -196,6 +206,25 @@ service cloud.firestore {
     // published prompts, the queue contains only ungraded responses, and a
     // grading result is kept separately for the student's dashboard.
 
+    // A result proves that a real student submission was consumed atomically.
+    // The claim timestamp cannot be added retroactively to an arbitrary result.
+    function claimsFrqQueue(resultId) {
+      let queued = get(/databases/$(database)/documents/ungraded-frqs/$(resultId));
+      let result = request.resource.data;
+      return queued != null
+        && result.templateId == queued.data.templateId
+        && result.subject == queued.data.subject
+        && result.unitId == queued.data.unitId
+        && result.studentId == queued.data.studentId
+        && result.responses == queued.data.responses
+        && result.submittedAt == queued.data.submittedAt
+        && result.queueClaimedAt == request.time
+        && result.gradedAt == request.time
+        && !existsAfter(/databases/$(database)/documents/ungraded-frqs/$(resultId))
+        && !(exists(/databases/$(database)/documents/graded-frqs/$(resultId)))
+        && !(exists(/databases/$(database)/documents/self-graded-frqs/$(resultId)));
+    }
+
 
     match /ungraded-frqs/{submissionId} {
   // `resource` is null when the document does not exist, and dereferencing it
@@ -205,6 +234,8 @@ service cloud.firestore {
     (isAuthenticated() && resource != null && resource.data.studentId == request.auth.uid);
 
   allow create: if isAuthenticated()
+    && !exists(/databases/$(database)/documents/graded-frqs/$(submissionId))
+    && !exists(/databases/$(database)/documents/self-graded-frqs/$(submissionId))
     && request.resource.data.keys().hasOnly([
       'templateId',
       'subject',
@@ -240,6 +271,9 @@ service cloud.firestore {
   // student cannot write here even about their own attempt — a self-assessment
   // goes to `self-graded-frqs` instead, where it carries no such authority.
   allow create: if isGraderOrMemberOrAdmin()
+    && claimsFrqQueue(resultId)
+    && request.resource.data.studentId != request.auth.uid
+    && !existsAfter(/databases/$(database)/documents/self-graded-frqs/$(resultId))
     && resultId == request.resource.data.sourceSubmissionId
     && request.resource.data.keys().hasOnly([
       'sourceSubmissionId',
@@ -253,7 +287,8 @@ service cloud.firestore {
       'feedback',
       'grades',
       'graderId',
-      'gradedAt'
+      'gradedAt',
+      'queueClaimedAt'
     ])
     && request.resource.data.grades is list
     && request.resource.data.sourceSubmissionId is string
@@ -266,7 +301,16 @@ service cloud.firestore {
     && request.resource.data.feedback is string
     && request.resource.data.graderId == request.auth.uid;
 
-  allow update, delete: if isGraderOrMemberOrAdmin();
+  // Regrades can change the verdict, never its submission provenance or author.
+  allow update: if isGraderOrMemberOrAdmin()
+    && resource.data.graderId == request.auth.uid
+    && request.resource.data.diff(resource.data).affectedKeys()
+      .hasOnly(['score', 'feedback', 'grades', 'gradedAt'])
+    && request.resource.data.score is string
+    && request.resource.data.feedback is string
+    && request.resource.data.grades is list
+    && request.resource.data.gradedAt == request.time;
+  allow delete: if isGraderOrMemberOrAdmin();
 }
 
     // A student's own assessment of their own attempt. Deliberately a separate
@@ -281,6 +325,8 @@ service cloud.firestore {
   // the caller's own uid, so a self-assessment cannot be filed against
   // somebody else's work or signed as though staff had graded it.
   allow create: if isAuthenticated()
+    && claimsFrqQueue(resultId)
+    && !existsAfter(/databases/$(database)/documents/graded-frqs/$(resultId))
     && request.resource.data.studentId == request.auth.uid
     && request.resource.data.graderId == request.auth.uid
     && resultId == request.resource.data.sourceSubmissionId
@@ -296,7 +342,8 @@ service cloud.firestore {
       'feedback',
       'grades',
       'graderId',
-      'gradedAt'
+      'gradedAt',
+      'queueClaimedAt'
     ])
     && request.resource.data.grades is list
     && request.resource.data.sourceSubmissionId is string
