@@ -1,8 +1,5 @@
-import { useEffect, useState } from "react";
-import { doc, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { readXpProgress, type XpProgress } from "@/lib/gamification/xp";
-import { dashboardDocumentPaths } from "@/types/dashboard";
+import { useLiveStats } from "@/components/hooks/useLiveStats";
+import type { XpProgress } from "@/lib/gamification/xp";
 
 export interface XpProgressState {
   /** Undefined while loading, and after a read error. */
@@ -19,21 +16,7 @@ export interface XpProgressState {
  * more. A student with no XP yet is level 1.
  */
 export function useXpProgress(uid: string | undefined): XpProgressState {
-  const [state, setState] = useState<XpProgressState>({});
-
-  useEffect(() => {
-    setState({});
-    if (!uid) return;
-
-    return onSnapshot(
-      doc(db, dashboardDocumentPaths.stats(uid)),
-      (snapshot) => setState({ progress: readXpProgress(snapshot.data()) }),
-      (error) => {
-        console.error("Error loading XP:", error);
-        setState({ error });
-      },
-    );
-  }, [uid]);
-
-  return state;
+  const { stats, error } = useLiveStats(uid);
+  if (error) return { error };
+  return { progress: stats?.xp };
 }
