@@ -11,6 +11,12 @@ import {
 } from "../../types/dashboard.ts";
 import { addXp, readXpTotal, type XpConfig } from "../gamification/xp.ts";
 import { readStreakState } from "../gamification/streak.ts";
+import {
+  getAllParts,
+  getTemplatePoints,
+  normalizeFrqTemplate,
+} from "../frq/template.ts";
+import { getEarnedPoints, type PartGrade } from "../frq/gradingView.ts";
 
 export class FrqGradeAwardError extends Error {
   readonly status: number;
@@ -131,7 +137,111 @@ export async function awardFrqGrade(
       );
     }
 
-    const entitledXp = gradeXpForScore(grade.score, config.frqGradeBonus);
+    // Staff membership is not evidence that this caller issued this report.
+    if (graderId !== callerUid)
+      throw new FrqGradeAwardError(
+        "Only the saved grader may process this grade",
+        403,
+      );
+    const [queue, template] = await transaction.getAll(
+      db.collection("ungraded-frqs").doc(submissionId),
+      db.doc(`subjects/${subject}/units/${unitId}/frqs/${templateId}`),
+    );
+    // Rules permit queueClaimedAt only while consuming a matching queue entry,
+    // and forbid changing it or the submission identity on subsequent regrades.
+    // Legacy results lack this evidence and must not be silently grandfathered.
+    if (
+      queue?.exists === true ||
+      self?.exists === true ||
+      !(grade.queueClaimedAt instanceof Timestamp) ||
+      !(grade.submittedAt instanceof Timestamp) ||
+      grade.queueClaimedAt.toMillis() < grade.submittedAt.toMillis() ||
+      grade.gradedAt.toMillis() < grade.queueClaimedAt.toMillis()
+    )
+      throw new FrqGradeAwardError(
+        "Saved grade has no valid consumed submission claim",
+        409,
+      );
+    if (!template?.exists)
+      throw new FrqGradeAwardError("Saved grade's FRQ template not found", 422);
+    gradeXpForScore(grade.score, config.frqGradeBonus);
+
+    // Reuse the grading model, including legacy parts. Neither an arbitrary
+    // aggregate denominator nor extra/duplicated rubric lines can produce XP.
+    const parts = getAllParts(
+      normalizeFrqTemplate(template.data(), {
+        id: templateId,
+        subject,
+        unitId,
+      }),
+    );
+    const grades: Record<string, PartGrade> = {};
+    const saved = grade.grades;
+    if (!Array.isArray(saved) || saved.length !== parts.length)
+      throw new FrqGradeAwardError(
+        "Saved grade does not match the FRQ rubric",
+        422,
+      );
+    for (const part of parts) {
+      const rubric = part.criteria ?? [];
+      const entries = saved.filter(
+        (entry: unknown) =>
+          typeof entry === "object" &&
+          entry !== null &&
+          "questionId" in entry &&
+          entry.questionId === part.id,
+      ) as Record<string, unknown>[];
+      const criteria = entries[0]?.criteria;
+      if (
+        entries.length !== 1 ||
+        !Array.isArray(criteria) ||
+        criteria.length !== rubric.length
+      )
+        throw new FrqGradeAwardError(
+          "Saved grade does not match the FRQ rubric",
+          422,
+        );
+      const points: Record<string, number> = {};
+      for (const criterion of rubric) {
+        const matches = criteria.filter(
+          (entry: unknown) =>
+            typeof entry === "object" &&
+            entry !== null &&
+            "criterionId" in entry &&
+            entry.criterionId === criterion.id,
+        ) as Record<string, unknown>[];
+        const value = matches[0]?.points;
+        if (
+          matches.length !== 1 ||
+          typeof value !== "number" ||
+          !Number.isInteger(value) ||
+          value < 0 ||
+          value > criterion.points
+        )
+          throw new FrqGradeAwardError(
+            "Saved grade has invalid rubric points",
+            422,
+          );
+        points[criterion.id] = value;
+      }
+      grades[part.id] = { feedback: "", criteria: points };
+    }
+    const earned = getEarnedPoints(parts, grades);
+    const maximum = getTemplatePoints(parts);
+    // Validate the saved aggregate too; the authoritative rubric sets its max.
+    const [savedEarned, savedMaximum] = (grade.score as string)
+      .split("/")
+      .map(Number);
+    if (savedEarned !== earned || savedMaximum !== maximum)
+      throw new FrqGradeAwardError(
+        "Saved score does not match the FRQ rubric",
+        422,
+      );
+
+    const entitledXp = gradeXpForScore(
+      `${earned}/${maximum}`,
+      config.frqGradeBonus,
+    );
     const previous = receipt?.data() as Record<string, unknown> | undefined;
     let paid: unknown = receipt?.exists ? previous?.xpAwarded : 0;
     const notificationState = notificationReceipt?.data() as

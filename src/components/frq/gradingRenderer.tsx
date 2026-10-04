@@ -231,6 +231,7 @@ const FRQGradingRenderer = ({
           grades: buildStoredGrades(parts, grades),
           graderId: user.uid,
           gradedAt: serverTimestamp(),
+          queueClaimedAt: serverTimestamp(),
         });
 
         transaction.delete(queueRef);

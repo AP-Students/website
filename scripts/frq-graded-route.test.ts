@@ -295,6 +295,7 @@ void test("staff request passes only saved ID and configured bonus; fake score a
     f.request("staff", {
       submissionId: "attempt",
       score: "999/1",
+      count: 999999,
       studentId: "grader",
       maxScore: 1,
       xp: 9999,
