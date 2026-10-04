@@ -1,54 +1,58 @@
-import { useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { getDeviceTimeZone } from "@/lib/gamification/calendarDay";
-import { readStudentStats, type StudentStats } from "@/lib/gamification/stats";
+import {
+  createLiveStatsStore,
+  LOADING,
+  type LiveStatsState,
+} from "@/lib/gamification/liveStatsStore";
 import { dashboardDocumentPaths } from "@/types/dashboard";
 
-export interface LiveStatsState {
-  /** Undefined while loading, and after a read error. */
-  stats?: StudentStats;
-  /**
-   * Set when the stats couldn't be read. Kept separate so a failure is never
-   * shown as a real "Level 1, 0 XP".
-   */
-  error?: Error;
-}
+export type { LiveStatsState };
+
+const store = createLiveStatsStore(
+  (uid, onStats, onError) =>
+    onSnapshot(
+      doc(db, dashboardDocumentPaths.stats(uid)),
+      // Without this, the server confirming what the cache already said is
+      // not delivered, since the data didn't change, and readers would wait.
+      // It also delivers the cached snapshot Firestore raises when the
+      // connection drops, which is what sends readers back to loading.
+      { includeMetadataChanges: true },
+      (snapshot) =>
+        onStats({
+          fromCache: snapshot.metadata.fromCache,
+          data: snapshot.data(),
+        }),
+      (error) => {
+        console.error("Error loading stats:", error);
+        onError(error);
+      },
+    ),
+  getDeviceTimeZone,
+);
 
 /**
  * The signed-in student's stats, kept live as the server records activity.
  * Anything that shows or uses a student's XP, level, streak or counts reads
  * them through this hook rather than opening its own listener.
  *
- * Nothing is cached. Every value is one the server has confirmed: a snapshot
- * Firestore answers from its local cache is skipped, because offline, or
- * before the first reply, a document it hasn't fetched yet reads as missing,
- * which looks exactly like a brand-new student with no XP.
+ * Every component that calls it for the same student shares one Firestore
+ * listener, which closes when the last of them unmounts.
+ *
+ * Nothing is cached. Only stats the server has confirmed are returned: before
+ * its first reply, and whenever the connection drops, this is loading.
  */
 export function useLiveStats(uid: string | undefined): LiveStatsState {
-  const [state, setState] = useState<LiveStatsState>({});
-
-  useEffect(() => {
-    setState({});
-    if (!uid) return;
-
-    return onSnapshot(
-      doc(db, dashboardDocumentPaths.stats(uid)),
-      // Without this, the server confirming what the cache already said is
-      // not delivered, since the data didn't change, and the hook would wait.
-      { includeMetadataChanges: true },
-      (snapshot) => {
-        if (snapshot.metadata.fromCache) return;
-        setState({
-          stats: readStudentStats(snapshot.data(), getDeviceTimeZone()),
-        });
-      },
-      (error) => {
-        console.error("Error loading stats:", error);
-        setState({ error });
-      },
-    );
-  }, [uid]);
-
-  return state;
+  const subscribe = useCallback(
+    (onChange: () => void) =>
+      uid ? store.subscribe(uid, onChange) : () => undefined,
+    [uid],
+  );
+  return useSyncExternalStore(
+    subscribe,
+    () => (uid ? store.getState(uid) : LOADING),
+    () => LOADING,
+  );
 }
