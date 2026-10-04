@@ -24,6 +24,16 @@ export interface StudyStreakState {
 }
 
 /**
+ * Calendar documents are per year. Last year's is loaded too, so the month
+ * view can step back from January into December and the year view can show
+ * the year before.
+ */
+function calendarYears(): number[] {
+  const thisYear = new Date().getFullYear();
+  return [thisYear - 1, thisYear];
+}
+
+/**
  * The signed-in student's streak and activity calendar, kept live as the
  * server records new activity.
  */
@@ -39,10 +49,7 @@ export function useStudyStreak(uid: string | undefined): StudyStreakState {
     setCalendarError(undefined);
     if (!uid) return;
 
-    // Calendar documents are per year, and the month view can step back
-    // from January into last December.
-    const thisYear = new Date().getFullYear();
-    const unsubscribes = [thisYear - 1, thisYear].map((year) =>
+    const unsubscribes = calendarYears().map((year) =>
       onSnapshot(
         doc(db, dashboardDocumentPaths.calendar(uid, year)),
         (snapshot) => {
@@ -69,8 +76,11 @@ export function useStudyStreak(uid: string | undefined): StudyStreakState {
 
   const error = statsError ?? calendarError;
   if (error) return { error };
+  // Wait for both years, or a calendar would show as empty until they arrive.
+  const calendarsLoaded = calendarYears().every((year) => year in calendars);
+  if (!stats || !calendarsLoaded) return {};
   return {
-    studyStreak: stats && {
+    studyStreak: {
       streak: stats.streak,
       timeZone: stats.timeZone,
       calendarDays,

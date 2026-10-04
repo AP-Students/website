@@ -5,6 +5,7 @@ import {
   dayOfWeek,
   daysBetween,
   eachDay,
+  formatDayKey,
   resolveTimeZone,
   toDayKey,
 } from "../src/lib/gamification/calendarDay.ts";
@@ -102,4 +103,30 @@ test("malformed or impossible day keys are rejected", () => {
   assert.throws(() => addDays("2026-02-30", 1), RangeError);
   assert.throws(() => addDays("26-9-1", 1), RangeError);
   assert.throws(() => toDayKey(new Date("nope"), "UTC"), RangeError);
+});
+
+test("a day is written out the same in every device time zone", () => {
+  const deviceZone = process.env.TZ;
+  try {
+    for (const zone of ["America/Los_Angeles", "Pacific/Kiritimati", "UTC"]) {
+      process.env.TZ = zone;
+      assert.equal(
+        formatDayKey("2026-09-20", { month: "short", day: "numeric" }),
+        "Sep 20",
+      );
+    }
+    // The bug this guards against: parsed as UTC midnight, then shown in
+    // California's zone, a day key becomes the day before.
+    process.env.TZ = "America/Los_Angeles";
+    assert.equal(
+      new Date("2026-09-20").toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      }),
+      "Sep 19",
+    );
+  } finally {
+    if (deviceZone === undefined) delete process.env.TZ;
+    else process.env.TZ = deviceZone;
+  }
 });
