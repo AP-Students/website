@@ -17,7 +17,7 @@ import {
 } from "../src/lib/server/awardFrqGrade.ts";
 
 type Data = Record<string, unknown>;
-type Ref = { path: string; id: string };
+type Ref = { path: string; id: string; field?: string; value?: unknown };
 type Snapshot = { exists: boolean; data: () => Data | undefined };
 type Transaction = {
   get: (ref: Ref) => Promise<Snapshot>;
@@ -37,11 +37,23 @@ class MemoryDb {
     return { path, id: path.split("/").at(-1)! };
   }
   collection(path: string) {
-    return { doc: (id: string) => this.doc(`${path}/${id}`) };
+    return {
+      doc: (id: string) => this.doc(`${path}/${id}`),
+      where: (field: string, _operator: string, value: unknown) => ({
+        ...this.doc(path),
+        field,
+        value,
+      }),
+    };
   }
   put(path: string, data: Data) {
     this.docs.set(path, data);
     this.versions.set(path, (this.versions.get(path) ?? 0) + 1);
+    const collectionKey = `query:${path.slice(0, path.lastIndexOf("/"))}`;
+    this.versions.set(
+      collectionKey,
+      (this.versions.get(collectionKey) ?? 0) + 1,
+    );
   }
 
   async runTransaction<T>(
@@ -57,6 +69,26 @@ class MemoryDb {
             0,
             "Firestore requires reads before writes",
           );
+          if (ref.field) {
+            reads.set(
+              `query:${ref.path}`,
+              this.versions.get(`query:${ref.path}`) ?? 0,
+            );
+            return {
+              exists: false,
+              data: () => undefined,
+              docs: [...this.docs]
+                .filter(
+                  ([path, data]) =>
+                    path.slice(0, path.lastIndexOf("/")) === ref.path &&
+                    data[ref.field!] === ref.value,
+                )
+                .map(([path, data]) => ({
+                  id: this.doc(path).id,
+                  data: () => data,
+                })),
+            };
+          }
           reads.set(ref.path, this.versions.get(ref.path) ?? 0);
           const data = this.docs.get(ref.path);
           return { exists: data !== undefined, data: () => data };
@@ -102,7 +134,8 @@ class MemoryDb {
 }
 
 const resultPath = "graded-frqs/attempt";
-const receiptPath = "xpAwards/frq_grade_attempt";
+const receiptPath = "xpAwards/student_frq_grade_template";
+const notificationReceiptPath = "xpAwards/frq_grade_attempt";
 const statsPath = "userStats/student";
 const notificationPath = "notifications/student/items/frq_graded_attempt";
 const grade: Data = {
@@ -129,8 +162,8 @@ function fixture(role = "grader") {
   });
   return db;
 }
-const award = (db: MemoryDb, bonus = 25) =>
-  awardFrqGrade(db as unknown as Firestore, "staff", "attempt", {
+const award = (db: MemoryDb, bonus = 25, submissionId = "attempt") =>
+  awardFrqGrade(db as unknown as Firestore, "staff", submissionId, {
     frqGradeBonus: bonus,
   });
 
@@ -164,7 +197,7 @@ void test("pays the student, updates levels, and leaves streak/calendar untouche
   assert.equal(db.docs.get(statsPath)?.frqsSubmitted, 1);
   assert.deepEqual(
     db.writes.sort(),
-    [statsPath, receiptPath, notificationPath].sort(),
+    [statsPath, receiptPath, notificationPath, notificationReceiptPath].sort(),
   );
   assert.equal(db.docs.has("userStats/staff"), false);
   assert.equal(db.docs.get(receiptPath)?.xpAwarded, 17);
@@ -200,11 +233,169 @@ void test("regrades pay only the positive difference and never lower the high-wa
   assert.equal(db.docs.get(receiptPath)?.xpAwarded, 25);
 });
 
+void test("retakes share the FRQ balance: 17, then +8, then zero for every full-score retry or attempt", async () => {
+  const db = fixture();
+  assert.equal((await award(db)).xpAwarded, 17);
+  db.put("graded-frqs/retake", {
+    ...grade,
+    sourceSubmissionId: "retake",
+    score: "6/6",
+  });
+  assert.equal((await award(db, 25, "retake")).xpAwarded, 8);
+  assert.equal((await award(db, 25, "retake")).xpAwarded, 0);
+  db.put(resultPath, { ...grade, score: "6/6" });
+  assert.equal((await award(db)).xpAwarded, 0);
+  db.put("graded-frqs/third", {
+    ...grade,
+    sourceSubmissionId: "third",
+    score: "6/6",
+  });
+  assert.equal((await award(db, 25, "third")).xpAwarded, 0);
+  assert.equal(db.docs.get(receiptPath)?.xpAwarded, 25);
+  assert.equal(db.docs.get(receiptPath)?.sourceId, "template");
+  assert.equal(db.docs.get(statsPath)?.xp, 115);
+  // Separate attempts still get their grading notifications, without fresh XP.
+  assert.ok(db.docs.has("notifications/student/items/frq_graded_retake"));
+  assert.ok(db.docs.has("notifications/student/items/frq_graded_third"));
+  assert.equal(db.docs.get("xpAwards/frq_grade_retake")?.xpAwarded, undefined);
+});
+
+void test("concurrent different attempts and retries cannot exceed one FRQ entitlement", async () => {
+  const db = fixture();
+  db.put("graded-frqs/retake", {
+    ...grade,
+    sourceSubmissionId: "retake",
+    score: "6/6",
+  });
+  const results = await Promise.all([
+    award(db),
+    award(db, 25, "retake"),
+    award(db),
+    award(db, 25, "retake"),
+  ]);
+  assert.equal(
+    results.reduce((sum, result) => sum + result.xpAwarded, 0),
+    25,
+  );
+  assert.equal(db.docs.get(receiptPath)?.xpAwarded, 25);
+  assert.equal(db.docs.get(statsPath)?.xp, 115);
+  assert.ok(db.retries > 0);
+});
+
+void test("concurrent retakes pay only the remaining FRQ difference", async () => {
+  const db = fixture();
+  await award(db);
+  for (const id of ["retake-a", "retake-b"]) {
+    db.put(`graded-frqs/${id}`, {
+      ...grade,
+      sourceSubmissionId: id,
+      score: "6/6",
+    });
+  }
+  const results = await Promise.all([
+    award(db, 25, "retake-a"),
+    award(db, 25, "retake-b"),
+  ]);
+  assert.equal(
+    results.reduce((sum, result) => sum + result.xpAwarded, 0),
+    8,
+  );
+  assert.equal(db.docs.get(receiptPath)?.xpAwarded, 25);
+});
+
+void test("different students and FRQs retain independent entitlements", async () => {
+  const db = fixture();
+  await award(db);
+  db.put("graded-frqs/other-student", {
+    ...grade,
+    studentId: "other",
+    sourceSubmissionId: "other-student",
+    score: "6/6",
+  });
+  db.put("graded-frqs/other-frq", {
+    ...grade,
+    templateId: "other-template",
+    sourceSubmissionId: "other-frq",
+    score: "6/6",
+  });
+  assert.equal((await award(db, 25, "other-student")).xpAwarded, 25);
+  assert.equal((await award(db, 25, "other-frq")).xpAwarded, 25);
+  assert.equal(db.docs.get("xpAwards/other_frq_grade_template")?.xpAwarded, 25);
+  assert.equal(
+    db.docs.get("xpAwards/student_frq_grade_other-template")?.xpAwarded,
+    25,
+  );
+  assert.equal(db.docs.get(receiptPath)?.xpAwarded, 17);
+});
+
+void test("legacy attempt payouts migrate cumulatively without paying them again or recreating expired notifications", async () => {
+  const db = fixture();
+  db.put(resultPath, { ...grade, score: "6/6" });
+  const legacy = {
+    userId: "student",
+    type: "frq_grade",
+    subject: "physics",
+    unitId: "unit",
+    templateId: "template",
+    notificationCreated: true,
+  };
+  db.put(notificationReceiptPath, { ...legacy, xpAwarded: 17 });
+  db.put("xpAwards/frq_grade_old-retake", { ...legacy, xpAwarded: 8 });
+  db.put(statsPath, { ...db.docs.get(statsPath), xp: 115 });
+  const results = await Promise.all([award(db), award(db)]);
+  assert.equal(
+    results.reduce((sum, result) => sum + result.xpAwarded, 0),
+    0,
+  );
+  assert.equal(db.docs.get(receiptPath)?.xpAwarded, 25);
+  assert.equal(db.docs.get(statsPath)?.xp, 115);
+  assert.equal(db.docs.has(notificationPath), false);
+  assert.equal(db.docs.get(notificationReceiptPath)?.xpAwarded, 17);
+});
+
+void test("legacy partial payout pays only the positive difference on a new attempt", async () => {
+  const db = fixture();
+  db.put("xpAwards/frq_grade_old", {
+    userId: "student",
+    type: "frq_grade",
+    subject: "physics",
+    unitId: "unit",
+    templateId: "template",
+    xpAwarded: 17,
+  });
+  db.put(resultPath, { ...grade, score: "6/6" });
+  db.put(statsPath, { ...db.docs.get(statsPath), xp: 107 });
+  assert.equal((await award(db)).xpAwarded, 8);
+  assert.equal(db.docs.get(receiptPath)?.xpAwarded, 25);
+  assert.equal(db.docs.get(statsPath)?.xp, 115);
+});
+
+void test("legacy overpayments are retained and prevent any fresh grade payout", async () => {
+  const db = fixture();
+  for (const id of ["old-a", "old-b"])
+    db.put(`xpAwards/frq_grade_${id}`, {
+      userId: "student",
+      type: "frq_grade",
+      subject: "physics",
+      unitId: "unit",
+      templateId: "template",
+      xpAwarded: 25,
+    });
+  db.put(resultPath, { ...grade, score: "6/6" });
+  db.put(statsPath, { ...db.docs.get(statsPath), xp: 140 });
+  assert.equal((await award(db)).xpAwarded, 0);
+  assert.equal(db.docs.get(receiptPath)?.xpAwarded, 50);
+  assert.equal(db.docs.get(statsPath)?.xp, 140);
+});
+
 void test("uses configured bonus and saved score, including a disabled bonus", async () => {
   assert.equal((await award(fixture(), 60)).xpAwarded, 40);
   const db = fixture();
   assert.equal((await award(db, 0)).xpAwarded, 0);
-  assert.deepEqual(db.writes.sort(), [receiptPath, notificationPath].sort());
+  assert.deepEqual(
+    db.writes.sort(),
+    [receiptPath, notificationPath, notificationReceiptPath].sort(),
+  );
 });
 
 void test("full, partial, and zero scores use a non-default configured maximum", async () => {

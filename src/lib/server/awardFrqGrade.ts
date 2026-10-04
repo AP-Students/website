@@ -47,7 +47,7 @@ export function gradeXpForScore(score: unknown, bonus: number): number {
 }
 
 /**
- * Payouts belong to a submission, whose result ID remains stable on regrades.
+ * Payouts belong to the student's FRQ template, shared by every attempt.
  * Read the role, saved grade, receipt and stats in the same transaction so a
  * concurrent edit or payout retries against the latest trusted state.
  */
@@ -95,12 +95,20 @@ export async function awardFrqGrade(
     }
 
     const statsRef = db.doc(dashboardDocumentPaths.stats(studentId));
-    // Unlike submission XP, this receipt tracks grade XP for this attempt.
-    // A separate namespace keeps submission and grade rewards independent.
+    // Submission XP already scopes awards to studentId + templateId. Use the
+    // same FRQ identity, with a separate namespace for cumulative grade XP.
     const receiptRef = db
       .collection("xpAwards")
+      .doc(`${studentId}_frq_grade_${templateId}`);
+    // Keep notification deduplication per submission, including legacy receipts.
+    const notificationReceiptRef = db
+      .collection("xpAwards")
       .doc(`frq_grade_${submissionId}`);
-    const [stats, receipt] = await transaction.getAll(statsRef, receiptRef);
+    const [stats, receipt, notificationReceipt] = await transaction.getAll(
+      statsRef,
+      receiptRef,
+      notificationReceiptRef,
+    );
     const statsData = stats?.data();
     const progress = addXp(readXpTotal(statsData), 0);
     const response: ActivityAwardResponse = {
@@ -125,7 +133,48 @@ export async function awardFrqGrade(
 
     const entitledXp = gradeXpForScore(grade.score, config.frqGradeBonus);
     const previous = receipt?.data() as Record<string, unknown> | undefined;
-    const paid = receipt?.exists ? previous?.xpAwarded : 0;
+    let paid: unknown = receipt?.exists ? previous?.xpAwarded : 0;
+    const notificationState = notificationReceipt?.data() as
+      | Record<string, unknown>
+      | undefined;
+    if (
+      notificationReceipt?.exists &&
+      ((notificationState?.type !== "frq_grade" &&
+        notificationState?.type !== "frq_grade_notification") ||
+        notificationState?.userId !== studentId ||
+        notificationState.subject !== subject ||
+        notificationState.unitId !== unitId ||
+        notificationState.templateId !== templateId)
+    )
+      throw new FrqGradeAwardError("Grade payout receipt is inconsistent", 409);
+
+    if (!receipt?.exists) {
+      // Carry forward all XP already paid by the old attempt-scoped version.
+      // A single-field query needs no new composite index. Migration is atomic
+      // with the first FRQ-scoped payout and is never repeated afterwards.
+      const legacy = await transaction.get(
+        db.collection("xpAwards").where("userId", "==", studentId),
+      );
+      let legacyPaid = 0;
+      for (const document of legacy.docs) {
+        const data = document.data() as Record<string, unknown>;
+        if (data.type !== "frq_grade" || data.templateId !== templateId)
+          continue;
+        if (
+          data.subject !== subject ||
+          data.unitId !== unitId ||
+          typeof data.xpAwarded !== "number" ||
+          !Number.isSafeInteger(data.xpAwarded) ||
+          data.xpAwarded < 0
+        )
+          throw new FrqGradeAwardError(
+            "Grade payout receipt is inconsistent",
+            409,
+          );
+        legacyPaid += data.xpAwarded;
+      }
+      paid = legacyPaid;
+    }
     if (
       typeof paid !== "number" ||
       !Number.isSafeInteger(paid) ||
@@ -148,11 +197,12 @@ export async function awardFrqGrade(
     );
     const notification = await transaction.get(notificationRef);
     const shouldNotify =
-      previous?.notificationCreated !== true && !notification.exists;
+      notificationState?.notificationCreated !== true && !notification.exists;
     if (
       xpAwarded === 0 &&
       !shouldNotify &&
-      previous?.notificationCreated === true
+      notificationState?.notificationCreated === true &&
+      receipt?.exists
     )
       return response;
 
@@ -179,16 +229,32 @@ export async function awardFrqGrade(
       subject,
       unitId,
       templateId,
-      sourceId: submissionId,
+      sourceId: templateId,
       submissionId,
       graderId,
       score: grade.score as string,
       gradeBonus: config.frqGradeBonus,
       xpAwarded: paid + xpAwarded,
-      // Kept even after TTL deletes the notification, so replay cannot recreate it.
-      notificationCreated: true,
       awardedAt: FieldValue.serverTimestamp(),
     });
+    if (notificationState?.notificationCreated !== true) {
+      // Preserve old payout amounts for migration; new attempt markers hold no XP.
+      transaction.set(
+        notificationReceiptRef,
+        notificationReceipt?.exists
+          ? { notificationCreated: true }
+          : {
+              userId: studentId,
+              type: "frq_grade_notification",
+              subject,
+              unitId,
+              templateId,
+              submissionId,
+              notificationCreated: true,
+            },
+        { merge: true },
+      );
+    }
     if (xpAwarded > 0)
       transaction.set(
         statsRef,
