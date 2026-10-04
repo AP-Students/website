@@ -13,7 +13,14 @@ import {
 } from "../src/lib/server/testCompletion.ts";
 
 type Data = Record<string, unknown>;
-type Ref = { path: string; id: string; field?: string; value?: unknown };
+type Ref = {
+  path: string;
+  id: string;
+  field?: string;
+  value?: unknown;
+  aggregate?: boolean;
+  operator?: string;
+};
 
 /** Optimistic transaction fixture, including collection-query version checks. */
 class CompletionDb {
@@ -21,15 +28,24 @@ class CompletionDb {
   versions = new Map<string, number>();
   writes: string[] = [];
   retries = 0;
+  reads: string[] = [];
   doc(path: string): Ref {
     return { path, id: path.split("/").at(-1)! };
   }
   collection(path: string) {
     return {
-      where: (field: string, _operator: string, value: unknown) => ({
+      where: (field: string, operator: string, value: unknown) => ({
         ...this.doc(path),
         field,
         value,
+        operator,
+        count: () => ({
+          ...this.doc(path),
+          field,
+          value,
+          operator,
+          aggregate: true,
+        }),
       }),
     };
   }
@@ -58,18 +74,23 @@ class CompletionDb {
           "Firestore requires reads before writes",
         );
         const key = ref.field ? `query:${ref.path}` : ref.path;
+        this.reads.push(ref.aggregate ? `count:${ref.path}` : key);
         reads.set(key, this.versions.get(key) ?? 0);
-        return ref.field
-          ? {
-              docs: [...this.docs]
-                .filter(
-                  ([path, data]) =>
-                    path.slice(0, path.lastIndexOf("/")) === ref.path &&
-                    data[ref.field!] === ref.value,
-                )
-                .map(([path]) => this.snapshot(path)),
-            }
-          : this.snapshot(ref.path);
+        if (ref.field) {
+          const docs = [...this.docs]
+            .filter(
+              ([path, data]) =>
+                path.slice(0, path.lastIndexOf("/")) === ref.path &&
+                (ref.operator === "in"
+                  ? (ref.value as unknown[]).includes(data[ref.field!])
+                  : data[ref.field!] === ref.value),
+            )
+            .map(([path]) => this.snapshot(path));
+          return ref.aggregate
+            ? { data: () => ({ count: docs.length }) }
+            : { docs };
+        }
+        return this.snapshot(ref.path);
       };
       const transaction = {
         get: async (ref: Ref) => read(ref),
@@ -109,7 +130,11 @@ const identity = (
 ): TestIdentity => ({ subject, unitId, testId });
 function fixture(testIds = ["a", "b"]) {
   const db = new CompletionDb();
-  db.put("subjects/physics", { units: [{ id: "unit" }] });
+  db.put("subjects/physics", {
+    units: [
+      { id: "unit", tests: testIds.map((id) => ({ id, isPublic: true })) },
+    ],
+  });
   testIds.forEach((id) =>
     db.put(`subjects/physics/units/unit/tests/${id}`, { isPublic: true }),
   );
@@ -132,6 +157,7 @@ const complete = (db: CompletionDb, current: TestIdentity) =>
       db as unknown as Firestore,
       "student",
       current,
+      stats.data(),
     );
     plan.write();
     if (!plan.alreadyCompleted || plan.subjectCompleted)
@@ -227,7 +253,17 @@ void test("concurrent different tests and duplicate final tests count exactly on
 void test("required tests span current units, exclude private tests and orphan units", async () => {
   const db = fixture(["a"]);
   db.put("subjects/physics", {
-    units: [{ id: "unit" }, { id: "second" }, { id: "second" }],
+    units: [
+      {
+        id: "unit",
+        tests: [
+          { id: "a", isPublic: true },
+          { id: "private", isPublic: false },
+        ],
+      },
+      { id: "second", tests: [{ id: "b", isPublic: true }] },
+      { id: "second", tests: [{ id: "b", isPublic: true }] },
+    ],
   });
   db.put("subjects/physics/units/unit/tests/private", { isPublic: false });
   db.put("subjects/physics/units/second/tests/b", { isPublic: true });
@@ -286,4 +322,154 @@ void test("empty curricula never auto-complete and identities are collision-free
     completedTestKey(identity("x:y", "physics", "z")),
     completedTestKey(identity("y", "physics", "z:x")),
   );
+});
+
+void test("retakes read only their own receipt and never inspect subject completion or catalogue", async () => {
+  const db = fixture();
+  await complete(db, identity("a"));
+  db.reads = [];
+  await complete(db, identity("a"));
+  assert.deepEqual(db.reads, [
+    "userStats/student", // The existing route's stats read.
+    `users/student/completedTests/${completedTestKey(identity("a"))}`,
+  ]);
+});
+
+void test("first and final completions use metadata and count queries, never test catalogue documents", async () => {
+  const db = fixture(["a", "b", "c"]);
+  for (const [index, id] of ["a", "b", "c"].entries()) {
+    db.reads = [];
+    const result = await complete(db, identity(id));
+    assert.equal(result.subjectAdded, index === 2);
+    assert.equal(
+      db.reads.some((path) => path.includes("/tests")),
+      false,
+    );
+    assert.equal(
+      db.reads.filter((path) => path === "count:users/student/completedTests")
+        .length,
+      1,
+    );
+    assert.equal(
+      db.reads.filter((path) => path === "query:activityEvents").length,
+      0,
+    );
+  }
+  assert.equal(db.docs.get("userStats/student")?.subjectsCompleted, 1);
+});
+
+void test("a new test after subject completion bypasses metadata, migration, and count queries", async () => {
+  const db = fixture(["a"]);
+  await complete(db, identity("a"));
+  db.reads = [];
+  assert.equal((await complete(db, identity("b"))).subjectAdded, false);
+  assert.equal(db.reads.includes("subjects/physics"), false);
+  assert.equal(
+    db.reads.some(
+      (path) => path.startsWith("count:") || path.startsWith("query:"),
+    ),
+    false,
+  );
+});
+
+void test("large curricula count in batches of 30 with no catalogue document reads", async () => {
+  const db = fixture(Array.from({ length: 61 }, (_, index) => `test-${index}`));
+  db.put("userStats/student", {
+    perSubject: { physics: { completionReceiptsMigrated: true } },
+  });
+  await complete(db, identity("test-0"));
+  assert.equal(
+    db.reads.filter((path) => path === "count:users/student/completedTests")
+      .length,
+    3,
+  );
+  assert.equal(
+    db.reads.some((path) => path.includes("/tests")),
+    false,
+  );
+});
+
+void test("removed/private completions do not substitute for currently required identities", async () => {
+  const db = fixture(["a", "b"]);
+  await complete(db, identity("a"));
+  db.put("subjects/physics", {
+    units: [
+      {
+        id: "unit",
+        tests: [
+          { id: "a", isPublic: false },
+          { id: "b", isPublic: true },
+          { id: "c", isPublic: true },
+        ],
+      },
+    ],
+  });
+  assert.equal((await complete(db, identity("b"))).subjectAdded, false);
+  assert.equal((await complete(db, identity("c"))).subjectAdded, true);
+});
+
+void test("legacy retakes backfill only their own receipt and do no subject work", async () => {
+  const db = fixture();
+  db.put("activityEvents/student_mcq_test_a", {
+    userId: "student",
+    type: "mcq_test",
+    subject: "physics",
+    unitId: "unit",
+    sourceId: "a",
+  });
+  assert.equal((await complete(db, identity("a"))).testAdded, false);
+  assert.equal(db.reads.includes("subjects/physics"), false);
+  assert.equal(
+    db.reads.some(
+      (path) => path.startsWith("query:") || path.startsWith("count:"),
+    ),
+    false,
+  );
+});
+
+void test("single-test legacy metadata needs only its explicitly named test document", async () => {
+  const db = fixture(["a"]);
+  db.put("subjects/physics", {
+    units: [{ id: "unit", test: true, testId: "a" }],
+  });
+  assert.equal((await complete(db, identity("a"))).subjectAdded, true);
+  assert.equal(db.reads.filter((path) => path.includes("/tests")).length, 1);
+  assert.equal(
+    db.reads.some((path) => path.startsWith("query:subjects/")),
+    false,
+  );
+});
+
+void test("legacy migration runs once and preserves tests that are republished later", async () => {
+  const db = fixture();
+  db.put("userStats/student", { mcqTestsCompleted: 1, subjectsCompleted: 0 });
+  db.put("activityEvents/student_mcq_test_c", {
+    userId: "student",
+    type: "mcq_test",
+    subject: "physics",
+    unitId: "unit",
+    sourceId: "c",
+  });
+  assert.equal((await complete(db, identity("a"))).subjectAdded, false);
+  assert.equal(
+    db.reads.filter((path) => path === "query:activityEvents").length,
+    1,
+  );
+  assert.ok(
+    db.docs.has(
+      `users/student/completedTests/${completedTestKey(identity("c"))}`,
+    ),
+  );
+  db.put("subjects/physics", {
+    units: [
+      {
+        id: "unit",
+        tests: ["a", "b", "c"].map((id) => ({ id, isPublic: true })),
+      },
+    ],
+  });
+  db.reads = [];
+  assert.equal((await complete(db, identity("b"))).subjectAdded, true);
+  assert.equal(db.reads.includes("query:activityEvents"), false);
+  assert.equal(db.docs.get("userStats/student")?.mcqTestsCompleted, 3);
 });

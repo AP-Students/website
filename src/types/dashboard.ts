@@ -88,6 +88,8 @@ export interface CompletedSubject {
 }
 
 export interface SubjectProgress {
+  /** Server-only one-time migration of legacy MCQ activity to stable receipts. */
+  completionReceiptsMigrated?: boolean;
   subjectSlug: string;
   attempted: number;
   correct: number;

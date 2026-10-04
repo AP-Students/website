@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
       // curriculum identity, so an event collision must not skip a new test.
       const eventData = event.data();
       const eventCollision = event.exists && (eventData?.subject !== subject || eventData?.unitId !== unitId || eventData?.sourceId !== testId);
-      const completion = await prepareTestCompletion(transaction, adminDb, uid, { subject, unitId, testId });
+      const completion = await prepareTestCompletion(transaction, adminDb, uid, { subject, unitId, testId }, statsData);
       const subjectsCompleted = (typeof statsData.subjectsCompleted === "number" ? statsData.subjectsCompleted : 0) + (completion.subjectCompleted ? 1 : 0);
       if (event.exists || completion.alreadyCompleted) {
         // Keep the legacy XP replay guard, while counting a distinct test once.
