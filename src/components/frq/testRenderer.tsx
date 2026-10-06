@@ -110,6 +110,12 @@ const FRQTestRenderer = ({
   const draftKey = templateId
     ? getDraftKey(templateId, uid ?? GUEST_DRAFT_OWNER)
     : "";
+  // The draft key `responses` was last loaded from. When the key changes —
+  // the template arrives, or a visitor signs in — the autosave below runs in
+  // the same pass as the seed and still holds the old answers, so until this
+  // catches up it would overwrite the draft that is being loaded (or the one
+  // a guest draft was just merged into).
+  const [seededDraftKey, setSeededDraftKey] = useState("");
 
   // Seed responses from the saved draft, then keep every part id present so
   // the review grid and submission payload never have holes. The map stays
@@ -133,10 +139,11 @@ const FRQTestRenderer = ({
       ),
     );
     setCurrentQuestionIndex(0);
+    setSeededDraftKey(draftKey);
   }, [questions, draftKey, templateId, uid]);
 
   useEffect(() => {
-    if (!draftKey || hasSubmitted) {
+    if (!draftKey || draftKey !== seededDraftKey || hasSubmitted) {
       return;
     }
 
@@ -145,7 +152,7 @@ const FRQTestRenderer = ({
     } catch {
       // A full or disabled localStorage should not interrupt the attempt.
     }
-  }, [draftKey, responses, hasSubmitted]);
+  }, [draftKey, seededDraftKey, responses, hasSubmitted]);
 
   const setPendingScrollPartId = usePendingPartScroll(
     getPartAnchorId,

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { getAuthHref } from "@/lib/redirect";
 
 type TimeUpModalProps = {
   submitting: boolean;
@@ -140,7 +141,7 @@ export const SubmissionModal = ({
           <>
             <Link
               replace
-              href={`/signup?redirect=${encodeURIComponent(returnPath)}`}
+              href={getAuthHref("/signup", returnPath)}
               className="rounded border border-blue-700 px-5 py-3 text-center font-semibold text-blue-700"
             >
               Create an Account
@@ -148,7 +149,7 @@ export const SubmissionModal = ({
 
             <Link
               replace
-              href={`/login?redirect=${encodeURIComponent(returnPath)}`}
+              href={getAuthHref("/login", returnPath)}
               className="rounded bg-blue-700 px-5 py-3 text-center font-semibold text-white"
             >
               Sign In to Submit

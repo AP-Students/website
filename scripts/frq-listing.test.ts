@@ -3,8 +3,8 @@ import { test } from "node:test";
 import {
   mergeVisitorFrqs,
   patchUnitFrqListing,
+  rebuildUnitFrqListing,
   toFrqListingEntry,
-  withFrqListings,
 } from "../src/lib/frq/listing.ts";
 import type { Unit } from "../src/types/firestore.ts";
 
@@ -24,7 +24,11 @@ test("a listing entry keeps only the id, title and visibility", () => {
     ...({ questions: [{ rubric: "secret" }] } as object),
   });
 
-  assert.deepEqual(entry, { id: "frq1", title: "FRQ #1 Set 1", isPublic: true });
+  assert.deepEqual(entry, {
+    id: "frq1",
+    title: "FRQ #1 Set 1",
+    isPublic: true,
+  });
 });
 
 test("an untitled or never-published FRQ is stored without undefined fields", () => {
@@ -92,35 +96,37 @@ test("patching a unit that is not on the subject document yet is skipped", () =>
   );
 });
 
-test("Save rebuilds every unit's listing from the loaded FRQs", () => {
-  const units = [
-    // A stale listing from before an FRQ action wrote through.
-    unit("u1", { frqs: [{ id: "old", title: "Old", isPublic: true }] }),
-    unit("u2"),
-    unit("u3"),
+test("Save rebuilds a unit's listing from its FRQs as just re-read", () => {
+  // What the page loaded earlier; another tab has renamed and published "x".
+  const loaded = unit("u1", {
+    frqs: [{ id: "x", title: "Old title", isPublic: false }],
+  });
+
+  const rebuilt = rebuildUnitFrqListing(
+    loaded,
+    [{ id: "x", title: "New title", isPublic: true }, { id: "z" }],
+    [],
+  );
+
+  assert.deepEqual(rebuilt.frqs, [
+    { id: "x", title: "New title", isPublic: true },
+    { id: "z", title: "", isPublic: false },
+  ]);
+  // Nothing else about the unit changes.
+  assert.equal(rebuilt.title, "Unit u1");
+});
+
+test("a unit whose FRQs could not be read keeps its stored listing", () => {
+  const stored = [
+    unit("u1", { frqs: [{ id: "x", title: "Stored", isPublic: true }] }),
   ];
 
-  const rebuilt = withFrqListings(units, [
-    { id: "x", unitId: "u1", title: "X", isPublic: false },
-    { id: "y", unitId: "u2", title: "Y", isPublic: true },
-    { id: "z", unitId: "u1" },
-    // An id-less template has no document to list.
-    { unitId: "u2", title: "No id" },
-  ]);
-
   assert.deepEqual(
-    rebuilt.map((rebuiltUnit) => rebuiltUnit.frqs),
-    [
-      [
-        { id: "x", title: "X", isPublic: false },
-        { id: "z", title: "", isPublic: false },
-      ],
-      [{ id: "y", title: "Y", isPublic: true }],
-      [],
-    ],
+    rebuildUnitFrqListing(unit("u1", { frqs: [] }), null, stored).frqs,
+    [{ id: "x", title: "Stored", isPublic: true }],
   );
-  // Nothing else about the unit changes.
-  assert.equal(rebuilt[0]?.title, "Unit u1");
+  // A unit added in this session has nothing stored yet.
+  assert.deepEqual(rebuildUnitFrqListing(unit("new"), null, stored).frqs, []);
 });
 
 test("a visitor sees published FRQs and the unpublished ones from the listing", () => {

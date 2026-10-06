@@ -30,7 +30,7 @@ import {
   getFrqTemplatesCollectionRef,
 } from "@/lib/firestore/frqRefs";
 import { writeFrqWithListing } from "@/lib/firestore/frqListing";
-import { toFrqListingEntry, withFrqListings } from "@/lib/frq/listing";
+import { rebuildUnitFrqListing, toFrqListingEntry } from "@/lib/frq/listing";
 
 const translator = short(short.constants.flickrBase58);
 
@@ -594,20 +594,53 @@ export default function Page({ params }: { params: { slug: string } }) {
     }
   };
 
+  // The units with their FRQ listings rebuilt from Firestore as it is now.
+  // Neither the listing in `units` nor `frqTemplates` will do: both were loaded
+  // with the page, so an FRQ renamed or published since — in another tab, or in
+  // the FRQ editor — would have that change rolled back by this save.
+  const withLatestFrqListings = async (unitsToSave: Unit[]) => {
+    const storedSubject = await getDoc(doc(db, "subjects", params.slug));
+    const storedUnits = storedSubject.exists()
+      ? ((storedSubject.data() as Subject).units ?? [])
+      : [];
+
+    return Promise.all(
+      unitsToSave.map(async (unit) => {
+        try {
+          const snapshot = await getDocs(
+            getFrqTemplatesCollectionRef(params.slug, unit.id),
+          );
+
+          return rebuildUnitFrqListing(
+            unit,
+            snapshot.docs.map((frqDoc) => ({
+              ...frqDoc.data(),
+              id: frqDoc.id,
+            })),
+            storedUnits,
+          );
+        } catch (frqError) {
+          // One unreadable FRQ collection must not stop the subject saving.
+          console.error(`Unable to load FRQs for unit ${unit.id}:`, frqError);
+
+          return rebuildUnitFrqListing(unit, null, storedUnits);
+        }
+      }),
+    );
+  };
+
   // Replaces save
   const handleSave = async () => {
-    // Rebuild the Subject object from current state
-    const subjectToSave: Subject = {
-      title: subjectTitle,
-      // The FRQ listing is rebuilt from the loaded FRQs rather than taken from
-      // `units`, whose copy goes stale as soon as an FRQ action writes through.
-      units: withFrqListings(units, frqTemplates),
-      hasUnit0: hasUnit0,
-      calculatorDefault,
-      referenceSheets: referenceSheets,
-    };
-
     try {
+      // Rebuild the Subject object from current state
+      const subjectToSave: Subject = {
+        title: subjectTitle,
+        units: await withLatestFrqListings(units),
+        hasUnit0: hasUnit0,
+        calculatorDefault,
+        referenceSheets: referenceSheets,
+      };
+
       const batch = writeBatch(db);
 
       // 1. Save the main subject doc

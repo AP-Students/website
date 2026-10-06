@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { getSafeRedirectPath } from "../src/lib/redirect.ts";
+import { getAuthHref, getSafeRedirectPath } from "../src/lib/redirect.ts";
 
 test("a path on this site is kept, with its query and hash", () => {
   const frqPath = "/subject/precalculus/unit-1-3zxlgH1d/frq/mfr8Ab3C";
@@ -34,5 +34,39 @@ test("an encoded double slash stays a path on this site", () => {
   assert.equal(
     getSafeRedirectPath("/%2F%2Fevil.example"),
     "/%2F%2Fevil.example",
+  );
+});
+
+test("a sign-in link carries the page to come back to", () => {
+  const frqPath = "/subject/precalculus/unit-1-3zxlgH1d/frq/mfr8Ab3C";
+
+  assert.equal(
+    getAuthHref("/login", frqPath),
+    `/login?redirect=${encodeURIComponent(frqPath)}`,
+  );
+  assert.equal(
+    getAuthHref("/signup", "/library?tab=2"),
+    "/signup?redirect=%2Flibrary%3Ftab%3D2",
+  );
+});
+
+test("a sign-in link skips the homepage, sign-in pages and unsafe targets", () => {
+  for (const returnTo of [
+    null,
+    "/",
+    "/?ref=nav",
+    "/login",
+    "/login/reset",
+    "/signup?redirect=%2Flibrary",
+    "//evil.example",
+    "https://evil.example/subject",
+  ]) {
+    assert.equal(getAuthHref("/login", returnTo), "/login", String(returnTo));
+  }
+
+  // Only the sign-in pages themselves are skipped, not lookalike paths.
+  assert.equal(
+    getAuthHref("/login", "/loginhelp"),
+    "/login?redirect=%2Floginhelp",
   );
 });

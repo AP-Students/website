@@ -64,25 +64,24 @@ export const patchUnitFrqListing = (
 };
 
 /**
- * Rebuilds every unit's listing from the FRQs the admin page loaded. Save
- * rewrites the whole subject document, so it has to carry the listing itself,
- * and rebuilding is also what fills the listing in for FRQs created before it
- * existed.
+ * The listing one unit is saved with when the admin page saves the subject.
+ * Save rewrites the whole subject document, so it has to carry the listing
+ * itself, and rebuilding is also what fills the listing in for FRQs created
+ * before it existed. `latestFrqs` is the unit's FRQs as just re-read, or null
+ * if they could not be read; the unit then keeps the listing `storedUnits`
+ * (the subject document as it is now) has for it, so a failed read never
+ * empties it.
  */
-export const withFrqListings = (
-  units: Unit[],
-  frqs: (Partial<FrqListingSource> & { unitId: string })[],
-): Unit[] =>
-  units.map((unit) => ({
-    ...unit,
-    frqs: frqs
-      // A template without an id has no document for the listing to point at.
-      .filter(
-        (frq): frq is FrqListingSource & { unitId: string } =>
-          frq.unitId === unit.id && Boolean(frq.id),
-      )
-      .map(toFrqListingEntry),
-  }));
+export const rebuildUnitFrqListing = (
+  unit: Unit,
+  latestFrqs: FrqListingSource[] | null,
+  storedUnits: Unit[],
+): Unit => ({
+  ...unit,
+  frqs: latestFrqs
+    ? latestFrqs.map(toFrqListingEntry)
+    : (storedUnits.find((storedUnit) => storedUnit.id === unit.id)?.frqs ?? []),
+});
 
 const compareById = (a: UnitFRQ, b: UnitFRQ) =>
   a.id < b.id ? -1 : a.id > b.id ? 1 : 0;

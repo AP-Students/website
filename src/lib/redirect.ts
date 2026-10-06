@@ -27,3 +27,32 @@ export const getSafeRedirectPath = (
     return null;
   }
 };
+
+// Sending someone back to a sign-in page after signing in would just loop.
+const isAuthPage = (pathname: string) =>
+  /^\/(login|signup)(\/|$)/.test(pathname);
+
+/**
+ * Where a "Log in" or "Sign up" link should point so that signing in brings
+ * the visitor back to `returnTo` instead of dropping them on the homepage. The
+ * homepage and the sign-in pages are left off: the homepage is where sign-in
+ * lands anyway, and returning to a sign-in page would loop.
+ */
+export const getAuthHref = (
+  authPath: "/login" | "/signup",
+  returnTo: string | null | undefined,
+) => {
+  const path = getSafeRedirectPath(returnTo);
+
+  if (!path) {
+    return authPath;
+  }
+
+  const { pathname } = new URL(path, PLACEHOLDER_ORIGIN);
+
+  if (pathname === "/" || isAuthPage(pathname)) {
+    return authPath;
+  }
+
+  return `${authPath}?redirect=${encodeURIComponent(path)}`;
+};

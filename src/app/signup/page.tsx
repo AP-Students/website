@@ -1,7 +1,8 @@
 "use client";
 
 import "@/styles/globals.css";
-import { useAuthHandlers } from "@/lib/auth";
+import { useAuthHandlers, useRedirectParam } from "@/lib/auth";
+import { getAuthHref } from "@/lib/redirect";
 import React, { type FormEvent, useState } from "react";
 import Link from "next/link";
 import Button from "@/components/login/submitButton";
@@ -10,6 +11,7 @@ import { Eye, EyeOff } from "lucide-react";
 
 export default function Signup() {
   const { signUpWithGoogle, signUpWithEmail } = useAuthHandlers();
+  const redirectParam = useRedirectParam();
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -230,7 +232,10 @@ export default function Signup() {
 
         <div className="mt-8 flex justify-center">
           <span className="pr-2">Already have an account?</span>
-          <Link className="hover:underline" href="/login">
+          <Link
+            className="hover:underline"
+            href={getAuthHref("/login", redirectParam)}
+          >
             Log in
           </Link>
         </div>
