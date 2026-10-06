@@ -11,14 +11,8 @@ import { useEffect, useState } from "react";
 import { notFound } from "next/navigation";
 import usePathname from "@/components/client/pathname";
 import { useUser } from "@/components/hooks/UserContext";
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-} from "firebase/firestore";
+import { loadUnitFrqs } from "@/lib/firestore/frqListing";
+import { doc, getDoc } from "firebase/firestore";
 
 const Page = ({ params }: { params: { slug: string } }) => {
   const pathname = usePathname();
@@ -58,48 +52,10 @@ const Page = ({ params }: { params: { slug: string } }) => {
             user?.access === "admin" || user?.access === "member";
 
           const unitsWithFrqs = await Promise.all(
-            units.map(async (unit) => {
-              // FRQs are supplementary to the curriculum. A failure here — a
-              // rules change that has not been deployed, an offline read —
-              // must not take down the whole subject page, which is what an
-              // unguarded rejection inside Promise.all did for every visitor.
-              try {
-                const frqsCollectionRef = collection(
-                  db,
-                  "subjects",
-                  params.slug,
-                  "units",
-                  unit.id,
-                  "frqs",
-                );
-
-                const frqsQuery = canPreview
-                  ? frqsCollectionRef
-                  : query(frqsCollectionRef, where("isPublic", "==", true));
-
-                const frqsSnapshot = await getDocs(frqsQuery);
-
-                const frqs = frqsSnapshot.docs.map((frqDoc) => ({
-                  ...frqDoc.data(),
-                  id: frqDoc.id,
-                }));
-
-                return {
-                  ...unit,
-                  frqs,
-                };
-              } catch (frqError) {
-                console.error(
-                  `Unable to load FRQs for unit ${unit.id}:`,
-                  frqError,
-                );
-
-                return {
-                  ...unit,
-                  frqs: [],
-                };
-              }
-            }),
+            units.map(async (unit) => ({
+              ...unit,
+              frqs: await loadUnitFrqs(params.slug, unit, canPreview),
+            })),
           );
 
           setSubject({

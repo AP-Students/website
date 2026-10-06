@@ -8,13 +8,10 @@ import { db } from "@/lib/firebase";
 import type { FRQTemplate } from "@/types/frq";
 import {
   collection,
-  deleteDoc,
   doc,
   getDoc,
   getDocs,
   serverTimestamp,
-  setDoc,
-  updateDoc,
   writeBatch,
 } from "firebase/firestore";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -32,6 +29,8 @@ import {
   getFrqTemplateDocRef,
   getFrqTemplatesCollectionRef,
 } from "@/lib/firestore/frqRefs";
+import { writeFrqWithListing } from "@/lib/firestore/frqListing";
+import { toFrqListingEntry, withFrqListings } from "@/lib/frq/listing";
 
 const translator = short(short.constants.flickrBase58);
 
@@ -300,16 +299,24 @@ export default function Page({ params }: { params: { slug: string } }) {
     };
 
     try {
-      await setDoc(getFrqTemplateDocRef(params.slug, unitId, frqId), {
-        subject: newFrq.subject,
-        unitId: newFrq.unitId,
-        title: newFrq.title,
-        directions: newFrq.directions,
-        questions: newFrq.questions,
-        isPublic: newFrq.isPublic,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+      await writeFrqWithListing(
+        params.slug,
+        unitId,
+        frqId,
+        toFrqListingEntry({ ...newFrq, id: frqId }),
+        (transaction) => {
+          transaction.set(getFrqTemplateDocRef(params.slug, unitId, frqId), {
+            subject: newFrq.subject,
+            unitId: newFrq.unitId,
+            title: newFrq.title,
+            directions: newFrq.directions,
+            questions: newFrq.questions,
+            isPublic: newFrq.isPublic,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+        },
+      );
 
       setFrqTemplates((currentFrqs) => [...currentFrqs, newFrq]);
 
@@ -345,10 +352,18 @@ export default function Page({ params }: { params: { slug: string } }) {
     }
 
     try {
-      await updateDoc(getFrqTemplateDocRef(params.slug, frq.unitId, frqId), {
-        title: trimmedTitle,
-        updatedAt: serverTimestamp(),
-      });
+      await writeFrqWithListing(
+        params.slug,
+        frq.unitId,
+        frqId,
+        toFrqListingEntry({ ...frq, id: frqId, title: trimmedTitle }),
+        (transaction) => {
+          transaction.update(
+            getFrqTemplateDocRef(params.slug, frq.unitId, frqId),
+            { title: trimmedTitle, updatedAt: serverTimestamp() },
+          );
+        },
+      );
 
       setFrqTemplates((currentFrqs) =>
         currentFrqs.map((item) =>
@@ -392,7 +407,17 @@ export default function Page({ params }: { params: { slug: string } }) {
     }
 
     try {
-      await deleteDoc(getFrqTemplateDocRef(params.slug, frq.unitId, frqId));
+      await writeFrqWithListing(
+        params.slug,
+        frq.unitId,
+        frqId,
+        null,
+        (transaction) => {
+          transaction.delete(
+            getFrqTemplateDocRef(params.slug, frq.unitId, frqId),
+          );
+        },
+      );
 
       setFrqTemplates((currentFrqs) =>
         currentFrqs.filter((item) => item.id !== frqId),
@@ -420,10 +445,18 @@ export default function Page({ params }: { params: { slug: string } }) {
     }
 
     try {
-      await updateDoc(getFrqTemplateDocRef(params.slug, frq.unitId, frqId), {
-        isPublic,
-        updatedAt: serverTimestamp(),
-      });
+      await writeFrqWithListing(
+        params.slug,
+        frq.unitId,
+        frqId,
+        toFrqListingEntry({ ...frq, id: frqId, isPublic }),
+        (transaction) => {
+          transaction.update(
+            getFrqTemplateDocRef(params.slug, frq.unitId, frqId),
+            { isPublic, updatedAt: serverTimestamp() },
+          );
+        },
+      );
 
       setFrqTemplates((currentFrqs) =>
         currentFrqs.map((item) =>
@@ -566,7 +599,9 @@ export default function Page({ params }: { params: { slug: string } }) {
     // Rebuild the Subject object from current state
     const subjectToSave: Subject = {
       title: subjectTitle,
-      units: units,
+      // The FRQ listing is rebuilt from the loaded FRQs rather than taken from
+      // `units`, whose copy goes stale as soon as an FRQ action writes through.
+      units: withFrqListings(units, frqTemplates),
       hasUnit0: hasUnit0,
       calculatorDefault,
       referenceSheets: referenceSheets,

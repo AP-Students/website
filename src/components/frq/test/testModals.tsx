@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 type TimeUpModalProps = {
   submitting: boolean;
   onContinue: () => void;
@@ -51,6 +53,10 @@ export const TimeUpModal = ({
 
 type SubmissionModalProps = {
   submitting: boolean;
+  /** Anyone can take an FRQ, but both ways of submitting need an account. */
+  signedIn: boolean;
+  /** Where sign-in should send the visitor back to: this FRQ. */
+  returnPath: string;
   onDownload: () => void;
   onSubmit: () => void;
   onSelfGrade: () => void;
@@ -61,9 +67,15 @@ type SubmissionModalProps = {
  * Final gate before the responses are written. Both paths store the same
  * submission; they differ only in who grades it afterwards, so the choice is
  * made here rather than by a separate flow.
+ *
+ * A signed-out visitor is offered sign-in in their place. The sign-in links
+ * replace this history entry, so after signing in the FRQ sits where it was
+ * rather than behind the sign-in page.
  */
 export const SubmissionModal = ({
   submitting,
+  signedIn,
+  returnPath,
   onDownload,
   onSubmit,
   onSelfGrade,
@@ -90,8 +102,9 @@ export const SubmissionModal = ({
       </h2>
 
       <p className="mt-3 text-sm text-gray-600">
-        Download a copy of your responses, grade them yourself against the
-        rubric, or send them to the FiveHive graders.
+        {signedIn
+          ? "Download a copy of your responses, grade them yourself against the rubric, or send them to the FiveHive graders."
+          : "Sign in to grade your responses yourself or send them to the FiveHive graders. Your answers are saved in this browser, so they will still be here after you sign in."}
       </p>
 
       <div className="mt-6 flex flex-col gap-3">
@@ -103,23 +116,45 @@ export const SubmissionModal = ({
           Download Responses as PDF
         </button>
 
-        <button
-          type="button"
-          className="rounded border border-blue-700 px-5 py-3 font-semibold text-blue-700 disabled:opacity-50"
-          onClick={onSelfGrade}
-          disabled={submitting}
-        >
-          {submitting ? "Submitting..." : "Grade It Myself"}
-        </button>
+        {signedIn ? (
+          <>
+            <button
+              type="button"
+              className="rounded border border-blue-700 px-5 py-3 font-semibold text-blue-700 disabled:opacity-50"
+              onClick={onSelfGrade}
+              disabled={submitting}
+            >
+              {submitting ? "Submitting..." : "Grade It Myself"}
+            </button>
 
-        <button
-          type="button"
-          className="rounded bg-blue-700 px-5 py-3 font-semibold text-white disabled:opacity-50"
-          onClick={onSubmit}
-          disabled={submitting}
-        >
-          {submitting ? "Submitting..." : "Submit to FiveHive Graders"}
-        </button>
+            <button
+              type="button"
+              className="rounded bg-blue-700 px-5 py-3 font-semibold text-white disabled:opacity-50"
+              onClick={onSubmit}
+              disabled={submitting}
+            >
+              {submitting ? "Submitting..." : "Submit to FiveHive Graders"}
+            </button>
+          </>
+        ) : (
+          <>
+            <Link
+              replace
+              href={`/signup?redirect=${encodeURIComponent(returnPath)}`}
+              className="rounded border border-blue-700 px-5 py-3 text-center font-semibold text-blue-700"
+            >
+              Create an Account
+            </Link>
+
+            <Link
+              replace
+              href={`/login?redirect=${encodeURIComponent(returnPath)}`}
+              className="rounded bg-blue-700 px-5 py-3 text-center font-semibold text-white"
+            >
+              Sign In to Submit
+            </Link>
+          </>
+        )}
 
         <button
           type="button"

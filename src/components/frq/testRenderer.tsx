@@ -12,6 +12,13 @@ import { SubmissionModal, TimeUpModal } from "@/components/frq/test/testModals";
 import { usePendingPartScroll } from "@/components/frq/usePendingPartScroll";
 import { getUngradedFrqsCollectionRef } from "@/lib/firestore/frqRefs";
 import {
+  GUEST_DRAFT_OWNER,
+  claimGuestDraft,
+  getDraftKey,
+  readDraft,
+  type DraftStorage,
+} from "@/lib/frq/draft";
+import {
   buildStudentQuestions,
   findQuestionIndexForPart,
   getResponsePartIds,
@@ -28,7 +35,7 @@ import type { ReferenceSheet } from "@/types/firestore";
 import ReferenceSheetPanel from "@/components/questions/ReferenceSheetPanel";
 import { addDoc, serverTimestamp } from "firebase/firestore";
 import { BookOpen, Calculator, LogOut } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type FRQTestRendererProps = {
@@ -44,40 +51,12 @@ type FRQTestRendererProps = {
   referenceSheet?: ReferenceSheet | null;
 };
 
-/**
- * Answers live in localStorage until they are submitted. A refresh, a closed
- * laptop, or a stray back-navigation used to lose the whole attempt, and there
- * is no server-side draft store to write to.
- */
-const getDraftKey = (templateId: string, studentId: string) =>
-  `frq-draft:${templateId}:${studentId}`;
-
-const readDraft = (draftKey: string): Record<string, string> => {
+// Merely reading `window.localStorage` throws when the browser blocks storage.
+const getDraftStorage = (): DraftStorage | null => {
   try {
-    const stored = window.localStorage.getItem(draftKey);
-
-    if (!stored) {
-      return {};
-    }
-
-    const parsed: unknown = JSON.parse(stored);
-
-    if (
-      typeof parsed !== "object" ||
-      parsed === null ||
-      Array.isArray(parsed)
-    ) {
-      return {};
-    }
-
-    return Object.fromEntries(
-      Object.entries(parsed).filter(
-        (entry): entry is [string, string] => typeof entry[1] === "string",
-      ),
-    );
+    return window.localStorage;
   } catch {
-    // A corrupt or unreadable draft must not block the student from starting.
-    return {};
+    return null;
   }
 };
 
@@ -88,6 +67,7 @@ const FRQTestRenderer = ({
   referenceSheet = null,
 }: FRQTestRendererProps) => {
   const router = useRouter();
+  const pathname = usePathname();
   const { user } = useUser();
   const [showReferenceSheet, setShowReferenceSheet] = useState(false);
   const [showReferenceSheetError, setShowReferenceSheetError] = useState(false);
@@ -124,15 +104,25 @@ const FRQTestRenderer = ({
   const calculatorButtonRef = useRef<HTMLButtonElement>(null);
 
   const templateId = template?.id ?? "";
-  const studentId = user?.uid ?? "";
-  const draftKey =
-    templateId && studentId ? getDraftKey(templateId, studentId) : "";
+  const uid = user?.uid;
+  // A signed-out visitor's work is saved too: they need an account to submit,
+  // and signing in navigates away from this page.
+  const draftKey = templateId
+    ? getDraftKey(templateId, uid ?? GUEST_DRAFT_OWNER)
+    : "";
 
   // Seed responses from the saved draft, then keep every part id present so
   // the review grid and submission payload never have holes. The map stays
   // keyed by part id, so work saved before question paging still resolves.
   useEffect(() => {
-    const draft = draftKey ? readDraft(draftKey) : {};
+    const storage = getDraftStorage();
+
+    // Back from signing in to submit: carry the signed-out answers over.
+    if (storage && templateId && uid) {
+      claimGuestDraft(storage, templateId, uid);
+    }
+
+    const draft = storage && draftKey ? readDraft(storage, draftKey) : {};
 
     setResponses(
       Object.fromEntries(
@@ -143,7 +133,7 @@ const FRQTestRenderer = ({
       ),
     );
     setCurrentQuestionIndex(0);
-  }, [questions, draftKey]);
+  }, [questions, draftKey, templateId, uid]);
 
   useEffect(() => {
     if (!draftKey || hasSubmitted) {
@@ -212,8 +202,15 @@ const FRQTestRenderer = ({
    */
   const submitForGrading = useCallback(
     async (destination: "queue" | "self" = "queue") => {
-      if (!template?.id || !user) {
-        window.alert("Please sign in before submitting this FRQ for grading.");
+      // Reached from the time-up popup. The submission modal is where a
+      // signed-out visitor is offered sign-in, with their answers kept.
+      if (!user) {
+        setShowTimeUpPopup(false);
+        setShowSubmissionModal(true);
+        return;
+      }
+
+      if (!template?.id) {
         return;
       }
 
@@ -367,6 +364,8 @@ const FRQTestRenderer = ({
   const submissionModal = showSubmissionModal ? (
     <SubmissionModal
       submitting={submitting}
+      signedIn={Boolean(user)}
+      returnPath={pathname}
       onDownload={() =>
         downloadResponsesAsPdf({ testName, questions, responses })
       }
