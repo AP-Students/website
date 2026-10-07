@@ -5,6 +5,7 @@ import {
   getPartLabel,
   getStudentFacingQuestions,
   isMultiQuestion,
+  stripResponseHtml,
 } from "./template.ts";
 
 /**
@@ -56,6 +57,46 @@ export const buildStudentQuestions = (
       label: getPartLabel(index),
     })),
   }));
+
+/**
+ * Whether rich text would put anything on screen. A cleared editor stores
+ * markup with no text in it (`<div><br></div>`, `&#160;`), so a plain `trim()`
+ * is not enough. The sanitizer allows no `<img>`, so an image is always a file.
+ */
+const hasVisibleContent = (
+  value: string | undefined,
+  files: QuestionFile[] | undefined,
+) => (files?.length ?? 0) > 0 || stripResponseHtml(value) !== "";
+
+export const questionHasStimulus = (question: StudentQuestion) =>
+  hasVisibleContent(question.stimulus, question.stimulusFiles);
+
+/**
+ * Where the exam-wide directions go on the test page.
+ *
+ * - "header": behind the Directions toggle, as AP's own test UI does, leaving
+ *   the left pane to the question's stimulus.
+ * - "pane": in the left pane. Used when no question has a stimulus of its own,
+ *   which is every legacy document: before the question/part split the
+ *   stimulus was stored as `directions`, so tucking it into the header would
+ *   hide the passage the student is answering about.
+ * - "none": the directions are blank.
+ *
+ * Decided per exam, not per question, so the directions never jump between
+ * the pane and the header as the student pages through.
+ */
+export type DirectionsPlacement = "header" | "pane" | "none";
+
+export const getDirectionsPlacement = (
+  template: FRQTemplate,
+  questions: StudentQuestion[],
+): DirectionsPlacement => {
+  if (!hasVisibleContent(template.directions, template.directionsFiles)) {
+    return "none";
+  }
+
+  return questions.some(questionHasStimulus) ? "header" : "pane";
+};
 
 /**
  * Every part id a student can write to, in reading order. The responses map

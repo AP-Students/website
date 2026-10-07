@@ -3,6 +3,7 @@
 import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
 import { useUser } from "@/components/hooks/UserContext";
 import FRQFooter from "@/components/frq/FRQFooter";
+import DirectionsDropdown from "@/components/frq/test/directionsDropdown";
 import { downloadResponsesAsPdf } from "@/components/frq/test/downloadResponsesPdf";
 import QuestionPane, {
   getPartAnchorId,
@@ -21,8 +22,10 @@ import {
 import {
   buildStudentQuestions,
   findQuestionIndexForPart,
+  getDirectionsPlacement,
   getResponsePartIds,
   getSectionHeading,
+  questionHasStimulus,
 } from "@/lib/frq/studentView";
 import {
   DEFAULT_TIME_LIMIT_MINUTES,
@@ -31,6 +34,7 @@ import {
 import type { FRQTemplate } from "@/types/frq";
 import CalculatorPanel from "@/components/questions/CalculatorPanel";
 import { resolveCalculatorPermission } from "@/lib/calculator";
+import { cn } from "@/lib/utils";
 import type { ReferenceSheet } from "@/types/firestore";
 import ReferenceSheetPanel from "@/components/questions/ReferenceSheetPanel";
 import { addDoc, serverTimestamp } from "firebase/firestore";
@@ -71,6 +75,10 @@ const FRQTestRenderer = ({
   const { user } = useUser();
   const [showReferenceSheet, setShowReferenceSheet] = useState(false);
   const [showReferenceSheetError, setShowReferenceSheetError] = useState(false);
+  // Open on arrival so the student reads the directions once before starting,
+  // as the MCQ test does. Lives here rather than in the dropdown so returning
+  // from the review page doesn't pop it open again.
+  const [showDirections, setShowDirections] = useState(true);
   const referenceSheetEnabled = template?.referenceSheetEnabled ?? false;
   const referenceSheetUnavailable = referenceSheetEnabled && !referenceSheet;
 
@@ -353,12 +361,21 @@ const FRQTestRenderer = ({
 
   const sectionHeading = getSectionHeading(template);
 
-  // `normalizeFrqTemplate` stores an unauthored stimulus as "", not as absent,
-  // so this cannot lean on `??`. Files are checked separately because a
-  // stimulus can be an image with no accompanying text.
-  const hasStimulus =
-    Boolean(currentQuestion.stimulus?.trim()) ||
-    (currentQuestion.stimulusFiles?.length ?? 0) > 0;
+  const directionsPlacement = getDirectionsPlacement(template, questions);
+
+  // The left pane holds one thing: the directions when they live there (every
+  // legacy document, whose stimulus *is* its directions), otherwise the open
+  // question's stimulus. A question with neither gets one column instead of a
+  // blank pane.
+  const leftPaneContent =
+    directionsPlacement === "pane"
+      ? toQuestionInput(template.directions, template.directionsFiles)
+      : questionHasStimulus(currentQuestion)
+        ? toQuestionInput(
+            currentQuestion.stimulus,
+            currentQuestion.stimulusFiles,
+          )
+        : null;
 
   const timeUpModal = showTimeUpPopup ? (
     <TimeUpModal
@@ -462,6 +479,14 @@ const FRQTestRenderer = ({
           <div>
             <p className="text-sm font-bold">{sectionHeading.label}</p>
             <p className="text-xs">{sectionHeading.subtitle}</p>
+            {directionsPlacement === "header" && (
+              <DirectionsDropdown
+                directions={template.directions}
+                directionsFiles={template.directionsFiles}
+                open={showDirections}
+                onOpenChange={setShowDirections}
+              />
+            )}
           </div>
 
           <div className="text-center">
@@ -547,41 +572,30 @@ const FRQTestRenderer = ({
           />
         </header>
 
-        <div className="grid flex-1 grid-cols-1 lg:grid-cols-2">
+        <div
+          className={cn(
+            "grid flex-1 grid-cols-1",
+            leftPaneContent && "lg:grid-cols-2",
+          )}
+        >
           {/*
             `pb-20` clears the fixed 56px footer. A page used to hold one part
             and rarely scrolled; stacking a question's parts makes it routine,
             and without the padding the last response box ends underneath the
             footer with no way to scroll further.
           */}
-          <section className="overflow-y-auto border-b-2 border-solid border-gray-500 p-8 pb-20 lg:border-b-0 lg:border-r-[3px]">
-            {/*
-              Exam-wide directions and the open question's stimulus are separate
-              fields and both may be present, so the stimulus is stacked under
-              the directions rather than replacing them.
-            */}
-            <RenderContent
-              content={toQuestionInput(
-                template.directions,
-                template.directionsFiles,
-              )}
-              origin="question"
-            />
+          {leftPaneContent && (
+            <section className="overflow-y-auto border-b-2 border-solid border-gray-500 p-8 pb-20 lg:border-b-0 lg:border-r-[3px]">
+              <RenderContent content={leftPaneContent} origin="question" />
+            </section>
+          )}
 
-            {hasStimulus && (
-              <div className="mt-8 border-t border-gray-300 pt-8">
-                <RenderContent
-                  content={toQuestionInput(
-                    currentQuestion.stimulus,
-                    currentQuestion.stimulusFiles,
-                  )}
-                  origin="question"
-                />
-              </div>
+          <section
+            className={cn(
+              "overflow-y-auto p-8 pb-20",
+              !leftPaneContent && "mx-auto w-full max-w-4xl",
             )}
-          </section>
-
-          <section className="overflow-y-auto p-8 pb-20">
+          >
             <QuestionPane
               question={currentQuestion}
               responses={responses}
