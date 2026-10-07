@@ -12,12 +12,45 @@ import {
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "./firebase"; // Firestore instance
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { type FirebaseAuthError } from "node_modules/firebase-admin/lib/utils/error";
 import { useUser } from "@/components/hooks/UserContext";
+import { getSafeRedirectPath } from "@/lib/redirect";
+
+/**
+ * The `?redirect=` a sign-in page was opened with, so switching between
+ * logging in and signing up keeps the way back. It is read after mount because
+ * the URL is only known in the browser, and `useSearchParams` would need a
+ * Suspense boundary around the page.
+ */
+export const useRedirectParam = () => {
+  const [redirect, setRedirect] = useState<string | null>(null);
+
+  useEffect(() => {
+    setRedirect(new URLSearchParams(window.location.search).get("redirect"));
+  }, []);
+
+  return redirect;
+};
 
 export const useAuthHandlers = () => {
   const router = useRouter();
   const { updateUser } = useUser(); // Get the updateUser function
+
+  // Someone sent here to sign in before submitting an FRQ goes back to it, not
+  // to the homepage. `replace` drops the sign-in page from the history, so the
+  // FRQ's "Return to the unit" (a history back) still lands on the unit.
+  const leaveAuthPage = () => {
+    const redirectPath = getSafeRedirectPath(
+      new URLSearchParams(window.location.search).get("redirect"),
+    );
+
+    if (redirectPath) {
+      router.replace(redirectPath);
+    } else {
+      router.push("/");
+    }
+  };
 
   const getMessageFromCode = (code: string): string | undefined => {
     return code.split("/").pop()?.replaceAll("-", " ");
@@ -54,7 +87,7 @@ export const useAuthHandlers = () => {
         createdWith: "email",
       });
 
-      router.push("/");
+      leaveAuthPage();
       await updateUser();
     } catch (e: unknown) {
       const error = e as FirebaseAuthError;
@@ -89,7 +122,7 @@ export const useAuthHandlers = () => {
       }
 
 
-      router.push("/");
+      leaveAuthPage();
       await updateUser();
       return userCredential;
     } catch (e: unknown) {
@@ -125,7 +158,7 @@ export const useAuthHandlers = () => {
         });
       }
 
-      router.push("/");
+      leaveAuthPage();
       await updateUser();
     } catch (e: unknown) {
       const error = e as FirebaseAuthError;

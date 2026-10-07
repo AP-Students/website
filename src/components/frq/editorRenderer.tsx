@@ -10,6 +10,8 @@ import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getFrqTemplateDocRef } from "@/lib/firestore/frqRefs";
+import { writeFrqWithListing } from "@/lib/firestore/frqListing";
+import { toFrqListingEntry } from "@/lib/frq/listing";
 import type {
   EditorPart,
   EditorQuestion,
@@ -45,7 +47,6 @@ import {
   doc,
   getDoc,
   serverTimestamp,
-  updateDoc,
 } from "firebase/firestore";
 import { Clock3, Plus, Save } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -312,13 +313,26 @@ const FRQEditorRenderer = ({
     setSaveError(null);
 
     try {
-      await updateDoc(
-        getFrqTemplateDocRef(
-          frqTemplate.subject,
-          frqTemplate.unitId,
-          frqTemplate.id,
-        ),
-        toFirestoreUpdate(currentPayload),
+      const frqRef = getFrqTemplateDocRef(
+        frqTemplate.subject,
+        frqTemplate.unitId,
+        frqTemplate.id,
+      );
+
+      // Title and visibility are both editable here, and the subject page's
+      // listing shows both, so the save carries the listing along with it.
+      await writeFrqWithListing(
+        frqTemplate.subject,
+        frqTemplate.unitId,
+        frqTemplate.id,
+        toFrqListingEntry({
+          id: frqTemplate.id,
+          title: currentPayload.title,
+          isPublic: currentPayload.isPublic,
+        }),
+        (transaction) => {
+          transaction.update(frqRef, toFirestoreUpdate(currentPayload));
+        },
       );
 
       // Re-baseline against exactly what was written, so an edit made while the
