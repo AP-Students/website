@@ -1,10 +1,15 @@
+"use client";
+
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { History } from "lucide-react";
-import type { ActivityEvent, ActivityType } from "@/types/dashboard";
+import type { ActivityType } from "@/types/dashboard";
 import { toHistoryRows, type HistoryRow } from "@/lib/dashboard/history";
 import { findCourse } from "@/lib/dashboard/subjects";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useActivityPage } from "@/components/hooks/useActivityPage";
+import Pager from "@/components/dashboard/Pager";
 
 const TYPE_BADGE: Record<ActivityType, string> = {
   reading: "bg-blue-100 text-blue-800",
@@ -54,20 +59,41 @@ function RowLink({ row }: { row: HistoryRow }) {
  * Every reading, MCQ test and FRQ the student has finished, newest first.
  * Graded FRQs link to their feedback; everything else links back to itself.
  */
-export default function SubmissionHistory({
-  events,
-}: {
-  events: ActivityEvent[];
-}) {
+export default function SubmissionHistory({ uid }: { uid: string }) {
+  const [page, setPage] = useState(1);
+  const { events, hasNext, totalPages, loading, error } = useActivityPage(
+    uid,
+    page,
+  );
+  const headingRef = useRef<HTMLHeadingElement>(null);
   const rows = toHistoryRows(events);
+
+  // Start keyboard and screen reader users at the top of the new page.
+  const changePage = (next: number) => {
+    setPage(next);
+    headingRef.current?.focus();
+  };
 
   return (
     <section aria-labelledby="submission-history-heading">
-      <h2 id="submission-history-heading" className="mb-3 text-2xl font-bold">
+      <h2
+        id="submission-history-heading"
+        ref={headingRef}
+        tabIndex={-1}
+        className="mb-3 text-2xl font-bold outline-none"
+      >
         Submission History:
       </h2>
 
-      {rows.length === 0 ? (
+      {error ? (
+        <p role="alert" className="rounded-md bg-red-100 p-4 text-red-700">
+          Couldn&apos;t load your history. Refresh to try again.
+        </p>
+      ) : loading && rows.length === 0 ? (
+        <p role="status" className="text-gray-500">
+          Loading your history…
+        </p>
+      ) : rows.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-gray-300 bg-white px-6 py-12 text-center">
           <History className="h-10 w-10 text-gray-400" aria-hidden="true" />
           <p className="text-lg font-semibold">No submissions yet</p>
@@ -150,6 +176,16 @@ export default function SubmissionHistory({
               </tbody>
             </table>
           </div>
+
+          <Pager
+            label="Submission history pages"
+            page={page}
+            onPageChange={changePage}
+            hasNext={hasNext}
+            totalPages={totalPages}
+            showNumbers
+            disabled={loading}
+          />
         </>
       )}
     </section>
