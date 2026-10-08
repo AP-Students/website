@@ -21,4 +21,6 @@ export interface UserChapterData {
     | "Complete"
     | "Need Review"
     | "Skipped";
+  /** Set by the server once the chapter's reading XP has been awarded. */
+  readingXpAwarded?: boolean;
 }

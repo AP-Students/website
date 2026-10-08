@@ -11,6 +11,7 @@ import ReviewPage from "@/components/frq/test/reviewPage";
 import { SubmissionModal, TimeUpModal } from "@/components/frq/test/testModals";
 import { usePendingPartScroll } from "@/components/frq/usePendingPartScroll";
 import { getUngradedFrqsCollectionRef } from "@/lib/firestore/frqRefs";
+import { reportWithRetry } from "@/lib/gamification/notifyActivityFailure";
 import { reportFrqSubmission } from "@/lib/gamification/reportActivity";
 import {
   buildStudentQuestions,
@@ -237,11 +238,12 @@ const FRQTestRenderer = ({
         setShowSubmissionModal(false);
         setShowTimeUpPopup(false);
 
-        // Counting toward the streak is extra: the FRQ itself is already
-        // saved, so a failure here is logged rather than shown to the student.
-        reportFrqSubmission(submissionRef.id).catch((reportError) => {
-          console.error("Error recording FRQ activity:", reportError);
-        });
+        // The FRQ itself is already saved; a failed XP save offers a retry.
+        reportWithRetry(
+          () => reportFrqSubmission(submissionRef.id),
+          "Error recording FRQ activity:",
+          `xp-frq-${submissionRef.id}`,
+        );
 
         // Only clear the draft once the write has actually landed, so a failed
         // submission still leaves the student's work recoverable.
