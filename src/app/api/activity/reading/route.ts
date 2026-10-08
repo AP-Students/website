@@ -129,10 +129,9 @@ export async function POST(request: NextRequest) {
       // chapterData can be missing (a deleted document, or a write a prior
       // deployment omitted) while the event, and the XP, already exist.
       if (activity.exists || chapterData.data()?.readingXpAwarded === true) {
-        // The tracker leaves saving "Complete" to this route, so a chapter
-        // marked Complete again still has to store it. The receipt is
-        // restored with it, and a missing event is backfilled, neither of
-        // which changes XP.
+        // The tracker saves "Complete" itself before calling this route, but
+        // the write is repeated here so the receipt is restored with it and a
+        // missing event is backfilled, neither of which changes XP.
         transaction.set(
           chapterDataRef,
           { progress: "Complete", readingXpAwarded: true },

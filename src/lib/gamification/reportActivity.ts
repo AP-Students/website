@@ -28,8 +28,11 @@ async function reportActivity(
     error?: string;
   };
   if (!response.ok) {
-    throw new Error(
-      result.error ?? `Request failed with status ${response.status}`,
+    throw Object.assign(
+      new Error(
+        result.error ?? `Request failed with status ${response.status}`,
+      ),
+      { status: response.status },
     );
   }
   return result as ActivityAwardResponse;
@@ -61,4 +64,16 @@ export function reportMcqTest(test: {
   answers: Record<number, string[]>;
 }): Promise<ActivityAwardResponse | null> {
   return reportActivity("/api/activity/mcq", test);
+}
+
+/**
+ * Awards the one-time XP for a completed chapter. The student's progress is
+ * saved separately, first; the server only decides the XP.
+ */
+export function reportReadingComplete(chapter: {
+  subject: string;
+  unitId: string;
+  chapterId: string;
+}): Promise<ActivityAwardResponse | null> {
+  return reportActivity("/api/activity/reading", chapter);
 }
