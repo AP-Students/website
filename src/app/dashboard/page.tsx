@@ -12,6 +12,7 @@ import DashboardTabs, {
 import MyClasses from "@/components/dashboard/MyClasses";
 import GlobalStats from "@/components/dashboard/GlobalStats";
 import StreakBar from "@/components/dashboard/StreakBar";
+import ActivityCalendar from "@/components/dashboard/ActivityCalendar";
 import {
   FIXTURE_STATS,
   FIXTURE_IN_PROGRESS,
@@ -219,15 +220,17 @@ export default function Dashboard() {
           panels={{
             overview,
             history: <SubmissionHistory uid={user.uid} />,
-            calendar: (
-              <TabPlaceholder title="Activity Calendar">
-                Your full-year activity calendar is on its way. Until then, your
-                streak and this month&apos;s calendar are on the{" "}
-                <a href="#overview" className="font-semibold underline">
-                  Overview
-                </a>{" "}
-                tab.
-              </TabPlaceholder>
+            calendar: studyStreak ? (
+              <ActivityCalendar
+                calendarDays={studyStreak.calendarDays}
+                timeZone={studyStreak.timeZone}
+              />
+            ) : streakError ? (
+              <LoadError>
+                Couldn&apos;t load your activity. Refresh to try again.
+              </LoadError>
+            ) : (
+              <p className="text-gray-500">Loading your activity…</p>
             ),
             saved: (
               <SavedList

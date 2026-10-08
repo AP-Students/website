@@ -143,6 +143,33 @@ export function dayOfWeek(key: DayKey): number {
   return new Date(dayKeyToUtcMs(key)).getUTCDay();
 }
 
+const dayFormatters = new Map<string, Intl.DateTimeFormat>();
+
+/**
+ * A calendar day written out, e.g. "Sep 20" for
+ * `{ month: "short", day: "numeric" }`.
+ *
+ * It is formatted in UTC because that is where `dayKeyToUtcMs` puts the date:
+ * midnight UTC on that day. Formatting in the device's zone instead, as
+ * `new Date("2026-09-20").toLocaleDateString()` does, shows anyone west of
+ * UTC, such as a student in California, the evening of the day before.
+ */
+export function formatDayKey(
+  key: DayKey,
+  options: Intl.DateTimeFormatOptions,
+): string {
+  const cacheKey = JSON.stringify(options);
+  let formatter = dayFormatters.get(cacheKey);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat("en-US", {
+      ...options,
+      timeZone: "UTC",
+    });
+    dayFormatters.set(cacheKey, formatter);
+  }
+  return formatter.format(dayKeyToUtcMs(key));
+}
+
 /** Every calendar day from `from` through `to`, inclusive, in order. */
 export function eachDay(from: DayKey, to: DayKey): DayKey[] {
   const length = daysBetween(from, to) + 1;
