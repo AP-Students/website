@@ -6,6 +6,7 @@ import { useState } from "react";
 import { updateMySubjects } from "@/lib/manageUser";
 import { Button } from "@/components/ui/button";
 import { findCourse, toSlug } from "@/lib/dashboard/subjects";
+import { useClassProgress } from "@/components/hooks/useClassProgress";
 
 export default function MyClasses({
   uid,
@@ -18,6 +19,10 @@ export default function MyClasses({
   const [selected, setSelected] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { progress, error: progressError } = useClassProgress(
+    uid,
+    subjectSlugs,
+  );
 
   const startEditing = () => {
     setSelected(subjectSlugs);
@@ -73,18 +78,18 @@ export default function MyClasses({
                       key={slug}
                       type="button"
                       onClick={() => toggle(slug)}
-                      className="focus-visible:outline-none rounded-full border px-3 py-1 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-primary"
+                      className="rounded-full border px-3 py-1 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       style={
                         isOn
                           ? {
-                            backgroundColor: section.borderColor,
-                            borderColor: section.borderColor,
-                            color: "white",
-                          }
+                              backgroundColor: section.borderColor,
+                              borderColor: section.borderColor,
+                              color: "white",
+                            }
                           : {
-                            borderColor: `${section.borderColor}80`,
-                            color: section.borderColor,
-                          }
+                              borderColor: `${section.borderColor}80`,
+                              color: section.borderColor,
+                            }
                       }
                     >
                       {course}
@@ -117,22 +122,58 @@ export default function MyClasses({
           {subjectSlugs.map((slug) => {
             const course = findCourse(slug);
             if (!course) return null;
+            const classProgress = progress[slug];
 
             return (
               <Link
                 key={slug}
                 href={`/subject/${slug}`}
-                className="focus-visible:outline-none flex items-center justify-between rounded-lg border bg-white px-4 py-3 text-lg font-bold transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary"
+                className="flex items-center justify-between rounded-lg border bg-white px-4 py-3 text-lg font-bold transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 style={{
                   color: course.color,
                   borderColor: `${course.color}80`,
                 }}
               >
-                {course.name}
+                <span className="flex grow flex-col gap-1">
+                  {course.name}
+                  {classProgress &&
+                    (classProgress.total === 0 ? (
+                      <span className="text-xs font-normal text-gray-500">
+                        No tests yet
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <span
+                          role="progressbar"
+                          aria-label={`${course.name} tests done`}
+                          aria-valuemin={0}
+                          aria-valuemax={classProgress.total}
+                          aria-valuenow={classProgress.done}
+                          className="h-2 w-full max-w-48 rounded-full bg-gray-200"
+                        >
+                          <span
+                            className="block h-full rounded-full"
+                            style={{
+                              width: `${(classProgress.done / classProgress.total) * 100}%`,
+                              backgroundColor: course.color,
+                            }}
+                          />
+                        </span>
+                        <span className="whitespace-nowrap text-xs font-normal text-gray-500">
+                          {classProgress.done} / {classProgress.total} tests
+                        </span>
+                      </span>
+                    ))}
+                </span>
                 <ChevronRight />
               </Link>
             );
           })}
+          {progressError && (
+            <p className="text-sm text-red-600">
+              Couldn&apos;t load your class progress. Refresh to try again.
+            </p>
+          )}
         </div>
       )}
     </section>

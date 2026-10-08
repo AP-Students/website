@@ -14,7 +14,6 @@ import GlobalStats from "@/components/dashboard/GlobalStats";
 import StreakBar from "@/components/dashboard/StreakBar";
 import {
   FIXTURE_STATS,
-  FIXTURE_EVENTS,
   FIXTURE_IN_PROGRESS,
   FIXTURE_IN_PROGRESS_READINGS,
 } from "@/lib/dashboard/fixtures";
@@ -173,7 +172,7 @@ export default function Dashboard() {
           }
           totalXp={xpProgress?.xp ?? null}
         />
-        <RecentActivity events={FIXTURE_EVENTS} />
+        <RecentActivity uid={user.uid} />
       </div>
 
       {/* Right column */}
@@ -219,7 +218,7 @@ export default function Dashboard() {
         <DashboardTabs
           panels={{
             overview,
-            history: <SubmissionHistory events={FIXTURE_EVENTS} />,
+            history: <SubmissionHistory uid={user.uid} />,
             calendar: (
               <TabPlaceholder title="Activity Calendar">
                 Your full-year activity calendar is on its way. Until then, your
