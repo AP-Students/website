@@ -81,6 +81,12 @@ export interface FRQTemplate {
   directions: string;
   directionsFiles?: QuestionFile[];
   /**
+   * Set by `normalizeFrqTemplate`, never stored: the document predates the
+   * question/part split, so its `directions` is the stimulus itself. Absent on
+   * every document saved with questions.
+   */
+  legacyFlatShape?: boolean;
+  /**
    * Section heading shown while taking the test, e.g. "Section II" or
    * "Section I, Part B". Absent on templates authored before this was
    * configurable, which fall back to the original hardcoded strings.

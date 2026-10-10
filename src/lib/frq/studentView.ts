@@ -76,10 +76,11 @@ export const questionHasStimulus = (question: StudentQuestion) =>
  *
  * - "header": behind the Directions toggle, as AP's own test UI does, leaving
  *   the left pane to the question's stimulus.
- * - "pane": in the left pane. Used when no question has a stimulus of its own,
- *   which is every legacy document: before the question/part split the
- *   stimulus was stored as `directions`, so tucking it into the header would
- *   hide the passage the student is answering about.
+ * - "pane": in the left pane, for legacy flat documents only. Before the
+ *   question/part split the stimulus was stored as `directions`, so tucking
+ *   it into the header would hide the passage the student is answering about.
+ *   Decided by the stored shape, not by "no question has a stimulus": a new
+ *   FRQ with only parts has real directions, and they belong in the header.
  * - "none": the directions are blank.
  *
  * Decided per exam, not per question, so the directions never jump between
@@ -89,13 +90,12 @@ export type DirectionsPlacement = "header" | "pane" | "none";
 
 export const getDirectionsPlacement = (
   template: FRQTemplate,
-  questions: StudentQuestion[],
 ): DirectionsPlacement => {
   if (!hasVisibleContent(template.directions, template.directionsFiles)) {
     return "none";
   }
 
-  return questions.some(questionHasStimulus) ? "header" : "pane";
+  return template.legacyFlatShape ? "pane" : "header";
 };
 
 /**

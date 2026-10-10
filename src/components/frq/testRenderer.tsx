@@ -125,6 +125,13 @@ const FRQTestRenderer = ({
   // a guest draft was just merged into).
   const [seededDraftKey, setSeededDraftKey] = useState("");
 
+  // A different test arriving in this same renderer opens its directions once,
+  // like the first did. Keyed on the id, so returning from the review page
+  // leaves the student's choice alone.
+  useEffect(() => {
+    setShowDirections(true);
+  }, [templateId]);
+
   // Seed responses from the saved draft, then keep every part id present so
   // the review grid and submission payload never have holes. The map stays
   // keyed by part id, so work saved before question paging still resolves.
@@ -361,7 +368,7 @@ const FRQTestRenderer = ({
 
   const sectionHeading = getSectionHeading(template);
 
-  const directionsPlacement = getDirectionsPlacement(template, questions);
+  const directionsPlacement = getDirectionsPlacement(template);
 
   // The left pane holds one thing: the directions when they live there (every
   // legacy document, whose stimulus *is* its directions), otherwise the open

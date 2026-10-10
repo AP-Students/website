@@ -215,27 +215,34 @@ test("a question's stimulus stays separate from the exam-wide directions", () =>
   assert.equal(questions[1]?.stimulus, "Stimulus for question two");
 });
 
-test("directions move to the header once questions carry their own stimulus", () => {
-  const template = twoQuestionTemplate();
-
-  assert.equal(
-    getDirectionsPlacement(template, buildStudentQuestions(template)),
-    "header",
-  );
+test("directions sit in the header on an FRQ written with questions", () => {
+  assert.equal(getDirectionsPlacement(twoQuestionTemplate()), "header");
 });
 
 test("a legacy document keeps its directions in the pane, where its stimulus lives", () => {
   // Before the question/part split the stimulus was stored as `directions`, so
   // moving it into a collapsible header would hide the passage itself.
-  const template = legacyFlatTemplate();
-
-  assert.equal(
-    getDirectionsPlacement(template, buildStudentQuestions(template)),
-    "pane",
-  );
+  assert.equal(getDirectionsPlacement(legacyFlatTemplate()), "pane");
 });
 
-test("one stimulus anywhere in the exam is enough to move directions to the header", () => {
+test("a new FRQ with no stimulus anywhere still puts its directions in the header", () => {
+  // The legacy rule keys off the stored shape, not off a missing stimulus: a
+  // math FRQ with only parts is new, and its directions are just directions.
+  // `LEGACY_QUESTION_ID` is minted for new saves too, so it proves nothing.
+  for (const id of ["q1", LEGACY_QUESTION_ID]) {
+    const template = normalizeFrqTemplate(
+      {
+        directions: "Show all of your work.",
+        questions: [{ id, stimulus: "", parts: [{ id: "p1" }] }],
+      },
+      identity,
+    );
+
+    assert.equal(getDirectionsPlacement(template), "header", id);
+  }
+});
+
+test("only a question with a stimulus gets one", () => {
   const template = normalizeFrqTemplate(
     {
       directions: "Exam-wide directions",
@@ -248,7 +255,7 @@ test("one stimulus anywhere in the exam is enough to move directions to the head
   );
   const questions = buildStudentQuestions(template);
 
-  assert.equal(getDirectionsPlacement(template, questions), "header");
+  assert.equal(getDirectionsPlacement(template), "header");
   assert.equal(questionHasStimulus(questions[0]!), true);
   assert.equal(questionHasStimulus(questions[1]!), false);
 });
@@ -273,7 +280,7 @@ test("directions the editor left blank are not shown anywhere", () => {
     );
 
     assert.equal(
-      getDirectionsPlacement(template, buildStudentQuestions(template)),
+      getDirectionsPlacement(template),
       "none",
       JSON.stringify(directions),
     );
@@ -304,7 +311,7 @@ test("an image with no text still counts as content", () => {
   const questions = buildStudentQuestions(template);
 
   assert.equal(questionHasStimulus(questions[0]!), true);
-  assert.equal(getDirectionsPlacement(template, questions), "header");
+  assert.equal(getDirectionsPlacement(template), "header");
 });
 
 test("a stimulus made only of empty markup is no stimulus", () => {
@@ -320,6 +327,6 @@ test("a stimulus made only of empty markup is no stimulus", () => {
   const questions = buildStudentQuestions(template);
 
   assert.equal(questionHasStimulus(questions[0]!), false);
-  // With nothing else for the pane to hold, the directions stay in it.
-  assert.equal(getDirectionsPlacement(template, questions), "pane");
+  // No pane at all, then; the directions stay in the header.
+  assert.equal(getDirectionsPlacement(template), "header");
 });
