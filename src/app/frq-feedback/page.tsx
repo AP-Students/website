@@ -5,13 +5,7 @@ import Footer from "@/components/global/footer";
 import Link from "next/link";
 import { useUser } from "@/components/hooks/UserContext";
 import { getGradedFrqsCollectionRef } from "@/lib/firestore/frqRefs";
-import {
-  getDocs,
-  orderBy,
-  query,
-  where,
-  Timestamp,
-} from "firebase/firestore";
+import { getDocs, query, where, Timestamp } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 type GradedFrqRow = {
@@ -36,30 +30,37 @@ const Page = () => {
 
     const fetchGradedFrqs = async () => {
       try {
+        // Equality only, sorted below. Adding `orderBy("gradedAt")` here makes
+        // Firestore require a composite index, and without one deployed every
+        // load fails with "Could not load your FRQ results". One student's
+        // graded FRQs are few enough to sort in the browser.
         const gradedQuery = query(
           getGradedFrqsCollectionRef(),
           where("studentId", "==", user.uid),
-          orderBy("gradedAt", "desc"),
         );
 
         const snapshot = await getDocs(gradedQuery);
 
-        setFrqs(
-          snapshot.docs.map((gradedDoc) => {
-            const data = gradedDoc.data();
+        const rows = snapshot.docs.map((gradedDoc): GradedFrqRow => {
+          const data = gradedDoc.data();
 
-            return {
-              id: gradedDoc.id,
-              templateId:
-                typeof data.templateId === "string" ? data.templateId : "",
-              subject: typeof data.subject === "string" ? data.subject : "",
-              unitId: typeof data.unitId === "string" ? data.unitId : "",
-              score: typeof data.score === "string" ? data.score : "",
-              gradedAt:
-                data.gradedAt instanceof Timestamp ? data.gradedAt : null,
-            };
-          }),
+          return {
+            id: gradedDoc.id,
+            templateId:
+              typeof data.templateId === "string" ? data.templateId : "",
+            subject: typeof data.subject === "string" ? data.subject : "",
+            unitId: typeof data.unitId === "string" ? data.unitId : "",
+            score: typeof data.score === "string" ? data.score : "",
+            gradedAt: data.gradedAt instanceof Timestamp ? data.gradedAt : null,
+          };
+        });
+
+        // Newest first; a result missing its timestamp sorts last.
+        rows.sort(
+          (a, b) =>
+            (b.gradedAt?.toMillis() ?? 0) - (a.gradedAt?.toMillis() ?? 0),
         );
+        setFrqs(rows);
       } catch (error) {
         console.error("Error fetching graded FRQs:", error);
         setLoadError("Could not load your FRQ results. Please try again.");
