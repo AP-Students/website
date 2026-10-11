@@ -153,6 +153,16 @@ export default function TeamMemberHex({ member }: { member: TeamMember }) {
           ))}
         </p>
       </div>
+
+      {/* HIT AREA. The parent tile turns pointer events off because its
+          square box overlaps the neighbouring hexes; this hex-shaped layer is
+          the only part that takes the mouse. Clipping the visual layers
+          instead would also cut off the drop shadow and the outer half of
+          the outline. */}
+      <div
+        className="absolute inset-0"
+        style={{ clipPath: HEX_CLIP_PATH, pointerEvents: "auto" }}
+      />
     </div>
   );
 }
