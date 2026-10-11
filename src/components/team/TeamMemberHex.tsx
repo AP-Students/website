@@ -19,7 +19,7 @@ const HEX_POINTS: [number, number][] = [
   [15.36, 30],
 ];
 const HEX_POINTS_STR = HEX_POINTS.map(([x, y]) => `${x},${y}`).join(" ");
-const HEX_CLIP_PATH = `polygon(${HEX_POINTS.map(
+export const HEX_CLIP_PATH = `polygon(${HEX_POINTS.map(
   ([x, y]) => `${x}% ${y}%`,
 ).join(", ")})`;
 
