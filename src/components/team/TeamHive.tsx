@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import TeamMemberHex, { HEX_CLIP_PATH } from "./TeamMemberHex";
+import TeamMemberHex from "./TeamMemberHex";
 import type { TeamMember } from "@/types/team";
 
 const HIVE_SCALE = 0.58;
@@ -510,7 +510,9 @@ export default function TeamHive() {
                   filter: "drop-shadow(0 10px 22px rgba(0,0,0,0.18))",
                   transform: "translateZ(0)",
                   willChange: "transform",
-                  clipPath: HEX_CLIP_PATH,
+                  // Tiles are squares that overlap their neighbours, so only
+                  // the hex-shaped hit area inside TeamMemberHex takes the mouse.
+                  pointerEvents: "none",
                 }}
               >
                 {/* Ensure the hit area matches the positioned wrapper */}

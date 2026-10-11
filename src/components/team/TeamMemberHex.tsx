@@ -19,7 +19,7 @@ const HEX_POINTS: [number, number][] = [
   [15.36, 30],
 ];
 const HEX_POINTS_STR = HEX_POINTS.map(([x, y]) => `${x},${y}`).join(" ");
-export const HEX_CLIP_PATH = `polygon(${HEX_POINTS.map(
+const HEX_CLIP_PATH = `polygon(${HEX_POINTS.map(
   ([x, y]) => `${x}% ${y}%`,
 ).join(", ")})`;
 
@@ -153,6 +153,16 @@ export default function TeamMemberHex({ member }: { member: TeamMember }) {
           ))}
         </p>
       </div>
+
+      {/* HIT AREA. The parent tile turns pointer events off because its
+          square box overlaps the neighbouring hexes; this hex-shaped layer is
+          the only part that takes the mouse. Clipping the visual layers
+          instead would also cut off the drop shadow and the outer half of
+          the outline. */}
+      <div
+        className="absolute inset-0"
+        style={{ clipPath: HEX_CLIP_PATH, pointerEvents: "auto" }}
+      />
     </div>
   );
 }
