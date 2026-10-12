@@ -8,14 +8,21 @@ import {
   onSnapshot,
   orderBy,
   query,
+  startAfter,
   where,
+  type DocumentData,
+  type QueryDocumentSnapshot,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { ActivityEvent } from "@/types/dashboard";
 
 export const ACTIVITY_PAGE_SIZE = 20;
+type PageCursor = QueryDocumentSnapshot<DocumentData> | null;
 
-export function useActivityPage(uid: string | undefined, page: number) {
+export function useActivityPage(uid: string | undefined) {
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageCursors, setPageCursors] = useState<PageCursor[]>([null]);
+  const [pageEndCursor, setPageEndCursor] = useState<PageCursor>(null);
   const [events, setEvents] = useState<ActivityEvent[]>([]);
   const [hasNext, setHasNext] = useState(false);
   const [totalPages, setTotalPages] = useState<number | null>(null);
@@ -23,10 +30,14 @@ export function useActivityPage(uid: string | undefined, page: number) {
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    setPageIndex(0);
+    setPageCursors([null]);
     setEvents([]);
     setHasNext(false);
     setTotalPages(null);
   }, [uid]);
+
+  const cursor = pageCursors[pageIndex] ?? null;
 
   useEffect(() => {
     if (!uid) return;
@@ -34,23 +45,32 @@ export function useActivityPage(uid: string | undefined, page: number) {
     setError(false);
 
     const ownEvents = where("userId", "==", uid);
-    const end = page * ACTIVITY_PAGE_SIZE;
     let cancelled = false;
 
     const unsubscribe = onSnapshot(
-      query(
-        collection(db, "activityEvents"),
-        ownEvents,
-        orderBy("occurredAt", "desc"),
-        limit(end + 1),
-      ),
+      cursor
+        ? query(
+            collection(db, "activityEvents"),
+            ownEvents,
+            orderBy("occurredAt", "desc"),
+            startAfter(cursor),
+            limit(ACTIVITY_PAGE_SIZE + 1),
+          )
+        : query(
+            collection(db, "activityEvents"),
+            ownEvents,
+            orderBy("occurredAt", "desc"),
+            limit(ACTIVITY_PAGE_SIZE + 1),
+          ),
       (snapshot) => {
-        const all = snapshot.docs.map(
-          (item) => ({ ...item.data(), id: item.id }) as ActivityEvent,
+        const pageDocuments = snapshot.docs.slice(0, ACTIVITY_PAGE_SIZE);
+        setEvents(
+          pageDocuments.map(
+            (item) => ({ ...item.data(), id: item.id }) as ActivityEvent,
+          ),
         );
-
-        setEvents(all.slice(end - ACTIVITY_PAGE_SIZE, end));
-        setHasNext(all.length > end);
+        setHasNext(snapshot.docs.length > ACTIVITY_PAGE_SIZE);
+        setPageEndCursor(pageDocuments.at(-1) ?? null);
         setLoading(false);
 
         getCountFromServer(query(collection(db, "activityEvents"), ownEvents))
@@ -75,7 +95,32 @@ export function useActivityPage(uid: string | undefined, page: number) {
       cancelled = true;
       unsubscribe();
     };
-  }, [uid, page]);
+  }, [uid, cursor]);
 
-  return { events, hasNext, totalPages, loading, error };
+  const nextPage = () => {
+    if (!hasNext || !pageEndCursor || loading) return;
+    const nextPageIndex = pageIndex + 1;
+    setPageCursors((currentCursors) => {
+      const updatedCursors = [...currentCursors];
+      updatedCursors[nextPageIndex] = pageEndCursor;
+      return updatedCursors;
+    });
+    setPageIndex(nextPageIndex);
+  };
+
+  const previousPage = () => {
+    if (pageIndex === 0 || loading) return;
+    setPageIndex(pageIndex - 1);
+  };
+
+  return {
+    events,
+    page: pageIndex + 1,
+    hasNext,
+    totalPages,
+    loading,
+    error,
+    nextPage,
+    previousPage,
+  };
 }

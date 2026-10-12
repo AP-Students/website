@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import Link from "next/link";
 import { History } from "lucide-react";
 import type { ActivityType } from "@/types/dashboard";
@@ -60,17 +60,27 @@ function RowLink({ row }: { row: HistoryRow }) {
  * Graded FRQs link to their feedback; everything else links back to itself.
  */
 export default function SubmissionHistory({ uid }: { uid: string }) {
-  const [page, setPage] = useState(1);
-  const { events, hasNext, totalPages, loading, error } = useActivityPage(
-    uid,
+  const {
+    events,
     page,
-  );
+    hasNext,
+    totalPages,
+    loading,
+    error,
+    nextPage,
+    previousPage,
+  } = useActivityPage(uid);
+
   const headingRef = useRef<HTMLHeadingElement>(null);
   const rows = toHistoryRows(events);
 
   // Start keyboard and screen reader users at the top of the new page.
-  const changePage = (next: number) => {
-    setPage(next);
+  const showPreviousPage = () => {
+    previousPage();
+    headingRef.current?.focus();
+  };
+  const showNextPage = () => {
+    nextPage();
     headingRef.current?.focus();
   };
 
@@ -180,10 +190,10 @@ export default function SubmissionHistory({ uid }: { uid: string }) {
           <Pager
             label="Submission history pages"
             page={page}
-            onPageChange={changePage}
+            onPreviousPage={showPreviousPage}
+            onNextPage={showNextPage}
             hasNext={hasNext}
             totalPages={totalPages}
-            showNumbers
             disabled={loading}
           />
         </>

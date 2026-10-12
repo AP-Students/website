@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, doc, getDoc, onSnapshot } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  onSnapshot,
+  query,
+  where,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Subject } from "@/types/firestore";
 
@@ -37,28 +44,67 @@ async function publishedTestKeys(slug: string): Promise<Set<string>> {
 }
 
 export function useClassProgress(uid: string | undefined, slugs: string[]) {
-  const [completed, setCompleted] = useState<ReadonlySet<string> | null>(null);
+  const [finished, setFinished] = useState<Record<string, Set<string>>>({});
   const [published, setPublished] = useState<Record<string, Set<string>>>({});
-  const [error, setError] = useState(false);
+  const [completionError, setCompletionError] = useState(false);
+  const [subjectError, setSubjectError] = useState(false);
   const slugList = slugs.join(",");
 
   useEffect(() => {
-    setCompleted(null);
-    setError(false);
+    setFinished({});
+    setCompletionError(false);
     if (!uid) return;
-
-    return onSnapshot(
-      collection(db, `users/${uid}/completedTests`),
-      (snapshot) => setCompleted(new Set(snapshot.docs.map((item) => item.id))),
-      (loadError) => {
-        console.error("Unable to load completed tests", loadError);
-        setError(true);
-      },
-    );
-  }, [uid]);
+    const list = slugList ? slugList.split(",") : [];
+    const receipts: Record<string, string[]> = {};
+    const legacyEvents: Record<string, string[]> = {};
+    const publish = (slug: string) => {
+      const fromReceipts = receipts[slug];
+      const fromEvents = legacyEvents[slug];
+      if (!fromReceipts || !fromEvents) return;
+      setFinished((current) => ({
+        ...current,
+        [slug]: new Set([...fromReceipts, ...fromEvents]),
+      }));
+    };
+    const onError = (loadError: Error) => {
+      console.error("Unable to load completed tests", loadError);
+      setCompletionError(true);
+    };
+    const unsubscribes = list.flatMap((slug) => [
+      onSnapshot(
+        query(
+          collection(db, `users/${uid}/completedTests`),
+          where("subject", "==", slug),
+        ),
+        (snapshot) => {
+          receipts[slug] = snapshot.docs.map((item) => item.id);
+          publish(slug);
+        },
+        onError,
+      ),
+      onSnapshot(
+        query(
+          collection(db, "activityEvents"),
+          where("userId", "==", uid),
+          where("type", "==", "mcq_test"),
+          where("subject", "==", slug),
+        ),
+        (snapshot) => {
+          legacyEvents[slug] = snapshot.docs.map((item) => {
+            const data = item.data();
+            return testKey(slug, String(data.unitId), String(data.sourceId));
+          });
+          publish(slug);
+        },
+        onError,
+      ),
+    ]);
+    return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
+  }, [uid, slugList]);
 
   useEffect(() => {
     let cancelled = false;
+    setSubjectError(false);
     const list = slugList ? slugList.split(",") : [];
     Promise.all(
       list.map(async (slug) => [slug, await publishedTestKeys(slug)] as const),
@@ -68,7 +114,7 @@ export function useClassProgress(uid: string | undefined, slugs: string[]) {
       })
       .catch((loadError: unknown) => {
         console.error("Unable to load class tests", loadError);
-        if (!cancelled) setError(true);
+        if (!cancelled) setSubjectError(true);
       });
     return () => {
       cancelled = true;
@@ -76,13 +122,13 @@ export function useClassProgress(uid: string | undefined, slugs: string[]) {
   }, [slugList]);
 
   const progress: Record<string, ClassProgress | undefined> = {};
-  if (completed) {
-    for (const [slug, keys] of Object.entries(published)) {
-      progress[slug] = {
-        done: [...keys].filter((key) => completed.has(key)).length,
-        total: keys.size,
-      };
-    }
+  for (const [slug, keys] of Object.entries(published)) {
+    const done = finished[slug];
+    if (!done) continue;
+    progress[slug] = {
+      done: [...keys].filter((key) => done.has(key)).length,
+      total: keys.size,
+    };
   }
-  return { progress, error };
+  return { progress, error: completionError || subjectError };
 }

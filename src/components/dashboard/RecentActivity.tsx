@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import type { ActivityEvent, GradeStatus } from "@/types/dashboard";
 import { buttonVariants } from "@/components/ui/button";
@@ -51,11 +50,16 @@ function describe(event: ActivityEvent) {
 }
 
 export default function RecentActivity({ uid }: { uid: string }) {
-  const [page, setPage] = useState(1);
-  const { events, hasNext, totalPages, loading, error } = useActivityPage(
-    uid,
+  const {
+    events,
     page,
-  );
+    hasNext,
+    totalPages,
+    loading,
+    error,
+    nextPage,
+    previousPage,
+  } = useActivityPage(uid);
 
   return (
     <section>
@@ -108,7 +112,8 @@ export default function RecentActivity({ uid }: { uid: string }) {
           <Pager
             label="Recent activity pages"
             page={page}
-            onPageChange={setPage}
+            onPreviousPage={previousPage}
+            onNextPage={nextPage}
             hasNext={hasNext}
             totalPages={totalPages}
             disabled={loading}
