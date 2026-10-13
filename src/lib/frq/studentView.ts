@@ -63,7 +63,7 @@ export const buildStudentQuestions = (
  * markup with no text in it (`<div><br></div>`, `&#160;`), so a plain `trim()`
  * is not enough. The sanitizer allows no `<img>`, so an image is always a file.
  */
-const hasVisibleContent = (
+export const hasVisibleContent = (
   value: string | undefined,
   files: QuestionFile[] | undefined,
 ) => (files?.length ?? 0) > 0 || stripResponseHtml(value) !== "";

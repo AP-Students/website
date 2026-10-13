@@ -2,32 +2,26 @@ import { RenderContent } from "@/components/article-creator/custom_questions/Ren
 import type { QuestionInput } from "@/types/questions";
 
 interface DescriptionPanelProps {
-  description: QuestionInput;
+  /**
+   * Passed only for a legacy document, whose directions are its stimulus.
+   * Anything newer shows its directions behind the header toggle, as the test
+   * page does.
+   */
+  directions?: QuestionInput;
+  /** Passed only when it would put something on screen. */
   stimulus?: QuestionInput;
 }
 
 export default function DescriptionPanel({
-  description,
+  directions,
   stimulus,
 }: DescriptionPanelProps) {
-  // `normalizeFrqTemplate` stores an unauthored stimulus as "", not as absent,
-  // so this cannot lean on `??`. Files are checked separately because a
-  // stimulus can be an image with no accompanying text.
-  const hasStimulus =
-    Boolean(stimulus?.value.trim()) || (stimulus?.files.length ?? 0) > 0;
-
   return (
     <section className="h-full overflow-y-auto px-16 py-8">
-      <RenderContent content={description} origin="content" />
+      {directions && <RenderContent content={directions} origin="content" />}
 
-      {/*
-        Stacked under the exam-wide directions rather than replacing them, the
-        way the test page shows the same two fields. Both can be authored, and
-        a student reading their feedback needs whatever they read while sitting
-        the exam.
-      */}
-      {hasStimulus && stimulus && (
-        <div className="mt-8 border-t border-gray-300 pt-8">
+      {stimulus && (
+        <div className={directions ? "mt-8 border-t border-gray-300 pt-8" : ""}>
           <RenderContent content={stimulus} origin="content" />
         </div>
       )}

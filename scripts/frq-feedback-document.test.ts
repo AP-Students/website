@@ -173,6 +173,48 @@ test("exam-wide directions and a question's stimulus stay separate", () => {
   assert.equal(document.frqs[1]?.stimulus?.value, "Stimulus for question two");
 });
 
+test("an FRQ written with questions tucks its directions into the header", () => {
+  // The same placement the test page uses, so the feedback page hides long
+  // directions behind a toggle instead of printing them above every stimulus.
+  const document = buildFeedbackDocument(
+    gradedSubmission(),
+    twoQuestionTemplate(),
+  );
+
+  assert.equal(document.directionsPlacement, "header");
+});
+
+test("a legacy document keeps its directions in the pane, since they are its stimulus", () => {
+  const document = buildFeedbackDocument(
+    gradedSubmission({ responses: { p1: "answer one", p2: "answer two" } }),
+    legacyFlatTemplate(),
+  );
+
+  assert.equal(document.directionsPlacement, "pane");
+});
+
+test("blank directions get no toggle at all", () => {
+  // A cleared editor stores markup with no text in it, not an empty string.
+  const document = buildFeedbackDocument(
+    gradedSubmission(),
+    normalizeFrqTemplate(
+      {
+        directions: "<div><br></div>",
+        questions: [
+          {
+            id: "q1",
+            stimulus: "",
+            parts: [{ id: "p1", criteria: [criterion("c1", 1)] }],
+          },
+        ],
+      },
+      identity,
+    ),
+  );
+
+  assert.equal(document.directionsPlacement, "none");
+});
+
 test("scores and responses stay one flat list keyed by part id", () => {
   const document = buildFeedbackDocument(
     gradedSubmission(),

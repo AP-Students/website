@@ -21,8 +21,10 @@ type DirectionsDropdownProps = {
 
 /**
  * The exam-wide directions behind a "Directions" toggle in the test header,
- * the way the MCQ test header and AP's own test UI show them. The panel hangs
- * from the header, so it must render inside a positioned (`relative`) header.
+ * the way the MCQ test header and AP's own test UI show them, and in the
+ * feedback header so the review reads the same way. The panel hangs from the
+ * header, so it must render inside a positioned header with no positioned
+ * wrapper between them.
  */
 const DirectionsDropdown = ({
   directions,
