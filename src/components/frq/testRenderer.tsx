@@ -243,6 +243,7 @@ const FRQTestRenderer = ({
           () => reportFrqSubmission(submissionRef.id),
           "Error recording FRQ activity:",
           `xp-frq-${submissionRef.id}`,
+          user.uid,
         );
 
         // Only clear the draft once the write has actually landed, so a failed

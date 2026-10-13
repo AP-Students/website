@@ -129,12 +129,12 @@ export async function POST(request: NextRequest) {
       // chapterData can be missing (a deleted document, or a write a prior
       // deployment omitted) while the event, and the XP, already exist.
       if (activity.exists || chapterData.data()?.readingXpAwarded === true) {
-        // The tracker saves "Complete" itself before calling this route, but
-        // the write is repeated here so the receipt is restored with it and a
-        // missing event is backfilled, neither of which changes XP.
+        // The receipt is restored and a missing event is backfilled, neither
+        // of which changes XP. Progress is the student's own choice, saved by
+        // the tracker, so a late request must not overwrite it.
         transaction.set(
           chapterDataRef,
-          { progress: "Complete", readingXpAwarded: true },
+          { readingXpAwarded: true },
           { merge: true },
         );
         if (!activity.exists) transaction.create(activityRef, event);
@@ -149,6 +149,21 @@ export async function POST(request: NextRequest) {
         } satisfies ActivityAwardResponse;
       }
 
+      // XP follows the student's saved choice. The tracker saves "Complete"
+      // before calling, so anything else means they changed it back (or never
+      // set it): award nothing, and a later Complete will ask again.
+      if (chapterData.data()?.progress !== "Complete") {
+        return {
+          xpAwarded: 0,
+          totalXp,
+          level,
+          leveledUp: false,
+          currentStreak,
+          newlyUnlocked: [],
+          alreadyRecorded: false,
+        } satisfies ActivityAwardResponse;
+      }
+
       const xpAwarded = xpConfig.readingComplete;
       const progress = addXp(totalXp, xpAwarded);
       const newlyUnlocked = await awardAchievements(transaction, adminDb, uid, {
@@ -159,7 +174,6 @@ export async function POST(request: NextRequest) {
       transaction.set(
         chapterDataRef,
         {
-          progress: "Complete",
           readingXpAwarded: true,
           completedAt: FieldValue.serverTimestamp(),
         },

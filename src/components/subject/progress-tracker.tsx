@@ -1,6 +1,8 @@
 "use client";
-import { toast } from "sonner";
-import { reportWithRetry } from "@/lib/gamification/notifyActivityFailure";
+import {
+  cancelXpReport,
+  reportWithRetry,
+} from "@/lib/gamification/notifyActivityFailure";
 import { reportReadingComplete } from "@/lib/gamification/reportActivity";
 import { BookOpen, Check, ChevronsRight, History, Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -47,24 +49,27 @@ export default function ProgressTracker({
   chapterId: string;
 }) {
   const { user } = useUser();
+  // The effect below keys on the id, not the user object: a context refresh
+  // that hands back the same student must not re-run recovery.
+  const uid = user?.uid;
 
   // A failed-save toast must not outlive its chapter: its Retry would act on
   // stale state.
   useEffect(() => {
     return () => {
-      toast.dismiss(`xp-reading-${chapterId}`);
+      cancelXpReport(`xp-reading-${chapterId}`);
     };
   }, [chapterId]);
 
   useEffect(() => {
     let cancelled = false;
     const fetchProgress = async () => {
-      if (!user) return;
+      if (!uid) return;
 
       try {
         const chapterDataRef = doc(
           db,
-          `users/${user.uid}/chapterData/${chapterId}`,
+          `users/${uid}/chapterData/${chapterId}`,
         );
         const chapterData = await getDoc(chapterDataRef);
         // The student left this chapter while the read was pending.
@@ -79,6 +84,7 @@ export default function ProgressTracker({
             () => reportReadingComplete({ subject, unitId, chapterId }),
             "Error recording completed reading:",
             `xp-reading-${chapterId}`,
+            uid,
           );
         }
       } catch (error) {
@@ -90,7 +96,7 @@ export default function ProgressTracker({
     return () => {
       cancelled = true;
     };
-  }, [user, subject, unitId, chapterId]);
+  }, [uid, subject, unitId, chapterId]);
 
   const [progress, setProgress] = useState<string>("");
   const [showConfetti, setShowConfetti] = useState(false);
@@ -113,7 +119,8 @@ export default function ProgressTracker({
       return;
     }
 
-    toast.dismiss(`xp-reading-${chapterId}`);
+    // A pending XP report for an earlier choice must not outlive this one.
+    cancelXpReport(`xp-reading-${chapterId}`);
     if (newProgress === "Complete" && !showConfetti) {
       setShowConfetti(true);
       setTimeout(() => {
@@ -127,6 +134,7 @@ export default function ProgressTracker({
         () => reportReadingComplete({ subject, unitId, chapterId }),
         "Error recording completed reading:",
         `xp-reading-${chapterId}`,
+        user.uid,
       );
     }
   };
