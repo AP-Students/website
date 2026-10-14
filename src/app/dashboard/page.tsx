@@ -14,7 +14,6 @@ import GlobalStats from "@/components/dashboard/GlobalStats";
 import StreakBar from "@/components/dashboard/StreakBar";
 import ActivityCalendar from "@/components/dashboard/ActivityCalendar";
 import {
-  FIXTURE_STATS,
   FIXTURE_EVENTS,
   FIXTURE_IN_PROGRESS,
   FIXTURE_IN_PROGRESS_READINGS,
@@ -35,6 +34,7 @@ import { db } from "@/lib/firebase";
 import type { User } from "@/types/user";
 import type { SavedItem } from "@/types/dashboard";
 import { useStudyStreak } from "@/components/hooks/useStudyStreak";
+import { useLiveStats } from "@/components/hooks/useLiveStats";
 import { useXpProgress } from "@/components/hooks/useXpProgress";
 import { useNotifications } from "@/components/hooks/useNotifications";
 import NotificationFeed from "@/components/dashboard/NotificationFeed";
@@ -61,6 +61,9 @@ export default function Dashboard() {
   const uid = user?.uid;
   const { studyStreak, error: streakError } = useStudyStreak(uid);
   const { progress: xpProgress, error: xpError } = useXpProgress(uid);
+  // Undefined until the server has answered, so the card shows a dash and not
+  // a made-up 0.
+  const { stats: liveStats } = useLiveStats(uid);
   const {
     stats: achievementStats,
     earnedIds,
@@ -168,10 +171,8 @@ export default function Dashboard() {
           <p className="text-gray-500">Loading your streak…</p>
         )}
         <GlobalStats
-          problemsSolved={FIXTURE_STATS.problemsSolved}
-          subjectsCompleted={
-            achievementError ? null : achievementStats.subjectsCompleted
-          }
+          problemsSolved={liveStats?.problemsSolved ?? null}
+          subjectsCompleted={liveStats?.subjectsCompleted ?? null}
           totalXp={xpProgress?.xp ?? null}
         />
         <RecentActivity events={FIXTURE_EVENTS} />
