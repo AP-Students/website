@@ -18,7 +18,9 @@ import {
   type CalculatorType,
 } from "@/lib/calculator";
 import SaveButton from "@/components/subject/save-button";
+import { reportWithRetry } from "@/lib/gamification/notifyActivityFailure";
 import { reportMcqTest } from "@/lib/gamification/reportActivity";
+import { auth } from "@/lib/firebase";
 import clsx from "clsx";
 import { cn } from "@/lib/utils";
 import "katex/dist/katex.min.css";
@@ -142,13 +144,15 @@ export default function DigitalTestingPage({
     setSubmitted(value);
     if (value && !adminMode) {
       setShowCompletionPage(true);
-      // The results are already on screen, so a failure here is logged
-      // rather than shown: it only costs the day on the student's streak.
-      if (attemptSource) {
-        reportMcqTest({ ...attemptSource, answers: selectedAnswers }).catch(
-          (error) => {
-            console.error("Error recording MCQ test:", error);
-          },
+      // The results are already on screen; a failed XP save offers a retry.
+      const uid = auth.currentUser?.uid;
+      // A signed-out visitor has no streak or XP to add to.
+      if (attemptSource && uid) {
+        reportWithRetry(
+          () => reportMcqTest({ ...attemptSource, answers: selectedAnswers }),
+          "Error recording MCQ test:",
+          `xp-mcq-${attemptSource.subject}-${attemptSource.unitId}-${attemptSource.testId}`,
+          uid,
         );
       }
     }
