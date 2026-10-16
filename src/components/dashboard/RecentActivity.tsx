@@ -1,8 +1,9 @@
 "use client";
 
+import { useRef } from "react";
 import Link from "next/link";
 import type { ActivityEvent, GradeStatus } from "@/types/dashboard";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { findCourse } from "@/lib/dashboard/subjects";
 import { cn } from "@/lib/utils";
 import { useActivityPage } from "@/components/hooks/useActivityPage";
@@ -28,6 +29,7 @@ function describe(event: ActivityEvent) {
         item: `Q${missed.index}`,
         detail: missed.topic,
         action: "Go to Question",
+        href: `${event.href}?question=${missed.index}`,
       };
     }
     const score = event.score
@@ -59,11 +61,37 @@ export default function RecentActivity({ uid }: { uid: string }) {
     error,
     nextPage,
     previousPage,
+    hasNewActivity,
+    refresh,
   } = useActivityPage(uid);
+
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  // The button disappears once clicked, so focus moves to the heading rather
+  // than being lost.
+  const showNewActivity = () => {
+    refresh();
+    headingRef.current?.focus();
+  };
 
   return (
     <section>
-      <h2 className="mb-3 text-2xl font-bold">Recent Activity:</h2>
+      <div className="mb-3 flex items-center justify-between">
+        <h2
+          ref={headingRef}
+          tabIndex={-1}
+          className="text-2xl font-bold outline-none"
+        >
+          Recent Activity:
+        </h2>
+        <div aria-live="polite">
+          {hasNewActivity && (
+            <Button variant="outline" size="sm" onClick={showNewActivity}>
+              New activity · Refresh
+            </Button>
+          )}
+        </div>
+      </div>
 
       {error ? (
         <p role="alert" className="rounded-md bg-red-100 p-4 text-red-700">
@@ -84,7 +112,12 @@ export default function RecentActivity({ uid }: { uid: string }) {
             className="divide-y divide-gray-300 overflow-hidden rounded-lg border border-gray-300 bg-white shadow"
           >
             {events.map((event) => {
-              const { item, detail, action } = describe(event);
+              const {
+                item,
+                detail,
+                action,
+                href = event.href,
+              } = describe(event);
               const subjectName =
                 findCourse(event.subject)?.name ?? event.subject;
               const title = [subjectName, unitLabel(event.unitId), item]
@@ -96,7 +129,7 @@ export default function RecentActivity({ uid }: { uid: string }) {
                   <p className="font-semibold">{title}</p>
                   <p className="text-sm text-gray-600">{detail}</p>
                   <Link
-                    href={event.href}
+                    href={href}
                     aria-label={`${action}: ${title}`}
                     className={cn(
                       buttonVariants({ size: "sm" }),

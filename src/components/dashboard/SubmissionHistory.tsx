@@ -6,7 +6,7 @@ import { History } from "lucide-react";
 import type { ActivityType } from "@/types/dashboard";
 import { toHistoryRows, type HistoryRow } from "@/lib/dashboard/history";
 import { findCourse } from "@/lib/dashboard/subjects";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useActivityPage } from "@/components/hooks/useActivityPage";
 import Pager from "@/components/dashboard/Pager";
@@ -69,6 +69,8 @@ export default function SubmissionHistory({ uid }: { uid: string }) {
     error,
     nextPage,
     previousPage,
+    hasNewActivity,
+    refresh,
   } = useActivityPage(uid);
 
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -83,17 +85,30 @@ export default function SubmissionHistory({ uid }: { uid: string }) {
     nextPage();
     headingRef.current?.focus();
   };
+  const showNewActivity = () => {
+    refresh();
+    headingRef.current?.focus();
+  };
 
   return (
     <section aria-labelledby="submission-history-heading">
-      <h2
-        id="submission-history-heading"
-        ref={headingRef}
-        tabIndex={-1}
-        className="mb-3 text-2xl font-bold outline-none"
-      >
-        Submission History:
-      </h2>
+      <div className="mb-3 flex items-center justify-between">
+        <h2
+          id="submission-history-heading"
+          ref={headingRef}
+          tabIndex={-1}
+          className="text-2xl font-bold outline-none"
+        >
+          Submission History:
+        </h2>
+        <div aria-live="polite">
+          {hasNewActivity && (
+            <Button variant="outline" size="sm" onClick={showNewActivity}>
+              New activity · Refresh
+            </Button>
+          )}
+        </div>
+      </div>
 
       {error ? (
         <p role="alert" className="rounded-md bg-red-100 p-4 text-red-700">

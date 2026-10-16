@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   collection,
   getCountFromServer,
+  getDocs,
   limit,
   onSnapshot,
   orderBy,
@@ -28,6 +29,9 @@ export function useActivityPage(uid: string | undefined) {
   const [totalPages, setTotalPages] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [refreshCount, setRefreshCount] = useState(0);
+  const [shownNewestId, setShownNewestId] = useState<string | null>();
+  const [newestId, setNewestId] = useState<string | null>();
 
   useEffect(() => {
     setPageIndex(0);
@@ -35,6 +39,8 @@ export function useActivityPage(uid: string | undefined) {
     setEvents([]);
     setHasNext(false);
     setTotalPages(null);
+    setShownNewestId(undefined);
+    setNewestId(undefined);
   }, [uid]);
 
   const cursor = pageCursors[pageIndex] ?? null;
@@ -47,7 +53,7 @@ export function useActivityPage(uid: string | undefined) {
     const ownEvents = where("userId", "==", uid);
     let cancelled = false;
 
-    const unsubscribe = onSnapshot(
+    getDocs(
       cursor
         ? query(
             collection(db, "activityEvents"),
@@ -62,7 +68,9 @@ export function useActivityPage(uid: string | undefined) {
             orderBy("occurredAt", "desc"),
             limit(ACTIVITY_PAGE_SIZE + 1),
           ),
-      (snapshot) => {
+    )
+      .then((snapshot) => {
+        if (cancelled) return;
         const pageDocuments = snapshot.docs.slice(0, ACTIVITY_PAGE_SIZE);
         setEvents(
           pageDocuments.map(
@@ -71,6 +79,7 @@ export function useActivityPage(uid: string | undefined) {
         );
         setHasNext(snapshot.docs.length > ACTIVITY_PAGE_SIZE);
         setPageEndCursor(pageDocuments.at(-1) ?? null);
+        if (!cursor) setShownNewestId(pageDocuments[0]?.id ?? null);
         setLoading(false);
 
         getCountFromServer(query(collection(db, "activityEvents"), ownEvents))
@@ -83,19 +92,33 @@ export function useActivityPage(uid: string | undefined) {
           .catch((countError: unknown) =>
             console.error("Unable to count activity", countError),
           );
-      },
-      (loadError) => {
+      })
+      .catch((loadError: unknown) => {
         console.error("Unable to load activity", loadError);
+        if (cancelled) return;
         setError(true);
         setLoading(false);
-      },
-    );
+      });
 
     return () => {
       cancelled = true;
-      unsubscribe();
     };
-  }, [uid, cursor]);
+  }, [uid, cursor, refreshCount]);
+
+  useEffect(() => {
+    if (!uid) return;
+    return onSnapshot(
+      query(
+        collection(db, "activityEvents"),
+        where("userId", "==", uid),
+        orderBy("occurredAt", "desc"),
+        limit(1),
+      ),
+      (snapshot) => setNewestId(snapshot.docs[0]?.id ?? null),
+      (watchError) =>
+        console.error("Unable to watch for new activity", watchError),
+    );
+  }, [uid]);
 
   const nextPage = () => {
     if (!hasNext || !pageEndCursor || loading) return;
@@ -113,6 +136,17 @@ export function useActivityPage(uid: string | undefined) {
     setPageIndex(pageIndex - 1);
   };
 
+  const refresh = () => {
+    setPageIndex(0);
+    setPageCursors([null]);
+    setRefreshCount((count) => count + 1);
+  };
+
+  const hasNewActivity =
+    newestId !== undefined &&
+    shownNewestId !== undefined &&
+    newestId !== shownNewestId;
+
   return {
     events,
     page: pageIndex + 1,
@@ -122,5 +156,7 @@ export function useActivityPage(uid: string | undefined) {
     error,
     nextPage,
     previousPage,
+    hasNewActivity,
+    refresh,
   };
 }

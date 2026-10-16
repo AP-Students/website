@@ -4,6 +4,7 @@ import TestRenderer from "@/components/questions/testRenderer";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   type ReferenceSheet,
   type Subject,
@@ -15,6 +16,8 @@ import type { CalculatorPermission, CalculatorType } from "@/lib/calculator";
 
 const Page = () => {
   const pathname = usePathname() ?? "";
+  const searchParams = useSearchParams();
+  const startQuestionIndex = Number(searchParams?.get("question")) - 1;
 
   const basePath = pathname.split("/").slice(-4).join("_");
   const subject = basePath.split("_")[0]!;
@@ -142,6 +145,7 @@ const Page = () => {
         referenceSheetEnabled={referenceSheetEnabled}
         referenceSheet={referenceSheet}
         attemptSource={{ subject, unitId: unitId!, testId }}
+        initialQuestionIndex={startQuestionIndex}
       />
     </div>
   );
