@@ -42,6 +42,8 @@ interface Props {
   referenceSheet?: ReferenceSheet | null;
   /** Where this test lives; when set, a finished test counts toward the streak. */
   attemptSource?: { subject: string; unitId: string; testId: string };
+  /** Question to open on (0-based); out-of-range values open the first. */
+  initialQuestionIndex?: number;
 }
 
 const initialQuestions: QuestionFormat[] = [
@@ -98,11 +100,16 @@ export default function DigitalTestingPage({
   referenceSheetEnabled = false,
   referenceSheet,
   attemptSource,
+  initialQuestionIndex = 0,
 }: Props) {
   const [questions, setQuestions] = useState<QuestionFormat[]>(
     inputQuestions || initialQuestions,
   );
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(
+    initialQuestionIndex > 0 && initialQuestionIndex < questions.length
+      ? initialQuestionIndex
+      : 0,
+  );
   const [selectedAnswers, setSelectedAnswers] = useState<
     Record<number, string[]>
   >({});
