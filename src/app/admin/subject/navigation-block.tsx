@@ -4,17 +4,27 @@
 
 import {
   type Dispatch,
+  type MutableRefObject,
   type SetStateAction,
   createContext,
+  useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
+
+/** Saves what is pending; resolves true when leaving would lose nothing. */
+type LeaveHandler = () => Promise<boolean>;
 
 export const NavigationBlockerContext = createContext<
   [isBlocked: boolean, setBlocked: Dispatch<SetStateAction<boolean>>]
   /* eslint-disable-next-line */
 >([false, () => {}]);
+
+const LeaveHandlerContext = createContext<
+  MutableRefObject<LeaveHandler | null>
+>({ current: null });
 
 export function NavigationBlockerProvider({
   children,
@@ -23,9 +33,12 @@ export function NavigationBlockerProvider({
 }) {
   // [isBlocked, setBlocked]
   const state = useState(false);
+  const leaveHandler = useRef<LeaveHandler | null>(null);
   return (
     <NavigationBlockerContext.Provider value={state}>
-      {children}
+      <LeaveHandlerContext.Provider value={leaveHandler}>
+        {children}
+      </LeaveHandlerContext.Provider>
     </NavigationBlockerContext.Provider>
   );
 }
@@ -35,8 +48,14 @@ export function useIsBlocked() {
   return isBlocked;
 }
 
-export function Blocker() {
+/**
+ * `onLeave` lets an autosaving editor finish its save instead of asking the
+ * author to throw the edit away: with a few seconds of debounce, "leave right
+ * after typing" is the normal case, not the careless one.
+ */
+export function Blocker({ onLeave }: { onLeave?: LeaveHandler } = {}) {
   const [isBlocked, setBlocked] = useContext(NavigationBlockerContext);
+  const leaveHandler = useContext(LeaveHandlerContext);
   useEffect(() => {
     setBlocked(() => {
       return true;
@@ -47,7 +66,47 @@ export function Blocker() {
       });
     };
   }, [isBlocked, setBlocked]);
+  useEffect(() => {
+    if (!onLeave) {
+      return;
+    }
+
+    leaveHandler.current = onLeave;
+
+    return () => {
+      if (leaveHandler.current === onLeave) {
+        leaveHandler.current = null;
+      }
+    };
+  }, [leaveHandler, onLeave]);
   return null;
+}
+
+/**
+ * Resolves true when an in-app navigation may go ahead: nothing is unsaved,
+ * the pending changes saved, or the author chose to discard them.
+ */
+export function useConfirmLeave() {
+  const isBlocked = useIsBlocked();
+  const leaveHandler = useContext(LeaveHandlerContext);
+
+  return useCallback(async () => {
+    if (!isBlocked) {
+      return true;
+    }
+
+    const handler = leaveHandler.current;
+
+    if (handler && (await handler().catch(() => false))) {
+      return true;
+    }
+
+    return window.confirm(
+      handler
+        ? "Your latest changes could not be saved. Leave anyway and discard them?"
+        : "Do you really want to leave and discard your unsaved changes?",
+    );
+  }, [isBlocked, leaveHandler]);
 }
 
 export function BlockBrowserNavigation() {
