@@ -175,7 +175,7 @@ export default function Dashboard() {
           subjectsCompleted={liveStats?.subjectsCompleted ?? null}
           totalXp={xpProgress?.xp ?? null}
         />
-        <RecentActivity events={FIXTURE_EVENTS} />
+        <RecentActivity uid={user.uid} />
       </div>
 
       {/* Right column */}
@@ -221,7 +221,7 @@ export default function Dashboard() {
         <DashboardTabs
           panels={{
             overview,
-            history: <SubmissionHistory events={FIXTURE_EVENTS} />,
+            history: <SubmissionHistory uid={user.uid} />,
             calendar: studyStreak ? (
               <ActivityCalendar
                 calendarDays={studyStreak.calendarDays}
