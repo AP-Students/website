@@ -42,6 +42,7 @@ export interface AutosaveController<T> {
    * clean, which is what a manual Save button has always done.
    */
   flush: (options?: { force?: boolean }) => Promise<boolean>;
+  /** Stops reporting state, after one last save of anything still unsaved. */
   dispose: () => void;
   isLoaded: () => boolean;
   getState: () => AutosaveState;
@@ -220,6 +221,10 @@ export const createAutosaveController = <T>({
     },
 
     update(value) {
+      if (disposed) {
+        return;
+      }
+
       latest = value;
       const signature = serialize(value);
 
@@ -269,7 +274,34 @@ export const createAutosaveController = <T>({
 
     dispose() {
       clearTimer();
+
+      if (disposed) {
+        return;
+      }
+
       disposed = true;
+
+      if (savedSignature === null) {
+        return;
+      }
+
+      // The admin links save before leaving, but the browser's Back and
+      // Forward buttons unmount the editor without asking. Cancelling the
+      // timer alone would drop the edits still waiting out the delay, and an
+      // edit (or undo) made during a save would never follow it. A draft whose
+      // save just failed is not retried on the way out: leaving by a link has
+      // just offered to discard it, and the same write would likely fail again.
+      const saveWhatIsLeft = () => {
+        if (isDirty() && failedSignature !== latestSignature) {
+          void startSave();
+        }
+      };
+
+      if (inFlight) {
+        void inFlight.then(saveWhatIsLeft);
+      } else {
+        saveWhatIsLeft();
+      }
     },
 
     isLoaded: () => savedSignature !== null,

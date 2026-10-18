@@ -156,7 +156,6 @@ function ArticleCreator({ className }: { className?: string }) {
     data: OutputData;
   }) => {
     const user = await getUser();
-    const pathParts = window.location.pathname.split("/").slice(-3);
 
     if (!user || (user.access !== "admin" && user.access !== "member")) {
       throw new Error("User is not authorized to perform this action.");
@@ -166,7 +165,10 @@ function ArticleCreator({ className }: { className?: string }) {
       id: uuidv4(),
       createdAt: new Date(),
       author: articleDraft.author,
-      title: pathParts.join("/"),
+      // From this editor's route, like `docRef` below, not `window.location`:
+      // a save that finishes after the author has left (Back pressed while it
+      // was waiting) would otherwise be titled after the page they went to.
+      title: pathParts.slice(-3).join("/"),
       // The block processing below rewrites blocks in place: a table's rows
       // become an object. Done on the live state, a second save of the same
       // draft, which is what Retry is, handed that object to `processTable`

@@ -338,19 +338,66 @@ test("a save that finishes after a reset does not overwrite the new baseline", a
   );
 });
 
-test("dispose cancels a pending save and silences late results", async () => {
+test("dispose saves a draft still waiting out the delay, once", async () => {
   const { clock, saver, states, controller } = setup();
   controller.load("v0");
   controller.update("v1");
 
+  // What the browser's Back button does: the editor unmounts mid-debounce.
   controller.dispose();
-  clock.advance(DELAY * 2);
-  assert.equal(saver.calls.length, 0);
+  assert.equal(saver.calls.length, 1);
+  assert.equal(saver.calls[0]!.value, "v1");
 
   const reported = states.length;
   controller.update("v2");
+  saver.calls[0]!.resolve();
   await flushMicrotasks();
-  assert.equal(states.length, reported);
+  clock.advance(DELAY * 2);
+  assert.equal(saver.calls.length, 1, "nothing is scheduled after dispose");
+  assert.equal(states.length, reported, "and nothing is reported");
+});
+
+test("dispose during a save follows it with the undo made meanwhile", async () => {
+  const { clock, saver, controller } = setup();
+  controller.load("Original");
+  controller.update("Edited");
+  clock.advance(DELAY);
+  controller.update("Original");
+
+  controller.dispose();
+  assert.equal(saver.calls.length, 1, "never two writes at once");
+
+  saver.calls[0]!.resolve();
+  await flushMicrotasks();
+  assert.equal(saver.calls.length, 2);
+  assert.equal(saver.calls[1]!.value, "Original");
+});
+
+test("dispose does not retry a draft whose save failed", async () => {
+  const { clock, saver, controller } = setup();
+  controller.load("v0");
+  controller.update("v1");
+  clock.advance(DELAY);
+  saver.calls[0]!.reject(new Error("Missing or insufficient permissions."));
+  await flushMicrotasks();
+
+  // The leave prompt has already asked whether to discard it.
+  controller.dispose();
+  await flushMicrotasks();
+  assert.equal(saver.calls.length, 1);
+});
+
+test("dispose with nothing unsaved writes nothing", () => {
+  const { saver, controller } = setup();
+  controller.load("v0");
+  controller.dispose();
+
+  const unloaded = setup();
+  unloaded.controller.update("typed into the loading placeholder");
+  unloaded.controller.dispose();
+
+  assert.equal(saver.calls.length, 0);
+  assert.equal(unloaded.saver.calls.length, 0);
 });
 
 test("a save that throws synchronously is reported, not left in flight", async () => {
