@@ -7,7 +7,7 @@ import { useUser } from "@/components/hooks/UserContext";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReferenceSheet, Subject, UnitTest } from "@/types/firestore";
 import { usePathname } from "next/navigation";
 import type { QuestionFormat } from "@/types/questions";
@@ -16,8 +16,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AdminEditorBackLinks } from "@/app/admin/subject/link";
-import { cn } from "@/lib/utils";
 import { Blocker } from "@/app/admin/subject/navigation-block";
+import { AutosaveStatus } from "@/app/admin/subject/autosave-status";
+import { useAutosave } from "@/components/hooks/useAutosave";
 import {
   CALCULATOR_TYPE_LABELS,
   type CalculatorPermission,
@@ -55,7 +56,6 @@ const Page = () => {
     useState<boolean>(false);
 
   const [testLoading, setTestLoading] = useState<boolean>(true);
-  const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
 
   useEffect(() => {
     // Fetch questions
@@ -72,8 +72,9 @@ const Page = () => {
         );
 
         const docSnap = await getDoc(docRef);
+        let data = docSnap.data() as Partial<UnitTest> | undefined;
 
-        if (!docSnap.exists()) {
+        if (!data) {
           const testData = {
             questions: [],
             time: 30 * 60,
@@ -81,9 +82,11 @@ const Page = () => {
           };
 
           await setDoc(docRef, testData, { merge: true });
-        }
 
-        const data = docSnap.data() as UnitTest;
+          // `docSnap` predates this write and is still empty. Reading it threw,
+          // so a new test never finished loading and could not autosave.
+          data = testData;
+        }
 
         const time = data.time;
         setMinutes((time && Math.floor(time / 60)) ?? 20);
@@ -99,10 +102,11 @@ const Page = () => {
         setTestName(data.name ?? "");
         setCalculatorDefault(data.calculatorDefault ?? "inherit");
         setCalculatorType(data.calculatorType ?? "graphing");
+        // Without stored questions, keep the ones `syncedQuestions` already
+        // restored. Calling that hook again here, outside render, threw and
+        // left a new test stuck loading.
         if (questions) {
           setQuestions(questions);
-        } else {
-          setQuestions(syncedQuestions(instanceId).questions);
         }
 
         const subjectSnap = await getDoc(doc(db, "subjects", subject));
@@ -125,7 +129,32 @@ const Page = () => {
     });
   }, [subject, unitId, instanceId, setQuestions, user, testId]);
 
-  const handleSave = async () => {
+  const draft = useMemo(
+    () => ({
+      questions,
+      minutes,
+      seconds,
+      directions,
+      calculatorDefault,
+      calculatorType,
+      referenceSheetEnabled,
+      referenceSheetId,
+    }),
+    [
+      questions,
+      minutes,
+      seconds,
+      directions,
+      calculatorDefault,
+      calculatorType,
+      referenceSheetEnabled,
+      referenceSheetId,
+    ],
+  );
+
+  // Writes the draft it is handed, and throws so the autosave status can
+  // report a failure instead of an alert popping up mid-edit.
+  const saveTest = async (testDraft: typeof draft) => {
     // Find a way to save to storage
     try {
       const testRef = doc(
@@ -138,28 +167,36 @@ const Page = () => {
         testId,
       );
 
-      const sanitizedQuestions = removeUndefined(questions) as QuestionFormat[];
+      const sanitizedQuestions = removeUndefined(
+        testDraft.questions,
+      ) as QuestionFormat[];
       const processedQuestions = await processQuestions(sanitizedQuestions);
 
       const testData = {
         questions: processedQuestions,
-        time: minutes * 60 + seconds,
+        time: testDraft.minutes * 60 + testDraft.seconds,
         instanceId: instanceId ?? "",
-        directions,
-        calculatorDefault,
-        calculatorType,
-        referenceSheetEnabled,
-        referenceSheetId: referenceSheetEnabled ? referenceSheetId : "",
+        directions: testDraft.directions,
+        calculatorDefault: testDraft.calculatorDefault,
+        calculatorType: testDraft.calculatorType,
+        referenceSheetEnabled: testDraft.referenceSheetEnabled,
+        referenceSheetId: testDraft.referenceSheetEnabled
+          ? testDraft.referenceSheetId
+          : "",
       };
 
       await setDoc(testRef, testData, { merge: true });
-      alert("Test saved successfully.");
-      setUnsavedChanges(false);
     } catch (error) {
       console.error("Error saving questions:", error);
-      alert("Failed to save questions.");
+      throw error;
     }
   };
+
+  const autosave = useAutosave({
+    value: draft,
+    save: saveTest,
+    enabled: !testLoading,
+  });
 
   // User auth
   if (
@@ -169,11 +206,11 @@ const Page = () => {
   ) {
     return (
       <div className="relative min-h-screen">
-        {unsavedChanges && <Blocker />}
+        {autosave.hasUnsavedChanges && <Blocker onLeave={autosave.flush} />}
         <div className="pl-4 pt-6">
           <AdminEditorBackLinks
             subjectSlug={subject}
-            unsavedChanges={unsavedChanges}
+            unsavedChanges={autosave.hasUnsavedChanges}
           />
         </div>
         <div className="flex gap-2 p-4 pb-0">
@@ -188,7 +225,6 @@ const Page = () => {
               className="w-24"
               onChange={(e) => {
                 setMinutes(parseInt(e.target.value) || 0);
-                setUnsavedChanges(true);
               }}
             />
           </div>
@@ -203,7 +239,6 @@ const Page = () => {
               className="w-24"
               onChange={(e) => {
                 setSeconds(parseInt(e.target.value) || 0);
-                setUnsavedChanges(true);
               }}
             />
           </div>
@@ -214,7 +249,6 @@ const Page = () => {
               value={directions}
               onChange={(e) => {
                 setDirections(e.target.value);
-                setUnsavedChanges(true);
               }}
             />
           </div>
@@ -226,7 +260,6 @@ const Page = () => {
               value={calculatorDefault}
               onChange={(e) => {
                 setCalculatorDefault(e.target.value as CalculatorPermission);
-                setUnsavedChanges(true);
               }}
             >
               <option value="inherit">Inherit from course</option>
@@ -243,7 +276,6 @@ const Page = () => {
                 value={calculatorType}
                 onChange={(e) => {
                   setCalculatorType(e.target.value as CalculatorType);
-                  setUnsavedChanges(true);
                 }}
               >
                 {Object.entries(CALCULATOR_TYPE_LABELS).map(
@@ -267,7 +299,6 @@ const Page = () => {
                 checked={referenceSheetEnabled}
                 onChange={(e) => {
                   setReferenceSheetEnabled(e.target.checked);
-                  setUnsavedChanges(true);
                 }}
               />
               Enable Reference Sheet
@@ -278,7 +309,6 @@ const Page = () => {
                 value={referenceSheetId}
                 onChange={(e) => {
                   setReferenceSheetId(e.target.value);
-                  setUnsavedChanges(true);
                 }}
               >
                 <option value="" disabled>
@@ -301,16 +331,24 @@ const Page = () => {
               </Button>
             )}
           </div>
-          {(!testLoading || unsavedChanges) && (
-            <Button
-              className={cn(
-                "mt-5 bg-blue-600 hover:bg-blue-700",
-                unsavedChanges && "animate-pulse",
-              )}
-              onClick={handleSave}
-            >
-              Save Changes
-            </Button>
+          {!testLoading && (
+            <div className="mt-5 grid place-content-start gap-1.5">
+              <Button
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={() => void autosave.saveNow()}
+                disabled={autosave.status === "saving"}
+              >
+                Save Changes
+              </Button>
+              {/* Wraps under the button rather than widening a control row
+                  that is already crowded on narrow screens. */}
+              <AutosaveStatus
+                status={autosave.status}
+                error={autosave.error}
+                onRetry={() => void autosave.saveNow()}
+                className="whitespace-normal"
+              />
+            </div>
           )}
         </div>
 
@@ -320,7 +358,6 @@ const Page = () => {
               questions={questions}
               setQuestions={setQuestions}
               testRenderer={true}
-              setUnsavedChanges={setUnsavedChanges}
             />
           </div>
           <div className="flex-1 overflow-y-scroll rounded border p-4">

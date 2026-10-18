@@ -826,7 +826,8 @@ export interface EditorHandle {
 const Editor = forwardRef<
   EditorHandle,
   {
-    setUnsavedChanges: (unsavedChanges: boolean) => void;
+    /** Optional: an autosaving parent detects changes from `setData` instead. */
+    setUnsavedChanges?: (unsavedChanges: boolean) => void;
     setData: (data: OutputData) => void;
     content: OutputData;
   }
@@ -857,7 +858,7 @@ const Editor = forwardRef<
     },
     placeholder: "Press '/' to see available blocks",
     onChange: (api) => {
-      setUnsavedChanges(true);
+      setUnsavedChanges?.(true);
       api.saver
         .save()
         .then((outputData) => {
@@ -912,7 +913,7 @@ const Editor = forwardRef<
 
       await editorRef.current.render(parsed);
       setData(parsed);
-      setUnsavedChanges(true);
+      setUnsavedChanges?.(true);
     },
   }));
 
