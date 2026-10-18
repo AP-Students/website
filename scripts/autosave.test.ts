@@ -165,6 +165,48 @@ test("an edit made during a save is saved next, never concurrently", async () =>
   assert.equal(controller.getState().status, "saved");
 });
 
+test("undoing during a save stays unsaved until the undo is stored", async () => {
+  const { clock, saver, controller } = setup();
+  controller.load("Original");
+
+  controller.update("Edited");
+  clock.advance(DELAY);
+  assert.equal(saver.calls.length, 1);
+
+  controller.update("Original");
+  assert.equal(
+    controller.getState().hasUnsavedChanges,
+    true,
+    "the write in flight is about to store Edited, so leaving would lose the undo",
+  );
+
+  const flushed = controller.flush();
+  saver.calls[0]!.resolve();
+  await flushMicrotasks();
+  assert.equal(saver.calls.length, 2);
+  assert.equal(saver.calls[1]!.value, "Original");
+
+  saver.calls[1]!.resolve();
+  assert.equal(await flushed, true);
+  assert.equal(controller.getState().hasUnsavedChanges, false);
+});
+
+test("an undo whose save fails mid-flight is clean: nothing was stored", async () => {
+  const { clock, saver, controller } = setup();
+  controller.load("Original");
+
+  controller.update("Edited");
+  clock.advance(DELAY);
+  controller.update("Original");
+  saver.calls[0]!.reject(new Error("offline"));
+  await flushMicrotasks();
+
+  assert.equal(controller.getState().status, "saved");
+  assert.equal(controller.getState().hasUnsavedChanges, false);
+  clock.advance(DELAY * 2);
+  assert.equal(saver.calls.length, 1);
+});
+
 test("a failed save keeps the changes, reports the error, and does not loop", async () => {
   const { clock, saver, controller } = setup();
   controller.load("v0");

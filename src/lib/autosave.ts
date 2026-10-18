@@ -3,8 +3,9 @@
  *
  * Kept free of React so the timing rules can be tested with `node --test`; the
  * editors use it through `useAutosave`. "Unsaved" means the serialized draft
- * differs from what was last written, not "something was typed": undoing back
- * to the stored content is clean again, and a re-render that rebuilds an equal
+ * differs from what was last written, or from what a save in flight is writing,
+ * not "something was typed": undoing back to the stored content is clean again
+ * once no save is writing something else, and a re-render that rebuilds an equal
  * draft never triggers a write.
  */
 
@@ -70,6 +71,10 @@ export const createAutosaveController = <T>({
   let failedSignature: string | null = null;
   let error: string | null = null;
   let inFlight: Promise<boolean> | null = null;
+  // What the save in flight is writing. Until it settles, the stored document
+  // is about to become this, so a draft undone back to `savedSignature` is
+  // still unsaved: leaving then would keep the write and lose the undo.
+  let inFlightSignature: string | null = null;
   let timer: unknown = null;
   // Bumped by `load`, so a save that started before a reset cannot overwrite
   // the baseline the reset just set.
@@ -82,7 +87,9 @@ export const createAutosaveController = <T>({
   };
 
   const isDirty = () =>
-    savedSignature !== null && latestSignature !== savedSignature;
+    savedSignature !== null &&
+    (latestSignature !== savedSignature ||
+      (inFlightSignature !== null && latestSignature !== inFlightSignature));
 
   const emit = () => {
     if (disposed) {
@@ -180,6 +187,7 @@ export const createAutosaveController = <T>({
       )
       .then((succeeded) => {
         inFlight = null;
+        inFlightSignature = null;
 
         // Edits typed during the save get their own debounce, unless they are
         // exactly the draft that just failed.
@@ -193,6 +201,7 @@ export const createAutosaveController = <T>({
       });
 
     inFlight = attempt;
+    inFlightSignature = attempted;
     emit();
 
     return attempt;
