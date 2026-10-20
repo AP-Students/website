@@ -43,6 +43,22 @@ const dropdownLabels: string[] = [
   "Skipped",
 ];
 
+/**
+ * Saves what lets the dashboard list a chapter, newest first, and link back to
+ * it. Written apart from progress: if this fails, the student loses the
+ * listing, never their progress.
+ */
+function saveChapterListing(uid: string, chapterId: string, title: string) {
+  setDoc(
+    doc(db, `users/${uid}/chapterData/${chapterId}`),
+    {
+      ...chapterListing(window.location.pathname, title),
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  ).catch((error) => console.error("Error saving chapter details:", error));
+}
+
 export default function ProgressTracker({
   subject,
   unitId,
@@ -85,19 +101,12 @@ export default function ProgressTracker({
         setProgress(data?.progress ?? "Not Started");
         // A chapter marked before its title and link were saved can't be
         // listed on the dashboard. Opening it saves them.
-        const listing = chapterListing(window.location.pathname, title);
         if (
           isInProgressReadingStatus(data?.progress) &&
           !data.href &&
-          listing
+          chapterListing(window.location.pathname, title)
         ) {
-          setDoc(
-            chapterDataRef,
-            { ...listing, updatedAt: serverTimestamp() },
-            { merge: true },
-          ).catch((error) =>
-            console.error("Error saving chapter details:", error),
-          );
+          saveChapterListing(uid, chapterId, title);
         }
         // Complete without an XP receipt means an earlier XP save failed and
         // its Retry toast is gone. The server never counts a reading twice,
@@ -133,13 +142,7 @@ export default function ProgressTracker({
       // cost the student their progress.
       await setDoc(
         doc(db, `users/${user.uid}/chapterData/${chapterId}`),
-        {
-          progress: newProgress,
-          // So the dashboard can list chapters still in progress, newest
-          // first, and link back here.
-          ...chapterListing(window.location.pathname, title),
-          updatedAt: serverTimestamp(),
-        },
+        { progress: newProgress },
         { merge: true },
       );
     } catch (error) {
@@ -147,6 +150,7 @@ export default function ProgressTracker({
       alert("Failed to update chapter progress:\n" + String(error));
       return;
     }
+    saveChapterListing(user.uid, chapterId, title);
 
     // A pending XP report for an earlier choice must not outlive this one.
     cancelXpReport(`xp-reading-${chapterId}`);

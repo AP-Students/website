@@ -392,54 +392,69 @@ check(
 check(
   "chapter progress saves its dashboard listing with the server's time, never an XP receipt",
   async () => {
-    const path = "users/student/chapterData/gauss-law";
     const listing = {
-      progress: "Reading",
       subject: "ap-physics-2",
       unitId: "unit-3",
       label: "Gauss's Law",
       href: "/subject/ap-physics-2/unit-3-abc/chapter/gauss-law/gauss-law",
     };
-    // Progress alone still saves, as it did before listings were recorded.
-    await status(
-      await doc(path, "student", "PATCH", { progress: "Reading" }),
-      200,
-    );
+    // What the tracker sends: progress on its own, then the listing.
+    const path = "users/student/chapterData/gauss-law";
+    await status(await merge("student", path, { progress: "Reading" }), 200);
     await status(await merge("student", path, listing, ["updatedAt"]), 200);
+    await status(await merge("student", path, { progress: "Practicing" }), 200);
     await status(await doc(path, "student"), 200);
     await status(await doc(path, "other"), 403);
 
-    for (const changes of [
+    // A chapter can also be created with its listing in one write. Either
+    // way the listing is checked, and updatedAt must be the server's time.
+    await status(
+      await merge(
+        "student",
+        "users/student/chapterData/fresh",
+        { progress: "Reading", ...listing },
+        ["updatedAt"],
+      ),
+      200,
+    );
+    const forged = [
       { href: "https://example.com/phish" },
       { label: "" },
       { subject: 7 },
       { updatedAt: submittedAt },
       { readingXpAwarded: true },
       { completedAt: submittedAt },
-    ]) {
+    ];
+    for (const [index, changes] of forged.entries()) {
+      const stamps = "updatedAt" in changes ? [] : ["updatedAt"];
       await status(
-        await merge("student", path, { ...listing, ...changes }, [
-          ...("updatedAt" in changes ? [] : ["updatedAt"]),
-        ]),
+        await merge(
+          "student",
+          `users/student/chapterData/forged-${index}`,
+          { progress: "Reading", ...listing, ...changes },
+          stamps,
+        ),
+        403,
+      );
+      await status(
+        await merge("student", path, { ...listing, ...changes }, stamps),
         403,
       );
     }
     await status(await merge("other", path, listing, ["updatedAt"]), 403);
 
-    // A chapter whose XP was awarded can still be marked for review, and
-    // its receipt stays.
+    // A chapter whose XP was awarded can still be marked for review and
+    // listed, and its receipt stays.
+    const completedPath = "users/student/chapterData/completed";
     await status(
-      await merge(
-        "student",
-        "users/student/chapterData/completed",
-        { ...listing, progress: "Need Review" },
-        ["updatedAt"],
-      ),
+      await merge("student", completedPath, { progress: "Need Review" }),
       200,
     );
-    const completed = await (
-      await doc("users/student/chapterData/completed", "student")
-    ).json();
+    await status(
+      await merge("student", completedPath, listing, ["updatedAt"]),
+      200,
+    );
+    const completed = await (await doc(completedPath, "student")).json();
     assert.equal(completed.fields.readingXpAwarded.booleanValue, true);
   },
 );
