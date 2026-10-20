@@ -164,16 +164,36 @@ service cloud.firestore {
       // owned and cannot be removed or reset to earn XP a second time. This
       // must stay the only chapterData match: Firestore allows a request if
       // any matching rule does, so a looser duplicate would override it.
+      // Alongside progress the tracker saves the chapter's subject, unit,
+      // title and link, stamped with the server's time, so the dashboard can
+      // list chapters still in progress.
       match /chapterData/{document=**} {
         allow read: if isAuthenticated() && request.auth.uid == userId;
         allow create: if isAuthenticated() && request.auth.uid == userId
-          && request.resource.data.keys().hasOnly(['progress'])
-          && request.resource.data.progress is string;
+          && request.resource.data.keys().hasOnly(['progress', 'subject', 'unitId', 'label', 'href', 'updatedAt'])
+          && request.resource.data.progress is string
+          && isChapterListing(request.resource.data, request.resource.data.keys());
         allow update: if isAuthenticated() && request.auth.uid == userId
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['progress'])
-          && request.resource.data.progress is string;
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['progress', 'subject', 'unitId', 'label', 'href', 'updatedAt'])
+          && request.resource.data.progress is string
+          && isChapterListing(request.resource.data, request.resource.data.diff(resource.data).affectedKeys());
         allow delete: if isAuthenticated() && request.auth.uid == userId
           && !('readingXpAwarded' in resource.data);
+      }
+
+      // Checks only the listing fields a write sets, so a chapter saved before
+      // they existed can still change its progress alone.
+      function isChapterListing(data, written) {
+        return (!('subject' in written)
+            || (data.subject is string && data.subject.size() > 0 && data.subject.size() <= 100))
+          && (!('unitId' in written)
+            || (data.unitId is string && data.unitId.size() > 0 && data.unitId.size() <= 100))
+          && (!('label' in written)
+            || (data.label is string && data.label.size() > 0 && data.label.size() <= 200))
+          && (!('href' in written)
+            || (data.href is string && data.href.size() <= 500
+              && data.href.matches('^/subject/[^\\s]*$')))
+          && (!('updatedAt' in written) || data.updatedAt == request.time);
       }
 
       // Dashboard stats, activity events and calendars are top-level

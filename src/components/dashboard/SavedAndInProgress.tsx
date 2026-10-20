@@ -8,12 +8,13 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
-import type {
-  InProgressItem,
-  InProgressReading,
-  SavedItem,
-} from "@/types/dashboard";
+import type { InProgressItem, SavedItem } from "@/types/dashboard";
 import { findCourse } from "@/lib/dashboard/subjects";
+import {
+  inProgressEntryId,
+  type InProgressEntry,
+} from "@/lib/dashboard/inProgress";
+import type { InProgressState } from "@/lib/dashboard/inProgressStore";
 
 const MAX_ROWS = 4;
 
@@ -49,16 +50,32 @@ function inProgressDetail(item: InProgressItem): string {
   return "Draft saved";
 }
 
+function inProgressRow(entry: InProgressEntry): Row {
+  return {
+    id: inProgressEntryId(entry),
+    kind: entry.kind,
+    subject: entry.subject,
+    unitId: entry.unitId,
+    label: entry.label,
+    href: entry.href,
+    detail: entry.kind === "reading" ? entry.progress : inProgressDetail(entry),
+  };
+}
+
 function ItemList({
   title,
   rows,
   empty,
+  failed,
   onRemove,
   limit = MAX_ROWS,
 }: {
   title: string;
-  rows: Row[];
+  /** Undefined while loading. */
+  rows: Row[] | undefined;
   empty: string;
+  /** Shown instead of the rows when they couldn't be loaded. */
+  failed?: string;
   /** When set, each row gets a remove button. */
   onRemove?: (id: string) => void;
   /** How many rows to show. The overview card shows a few; a tab shows all. */
@@ -67,7 +84,15 @@ function ItemList({
   return (
     <section>
       <h2 className="mb-3 text-2xl font-bold">{title}</h2>
-      {rows.length === 0 ? (
+      {failed ? (
+        <p role="alert" className="rounded-md bg-red-100 p-4 text-red-700">
+          {failed}
+        </p>
+      ) : rows === undefined ? (
+        <p role="status" className="text-gray-500">
+          Loading…
+        </p>
+      ) : rows.length === 0 ? (
         <p className="text-gray-500">{empty}</p>
       ) : (
         <ul className="flex flex-col gap-3">
@@ -123,41 +148,23 @@ function ItemList({
   );
 }
 
+/** Shows `useInProgress`'s list in its order, newest first. */
 export function InProgressList({
   inProgress,
-  inProgressReadings,
   limit,
 }: {
-  inProgress: InProgressItem[];
-  inProgressReadings: InProgressReading[];
+  inProgress: InProgressState;
   limit?: number;
 }) {
-  const rows: Row[] = [
-    ...inProgress.map((item) => ({
-      id: item.id,
-      kind: item.kind,
-      subject: item.subject,
-      unitId: item.unitId,
-      label: item.label,
-      href: item.href,
-      detail: inProgressDetail(item),
-    })),
-    ...inProgressReadings.map((reading) => ({
-      id: `reading-${reading.chapterId}`,
-      kind: "reading" as const,
-      subject: reading.subject,
-      unitId: reading.unitId,
-      label: reading.label,
-      href: reading.href,
-      detail: reading.progress,
-    })),
-  ];
-
   return (
     <ItemList
       title="In Progress:"
-      rows={rows}
+      rows={inProgress.entries?.map(inProgressRow)}
       empty="Nothing in progress. Start a practice test or reading to pick it up here later."
+      failed={
+        inProgress.error &&
+        "Couldn't load what you're working on. Refresh to try again."
+      }
       limit={limit}
     />
   );
@@ -198,8 +205,7 @@ export function SavedList({
 
 interface SavedAndInProgressProps {
   saved: SavedItem[];
-  inProgress: InProgressItem[];
-  inProgressReadings: InProgressReading[];
+  inProgress: InProgressState;
   /** Removes a saved item by id. Saved rows show a remove button when set. */
   onRemoveSaved?: (id: string) => void;
 }
@@ -207,15 +213,11 @@ interface SavedAndInProgressProps {
 export default function SavedAndInProgress({
   saved,
   inProgress,
-  inProgressReadings,
   onRemoveSaved,
 }: SavedAndInProgressProps) {
   return (
     <div className="flex flex-col gap-8">
-      <InProgressList
-        inProgress={inProgress}
-        inProgressReadings={inProgressReadings}
-      />
+      <InProgressList inProgress={inProgress} />
       <SavedList saved={saved} onRemove={onRemoveSaved} />
     </div>
   );

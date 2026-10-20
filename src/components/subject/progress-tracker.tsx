@@ -19,8 +19,12 @@ import { cn } from "@/lib/utils";
 import ConfettiExplosion from "react-confetti-explosion";
 import { useUser } from "../hooks/UserContext";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import type { UserChapterData } from "@/types/user";
+import {
+  chapterListing,
+  isInProgressReadingStatus,
+} from "@/lib/dashboard/inProgress";
 
 const dropdownIcons: Record<string, React.ReactNode> = {
   Reading: <BookOpen className="size-5 stroke-yellow-500" />,
@@ -43,10 +47,13 @@ export default function ProgressTracker({
   subject,
   unitId,
   chapterId,
+  title,
 }: {
   subject: string;
   unitId: string;
   chapterId: string;
+  /** The chapter's title, saved with its progress for the dashboard. */
+  title: string;
 }) {
   const { user } = useUser();
   // The effect below keys on the id, not the user object: a context refresh
@@ -74,8 +81,24 @@ export default function ProgressTracker({
         const chapterData = await getDoc(chapterDataRef);
         // The student left this chapter while the read was pending.
         if (cancelled) return;
-        const data = chapterData.data() as UserChapterData;
+        const data = chapterData.data() as UserChapterData | undefined;
         setProgress(data?.progress ?? "Not Started");
+        // A chapter marked before its title and link were saved can't be
+        // listed on the dashboard. Opening it saves them.
+        const listing = chapterListing(window.location.pathname, title);
+        if (
+          isInProgressReadingStatus(data?.progress) &&
+          !data.href &&
+          listing
+        ) {
+          setDoc(
+            chapterDataRef,
+            { ...listing, updatedAt: serverTimestamp() },
+            { merge: true },
+          ).catch((error) =>
+            console.error("Error saving chapter details:", error),
+          );
+        }
         // Complete without an XP receipt means an earlier XP save failed and
         // its Retry toast is gone. The server never counts a reading twice,
         // so sending it again is safe.
@@ -96,7 +119,7 @@ export default function ProgressTracker({
     return () => {
       cancelled = true;
     };
-  }, [uid, subject, unitId, chapterId]);
+  }, [uid, subject, unitId, chapterId, title]);
 
   const [progress, setProgress] = useState<string>("");
   const [showConfetti, setShowConfetti] = useState(false);
@@ -110,7 +133,13 @@ export default function ProgressTracker({
       // cost the student their progress.
       await setDoc(
         doc(db, `users/${user.uid}/chapterData/${chapterId}`),
-        { progress: newProgress },
+        {
+          progress: newProgress,
+          // So the dashboard can list chapters still in progress, newest
+          // first, and link back here.
+          ...chapterListing(window.location.pathname, title),
+          updatedAt: serverTimestamp(),
+        },
         { merge: true },
       );
     } catch (error) {

@@ -718,6 +718,7 @@ export const FIXTURE_IN_PROGRESS_READINGS: InProgressReading[] = [
     label: "Gauss's Law",
     href: readingHref("ap-physics-2", "unit-3", "gauss-law", "gauss-law"),
     progress: "Reading",
+    updatedAt: at("2026-09-20T15:40:00"),
   },
   {
     kind: "reading",
@@ -732,6 +733,7 @@ export const FIXTURE_IN_PROGRESS_READINGS: InProgressReading[] = [
       "curve-sketching",
     ),
     progress: "Practicing",
+    updatedAt: at("2026-09-19T20:05:00"),
   },
   {
     kind: "reading",
@@ -746,6 +748,7 @@ export const FIXTURE_IN_PROGRESS_READINGS: InProgressReading[] = [
       "block-ciphers",
     ),
     progress: "Need Review",
+    updatedAt: at("2026-09-17T19:30:00"),
   },
 ];
 

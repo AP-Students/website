@@ -65,6 +65,17 @@ const commit = (uid, path, data, times = [], deletes = []) =>
       ...deletes.map((path) => ({ delete: `${root}/${path}` })),
     ],
   });
+// Like the client's setDoc with { merge: true }: only the named fields change.
+const merge = (uid, path, data, times = []) =>
+  request(":commit", uid, "POST", {
+    writes: [
+      {
+        update: { name: `${root}/${path}`, fields: fields(data) },
+        updateMask: { fieldPaths: Object.keys(data) },
+        updateTransforms: times.map(stamp),
+      },
+    ],
+  });
 async function status(response, expected) {
   assert.equal(response.status, expected, await response.text());
 }
@@ -113,6 +124,10 @@ before(async () => {
       { studentId: "student", score: "2/3", graderId: "student" },
     ],
     ["ungraded-frqs/pending", { studentId: "student" }],
+    [
+      "users/student/chapterData/completed",
+      { progress: "Complete", readingXpAwarded: true },
+    ],
     [
       "users/student/frqResponses/legacy",
       { userId: "student", responseText: "answer", grade: "2/3" },
@@ -372,5 +387,59 @@ check(
     await status(await doc(path, "student", "DELETE"), 403);
     await status(await doc(`${path}-new`, "student", "PATCH", original), 403);
     await status(await commit("student", path, original, ["readAt"]), 200);
+  },
+);
+check(
+  "chapter progress saves its dashboard listing with the server's time, never an XP receipt",
+  async () => {
+    const path = "users/student/chapterData/gauss-law";
+    const listing = {
+      progress: "Reading",
+      subject: "ap-physics-2",
+      unitId: "unit-3",
+      label: "Gauss's Law",
+      href: "/subject/ap-physics-2/unit-3-abc/chapter/gauss-law/gauss-law",
+    };
+    // Progress alone still saves, as it did before listings were recorded.
+    await status(
+      await doc(path, "student", "PATCH", { progress: "Reading" }),
+      200,
+    );
+    await status(await merge("student", path, listing, ["updatedAt"]), 200);
+    await status(await doc(path, "student"), 200);
+    await status(await doc(path, "other"), 403);
+
+    for (const changes of [
+      { href: "https://example.com/phish" },
+      { label: "" },
+      { subject: 7 },
+      { updatedAt: submittedAt },
+      { readingXpAwarded: true },
+      { completedAt: submittedAt },
+    ]) {
+      await status(
+        await merge("student", path, { ...listing, ...changes }, [
+          ...("updatedAt" in changes ? [] : ["updatedAt"]),
+        ]),
+        403,
+      );
+    }
+    await status(await merge("other", path, listing, ["updatedAt"]), 403);
+
+    // A chapter whose XP was awarded can still be marked for review, and
+    // its receipt stays.
+    await status(
+      await merge(
+        "student",
+        "users/student/chapterData/completed",
+        { ...listing, progress: "Need Review" },
+        ["updatedAt"],
+      ),
+      200,
+    );
+    const completed = await (
+      await doc("users/student/chapterData/completed", "student")
+    ).json();
+    assert.equal(completed.fields.readingXpAwarded.booleanValue, true);
   },
 );
