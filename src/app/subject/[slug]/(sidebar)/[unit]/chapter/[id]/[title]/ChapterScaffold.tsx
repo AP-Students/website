@@ -60,6 +60,7 @@ export default function ChapterScaffold({
               subject={subjectSlug}
               unitId={units[unitIndex]!.id}
               chapterId={chapterId}
+              title={chapterTitle}
             />
             <SaveButton
               key={chapterId}

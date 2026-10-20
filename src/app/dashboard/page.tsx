@@ -13,11 +13,6 @@ import MyClasses from "@/components/dashboard/MyClasses";
 import GlobalStats from "@/components/dashboard/GlobalStats";
 import StreakBar from "@/components/dashboard/StreakBar";
 import ActivityCalendar from "@/components/dashboard/ActivityCalendar";
-import {
-  FIXTURE_EVENTS,
-  FIXTURE_IN_PROGRESS,
-  FIXTURE_IN_PROGRESS_READINGS,
-} from "@/lib/dashboard/fixtures";
 import AchievementsCard from "@/components/dashboard/AchievementsCard";
 import { useAchievements } from "@/components/hooks/useAchievements";
 import RecentActivity from "@/components/dashboard/RecentActivity";
@@ -36,6 +31,7 @@ import type { SavedItem } from "@/types/dashboard";
 import { useStudyStreak } from "@/components/hooks/useStudyStreak";
 import { useLiveStats } from "@/components/hooks/useLiveStats";
 import { useXpProgress } from "@/components/hooks/useXpProgress";
+import { useInProgress } from "@/components/hooks/useInProgress";
 import { useNotifications } from "@/components/hooks/useNotifications";
 import NotificationFeed from "@/components/dashboard/NotificationFeed";
 
@@ -64,6 +60,7 @@ export default function Dashboard() {
   // Undefined until the server has answered, so the card shows a dash and not
   // a made-up 0.
   const { stats: liveStats } = useLiveStats(uid);
+  const inProgress = useInProgress(uid);
   const {
     stats: achievementStats,
     earnedIds,
@@ -194,8 +191,7 @@ export default function Dashboard() {
         )}
         <SavedAndInProgress
           saved={savedItems}
-          inProgress={FIXTURE_IN_PROGRESS}
-          inProgressReadings={FIXTURE_IN_PROGRESS_READINGS}
+          inProgress={inProgress}
           onRemoveSaved={(id) => void removeSaved(id)}
         />
       </div>
@@ -242,11 +238,7 @@ export default function Dashboard() {
               />
             ),
             "in-progress": (
-              <InProgressList
-                inProgress={FIXTURE_IN_PROGRESS}
-                inProgressReadings={FIXTURE_IN_PROGRESS_READINGS}
-                limit={Infinity}
-              />
+              <InProgressList inProgress={inProgress} limit={Infinity} />
             ),
             achievements: achievementError ? (
               <LoadError>

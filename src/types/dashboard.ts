@@ -177,6 +177,8 @@ export interface InProgressReading {
   label: string;
   href: string;
   progress: "Reading" | "Practicing" | "Need Review";
+  /** When the student last set the chapter's progress. */
+  updatedAt: Timestamp;
 }
 
 /** Every /api/activity/* route returns exactly this. */
