@@ -158,6 +158,17 @@ export const inProgressEntryId = (entry: InProgressEntry) =>
   entry.kind === "reading" ? `reading-${entry.chapterId}` : entry.id;
 
 /**
+ * The document id of a saved test or FRQ draft in `users/{uid}/inProgress`.
+ * It is built from the item's full place in the curriculum, as completed
+ * tests' keys are, so tests with the same id in two units never share a save.
+ */
+export const inProgressItemId = (
+  kind: InProgressItem["kind"],
+  place: { subject: string; unitId: string; refId: string },
+) =>
+  `${kind}_${encodeURIComponent(JSON.stringify([place.subject, place.unitId, place.refId]))}`;
+
+/**
  * Everything in progress, newest first: whatever the student touched last
  * leads. Entries saved at the same moment keep a fixed order.
  */
