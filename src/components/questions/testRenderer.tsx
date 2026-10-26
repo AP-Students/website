@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Bookmark, Calculator, Check, X } from "lucide-react";
 import Header from "./digital-testing/Header";
 import QuestionPanel from "./digital-testing/QuestionPanel";
@@ -21,6 +21,8 @@ import SaveButton from "@/components/subject/save-button";
 import { reportWithRetry } from "@/lib/gamification/notifyActivityFailure";
 import { reportMcqTest } from "@/lib/gamification/reportActivity";
 import { auth } from "@/lib/firebase";
+import { useTestAutosave } from "@/components/hooks/useTestAutosave";
+import type { McqTestState } from "@/types/dashboard";
 import clsx from "clsx";
 import { cn } from "@/lib/utils";
 import "katex/dist/katex.min.css";
@@ -114,6 +116,29 @@ export default function DigitalTestingPage({
     Record<number, string[]>
   >({});
 
+  // The test as it stands, for the autosave. Kept in a ref so the countdown
+  // updating it every second doesn't re-render the test.
+  const progress = useRef<McqTestState>({
+    answers: selectedAnswers,
+    currentIndex: currentQuestionIndex,
+    secondsRemaining: time * 60,
+  });
+  useEffect(() => {
+    progress.current = {
+      ...progress.current,
+      answers: selectedAnswers,
+      currentIndex: currentQuestionIndex,
+    };
+  }, [selectedAnswers, currentQuestionIndex]);
+  const recordTimeLeft = useCallback((secondsRemaining: number) => {
+    progress.current = { ...progress.current, secondsRemaining };
+  }, []);
+  const autosave = useTestAutosave(
+    adminMode ? undefined : attemptSource,
+    testName,
+    progress,
+  );
+
   const [contentHighlights, setContentHighlights] = useState<Highlight[][]>(
     initialQuestions.map(() => []),
   );
@@ -151,6 +176,8 @@ export default function DigitalTestingPage({
     setSubmitted(value);
     if (value && !adminMode) {
       setShowCompletionPage(true);
+      // A submitted test isn't in progress any more.
+      autosave.finish();
       // The results are already on screen; a failed XP save offers a retry.
       const uid = auth.currentUser?.uid;
       // A signed-out visitor has no streak or XP to add to.
@@ -214,6 +241,7 @@ export default function DigitalTestingPage({
           setSubmitted={handleSetSubmitted}
           submitted={submitted}
           timeRemaining={time * 60}
+          onTimeChange={recordTimeLeft}
           directions={directions}
           referenceSheetEnabled={referenceSheetEnabled}
           referenceSheet={referenceSheet}

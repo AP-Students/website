@@ -25,6 +25,8 @@ interface HeaderProps {
    * having been turned on.
    */
   referenceSheet?: ReferenceSheet | null;
+  /** Called with the seconds left whenever the countdown moves. */
+  onTimeChange?: (secondsRemaining: number) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -34,6 +36,7 @@ const Header: React.FC<HeaderProps> = ({
   directions,
   referenceSheetEnabled = false,
   referenceSheet,
+  onTimeChange,
 }) => {
   const [showReferenceSheet, setShowReferenceSheet] = useState(false);
   const [showReferenceSheetError, setShowReferenceSheetError] =
@@ -67,6 +70,10 @@ const Header: React.FC<HeaderProps> = ({
       setSubmitted(true);
     }
   }, [remainingTime, setSubmitted]);
+
+  useEffect(() => {
+    onTimeChange?.(remainingTime);
+  }, [remainingTime, onTimeChange]);
 
   // Close directions when clicking outside
   useEffect(() => {
