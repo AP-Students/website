@@ -62,6 +62,43 @@ export function mcqTestProgress(input: {
   };
 }
 
+/**
+ * Where a student picks a saved test back up, checked against the test as it
+ * is now, since it may have been edited since: answers to questions or
+ * options that no longer exist are dropped, the question stays in range, and
+ * the time left never goes over the test's limit. A question asked for in
+ * the link (`requestedIndex`, as "Go to question" sends) wins over the saved
+ * one. Null when there's nothing to pick up.
+ */
+export function resumeTest(
+  saved: McqTestState | undefined,
+  test: { questions: { options: { id: string }[] }[]; seconds: number },
+  requestedIndex = -1,
+): McqTestState | null {
+  if (!saved || test.questions.length === 0) return null;
+
+  const answers: Record<number, string[]> = {};
+  for (const [key, choices] of Object.entries(saved.answers)) {
+    const index = Number(key);
+    const options = test.questions[index]?.options.map((option) => option.id);
+    const kept = choices.filter((choice) => options?.includes(choice));
+    if (kept.length > 0) answers[index] = kept;
+  }
+
+  const last = test.questions.length - 1;
+  return {
+    answers,
+    currentIndex:
+      requestedIndex >= 0 && requestedIndex <= last
+        ? requestedIndex
+        : Math.min(saved.currentIndex, last),
+    secondsRemaining: Math.min(
+      Math.max(0, saved.secondsRemaining),
+      test.seconds,
+    ),
+  };
+}
+
 export interface TestAutosave {
   /** Saves now, if anything changed since the last save. */
   flush(): void;
@@ -85,8 +122,16 @@ export function createTestAutosave(options: {
   save: (state: McqTestState) => Promise<void>;
   remove: () => Promise<void>;
   schedule?: Schedule;
+  /** Picked back up from a save, so it's in progress from the first tick. */
+  resumed?: boolean;
 }): TestAutosave {
-  const { read, save, remove, schedule = everyFewSeconds } = options;
+  const {
+    read,
+    save,
+    remove,
+    schedule = everyFewSeconds,
+    resumed = false,
+  } = options;
   let running = true;
   let finished = false;
   // What the last save sent, to skip ticks where nothing changed.
@@ -94,11 +139,13 @@ export function createTestAutosave(options: {
 
   // A test that has only been opened isn't in progress yet, or every test a
   // student clicks into by mistake would sit on their dashboard. Saving starts
-  // once they answer something or move to another question.
+  // once they answer something or move to another question. A test picked
+  // back up from a save is already in progress, so its time left is saved
+  // straight away.
   const whereTheyAre = ({ answers, currentIndex }: McqTestState) =>
     JSON.stringify({ answers, currentIndex });
   const openedAt = whereTheyAre(read());
-  let started = false;
+  let started = resumed;
 
   const flush = () => {
     if (!running) return;

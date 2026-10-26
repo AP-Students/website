@@ -44,9 +44,7 @@ export default function Footer({
         if (adminMode) {
           setSubmitted(false);
         } else if (
-          confirm(
-            "Exit the test? All progress will be lost. FiveHive does not currently save your progress (but we're working on it!).",
-          )
+          confirm("Leave the test review? You'll go back to the subject page.")
         ) {
           router.push(pathname.split("/").slice(0, 3).join("/"));
         }

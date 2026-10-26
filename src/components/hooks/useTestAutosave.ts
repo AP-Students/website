@@ -20,7 +20,8 @@ import { dashboardDocumentPaths, type McqTestState } from "@/types/dashboard";
 /**
  * Saves a practice test in progress every few seconds: its answers, current
  * question and time left, read from `progress`. Call `finish()` when the test
- * is submitted; it stops saving and deletes the save.
+ * is submitted; it stops saving and deletes the save. For a test picked back
+ * up from a save, pass when it was first started as `resumedFrom`.
  *
  * Does nothing without a `source` (admin previews), away from a test page,
  * or while no one is signed in.
@@ -29,8 +30,13 @@ export function useTestAutosave(
   source: TestSource | undefined,
   label: string,
   progress: MutableRefObject<McqTestState>,
+  resumedFrom?: Timestamp,
 ): { finish: () => void } {
   const autosave = useRef<TestAutosave | null>(null);
+  // A test can be submitted before the autosave starts: one picked back up
+  // with no time left is submitted as the header mounts. Remembering that
+  // keeps the autosave from bringing the save back.
+  const finished = useRef(false);
   // The test's name can arrive after it opens; the next save picks it up.
   const latestLabel = useRef(label);
   useEffect(() => {
@@ -47,7 +53,7 @@ export function useTestAutosave(
     if (!context) return;
 
     const id = testSaveId({ subject, unitId, testId });
-    const startedAt = Timestamp.now();
+    const startedAt = resumedFrom ?? Timestamp.now();
     // Looked up at each write: the student may sign in after the test opens.
     const saveRef = () => {
       const uid = auth.currentUser?.uid;
@@ -55,6 +61,7 @@ export function useTestAutosave(
     };
 
     const controller = createTestAutosave({
+      resumed: resumedFrom !== undefined,
       read: () => progress.current,
       save: async (state) => {
         const ref = saveRef();
@@ -76,6 +83,7 @@ export function useTestAutosave(
       },
     });
     autosave.current = controller;
+    if (finished.current) controller.finish();
 
     // A student who switches away or closes the tab may not come back before
     // the next tick, so what they last did is saved straight away.
@@ -88,7 +96,15 @@ export function useTestAutosave(
       controller.stop();
       if (autosave.current === controller) autosave.current = null;
     };
-  }, [subject, unitId, testId, progress]);
+  }, [subject, unitId, testId, progress, resumedFrom]);
 
-  return useMemo(() => ({ finish: () => autosave.current?.finish() }), []);
+  return useMemo(
+    () => ({
+      finish: () => {
+        finished.current = true;
+        autosave.current?.finish();
+      },
+    }),
+    [],
+  );
 }
