@@ -62,9 +62,37 @@ export default function DashboardTabs({
 
   useEffect(() => {
     const sync = () => setActive(tabFromHash());
+    // A Next.js <Link> to /dashboard#achievements, like a notification,
+    // changes the hash with pushState, which fires no hashchange. So clicks
+    // on links to a tab on this page switch to it here.
+    const onClick = (event: MouseEvent) => {
+      if (
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      )
+        return;
+      const link = (event.target as Element | null)?.closest?.("a[href]");
+      if (!(link instanceof HTMLAnchorElement) || link.target === "_blank")
+        return;
+      const url = new URL(link.href);
+      const id = url.hash.slice(1);
+      if (
+        url.origin === window.location.origin &&
+        url.pathname === window.location.pathname &&
+        isTabId(id)
+      )
+        setActive(id);
+    };
     sync();
     window.addEventListener("hashchange", sync);
-    return () => window.removeEventListener("hashchange", sync);
+    document.addEventListener("click", onClick);
+    return () => {
+      window.removeEventListener("hashchange", sync);
+      document.removeEventListener("click", onClick);
+    };
   }, []);
 
   const select = (id: DashboardTabId, focus = false) => {
