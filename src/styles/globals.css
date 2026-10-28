@@ -290,3 +290,18 @@ figcaption a {
     width: calc(100vw - 24px);
   }
 }
+
+/* Bottom pop-ups sit above a fixed bottom bar marked data-toast-clearance,
+   like a test's Back and Exit buttons, instead of covering it. Sonner's own
+   rules use :where(), so these win without !important. */
+body:has([data-toast-clearance])
+  [data-sonner-toaster][data-y-position="bottom"] {
+  bottom: calc(var(--offset-bottom) + 4rem);
+}
+
+@media (max-width: 600px) {
+  body:has([data-toast-clearance])
+    [data-sonner-toaster][data-y-position="bottom"] {
+    bottom: calc(var(--mobile-offset-bottom) + 4rem);
+  }
+}
