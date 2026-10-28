@@ -1,38 +1,36 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, doc, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { dashboardDocumentPaths } from "@/types/dashboard";
-import { readAchievementStats } from "@/lib/achievements/checkAchievements";
+import { achievementStatsFrom } from "@/lib/achievements/checkAchievements";
+import { useLiveStats } from "@/components/hooks/useLiveStats";
 
+/**
+ * Progress comes from the shared live stats listener, so the only listener
+ * opened here is the earned list. Both are undefined until loaded, so the
+ * card never shows a made-up 0.
+ */
 export function useAchievements(uid: string | undefined) {
-  const [stats, setStats] = useState(() => readAchievementStats(undefined));
-  const [earnedIds, setEarnedIds] = useState<ReadonlySet<string>>(new Set());
-  const [error, setError] = useState(false);
+  const { stats: liveStats, error: statsError } = useLiveStats(uid);
+  const [earnedIds, setEarnedIds] = useState<ReadonlySet<string>>();
+  const [earnedError, setEarnedError] = useState(false);
   useEffect(() => {
-    setStats(readAchievementStats(undefined));
-    setEarnedIds(new Set());
-    setError(false);
+    setEarnedIds(undefined);
+    setEarnedError(false);
     if (!uid) return;
-    const onError = (loadError: Error) => {
-      console.error("Unable to load achievements", loadError);
-      setError(true);
-    };
-    const unsubscribeStats = onSnapshot(
-      doc(db, dashboardDocumentPaths.stats(uid)),
-      (snapshot) => setStats(readAchievementStats(snapshot.data())),
-      onError,
-    );
-    const unsubscribeEarned = onSnapshot(
+    return onSnapshot(
       collection(db, `users/${uid}/achievements`),
       (snapshot) => setEarnedIds(new Set(snapshot.docs.map((item) => item.id))),
-      onError,
+      (loadError) => {
+        console.error("Unable to load achievements", loadError);
+        setEarnedError(true);
+      },
     );
-    return () => {
-      unsubscribeStats();
-      unsubscribeEarned();
-    };
   }, [uid]);
-  return { stats, earnedIds, error };
+  return {
+    stats: liveStats ? achievementStatsFrom(liveStats) : undefined,
+    earnedIds,
+    error: earnedError || Boolean(statsError),
+  };
 }

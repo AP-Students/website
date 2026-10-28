@@ -137,6 +137,16 @@ export default function Dashboard() {
     );
   }
 
+  const achievements = achievementError ? (
+    <LoadError>
+      Couldn&apos;t load your achievements. Refresh to try again.
+    </LoadError>
+  ) : achievementStats && earnedIds ? (
+    <AchievementsCard stats={achievementStats} earnedIds={earnedIds} />
+  ) : (
+    <p className="text-gray-500">Loading your achievements…</p>
+  );
+
   const overview = (
     <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
       {/* Left column */}
@@ -177,13 +187,7 @@ export default function Dashboard() {
 
       {/* Right column */}
       <div className="flex flex-col gap-8">
-        {achievementError ? (
-          <LoadError>
-            Couldn&apos;t load your achievements. Refresh to try again.
-          </LoadError>
-        ) : (
-          <AchievementsCard stats={achievementStats} earnedIds={earnedIds} />
-        )}
+        {achievements}
         {userDoc === undefined ? (
           <p className="text-gray-500">Loading your classes…</p>
         ) : (
@@ -240,16 +244,7 @@ export default function Dashboard() {
             "in-progress": (
               <InProgressList inProgress={inProgress} limit={Infinity} />
             ),
-            achievements: achievementError ? (
-              <LoadError>
-                Couldn&apos;t load your achievements. Refresh to try again.
-              </LoadError>
-            ) : (
-              <AchievementsCard
-                stats={achievementStats}
-                earnedIds={earnedIds}
-              />
-            ),
+            achievements,
             profile: (
               <TabPlaceholder title="Profile">
                 Public profiles are coming soon. You can change your name, email
