@@ -207,6 +207,8 @@ export default function Dashboard() {
       <Navbar />
       <DashboardHeader
         user={userDoc ?? user}
+        level={xpProgress?.level}
+        classCount={userDoc?.mySubjects?.length}
         notifications={notifications}
         markRead={markRead}
       />
