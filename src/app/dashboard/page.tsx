@@ -1,14 +1,11 @@
 "use client";
-import Link from "next/link";
 import Navbar from "@/components/global/navbar";
 import Footer from "@/components/global/footer";
 import { useUser } from "@/components/hooks/UserContext";
 import { useRouter } from "next/navigation";
 import ExperienceCard from "@/components/dashboard/ExperienceCard";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import DashboardTabs, {
-  TabPlaceholder,
-} from "@/components/dashboard/DashboardTabs";
+import DashboardTabs from "@/components/dashboard/DashboardTabs";
 import MyClasses from "@/components/dashboard/MyClasses";
 import GlobalStats from "@/components/dashboard/GlobalStats";
 import StreakBar from "@/components/dashboard/StreakBar";
@@ -34,6 +31,10 @@ import { useXpProgress } from "@/components/hooks/useXpProgress";
 import { useInProgress } from "@/components/hooks/useInProgress";
 import { useNotifications } from "@/components/hooks/useNotifications";
 import NotificationFeed from "@/components/dashboard/NotificationFeed";
+import ProfileView from "@/components/dashboard/ProfileView";
+import { streakAsOf } from "@/lib/gamification/streak";
+import { toDayKey } from "@/lib/gamification/calendarDay";
+import ProfileVisibility from "@/components/dashboard/ProfileVisibility";
 
 function LoadError({ children }: { children: string }) {
   return (
@@ -198,6 +199,30 @@ export default function Dashboard() {
     </div>
   );
 
+  const profile =
+    xpProgress && studyStreak && liveStats ? (
+      <ProfileView
+        displayName={(userDoc ?? user).displayName}
+        photoURL={(userDoc ?? user).photoURL}
+        xp={xpProgress.xp}
+        streak={streakAsOf(
+          studyStreak.streak,
+          toDayKey(new Date(), studyStreak.timeZone),
+        )}
+        problemsSolved={liveStats.problemsSolved}
+        subjectsCompleted={liveStats.subjectsCompleted}
+        earnedIds={earnedIds}
+      />
+        ) : xpError ?? streakError ?? achievementError ? (
+      <LoadError>
+        Couldn&apos;t load your profile. Refresh to try again.
+      </LoadError>
+    ) : (
+      <p className="text-gray-500">Loading your profile…</p>
+    );
+
+
+
   return (
     <div>
       <Navbar />
@@ -251,14 +276,10 @@ export default function Dashboard() {
               />
             ),
             profile: (
-              <TabPlaceholder title="Profile">
-                Public profiles are coming soon. You can change your name, email
-                and photo on your{" "}
-                <Link href="/account" className="font-semibold underline">
-                  account page
-                </Link>
-                .
-              </TabPlaceholder>
+              <>
+                {profile}
+                <ProfileVisibility uid={user.uid} />
+              </>
             ),
           }}
         />
