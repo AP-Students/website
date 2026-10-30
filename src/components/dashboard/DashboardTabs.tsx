@@ -29,21 +29,6 @@ const tabFromHash = (): DashboardTabId => {
   return isTabId(hash) ? hash : "overview";
 };
 
-/** A tab whose real content hasn't been built yet. */
-export function TabPlaceholder({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-gray-300 bg-white px-6 py-12 text-center">
-      <h2 className="text-2xl font-bold">{title}</h2>
-      <div className="max-w-md text-gray-600">{children}</div>
-    </section>
-  );
-}
 
 /**
  * The dashboard's seven tabs. The open tab is kept in the URL hash, e.g.
