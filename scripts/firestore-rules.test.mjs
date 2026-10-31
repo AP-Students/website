@@ -458,3 +458,90 @@ check(
     assert.equal(completed.fields.readingXpAwarded.booleanValue, true);
   },
 );
+check(
+  "in-progress tests and FRQ drafts keep the dashboard's shape and the server's time, one save a second",
+  async () => {
+    const testPath = "users/student/inProgress/mcq_test_unit-2";
+    const practiceTest = {
+      kind: "mcq_test",
+      subject: "biology",
+      unitId: "unit-2",
+      refId: "u2-test",
+      label: "Unit 2 Test",
+      href: "/subject/biology/unit-2-abc/test/u2-test",
+      startedAt: submittedAt,
+      state: { answers: { 0: ["B"] }, currentIndex: 1, secondsRemaining: 1740 },
+    };
+    const draftPath = "users/student/inProgress/frq_essay";
+    const draft = {
+      kind: "frq",
+      subject: "english",
+      unitId: "unit-3",
+      refId: "essay",
+      label: "Argument Essay",
+      href: "/subject/english/unit-3-abc/frq/essay",
+      startedAt: submittedAt,
+      state: { responses: { thesis: "<p>Slant rhyme unsettles closure.</p>" } },
+    };
+
+    // What the test autosave and the FRQ draft write.
+    await status(
+      await commit("student", testPath, practiceTest, ["updatedAt"]),
+      200,
+    );
+    await status(await commit("student", draftPath, draft, ["updatedAt"]), 200);
+    await status(await doc(draftPath, "student"), 200);
+    await status(await doc(draftPath, "other"), 403);
+    await status(
+      await commit("other", "users/student/inProgress/frq_other", draft, [
+        "updatedAt",
+      ]),
+      403,
+    );
+
+    // A second save within a second is refused; a moment later it lands.
+    await status(await commit("student", draftPath, draft, ["updatedAt"]), 403);
+    await new Promise((resolve) => setTimeout(resolve, 1_100));
+    await status(await commit("student", draftPath, draft, ["updatedAt"]), 200);
+
+    const forged = [
+      ["client clock", draft, {}, []],
+      ["link off the site", draft, { href: "javascript:alert(1)" }],
+      ["extra field", draft, { xp: 999 }],
+      ["unknown kind", draft, { kind: "reading" }],
+      ["empty label", draft, { label: "" }],
+      ["answers in a draft", draft, { state: { responses: {}, answers: {} } }],
+      ["draft that isn't a map", draft, { state: { responses: "essay" } }],
+      [
+        "negative question",
+        practiceTest,
+        {
+          state: { answers: {}, currentIndex: -1, secondsRemaining: 60 },
+        },
+      ],
+    ];
+    for (const [name, base, changes, stamps = ["updatedAt"]] of forged) {
+      const kind = changes.kind ?? base.kind;
+      const response = await commit(
+        "student",
+        `users/student/inProgress/${kind}_${name.replaceAll(" ", "-")}`,
+        { ...base, ...changes },
+        stamps,
+      );
+      assert.equal(response.status, 403, name);
+    }
+    // The id says what it holds: an FRQ draft can't sit under a test's id.
+    await status(
+      await commit(
+        "student",
+        "users/student/inProgress/mcq_test_essay",
+        draft,
+        ["updatedAt"],
+      ),
+      403,
+    );
+
+    await status(await doc(draftPath, "other", "DELETE"), 403);
+    await status(await doc(draftPath, "student", "DELETE"), 200);
+  },
+);

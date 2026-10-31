@@ -125,8 +125,48 @@ service cloud.firestore {
         && request.resource.data.savedAt == request.time;
     }
 
+    // Practice tests and FRQ drafts saved part-way reuse the dashboard
+    // InProgressItem contract: kind, subject, unitId, refId, label, href,
+    // startedAt and state, with updatedAt stamped server-side. The autosave
+    // writes every few seconds, so one save a second is the most a draft
+    // takes; a runaway or abusive client can't write faster than that.
     match /users/{userId}/inProgress/{itemId} {
-      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      allow read, delete: if isAuthenticated() && request.auth.uid == userId;
+      allow create: if isAuthenticated() && request.auth.uid == userId
+        && isInProgressItem(itemId, request.resource.data);
+      allow update: if isAuthenticated() && request.auth.uid == userId
+        && isInProgressItem(itemId, request.resource.data)
+        && (!('updatedAt' in resource.data)
+          || request.time > resource.data.updatedAt + duration.value(1, 's'));
+    }
+
+    function isInProgressItem(itemId, data) {
+      return data.keys().hasOnly(['kind', 'subject', 'unitId', 'refId', 'label', 'href', 'startedAt', 'updatedAt', 'state'])
+        && data.kind in ['mcq_test', 'frq']
+        && itemId.matches('^' + data.kind + '_.+$')
+        && data.subject is string && data.subject.size() > 0 && data.subject.size() <= 100
+        && data.unitId is string && data.unitId.size() > 0 && data.unitId.size() <= 100
+        && data.refId is string && data.refId.size() > 0 && data.refId.size() <= 200
+        && data.label is string && data.label.size() > 0 && data.label.size() <= 200
+        && data.href is string && data.href.size() <= 500
+        && data.href.matches('^/subject/[^\\s]*$')
+        && data.startedAt is timestamp
+        && data.updatedAt == request.time
+        && data.state is map
+        && (data.kind != 'mcq_test' || isMcqTestState(data.state))
+        && (data.kind != 'frq' || isFrqDraftState(data.state));
+    }
+
+    function isMcqTestState(state) {
+      return state.keys().hasOnly(['answers', 'currentIndex', 'secondsRemaining'])
+        && state.answers is map && state.answers.size() <= 500
+        && state.currentIndex is int && state.currentIndex >= 0
+        && state.secondsRemaining is number && state.secondsRemaining >= 0;
+    }
+
+    function isFrqDraftState(state) {
+      return state.keys().hasOnly(['responses'])
+        && state.responses is map && state.responses.size() <= 200;
     }
 
     // Allow read/write access to users for their own user data
