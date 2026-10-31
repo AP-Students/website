@@ -10,7 +10,8 @@
     "start": "next start",
     "emulate": "firebase emulators:start --import emulator --export-on-exit",
     "deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes",
-    "test": "node --test --experimental-strip-types \"scripts/*.test.ts\""
+    "test": "node --test --experimental-strip-types \"scripts/*.test.ts\"",
+    "test:double-count": "node --test scripts/double-count.mjs"
   },
   "dependencies": {
     "@editorjs/attaches": "^1.3.0",

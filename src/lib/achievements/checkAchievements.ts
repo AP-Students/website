@@ -3,6 +3,20 @@ import {
   type AchievementDefinition,
   type AchievementStats,
 } from "./definitions.ts";
+import type { StudentStats } from "../gamification/stats.ts";
+
+/** The achievement stats in stats already read by the live stats hook. */
+export function achievementStatsFrom(stats: StudentStats): AchievementStats {
+  return {
+    readingsCompleted: stats.readingsCompleted,
+    mcqTestsCompleted: stats.mcqTestsCompleted,
+    frqsSubmitted: stats.frqsSubmitted,
+    problemsSolved: stats.problemsSolved,
+    subjectsCompleted: stats.subjectsCompleted,
+    longestStreak: stats.streak.longestStreak,
+    level: stats.xp.level,
+  };
+}
 
 /** Missing statistics are zero until the corresponding activity is recorded. */
 export function readAchievementStats(

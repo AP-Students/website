@@ -9,25 +9,66 @@ import type { AppNotification } from "@/types/dashboard";
 
 const BANNER_DURATION_MS = 10_000;
 
+/** One banner, standing for one notification or several that arrived together. */
+interface Banner {
+  key: string;
+  title: string;
+  body: string;
+  href: string;
+  /** The notifications opening the banner marks read. */
+  ids: string[];
+}
+
+const toBanner = (item: AppNotification): Banner => ({
+  key: item.id,
+  title: item.title,
+  body: item.body,
+  href: item.href,
+  ids: [item.id],
+});
+
+/**
+ * Achievements unlocked by the same activity arrive in one snapshot; they
+ * share a banner so they don't stack down the screen.
+ */
+function toBanners(added: AppNotification[]): Banner[] {
+  const achievements = added.filter((item) => item.type === "achievement");
+  if (achievements.length < 2) return added.map(toBanner);
+  const grouped: Banner = {
+    key: achievements.map((item) => item.id).join(","),
+    title: `${achievements.length} achievements unlocked`,
+    body: achievements.map((item) => item.title).join(", "),
+    href: "/dashboard#achievements",
+    ids: achievements.map((item) => item.id),
+  };
+  return [
+    ...added.filter((item) => item.type !== "achievement").map(toBanner),
+    grouped,
+  ];
+}
+
 function NotificationBanner({
   item,
   dismiss,
   open,
 }: {
-  item: AppNotification;
-  dismiss: (id: string) => void;
-  open: (id: string) => void;
+  item: Banner;
+  dismiss: (key: string) => void;
+  open: (item: Banner) => void;
 }) {
   useEffect(() => {
-    const timer = window.setTimeout(() => dismiss(item.id), BANNER_DURATION_MS);
+    const timer = window.setTimeout(
+      () => dismiss(item.key),
+      BANNER_DURATION_MS,
+    );
     return () => window.clearTimeout(timer);
-  }, [item.id, dismiss]);
+  }, [item.key, dismiss]);
 
   return (
     <div className="pointer-events-auto relative mx-auto w-full max-w-2xl shrink-0 overflow-hidden rounded-lg border border-orange-300 bg-orange-50 text-gray-900 shadow-lg duration-300 animate-in slide-in-from-top-8 motion-reduce:animate-none">
       <Link
         href={item.href}
-        onClick={() => open(item.id)}
+        onClick={() => open(item)}
         className="block break-words p-4 pr-14 hover:bg-orange-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
       >
         <p className="font-semibold">{item.title}</p>
@@ -36,7 +77,7 @@ function NotificationBanner({
       <button
         type="button"
         aria-label="Close notification"
-        onClick={() => dismiss(item.id)}
+        onClick={() => dismiss(item.key)}
         className="absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded-md text-orange-900 hover:bg-orange-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         <X size={20} aria-hidden="true" />
@@ -73,7 +114,7 @@ export default function LiveNotificationBanner() {
   const uid = user?.uid;
   const { notifications, loaded, markRead } = useNotifications(uid);
   const seen = useRef<Set<string> | null>(null);
-  const [banners, setBanners] = useState<AppNotification[]>([]);
+  const [banners, setBanners] = useState<Banner[]>([]);
 
   useEffect(() => {
     seen.current = null;
@@ -94,17 +135,21 @@ export default function LiveNotificationBanner() {
         item.readAt === null,
     );
     notifications.forEach((item) => seen.current!.add(item.id));
-    if (added.length) setBanners((current) => [...current, ...added]);
+    if (added.length)
+      setBanners((current) => [...current, ...toBanners(added)]);
   }, [uid, loaded, notifications]);
 
-  const dismiss = useCallback((id: string) => {
-    setBanners((current) => current.filter((item) => item.id !== id));
+  const dismiss = useCallback((key: string) => {
+    setBanners((current) => current.filter((item) => item.key !== key));
   }, []);
 
-  const open = (id: string) => {
-    dismiss(id);
-    void markRead(id).catch((error: unknown) =>
-      console.error("Unable to acknowledge grade notification", error),
+  const open = (item: Banner) => {
+    dismiss(item.key);
+    item.ids.forEach(
+      (id) =>
+        void markRead(id).catch((error: unknown) =>
+          console.error("Unable to acknowledge notification", error),
+        ),
     );
   };
 
@@ -118,7 +163,7 @@ export default function LiveNotificationBanner() {
     >
       {banners.map((item) => (
         <NotificationBanner
-          key={item.id}
+          key={item.key}
           item={item}
           dismiss={dismiss}
           open={open}
