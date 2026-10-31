@@ -27,6 +27,8 @@ interface HeaderProps {
   referenceSheet?: ReferenceSheet | null;
   /** Called with the seconds left whenever the countdown moves. */
   onTimeChange?: (secondsRemaining: number) => void;
+  /** Whether the student's answers and time left are being saved. */
+  progressSaved?: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -37,6 +39,7 @@ const Header: React.FC<HeaderProps> = ({
   referenceSheetEnabled = false,
   referenceSheet,
   onTimeChange,
+  progressSaved = false,
 }) => {
   const [showReferenceSheet, setShowReferenceSheet] = useState(false);
   const [showReferenceSheetError, setShowReferenceSheetError] =
@@ -161,7 +164,9 @@ const Header: React.FC<HeaderProps> = ({
           onClick={(e) => {
             if (
               !confirm(
-                "Exit the test? All progress will be lost. FiveHive does not currently save your progress.",
+                progressSaved
+                  ? "Exit the test? Your answers and time left are saved every few seconds, so you can pick up where you left off from your dashboard."
+                  : "Exit the test? All progress will be lost.",
               )
             ) {
               e.preventDefault();

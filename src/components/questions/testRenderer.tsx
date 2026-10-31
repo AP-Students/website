@@ -23,6 +23,8 @@ import { reportMcqTest } from "@/lib/gamification/reportActivity";
 import { auth } from "@/lib/firebase";
 import { useTestAutosave } from "@/components/hooks/useTestAutosave";
 import type { McqTestState } from "@/types/dashboard";
+import type { Timestamp } from "firebase/firestore";
+import { toast } from "sonner";
 import clsx from "clsx";
 import { cn } from "@/lib/utils";
 import "katex/dist/katex.min.css";
@@ -46,6 +48,10 @@ interface Props {
   attemptSource?: { subject: string; unitId: string; testId: string };
   /** Question to open on (0-based); out-of-range values open the first. */
   initialQuestionIndex?: number;
+  /** A save to pick the test back up from, already checked with `resumeTest`. */
+  resume?: { state: McqTestState; startedAt: Timestamp };
+  /** False when an earlier save couldn't be read: saving now could overwrite it. */
+  saveProgress?: boolean;
 }
 
 const initialQuestions: QuestionFormat[] = [
@@ -103,25 +109,31 @@ export default function DigitalTestingPage({
   referenceSheet,
   attemptSource,
   initialQuestionIndex = 0,
+  resume,
+  saveProgress = true,
 }: Props) {
   const [questions, setQuestions] = useState<QuestionFormat[]>(
     inputQuestions || initialQuestions,
   );
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(
-    initialQuestionIndex > 0 && initialQuestionIndex < questions.length
-      ? initialQuestionIndex
-      : 0,
+    resume
+      ? resume.state.currentIndex
+      : initialQuestionIndex > 0 && initialQuestionIndex < questions.length
+        ? initialQuestionIndex
+        : 0,
   );
   const [selectedAnswers, setSelectedAnswers] = useState<
     Record<number, string[]>
-  >({});
+  >(resume?.state.answers ?? {});
+  // A test picked back up counts down from the time it had left.
+  const startingSeconds = resume?.state.secondsRemaining ?? time * 60;
 
   // The test as it stands, for the autosave. Kept in a ref so the countdown
   // updating it every second doesn't re-render the test.
   const progress = useRef<McqTestState>({
     answers: selectedAnswers,
     currentIndex: currentQuestionIndex,
-    secondsRemaining: time * 60,
+    secondsRemaining: startingSeconds,
   });
   useEffect(() => {
     progress.current = {
@@ -133,11 +145,26 @@ export default function DigitalTestingPage({
   const recordTimeLeft = useCallback((secondsRemaining: number) => {
     progress.current = { ...progress.current, secondsRemaining };
   }, []);
+  const savingProgress = !adminMode && saveProgress && !!attemptSource;
   const autosave = useTestAutosave(
-    adminMode ? undefined : attemptSource,
+    savingProgress ? attemptSource : undefined,
     testName,
     progress,
+    resume?.startedAt,
   );
+
+  // A test that opens where the student left it says so, so the answers
+  // already filled in and the shorter timer aren't a surprise.
+  useEffect(() => {
+    if (!resume) return;
+    const { currentIndex, secondsRemaining } = resume.state;
+    toast.info(
+      secondsRemaining > 0
+        ? `Picked up where you left off: question ${currentIndex + 1}, ${Math.max(1, Math.round(secondsRemaining / 60))} min left.`
+        : "Time ran out on this test, so your saved answers were submitted.",
+      { id: "test-resumed" },
+    );
+  }, [resume]);
 
   const [contentHighlights, setContentHighlights] = useState<Highlight[][]>(
     initialQuestions.map(() => []),
@@ -240,8 +267,9 @@ export default function DigitalTestingPage({
         <Header
           setSubmitted={handleSetSubmitted}
           submitted={submitted}
-          timeRemaining={time * 60}
+          timeRemaining={startingSeconds}
           onTimeChange={recordTimeLeft}
+          progressSaved={savingProgress && auth.currentUser !== null}
           directions={directions}
           referenceSheetEnabled={referenceSheetEnabled}
           referenceSheet={referenceSheet}

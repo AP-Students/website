@@ -7,6 +7,7 @@ import {
   AUTOSAVE_EVERY_MS,
   createTestAutosave,
   mcqTestProgress,
+  resumeTest,
   testSaveId,
   type Schedule,
 } from "../src/lib/dashboard/testAutosave.ts";
@@ -16,7 +17,7 @@ import type { McqTestState } from "../src/types/dashboard.ts";
  * An autosave whose clock is driven by hand, recording every write it makes
  * in order, the way Firestore would apply them.
  */
-function fakeAutosave(initial: McqTestState) {
+function fakeAutosave(initial: McqTestState, resumed = false) {
   let state = initial;
   const writes: ({ saved: McqTestState } | "removed")[] = [];
   let tick = () => undefined as void;
@@ -38,6 +39,7 @@ function fakeAutosave(initial: McqTestState) {
       writes.push("removed");
     },
     schedule,
+    resumed,
   });
   return {
     autosave,
@@ -259,4 +261,102 @@ test("tests with the same id in different units never share a save", () => {
     testSaveId({ subject: "biology", unitId: "u1", testId: "t" }),
     unit1,
   );
+});
+
+test("a test picked back up saves its time left straight away", () => {
+  const session = fakeAutosave(
+    { answers: { 0: ["B"] }, currentIndex: 3, secondsRemaining: 1_200 },
+    true,
+  );
+  session.set({ secondsRemaining: 1_195 });
+  session.tick();
+  assert.deepEqual(session.writes, [
+    {
+      saved: {
+        answers: { 0: ["B"] },
+        currentIndex: 3,
+        secondsRemaining: 1_195,
+      },
+    },
+  ]);
+});
+
+/** A four-question test with options A-D, and 45 minutes. */
+const fourQuestions = {
+  questions: Array.from({ length: 4 }, () => ({
+    options: ["A", "B", "C", "D"].map((id) => ({ id })),
+  })),
+  seconds: 2_700,
+};
+
+test("a saved test opens on the same question, with its answers and time left", () => {
+  // As Firestore hands it back: map keys are strings.
+  const fromFirestore = JSON.parse(
+    JSON.stringify({
+      answers: { 0: ["B"], 2: ["A", "C"] },
+      currentIndex: 2,
+      secondsRemaining: 1_740,
+    }),
+  ) as McqTestState;
+
+  assert.deepEqual(resumeTest(fromFirestore, fourQuestions), {
+    answers: { 0: ["B"], 2: ["A", "C"] },
+    currentIndex: 2,
+    secondsRemaining: 1_740,
+  });
+});
+
+test("with no save there's nothing to pick up", () => {
+  assert.equal(resumeTest(undefined, fourQuestions), null);
+  assert.equal(resumeTest(opened, { questions: [], seconds: 2_700 }), null);
+});
+
+test("answers that no longer match the test are dropped, and the question stays in range", () => {
+  // The test lost its last two questions and option D after this was saved.
+  const edited = {
+    questions: Array.from({ length: 2 }, () => ({
+      options: ["A", "B", "C"].map((id) => ({ id })),
+    })),
+    seconds: 2_700,
+  };
+  const resumed = resumeTest(
+    {
+      answers: { 0: ["D"], 1: ["A", "D"], 3: ["B"] },
+      currentIndex: 3,
+      secondsRemaining: 900,
+    },
+    edited,
+  );
+  assert.deepEqual(resumed, {
+    answers: { 1: ["A"] },
+    currentIndex: 1,
+    secondsRemaining: 900,
+  });
+});
+
+test("the time left never goes over the test's limit, or below zero", () => {
+  const shortened = { ...fourQuestions, seconds: 600 };
+  assert.equal(
+    resumeTest({ ...opened, secondsRemaining: 1_800 }, shortened)
+      ?.secondsRemaining,
+    600,
+  );
+  assert.equal(
+    resumeTest({ ...opened, secondsRemaining: -5 }, fourQuestions)
+      ?.secondsRemaining,
+    0,
+  );
+});
+
+test("a question asked for in the link wins over the saved one", () => {
+  const saved = {
+    answers: { 0: ["B"] },
+    currentIndex: 2,
+    secondsRemaining: 900,
+  };
+  assert.equal(resumeTest(saved, fourQuestions, 0)?.currentIndex, 0);
+  // No question in the link reads as -1; a bad one is ignored.
+  assert.equal(resumeTest(saved, fourQuestions, -1)?.currentIndex, 2);
+  assert.equal(resumeTest(saved, fourQuestions, Number.NaN)?.currentIndex, 2);
+  assert.equal(resumeTest(saved, fourQuestions, 9)?.currentIndex, 2);
 });

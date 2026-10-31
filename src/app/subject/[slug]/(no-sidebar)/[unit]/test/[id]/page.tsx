@@ -3,7 +3,7 @@
 import TestRenderer from "@/components/questions/testRenderer";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   type ReferenceSheet,
@@ -13,6 +13,8 @@ import {
 import { type QuestionFormat } from "@/types/questions";
 import usePathname from "@/components/client/pathname";
 import type { CalculatorPermission, CalculatorType } from "@/lib/calculator";
+import { useSavedTest } from "@/components/hooks/useSavedTest";
+import { resumeTest } from "@/lib/dashboard/testAutosave";
 
 const Page = () => {
   const pathname = usePathname() ?? "";
@@ -124,9 +126,27 @@ const Page = () => {
     });
   }, [subject, unitId, testId]);
 
+  // A test the student started and didn't submit opens where they left it.
+  const source = useMemo(
+    () => (unitId ? { subject, unitId, testId } : undefined),
+    [subject, unitId, testId],
+  );
+  const saved = useSavedTest(source);
+  const resume = useMemo(() => {
+    if (saved.status !== "found" || !questions) return undefined;
+    const { state, startedAt } = saved.save;
+    if (!("currentIndex" in state)) return undefined;
+    const resumed = resumeTest(
+      state,
+      { questions, seconds: time * 60 },
+      startQuestionIndex,
+    );
+    return resumed ? { state: resumed, startedAt } : undefined;
+  }, [saved, questions, time, startQuestionIndex]);
+
   // Render TestRenderer only for clients without admin privileges
 
-  if (questions === null) {
+  if (questions === null || saved.status === "loading") {
     return <div>Loading...</div>;
   }
 
@@ -146,6 +166,8 @@ const Page = () => {
         referenceSheet={referenceSheet}
         attemptSource={{ subject, unitId: unitId!, testId }}
         initialQuestionIndex={startQuestionIndex}
+        resume={resume}
+        saveProgress={saved.status !== "failed"}
       />
     </div>
   );
