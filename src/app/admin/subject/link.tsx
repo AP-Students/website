@@ -3,7 +3,7 @@ import { startTransition } from "react";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, UserRoundCog } from "lucide-react";
-import { useIsBlocked } from "@/app/admin/subject/navigation-block";
+import { useConfirmLeave } from "@/app/admin/subject/navigation-block";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +17,7 @@ export function Link({
   ...rest
 }: Parameters<typeof NextLink>[0]) {
   const router = useRouter();
-  const isBlocked = useIsBlocked();
+  const confirmLeave = useConfirmLeave();
 
   return (
     <NextLink
@@ -25,25 +25,22 @@ export function Link({
       onClick={(e) => {
         e.preventDefault();
 
-        // Cancel navigation
-        if (
-          isBlocked &&
-          !window.confirm(
-            "Do you really want to leave and discard your unsaved changes?",
-          )
-        ) {
-          return;
-        }
-
-        startTransition(() => {
-          // Wont happen because href will always cast to a string
-          /* eslint-disable-next-line */
-          const url = href.toString();
-          if (replace) {
-            router.replace(url);
-          } else {
-            router.push(url);
+        void confirmLeave().then((leave) => {
+          // Cancel navigation
+          if (!leave) {
+            return;
           }
+
+          startTransition(() => {
+            // Wont happen because href will always cast to a string
+            /* eslint-disable-next-line */
+            const url = href.toString();
+            if (replace) {
+              router.replace(url);
+            } else {
+              router.push(url);
+            }
+          });
         });
       }}
       {...rest}

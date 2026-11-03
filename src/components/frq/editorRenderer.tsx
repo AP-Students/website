@@ -49,14 +49,13 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { Clock3, Plus, Save } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useAutosave } from "@/components/hooks/useAutosave";
 
 interface FRQEditorRendererProps {
   frqFound: boolean;
   frqTemplate: FRQTemplate | null;
 }
-
-type SaveState = "idle" | "saving" | "saved" | "error";
 
 /**
  * Firestore rejects `undefined`, and omitting a key from `updateDoc` leaves
@@ -152,12 +151,6 @@ const FRQEditorRenderer = ({
     ),
   );
 
-  const [saveState, setSaveState] = useState<SaveState>("idle");
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [savedSignature, setSavedSignature] = useState(() =>
-    JSON.stringify(buildTemplatePayload(initialState)),
-  );
-
   const currentPayload = useMemo(
     () =>
       buildTemplatePayload({
@@ -188,10 +181,51 @@ const FRQEditorRenderer = ({
     ],
   );
 
-  const hasUnsavedChanges = useMemo(
-    () => JSON.stringify(currentPayload) !== savedSignature,
-    [currentPayload, savedSignature],
-  );
+  // Writes the payload it is handed, so autosave records exactly what reached
+  // Firestore and an edit made while the save was in flight stays unsaved.
+  const saveTemplate = async (
+    payload: ReturnType<typeof buildTemplatePayload>,
+  ) => {
+    if (!frqTemplate?.id) {
+      throw new Error("This FRQ has no document to save to.");
+    }
+
+    try {
+      const frqRef = getFrqTemplateDocRef(
+        frqTemplate.subject,
+        frqTemplate.unitId,
+        frqTemplate.id,
+      );
+
+      // Title and visibility are both editable here, and the subject page's
+      // listing shows both, so the save carries the listing along with it.
+      await writeFrqWithListing(
+        frqTemplate.subject,
+        frqTemplate.unitId,
+        frqTemplate.id,
+        toFrqListingEntry({
+          id: frqTemplate.id,
+          title: payload.title,
+          isPublic: payload.isPublic,
+        }),
+        (transaction) => {
+          transaction.update(frqRef, toFirestoreUpdate(payload));
+        },
+      );
+    } catch (error) {
+      // The previous version swallowed this entirely, which is why a
+      // permission-denied rule looked identical to a successful save.
+      console.error("Error saving FRQ template:", error);
+      throw error;
+    }
+  };
+
+  const autosave = useAutosave({
+    value: currentPayload,
+    save: saveTemplate,
+    enabled: frqFound && frqTemplate !== null,
+  });
+  const hasUnsavedChanges = autosave.hasUnsavedChanges;
 
   useEffect(() => {
     if (!hasUnsavedChanges) {
@@ -302,57 +336,6 @@ const FRQEditorRenderer = ({
     });
   };
 
-  const saveTemplate = useCallback(async () => {
-    if (!frqTemplate?.id) {
-      setSaveState("error");
-      setSaveError("This FRQ has no document to save to.");
-      return;
-    }
-
-    setSaveState("saving");
-    setSaveError(null);
-
-    try {
-      const frqRef = getFrqTemplateDocRef(
-        frqTemplate.subject,
-        frqTemplate.unitId,
-        frqTemplate.id,
-      );
-
-      // Title and visibility are both editable here, and the subject page's
-      // listing shows both, so the save carries the listing along with it.
-      await writeFrqWithListing(
-        frqTemplate.subject,
-        frqTemplate.unitId,
-        frqTemplate.id,
-        toFrqListingEntry({
-          id: frqTemplate.id,
-          title: currentPayload.title,
-          isPublic: currentPayload.isPublic,
-        }),
-        (transaction) => {
-          transaction.update(frqRef, toFirestoreUpdate(currentPayload));
-        },
-      );
-
-      // Re-baseline against exactly what was written, so an edit made while the
-      // save was in flight still registers as unsaved.
-      setSavedSignature(JSON.stringify(currentPayload));
-      setSaveState("saved");
-    } catch (error) {
-      // The previous version swallowed this entirely, which is why a
-      // permission-denied rule looked identical to a successful save.
-      console.error("Error saving FRQ template:", error);
-
-      setSaveState("error");
-      setSaveError(
-        error instanceof Error
-          ? error.message
-          : "Unknown error while saving this FRQ.",
-      );
-    }
-  }, [currentPayload, frqTemplate]);
-
   const partLocationIndex = useMemo(
     () => buildPartLocationIndex(questions),
     [questions],
@@ -373,7 +356,7 @@ const FRQEditorRenderer = ({
       {/* Arms the confirm inside the `Link` below. Without it the back button
           would discard an unsaved edit silently, which is the whole reason the
           MCQ test editor pairs the two. */}
-      {hasUnsavedChanges && <Blocker />}
+      {hasUnsavedChanges && <Blocker onLeave={autosave.flush} />}
 
       {/* Columns are sized to their content rather than split into equal
           thirds: a fixed third no longer fits the back links beside the points
@@ -412,27 +395,16 @@ const FRQEditorRenderer = ({
         </div>
 
         <div className="flex items-center justify-end gap-3">
-          {saveState === "saved" && !hasUnsavedChanges && (
-            <span className="text-sm text-green-700">Saved</span>
-          )}
-
-          {saveState === "error" && (
-            <span
-              className="max-w-64 truncate text-sm text-destructive"
-              title={saveError ?? undefined}
-            >
-              {saveError}
-            </span>
-          )}
-
+          {/* The save status lives in the footer, which already reported it;
+              this header has no room left on a phone. */}
           <Button
             type="button"
-            onClick={() => void saveTemplate()}
-            disabled={saveState === "saving" || !hasUnsavedChanges}
+            onClick={() => void autosave.saveNow()}
+            disabled={autosave.status === "saving" || !hasUnsavedChanges}
             title={hasUnsavedChanges ? "Save this FRQ" : "No changes to save"}
           >
             <Save className="mr-2 size-4" />
-            {saveState === "saving" ? "Saving..." : "Save Changes"}
+            {autosave.status === "saving" ? "Saving..." : "Save Changes"}
           </Button>
         </div>
       </header>
@@ -692,7 +664,9 @@ const FRQEditorRenderer = ({
         )}
         frqName={title.trim() || "Untitled FRQ"}
         visibility={isPublic ? "public" : "private"}
-        hasUnsavedChanges={hasUnsavedChanges}
+        saveStatus={autosave.status}
+        saveError={autosave.error}
+        onRetrySave={() => void autosave.saveNow()}
         onSelectPart={selectPart}
       />
 

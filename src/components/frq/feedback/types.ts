@@ -1,3 +1,4 @@
+import type { DirectionsPlacement } from "@/lib/frq/studentView";
 import type { FRQAnswerType } from "@/types/frq";
 import type { QuestionFile, QuestionInput } from "@/types/questions";
 
@@ -77,4 +78,9 @@ export interface FRQFeedbackDocument {
   feedback: FRQFeedback;
   response: FRQResponse;
   frqs: FRQQuestion[];
+  /**
+   * Where each page shows `description`, decided once for the whole exam by
+   * the rule the test page uses, so feedback reads the way the test did.
+   */
+  directionsPlacement: DirectionsPlacement;
 }

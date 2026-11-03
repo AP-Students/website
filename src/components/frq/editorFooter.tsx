@@ -1,10 +1,12 @@
 "use client";
 
+import { AutosaveStatus } from "@/app/admin/subject/autosave-status";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import type { AutosaveStatus as AutosaveStatusValue } from "@/lib/autosave";
 import { ChevronUp } from "lucide-react";
 import { useState } from "react";
 
@@ -19,7 +21,9 @@ interface FRQEditorFooterProps {
   parts: FRQPartSummary[];
   frqName: string;
   visibility: FRQVisibility;
-  hasUnsavedChanges: boolean;
+  saveStatus: AutosaveStatusValue;
+  saveError: string | null;
+  onRetrySave: () => void;
   /**
    * Reveals and scrolls to a part. The editor owns this rather than the footer
    * because a part sits inside its question's accordion panel: while that
@@ -38,7 +42,9 @@ const FRQEditorFooter = ({
   parts,
   frqName,
   visibility,
-  hasUnsavedChanges,
+  saveStatus,
+  saveError,
+  onRetrySave,
   onSelectPart,
 }: FRQEditorFooterProps) => {
   // Controlled so picking a part closes the panel instead of leaving it parked
@@ -96,13 +102,12 @@ const FRQEditorFooter = ({
         </Popover>
       </div>
 
-      <div className="justify-self-end text-sm">
-        {hasUnsavedChanges ? (
-          <span className="font-medium text-amber-600">Unsaved changes</span>
-        ) : (
-          <span className="text-muted-foreground">All changes saved</span>
-        )}
-      </div>
+      <AutosaveStatus
+        status={saveStatus}
+        error={saveError}
+        onRetry={onRetrySave}
+        className="justify-self-end"
+      />
     </footer>
   );
 };

@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
 import katex from "katex";
 import type { QuestionFile, QuestionInput } from "@/types/questions";
+// Imported where the KaTeX markup is produced, not by the pages that happen to
+// render it. Without this sheet KaTeX's MathML copy shows next to the visual
+// one ("aa", "R(t)R(t)"), and the FRQ grading and feedback pages only had it
+// when the visitor had opened a subject page earlier in the session.
+import "katex/dist/katex.min.css";
 import "../../../styles/katexStyling.css";
 import { decodeEntities, katexMacros } from "../Renderer";
 
