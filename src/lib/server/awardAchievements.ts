@@ -10,6 +10,11 @@ import {
 import { dashboardDocumentPaths } from "../../types/dashboard.ts";
 import { createNotification } from "./createNotification.ts";
 
+export interface LevelTransition {
+  fromLevel: number;
+  toLevel: number;
+}
+
 /**
  * Call after all other transaction reads and before any writes, using the
  * activity's next trusted stats. The earned document is the durable receipt;
@@ -20,20 +25,43 @@ export async function awardAchievements(
   db: Firestore,
   uid: string,
   nextStats: Record<string, unknown>,
+  levelTransition?: LevelTransition,
 ): Promise<string[]> {
   const eligible = checkAchievements(
     readAchievementStats(nextStats),
     new Set(),
   );
-  if (!eligible.length) return [];
+  const levelReached =
+    levelTransition &&
+    Number.isInteger(levelTransition.fromLevel) &&
+    Number.isInteger(levelTransition.toLevel) &&
+    levelTransition.toLevel > levelTransition.fromLevel
+      ? levelTransition.toLevel
+      : null;
+  if (!eligible.length && levelReached === null) return [];
   const refs = eligible.map((achievement) => ({
     earned: db.doc(`users/${uid}/achievements/${achievement.id}`),
     notification: db.doc(
       dashboardDocumentPaths.notification(uid, `achievement_${achievement.id}`),
     ),
   }));
+  const levelNotifications =
+    levelReached === null
+      ? []
+      : [
+          {
+            level: levelReached,
+            notification: db.doc(
+              dashboardDocumentPaths.notification(
+                uid,
+                `level_up_${levelReached}`,
+              ),
+            ),
+          },
+        ];
   const snapshots = await transaction.getAll(
     ...refs.flatMap((ref) => [ref.earned, ref.notification]),
+    ...levelNotifications.map((ref) => ref.notification),
   );
   const unlocked: string[] = [];
   eligible.forEach((achievement, index) => {
@@ -53,6 +81,16 @@ export async function awardAchievements(
       });
     }
     unlocked.push(achievement.id);
+  });
+  const levelOffset = refs.length * 2;
+  levelNotifications.forEach(({ level, notification }, index) => {
+    if (snapshots[levelOffset + index]?.exists) return;
+    createNotification(transaction, notification, {
+      type: "level_up",
+      title: "Level up!",
+      body: `You reached level ${level}. Keep learning to reach the next one.`,
+      href: "/dashboard",
+    });
   });
   return unlocked;
 }

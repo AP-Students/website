@@ -332,10 +332,13 @@ export async function awardFrqGrade(
     const next = addXp(progress.xp, xpAwarded);
     const newlyUnlocked =
       xpAwarded > 0
-        ? await awardAchievements(transaction, db, studentId, {
-            ...statsData,
-            level: next.level,
-          })
+        ? await awardAchievements(
+            transaction,
+            db,
+            studentId,
+            { ...statsData, level: next.level },
+            { fromLevel: progress.level, toLevel: next.level },
+          )
         : [];
     if (shouldNotify) {
       createNotification(transaction, notificationRef, {

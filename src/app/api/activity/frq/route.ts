@@ -229,10 +229,19 @@ export async function POST(request: NextRequest) {
         (paysSubmissionXp ? xpConfig.frqSubmission : 0) +
         streakXp(streak, next, xpConfig);
       const progress = addXp(totalXp, xpAwarded);
-      const newlyUnlocked = await awardAchievements(transaction, adminDb, uid, {
-        ...statsData, level: progress.level, longestStreak: next.longestStreak,
-        frqsSubmitted: nonNegativeNumber(statsData?.frqsSubmitted, 0) + 1,
-      });
+      const newlyUnlocked = await awardAchievements(
+        transaction,
+        adminDb,
+        uid,
+        {
+          ...statsData,
+          level: progress.level,
+          longestStreak: next.longestStreak,
+          frqsSubmitted:
+            nonNegativeNumber(statsData?.frqsSubmitted, 0) + 1,
+        },
+        { fromLevel: addXp(totalXp, 0).level, toLevel: progress.level },
+      );
 
       if (paysSubmissionXp) {
         transaction.create(xpAwardRef, {

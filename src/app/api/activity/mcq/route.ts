@@ -160,12 +160,26 @@ export async function POST(request: NextRequest) {
         ? statsData.perSubject as Record<string, Record<string, unknown>>
         : {};
       const subjectProgress = perSubject[subject] ?? {};
-      const newlyUnlocked = await awardAchievements(transaction, adminDb, uid, {
-        ...statsData, level: progress.level, longestStreak: streak.longestStreak,
-        mcqTestsCompleted: (typeof statsData.mcqTestsCompleted === "number" ? statsData.mcqTestsCompleted : 0) + 1,
-        problemsSolved: (typeof statsData.problemsSolved === "number" ? statsData.problemsSolved : 0) + correct,
-        subjectsCompleted,
-      });
+      const newlyUnlocked = await awardAchievements(
+        transaction,
+        adminDb,
+        uid,
+        {
+          ...statsData,
+          level: progress.level,
+          longestStreak: streak.longestStreak,
+          mcqTestsCompleted:
+            (typeof statsData.mcqTestsCompleted === "number"
+              ? statsData.mcqTestsCompleted
+              : 0) + 1,
+          problemsSolved:
+            (typeof statsData.problemsSolved === "number"
+              ? statsData.problemsSolved
+              : 0) + correct,
+          subjectsCompleted,
+        },
+        { fromLevel: addXp(totalXp, 0).level, toLevel: progress.level },
+      );
       completion.write();
 
       transaction.set(eventRef, {
