@@ -260,6 +260,9 @@ export async function POST(request: NextRequest) {
         dayKey: day,
         xpAwarded,
         gradeStatus,
+        ...(gradeStatus === "graded" && typeof submission.score === "string"
+          ? { frqScore: submission.score }
+          : {}),
       });
       transaction.set(
         statsRef,

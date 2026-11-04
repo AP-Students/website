@@ -49,6 +49,8 @@ export interface ActivityEvent {
   dayKey: string; // "2026-09-20", computed in the USER's timezone
   xpAwarded: number;
   gradeStatus: GradeStatus;
+  /** The saved FRQ score, e.g. "4/6". */
+  frqScore?: string;
   score?: { correct: number; total: number };
   questions?: { index: number; topic: string; correct: boolean }[]; // mcq only
 }

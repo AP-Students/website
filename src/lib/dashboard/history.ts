@@ -56,7 +56,10 @@ export function toHistoryRow(event: ActivityEvent): HistoryRow {
   let action = "Open reading";
 
   if (event.type === "frq") {
-    status = FRQ_STATUS[event.gradeStatus];
+    status =
+      event.gradeStatus === "graded" && event.frqScore
+        ? `${FRQ_STATUS[event.gradeStatus]} · ${event.frqScore}`
+        : FRQ_STATUS[event.gradeStatus];
     // A graded FRQ's id is its submission's, which is also the id of its
     // result in graded-frqs or self-graded-frqs, where the feedback page
     // looks it up.

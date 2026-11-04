@@ -40,7 +40,10 @@ function describe(event: ActivityEvent) {
   if (event.type === "frq") {
     return {
       item: event.label,
-      detail: FRQ_STATUS[event.gradeStatus],
+      detail:
+        event.gradeStatus === "graded" && event.frqScore
+          ? `${FRQ_STATUS[event.gradeStatus]} · ${event.frqScore}`
+          : FRQ_STATUS[event.gradeStatus],
       action: "View FRQ",
     };
   }
