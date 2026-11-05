@@ -336,7 +336,7 @@ export async function awardFrqGrade(
             transaction,
             db,
             studentId,
-            { ...statsData, level: next.level },
+            { ...statsData, xp: next.xp, level: next.level },
             { fromLevel: progress.level, toLevel: next.level },
           )
         : [];

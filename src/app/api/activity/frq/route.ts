@@ -235,8 +235,10 @@ export async function POST(request: NextRequest) {
         uid,
         {
           ...statsData,
+          xp: progress.xp,
           level: progress.level,
           longestStreak: next.longestStreak,
+          currentStreak: next.currentStreak,
           frqsSubmitted:
             nonNegativeNumber(statsData?.frqsSubmitted, 0) + 1,
         },

@@ -166,8 +166,10 @@ export async function POST(request: NextRequest) {
         uid,
         {
           ...statsData,
+          xp: progress.xp,
           level: progress.level,
           longestStreak: streak.longestStreak,
+          currentStreak: streak.currentStreak,
           mcqTestsCompleted:
             (typeof statsData.mcqTestsCompleted === "number"
               ? statsData.mcqTestsCompleted

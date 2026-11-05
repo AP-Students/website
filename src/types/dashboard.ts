@@ -107,9 +107,10 @@ export interface ActivityCalendar {
   updatedAt: Timestamp;
 }
 
-/** World-readable mirror of a user's stats. No email, no role, ever. */
+/** Server-written profile projection. Never includes email or private activity. */
 export interface PublicProfile {
   uid: string;
+  isPublic: boolean;
   displayName: string;
   photoURL?: string;
   xp: number;
@@ -117,8 +118,9 @@ export interface PublicProfile {
   currentStreak: number;
   longestStreak: number;
   problemsSolved: number;
+  subjectsCompleted: number;
   achievementCount: number;
-  updatedAt: Timestamp;
+    achievements: Array<{ id: string; title: string }>;
 }
 
 export type NotificationType = "level_up" | "achievement" | "frq_graded";

@@ -9,6 +9,7 @@ import {
 } from "../achievements/checkAchievements.ts";
 import { dashboardDocumentPaths } from "../../types/dashboard.ts";
 import { createNotification } from "./createNotification.ts";
+import { buildPublicProfile } from "./publicProfile.ts";
 
 export interface LevelTransition {
   fromLevel: number;
@@ -38,7 +39,6 @@ export async function awardAchievements(
     levelTransition.toLevel > levelTransition.fromLevel
       ? levelTransition.toLevel
       : null;
-  if (!eligible.length && levelReached === null) return [];
   const refs = eligible.map((achievement) => ({
     earned: db.doc(`users/${uid}/achievements/${achievement.id}`),
     notification: db.doc(
@@ -59,10 +59,18 @@ export async function awardAchievements(
             ),
           },
         ];
-  const snapshots = await transaction.getAll(
-    ...refs.flatMap((ref) => [ref.earned, ref.notification]),
-    ...levelNotifications.map((ref) => ref.notification),
-  );
+  const userRef = db.doc(`users/${uid}`);
+  const profileRef = db.doc(`profiles/${uid}`);
+  const achievementsQuery = db.collection(`users/${uid}/achievements`);
+  const [snapshots, earnedAchievements] = await Promise.all([
+    transaction.getAll(
+      ...refs.flatMap((ref) => [ref.earned, ref.notification]),
+      userRef,
+      profileRef,
+      ...levelNotifications.map((ref) => ref.notification),
+    ),
+    transaction.get(achievementsQuery),
+  ]);
   const unlocked: string[] = [];
   eligible.forEach((achievement, index) => {
     if (snapshots[index * 2]?.exists) return;
@@ -82,7 +90,7 @@ export async function awardAchievements(
     }
     unlocked.push(achievement.id);
   });
-  const levelOffset = refs.length * 2;
+  const levelOffset = refs.length * 2 + 2;
   levelNotifications.forEach(({ level, notification }, index) => {
     if (snapshots[levelOffset + index]?.exists) return;
     createNotification(transaction, notification, {
@@ -92,5 +100,25 @@ export async function awardAchievements(
       href: "/dashboard",
     });
   });
+  transaction.set(
+    profileRef,
+    buildPublicProfile(
+      uid,
+      snapshots[refs.length * 2]?.data() as
+        | Record<string, unknown>
+        | undefined,
+      nextStats,
+      [
+        ...earnedAchievements.docs.map((doc) => ({
+          id: doc.id,
+          title: String(doc.data().title ?? doc.id),
+        })),
+        ...eligible
+          .filter((achievement) => unlocked.includes(achievement.id))
+          .map(({ id, title }) => ({ id, title })),
+      ],
+      snapshots[refs.length * 2 + 1]?.data()?.isPublic === true,
+    ),
+  );
   return unlocked;
 }

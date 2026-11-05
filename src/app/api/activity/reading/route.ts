@@ -172,6 +172,7 @@ export async function POST(request: NextRequest) {
         uid,
         {
           ...statsData,
+          xp: progress.xp,
           level: progress.level,
           readingsCompleted:
             nonNegativeNumber(statsData?.readingsCompleted, 0) + 1,
