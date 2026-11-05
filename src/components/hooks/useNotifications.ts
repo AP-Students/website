@@ -9,6 +9,7 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  Timestamp,
   updateDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -52,8 +53,10 @@ export function useNotifications(uid: string | undefined) {
 
   const markRead = async (id: string) => {
     if (!uid) return;
+    const expiresAt = Timestamp.fromMillis(Date.now() + 48 * 60 * 60 * 1000);
     await updateDoc(doc(db, dashboardDocumentPaths.notification(uid, id)), {
       readAt: serverTimestamp(),
+      expiresAt,
     });
   };
   return {
