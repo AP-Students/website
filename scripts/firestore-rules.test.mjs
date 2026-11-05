@@ -42,13 +42,13 @@ function token(uid) {
   })}.`;
 }
 async function request(suffix, uid, method = "GET", body) {
+  const headers = { "Content-Type": "application/json" };
+  if (uid != null)
+    headers.Authorization = `Bearer ${uid === "server" ? "owner" : token(uid)}`;
   return fetch(`${base}${suffix}`, {
     method,
     signal: AbortSignal.timeout(15_000),
-    headers: {
-      Authorization: `Bearer ${uid === "server" ? "owner" : token(uid)}`,
-      "Content-Type": "application/json",
-    },
+    headers,
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
 }
@@ -118,6 +118,8 @@ before(async () => {
       "notifications/student/items/notice",
       { title: "Earned", readAt: null, expiresAt: null },
     ],
+    ["profiles/student", { uid: "student", isPublic: false }],
+    ["profiles/public", { uid: "public", isPublic: true }],
     ["graded-frqs/attempt", savedGrade],
     [
       "self-graded-frqs/self",
@@ -386,9 +388,48 @@ check(
     }
     await status(await doc(path, "student", "DELETE"), 403);
     await status(await doc(`${path}-new`, "student", "PATCH", original), 403);
-    await status(await commit("student", path, original, ["readAt"]), 200);
+    const validExpiry = new Date(Date.now() + 48 * 60 * 60 * 1000);
+    await status(
+      await commit(
+        "student",
+        path,
+        { ...original, expiresAt: validExpiry },
+        ["readAt"],
+      ),
+      200,
+    );
+    const unreadPath = "notifications/student/items/invalid-expiry";
+    await status(await doc(unreadPath, "server", "PATCH", original), 200);
+    for (const hours of [46, 50]) {
+      await status(
+        await commit(
+          "student",
+          unreadPath,
+          {
+            ...original,
+            expiresAt: new Date(Date.now() + hours * 60 * 60 * 1000),
+          },
+          ["readAt"],
+        ),
+        403,
+      );
+    }
   },
 );
+check("public profile reads follow visibility and clients cannot write projections", async () => {
+  await status(await doc("profiles/public", null), 200);
+  await status(await doc("profiles/student", null), 403);
+  await status(await doc("profiles/student", "student"), 200);
+  await status(await doc("profiles/student", "other"), 403);
+  await status(
+    await doc("profiles/student", "student", "PATCH", {
+      uid: "student",
+      isPublic: true,
+    }),
+    403,
+  );
+  await status(await doc("profiles/public", "student", "DELETE"), 403);
+});
 check(
   "chapter progress saves its dashboard listing with the server's time, never an XP receipt",
   async () => {

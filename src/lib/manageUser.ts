@@ -213,6 +213,15 @@ export async function deleteAccount(): Promise<void> {
   const userDocRef = doc(db, "users", user.uid);
 
   try {
+    const response = await fetch("/api/profile/visibility", {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${await user.getIdToken()}`,
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`Unable to remove public profile (${response.status})`);
+    }
     // Delete Firestore document first
     await deleteDoc(userDocRef);
     // Then delete Firebase user

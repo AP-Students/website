@@ -17,10 +17,11 @@ import {
 } from "../src/lib/server/awardFrqGrade.ts";
 
 type Data = Record<string, unknown>;
-type Ref = { path: string; id: string; field?: string; value?: unknown };
+type Ref = { path: string; id: string; field?: string; value?: unknown; collectionQuery?: boolean };
 type Snapshot = { exists: boolean; data: () => Data | undefined };
+type QuerySnapshot = { docs: Array<{ id: string; data: () => Data }> };
 type Transaction = {
-  get: (ref: Ref) => Promise<Snapshot>;
+  get: (ref: Ref) => Promise<Snapshot & Partial<QuerySnapshot>>;
   getAll: (...refs: Ref[]) => Promise<Snapshot[]>;
   create: (ref: Ref, data: Data) => void;
   set: (ref: Ref, data: Data, options?: { merge: boolean }) => void;
@@ -38,6 +39,8 @@ class MemoryDb {
   }
   collection(path: string) {
     return {
+      path,
+      collectionQuery: true,
       doc: (id: string) => this.doc(`${path}/${id}`),
       where: (field: string, _operator: string, value: unknown) => ({
         ...this.doc(path),
@@ -69,24 +72,24 @@ class MemoryDb {
             0,
             "Firestore requires reads before writes",
           );
-          if (ref.field) {
+          if (ref.field || ref.collectionQuery) {
             reads.set(
               `query:${ref.path}`,
               this.versions.get(`query:${ref.path}`) ?? 0,
             );
+            const docs = [...this.docs]
+              .filter(([path, data]) =>
+                path.slice(0, path.lastIndexOf("/")) === ref.path &&
+                (!ref.field || data[ref.field] === ref.value),
+              )
+              .map(([path, data]) => ({
+                id: this.doc(path).id,
+                data: () => data,
+              }));
             return {
               exists: false,
               data: () => undefined,
-              docs: [...this.docs]
-                .filter(
-                  ([path, data]) =>
-                    path.slice(0, path.lastIndexOf("/")) === ref.path &&
-                    data[ref.field!] === ref.value,
-                )
-                .map(([path, data]) => ({
-                  id: this.doc(path).id,
-                  data: () => data,
-                })),
+              docs,
             };
           }
           reads.set(ref.path, this.versions.get(ref.path) ?? 0);
@@ -302,10 +305,15 @@ void test("pays the student, updates levels, and leaves streak/calendar untouche
   assert.equal(db.docs.get(statsPath)?.frqsSubmitted, 1);
   assert.deepEqual(
     db.writes.sort(),
-    [statsPath, receiptPath, notificationPath, notificationReceiptPath].sort(),
+    [statsPath, receiptPath, notificationPath, notificationReceiptPath, "profiles/student"].sort(),
   );
   assert.equal(db.docs.has("userStats/staff"), false);
   assert.equal(db.docs.get(receiptPath)?.xpAwarded, 17);
+  assert.equal(db.docs.get("profiles/student")?.isPublic, false);
+  assert.equal(db.docs.get("profiles/student")?.xp, 107);
+  assert.deepEqual(db.docs.get("profiles/student")?.achievements, [
+    { id: "frq-1", title: "frq-1" },
+  ]);
 });
 
 void test("replays and concurrent requests cannot double pay", async () => {
@@ -655,7 +663,8 @@ void test("pure achievement checks and ineligible stats never create notificatio
   );
   assert.deepEqual(db.writes, []);
   assert.deepEqual(await awardBadges(db, {}), []);
-  assert.deepEqual(db.writes, []);
+  assert.deepEqual(db.writes, ["profiles/student"]);
+  assert.equal(db.docs.get("profiles/student")?.isPublic, false);
 });
 
 void test("new achievements and their notifications commit together once under concurrency", async () => {
@@ -673,10 +682,14 @@ void test("new achievements and their notifications commit together once under c
   assert.equal(notification.type, "achievement");
   assert.equal(notification.href, "/dashboard#achievements");
   assert.equal(notification.expiresAt, null);
-  assert.equal(db.writes.length, 2);
+  assert.equal(db.writes.length, 3);
+  assert.equal(db.docs.get("profiles/student")?.achievementCount, 1);
+  assert.deepEqual(db.docs.get("profiles/student")?.achievements, [
+    { id: "frq-1", title: "Free Thinker" },
+  ]);
   assert.ok(db.retries > 0);
   assert.deepEqual(await awardBadges(db, { frqsSubmitted: 1 }), []);
-  assert.equal(db.writes.length, 2);
+  assert.equal(db.writes.length, 4);
 });
 
 void test("earned achievements never re-notify even after notification deletion", async () => {
@@ -688,13 +701,13 @@ void test("earned achievements never re-notify even after notification deletion"
     db.docs.has("notifications/student/items/achievement_frq-1"),
     false,
   );
-  assert.equal(db.writes.length, 2);
+  assert.equal(db.writes.length, 4);
 });
 
 void test("previously earned achievements are not backfilled with notifications", async () => {
   const db = fixture();
   assert.deepEqual(await awardBadges(db, { frqsSubmitted: 1 }), []);
-  assert.deepEqual(db.writes, []);
+  assert.deepEqual(db.writes, ["profiles/student"]);
 });
 
 void test("new thresholds award only the newly earned achievement", async () => {
@@ -702,7 +715,7 @@ void test("new thresholds award only the newly earned achievement", async () => 
   await awardBadges(db, { frqsSubmitted: 1 });
   assert.deepEqual(await awardBadges(db, { frqsSubmitted: 10 }), ["frq-10"]);
   assert.deepEqual(await awardBadges(db, { frqsSubmitted: 10 }), []);
-  assert.equal(db.writes.length, 4);
+  assert.equal(db.writes.length, 7);
 });
 
 void test("FRQ grade XP can unlock a level achievement for the student", async () => {
@@ -712,6 +725,7 @@ void test("FRQ grade XP can unlock a level achievement for the student", async (
   assert.deepEqual(result.newlyUnlocked, ["level-5"]);
   assert.ok(db.docs.has("users/student/achievements/level-5"));
   assert.ok(db.docs.has("notifications/student/items/achievement_level-5"));
+  assert.ok(db.docs.has("notifications/student/items/level_up_5"));
   assert.equal(db.docs.get(statsPath)?.currentStreak, 4);
   assert.equal((await award(db)).newlyUnlocked.length, 0);
 });

@@ -3,6 +3,22 @@ import { getAdminDb } from "@/lib/firebase-admin";
 import { requireUser } from "@/lib/server/activityRequest";
 import { buildPublicProfile } from "@/lib/server/publicProfile";
 
+export async function DELETE(request: NextRequest) {
+  const caller = await requireUser(request);
+  if ("error" in caller) return caller.error;
+
+  try {
+    await getAdminDb().doc(`profiles/${caller.uid}`).delete();
+    return NextResponse.json({ deleted: true });
+  } catch (error) {
+    console.error("Unable to delete public profile", error);
+    return NextResponse.json(
+      { error: "Unable to delete public profile" },
+      { status: 500 },
+    );
+  }
+}
+
 export async function PUT(request: NextRequest) {
   const caller = await requireUser(request);
   if ("error" in caller) return caller.error;
