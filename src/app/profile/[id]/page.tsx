@@ -20,7 +20,7 @@ interface PublicProfile {
   timeZone: string;
   problemsSolved: number;
   subjectsCompleted: number;
-  achievements: string[];
+  achievements: { id: string; title: string }[];
 }
 
 export default function PublicProfilePage() {
@@ -38,11 +38,9 @@ export default function PublicProfilePage() {
       return;
     }
     return onSnapshot(
-      doc(db, "publicProfiles", uid),
+      doc(db, "profiles", uid),
       (snapshot) => {
-        setProfile(
-          snapshot.exists() ? (snapshot.data() as PublicProfile) : null,
-        );
+        setProfile(snapshot.exists() && snapshot.data().isPublic === true ? (snapshot.data() as PublicProfile) : null);
       },
       (error) => {
         if (error.code === "permission-denied") {
@@ -89,7 +87,7 @@ export default function PublicProfilePage() {
             )}
             problemsSolved={profile.problemsSolved}
             subjectsCompleted={profile.subjectsCompleted}
-            earnedIds={new Set(profile.achievements)}
+            earnedIds={new Set(profile.achievements.map((a) => a.id))}
             nameAs="h1"
           />
         )}

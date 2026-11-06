@@ -13,7 +13,7 @@ async function setProfileVisibility(isPublic: boolean) {
   if (!idToken) throw new Error("Not signed in");
 
   const response = await fetch("/api/profile/visibility", {
-    method: "POST",
+    method: "PUT",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${idToken}`,
@@ -32,7 +32,7 @@ export default function ProfileVisibility({ uid }: { uid: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    getDoc(doc(db, "publicProfiles", uid))
+    getDoc(doc(db, "profiles", uid))
       .then((snapshot) => {
         if (!cancelled) setIsPublic(snapshot.data()?.isPublic === true);
       })
