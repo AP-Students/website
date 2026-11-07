@@ -7,10 +7,10 @@ import usePathname from "@/components/client/pathname";
 import { db } from "@/lib/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { streakAsOf } from "@/lib/gamification/streak";
+import { readStreakState, streakAsOf } from "@/lib/gamification/streak";
 import { toDayKey } from "@/lib/gamification/calendarDay";
 
-interface PublicProfile {
+type PublicProfile = {
   displayName: string;
   photoURL?: string;
   xp: number;
@@ -21,13 +21,15 @@ interface PublicProfile {
   problemsSolved: number;
   subjectsCompleted: number;
   achievements: { id: string; title: string }[];
-}
+};
 
 export default function PublicProfilePage() {
   const pathname = usePathname() ?? "";
   const uid = pathname.split("/").at(-1) ?? "";
 
-  const [profile, setProfile] = useState<PublicProfile | null | undefined>(undefined);
+  const [profile, setProfile] = useState<PublicProfile | null | undefined>(
+    undefined,
+  );
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -40,7 +42,11 @@ export default function PublicProfilePage() {
     return onSnapshot(
       doc(db, "profiles", uid),
       (snapshot) => {
-        setProfile(snapshot.exists() && snapshot.data().isPublic === true ? (snapshot.data() as PublicProfile) : null);
+        setProfile(
+          snapshot.exists() && snapshot.data().isPublic === true
+            ? (snapshot.data() as PublicProfile)
+            : null,
+        );
       },
       (error) => {
         if (error.code === "permission-denied") {
@@ -77,12 +83,8 @@ export default function PublicProfilePage() {
             displayName={profile.displayName}
             photoURL={profile.photoURL}
             xp={profile.xp}
-                        streak={streakAsOf(
-              {
-                currentStreak: profile.currentStreak,
-                longestStreak: profile.longestStreak,
-                lastActiveDay: profile.lastActiveDay,
-              },
+            streak={streakAsOf(
+              readStreakState(profile),
               toDayKey(new Date(), profile.timeZone),
             )}
             problemsSolved={profile.problemsSolved}

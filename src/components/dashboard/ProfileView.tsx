@@ -33,12 +33,14 @@ export default function ProfileView({
           <img
             src={photoURL}
             alt=""
-            className="h-24 w-24 rounded-full object-cover"
+            className="h-24 w-24 shrink-0 rounded-full object-cover"
           />
         ) : (
-          <div className="h-24 w-24 rounded-full bg-gray-300" />
+          <div className="h-24 w-24 shrink-0 rounded-full bg-gray-300" />
         )}
-        <Name className="text-4xl font-extrabold">{displayName}</Name>
+        <Name className="min-w-0 break-words text-4xl font-extrabold">
+          {displayName}
+        </Name>
       </div>
 
       <ExperienceCard

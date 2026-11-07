@@ -204,7 +204,7 @@ export default function Dashboard() {
   );
 
   const profile =
-    xpProgress && studyStreak && liveStats ? (
+    xpProgress && studyStreak && liveStats && earnedIds ? (
       <ProfileView
         displayName={(userDoc ?? user).displayName}
         photoURL={(userDoc ?? user).photoURL}
@@ -217,15 +217,13 @@ export default function Dashboard() {
         subjectsCompleted={liveStats.subjectsCompleted}
         earnedIds={earnedIds}
       />
-        ) : xpError ?? streakError ?? achievementError ? (
+    ) : (xpError ?? streakError ?? achievementError) ? (
       <LoadError>
         Couldn&apos;t load your profile. Refresh to try again.
       </LoadError>
     ) : (
       <p className="text-gray-500">Loading your profile…</p>
     );
-
-
 
   return (
     <div>

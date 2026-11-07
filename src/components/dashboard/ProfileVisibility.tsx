@@ -1,12 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { toast } from "sonner";
 import { auth, db } from "@/lib/firebase";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 async function setProfileVisibility(isPublic: boolean) {
   const idToken = await auth.currentUser?.getIdToken();
@@ -29,6 +36,8 @@ export default function ProfileVisibility({ uid }: { uid: string }) {
   const [isPublic, setIsPublic] = useState<boolean>();
   const [confirming, setConfirming] = useState(false);
   const [saving, setSaving] = useState(false);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -37,7 +46,7 @@ export default function ProfileVisibility({ uid }: { uid: string }) {
         if (!cancelled) setIsPublic(snapshot.data()?.isPublic === true);
       })
       .catch(() => {
-        if (!cancelled) setIsPublic(false);
+        if (!cancelled) setLoadFailed(true);
       });
     return () => {
       cancelled = true;
@@ -74,14 +83,19 @@ export default function ProfileVisibility({ uid }: { uid: string }) {
       <h2 id="profile-visibility" className="text-2xl font-bold">
         Public profile
       </h2>
-      <p className="mt-1 text-gray-600">
-        {isPublic
-          ? "Anyone with the link can see the profile above."
-          : "Only you can see the profile above."}
+      <p role="status" className="mt-1 text-gray-600">
+        {loadFailed
+          ? "Couldn't load your profile setting. Refresh to try again."
+          : isPublic === undefined
+            ? "Loading…"
+            : isPublic
+              ? "Anyone with the link can see the profile above."
+              : "Only you can see the profile above."}
       </p>
 
       <div className="mt-4 flex flex-wrap items-center gap-4">
         <button
+          ref={toggleRef}
           type="button"
           role="switch"
           aria-checked={isPublic === true}
@@ -101,7 +115,15 @@ export default function ProfileVisibility({ uid }: { uid: string }) {
             )}
           />
         </button>
-        <span className="font-semibold">{isPublic ? "Public" : "Private"}</span>
+        <span className="font-semibold">
+          {loadFailed
+            ? "Couldn't load"
+            : isPublic === undefined
+              ? "Loading…"
+              : isPublic
+                ? "Public"
+                : "Private"}
+        </span>
         {isPublic && (
           <Button
             type="button"
@@ -114,7 +136,12 @@ export default function ProfileVisibility({ uid }: { uid: string }) {
       </div>
 
       <Dialog open={confirming} onOpenChange={setConfirming}>
-        <DialogContent>
+        <DialogContent
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            toggleRef.current?.focus();
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Make your profile public?</DialogTitle>
             <DialogDescription>

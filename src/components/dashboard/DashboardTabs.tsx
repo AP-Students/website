@@ -29,7 +29,6 @@ const tabFromHash = (): DashboardTabId => {
   return isTabId(hash) ? hash : "overview";
 };
 
-
 /**
  * The dashboard's seven tabs. The open tab is kept in the URL hash, e.g.
  * /dashboard#history, so a tab can be linked to and survives a reload; a
