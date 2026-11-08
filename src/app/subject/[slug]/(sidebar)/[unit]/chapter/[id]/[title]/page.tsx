@@ -43,6 +43,7 @@ export default async function Page({ params }: { params: PageParams }) {
   return (
     <ChapterScaffold
       subjectTitle={subject.title}
+      subjectSlug={params.slug}
       units={subject.units}
       unitIndex={unitIndex}
       chapterIndex={chapterIndex}

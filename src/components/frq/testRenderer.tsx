@@ -2,6 +2,7 @@
 
 import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
 import { useUser } from "@/components/hooks/UserContext";
+import { useFrqDraft } from "@/components/hooks/useFrqDraft";
 import FRQFooter from "@/components/frq/FRQFooter";
 import DirectionsDropdown from "@/components/frq/test/directionsDropdown";
 import { downloadResponsesAsPdf } from "@/components/frq/test/downloadResponsesPdf";
@@ -12,13 +13,8 @@ import ReviewPage from "@/components/frq/test/reviewPage";
 import { SubmissionModal, TimeUpModal } from "@/components/frq/test/testModals";
 import { usePendingPartScroll } from "@/components/frq/usePendingPartScroll";
 import { getUngradedFrqsCollectionRef } from "@/lib/firestore/frqRefs";
-import {
-  GUEST_DRAFT_OWNER,
-  claimGuestDraft,
-  getDraftKey,
-  readDraft,
-  type DraftStorage,
-} from "@/lib/frq/draft";
+import { reportWithRetry } from "@/lib/gamification/notifyActivityFailure";
+import { reportFrqSubmission } from "@/lib/gamification/reportActivity";
 import {
   buildStudentQuestions,
   findQuestionIndexForPart,
@@ -55,15 +51,6 @@ type FRQTestRendererProps = {
   referenceSheet?: ReferenceSheet | null;
 };
 
-// Merely reading `window.localStorage` throws when the browser blocks storage.
-const getDraftStorage = (): DraftStorage | null => {
-  try {
-    return window.localStorage;
-  } catch {
-    return null;
-  }
-};
-
 const FRQTestRenderer = ({
   template,
   loading = false,
@@ -72,7 +59,7 @@ const FRQTestRenderer = ({
 }: FRQTestRendererProps) => {
   const router = useRouter();
   const pathname = usePathname();
-  const { user } = useUser();
+  const { user, loading: userLoading } = useUser();
   const [showReferenceSheet, setShowReferenceSheet] = useState(false);
   const [showReferenceSheetError, setShowReferenceSheetError] = useState(false);
   // Open on arrival so the student reads the directions once before starting,
@@ -111,20 +98,18 @@ const FRQTestRenderer = ({
   const [showCalculator, setShowCalculator] = useState(false);
   const calculatorButtonRef = useRef<HTMLButtonElement>(null);
 
+  // A refresh, a closed laptop or a stray back-navigation used to lose the
+  // whole attempt. The draft is now saved while the student writes, and they
+  // pick up where they left off on any device. A signed-out visitor's work is
+  // kept in the browser: they need an account to submit, and signing in
+  // navigates away from this page.
+  const draft = useFrqDraft(
+    template,
+    userLoading ? undefined : (user?.uid ?? null),
+    responses,
+  );
+  const loadedDraft = draft.loaded;
   const templateId = template?.id ?? "";
-  const uid = user?.uid;
-  // A signed-out visitor's work is saved too: they need an account to submit,
-  // and signing in navigates away from this page.
-  const draftKey = templateId
-    ? getDraftKey(templateId, uid ?? GUEST_DRAFT_OWNER)
-    : "";
-  // The draft key `responses` was last loaded from. When the key changes —
-  // the template arrives, or a visitor signs in — the autosave below runs in
-  // the same pass as the seed and still holds the old answers, so until this
-  // catches up it would overwrite the draft that is being loaded (or the one
-  // a guest draft was just merged into).
-  const [seededDraftKey, setSeededDraftKey] = useState("");
-
   // A different test arriving in this same renderer opens its directions once,
   // like the first did. Keyed on the id, so returning from the review page
   // leaves the student's choice alone.
@@ -132,42 +117,22 @@ const FRQTestRenderer = ({
     setShowDirections(true);
   }, [templateId]);
 
-  // Seed responses from the saved draft, then keep every part id present so
-  // the review grid and submission payload never have holes. The map stays
-  // keyed by part id, so work saved before question paging still resolves.
+  // Seed responses from the draft, then keep every part id present so the
+  // review grid and submission payload never have holes. The map stays keyed
+  // by part id, so work saved before question paging still resolves.
   useEffect(() => {
-    const storage = getDraftStorage();
-
-    // Back from signing in to submit: carry the signed-out answers over.
-    if (storage && templateId && uid) {
-      claimGuestDraft(storage, templateId, uid);
-    }
-
-    const draft = storage && draftKey ? readDraft(storage, draftKey) : {};
+    if (!loadedDraft) return;
 
     setResponses(
       Object.fromEntries(
         getResponsePartIds(questions).map((partId) => [
           partId,
-          draft[partId] ?? "",
+          loadedDraft[partId] ?? "",
         ]),
       ),
     );
     setCurrentQuestionIndex(0);
-    setSeededDraftKey(draftKey);
-  }, [questions, draftKey, templateId, uid]);
-
-  useEffect(() => {
-    if (!draftKey || draftKey !== seededDraftKey || hasSubmitted) {
-      return;
-    }
-
-    try {
-      window.localStorage.setItem(draftKey, JSON.stringify(responses));
-    } catch {
-      // A full or disabled localStorage should not interrupt the attempt.
-    }
-  }, [draftKey, seededDraftKey, responses, hasSubmitted]);
+  }, [questions, loadedDraft]);
 
   const setPendingScrollPartId = usePendingPartScroll(
     getPartAnchorId,
@@ -255,15 +220,17 @@ const FRQTestRenderer = ({
         setShowSubmissionModal(false);
         setShowTimeUpPopup(false);
 
+        // The FRQ itself is already saved; a failed XP save offers a retry.
+        reportWithRetry(
+          () => reportFrqSubmission(submissionRef.id),
+          "Error recording FRQ activity:",
+          `xp-frq-${submissionRef.id}`,
+          user.uid,
+        );
+
         // Only clear the draft once the write has actually landed, so a failed
         // submission still leaves the student's work recoverable.
-        if (draftKey) {
-          try {
-            window.localStorage.removeItem(draftKey);
-          } catch {
-            // Nothing to do: the submission already succeeded.
-          }
-        }
+        draft.finish();
 
         if (destination === "self") {
           router.push(`/frq-grading/${submissionRef.id}`);
@@ -283,7 +250,7 @@ const FRQTestRenderer = ({
         setSubmitting(false);
       }
     },
-    [draftKey, responses, router, template, user],
+    [draft, responses, router, template, user],
   );
 
   const formattedTime = `${Math.floor(timeRemaining / 3600)}:${String(
@@ -335,13 +302,14 @@ const FRQTestRenderer = ({
   };
 
   const updateResponse = (partId: string, value: string) => {
+    draft.noteEdit();
     setResponses((currentResponses) => ({
       ...currentResponses,
       [partId]: value,
     }));
   };
 
-  if (loading) {
+  if (loading || (template && !loadedDraft)) {
     return <p className="p-8">Loading FRQ test...</p>;
   }
 

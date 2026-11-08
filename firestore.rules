@@ -24,13 +24,188 @@ service cloud.firestore {
       return isAuthenticated() && (accessLevel == "admin" || accessLevel == "member" || accessLevel == "grader");
     }
 
+    // These legacy fields may still exist on /users/{uid}, but all dashboard
+    // progress now lives in /userStats/{uid} and is server-maintained.
+    function doesNotChangeDerivedDashboardFields() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+        'xp', 'level', 'xpIntoLevel', 'xpForNextLevel', 'currentStreak',
+        'longestStreak', 'lastActiveDay', 'readingsCompleted',
+        'mcqTestsCompleted', 'problemsSolved', 'frqsSubmitted',
+        'subjectsCompleted', 'perSubject', 'updatedAt'
+      ]);
+    }
+
+    function doesNotSetDerivedDashboardFields() {
+      return !request.resource.data.keys().hasAny([
+        'xp', 'level', 'xpIntoLevel', 'xpForNextLevel', 'currentStreak',
+        'longestStreak', 'lastActiveDay', 'readingsCompleted',
+        'mcqTestsCompleted', 'problemsSolved', 'frqsSubmitted',
+        'subjectsCompleted', 'perSubject', 'updatedAt'
+      ]);
+    }
+
+    // Week 1 activity data is written only by trusted server code.  Clients
+    // can read only documents belonging to their authenticated account.
+    match /userStats/{userId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    match /activityEvents/{eventId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // Calendar document IDs are namespaced as "{uid}_{year}".
+    match /activityCalendar/{calendarId} {
+      allow read: if isAuthenticated()
+        && calendarId.matches('^' + request.auth.uid + '_[0-9]{4}$');
+    }
+
+    // XP amounts for every activity (src/lib/gamification/xp.ts). They aren't
+    // secret, so anyone may read them. Only admins may change them, and only
+    // to whole numbers the activity routes can use; the routes still check
+    // each value and fall back to its default if one is ever unusable. The
+    // level curve is deliberately not here: it lives in code, because changing
+    // it would move students who already earned their level back down.
+    function isXpAmount(value) {
+      return value is int && value >= 0 && value <= 100000;
+    }
+
+    match /config/xp {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'readingComplete', 'mcqTestComplete', 'mcqCorrectAnswer',
+          'frqSubmission', 'frqGradeBonus', 'streakDay', 'streakMilestones',
+          'updatedAt', 'updatedBy'
+        ])
+        && isXpAmount(request.resource.data.readingComplete)
+        && isXpAmount(request.resource.data.mcqTestComplete)
+        && isXpAmount(request.resource.data.mcqCorrectAnswer)
+        && isXpAmount(request.resource.data.frqSubmission)
+        && isXpAmount(request.resource.data.frqGradeBonus)
+        && isXpAmount(request.resource.data.streakDay)
+        && request.resource.data.streakMilestones is map
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isAdmin();
+    }
+
+    // /xpAwards holds server-written receipts for one-time XP, such as the
+    // first submission of each FRQ. It deliberately has no rules: clients can
+    // neither read nor forge one.
+
+    match /notifications/{userId}/items/{notificationId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      // Recipients may acknowledge once. The browser proposes a 48-hour TTL;
+      // accept a one-hour clock-skew window around Firestore's server time.
+      allow update: if isAuthenticated()
+        && request.auth.uid == userId
+        && resource.data.readAt == null
+        && resource.data.expiresAt == null
+        && request.resource.data.readAt == request.time
+        && (
+          // Older open tabs only write readAt. Accept that acknowledgement
+          // during rollout; the bell derives the same 48-hour cutoff when
+          // expiresAt is absent.
+          (request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['readAt'])
+            && request.resource.data.expiresAt == null)
+          ||
+          (request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['readAt', 'expiresAt'])
+            && request.resource.data.expiresAt is timestamp
+            && request.resource.data.expiresAt >= request.time + duration.value(47, 'h')
+            && request.resource.data.expiresAt <= request.time + duration.value(49, 'h'))
+        );
+    }
+
+    // Saved readings/problems reuse the dashboard SavedItem contract:
+    // kind, subject, unitId, refId, label, href (+ optional questionIndex),
+    // with savedAt stamped server-side. Readable and removable by the owner.
+    match /users/{userId}/savedItems/{itemId} {
+      allow read, delete: if isAuthenticated() && request.auth.uid == userId;
+      allow create, update: if isAuthenticated() && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['kind', 'subject', 'unitId', 'refId', 'questionIndex', 'label', 'href', 'savedAt'])
+        && request.resource.data.kind in ['reading', 'question']
+        && request.resource.data.subject is string && request.resource.data.subject.size() > 0
+        && request.resource.data.unitId is string && request.resource.data.unitId.size() > 0
+        && request.resource.data.refId is string && request.resource.data.refId.size() > 0
+        && request.resource.data.label is string && request.resource.data.label.size() > 0
+        && request.resource.data.label.size() <= 200
+        && request.resource.data.href is string && request.resource.data.href.size() <= 500
+        && request.resource.data.href.matches('^/subject/[^\\s]*$')
+        && (!('questionIndex' in request.resource.data)
+          || (request.resource.data.questionIndex is int && request.resource.data.questionIndex >= 0))
+        && request.resource.data.savedAt == request.time;
+    }
+
+    // Practice tests and FRQ drafts saved part-way reuse the dashboard
+    // InProgressItem contract: kind, subject, unitId, refId, label, href,
+    // startedAt and state, with updatedAt stamped server-side. The autosave
+    // writes every few seconds, so one save a second is the most a draft
+    // takes; a runaway or abusive client can't write faster than that.
+    match /users/{userId}/inProgress/{itemId} {
+      allow read, delete: if isAuthenticated() && request.auth.uid == userId;
+      allow create: if isAuthenticated() && request.auth.uid == userId
+        && isInProgressItem(itemId, request.resource.data);
+      allow update: if isAuthenticated() && request.auth.uid == userId
+        && isInProgressItem(itemId, request.resource.data)
+        && (!('updatedAt' in resource.data)
+          || request.time > resource.data.updatedAt + duration.value(1, 's'));
+    }
+
+    function isInProgressItem(itemId, data) {
+      return data.keys().hasOnly(['kind', 'subject', 'unitId', 'refId', 'label', 'href', 'startedAt', 'updatedAt', 'state'])
+        && data.kind in ['mcq_test', 'frq']
+        && itemId.matches('^' + data.kind + '_.+$')
+        && data.subject is string && data.subject.size() > 0 && data.subject.size() <= 100
+        && data.unitId is string && data.unitId.size() > 0 && data.unitId.size() <= 100
+        && data.refId is string && data.refId.size() > 0 && data.refId.size() <= 200
+        && data.label is string && data.label.size() > 0 && data.label.size() <= 200
+        && data.href is string && data.href.size() <= 500
+        && data.href.matches('^/subject/[^\\s]*$')
+        && data.startedAt is timestamp
+        && data.updatedAt == request.time
+        && data.state is map
+        && (data.kind != 'mcq_test' || isMcqTestState(data.state))
+        && (data.kind != 'frq' || isFrqDraftState(data.state));
+    }
+
+    function isMcqTestState(state) {
+      return state.keys().hasOnly(['answers', 'currentIndex', 'secondsRemaining'])
+        && state.answers is map && state.answers.size() <= 500
+        && state.currentIndex is int && state.currentIndex >= 0
+        && state.secondsRemaining is number && state.secondsRemaining >= 0;
+    }
+
+    function isFrqDraftState(state) {
+      return state.keys().hasOnly(['responses'])
+        && state.responses is map && state.responses.size() <= 200;
+    }
+
     // Allow read/write access to users for their own user data
     match /users/{userId} {
       allow read: if isAuthenticated() && request.auth.uid == userId;
 
-      allow create: if isAuthenticated() && request.auth.uid == userId && request.resource.data.access == "user";
-      allow update: if isAuthenticated() && request.auth.uid == userId && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['access', 'uid']));
+      allow create: if isAuthenticated() && request.auth.uid == userId
+        && request.resource.data.access == "user"
+        && doesNotSetDerivedDashboardFields();
+      allow update: if isAuthenticated() && request.auth.uid == userId
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['access', 'uid'])
+        && doesNotChangeDerivedDashboardFields();
       allow delete: if isAuthenticated() && request.auth.uid == userId;
+
+      match /achievements/{achievementId} {
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+      }
+
+      // Completion receipts are maintained only by the trusted activity API.
+      match /completedTests/{testId} {
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+      }
+      match /completedSubjects/{subjectId} {
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+      }
 
       match /frqResponses/{document=**} {
         allow read: if isAuthenticated() && request.auth.uid == userId;
@@ -39,9 +214,46 @@ service cloud.firestore {
         allow update: if isGraderOrMemberOrAdmin() && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['feedback', 'grade', 'gradedAt', 'gradedBy', 'status']));
       }
 
+      // Progress remains user-controlled, but the award receipt is server
+      // owned and cannot be removed or reset to earn XP a second time. This
+      // must stay the only chapterData match: Firestore allows a request if
+      // any matching rule does, so a looser duplicate would override it.
+      // Alongside progress the tracker saves the chapter's subject, unit,
+      // title and link, stamped with the server's time, so the dashboard can
+      // list chapters still in progress.
       match /chapterData/{document=**} {
-        allow read, write: if isAuthenticated() && request.auth.uid == userId;
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+        allow create: if isAuthenticated() && request.auth.uid == userId
+          && request.resource.data.keys().hasOnly(['progress', 'subject', 'unitId', 'label', 'href', 'updatedAt'])
+          && request.resource.data.progress is string
+          && isChapterListing(request.resource.data, request.resource.data.keys());
+        allow update: if isAuthenticated() && request.auth.uid == userId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['progress', 'subject', 'unitId', 'label', 'href', 'updatedAt'])
+          && request.resource.data.progress is string
+          && isChapterListing(request.resource.data, request.resource.data.diff(resource.data).affectedKeys());
+        allow delete: if isAuthenticated() && request.auth.uid == userId
+          && !('readingXpAwarded' in resource.data);
       }
+
+      // Checks only the listing fields a write sets, so a chapter saved before
+      // they existed can still change its progress alone.
+      function isChapterListing(data, written) {
+        return (!('subject' in written)
+            || (data.subject is string && data.subject.size() > 0 && data.subject.size() <= 100))
+          && (!('unitId' in written)
+            || (data.unitId is string && data.unitId.size() > 0 && data.unitId.size() <= 100))
+          && (!('label' in written)
+            || (data.label is string && data.label.size() > 0 && data.label.size() <= 200))
+          && (!('href' in written)
+            || (data.href is string && data.href.size() <= 500
+              && data.href.matches('^/subject/[^\\s]*$')))
+          && (!('updatedAt' in written) || data.updatedAt == request.time);
+      }
+
+      // Dashboard stats, activity events and calendars are top-level
+      // collections (/userStats, /activityEvents, /activityCalendar above), and
+      // savedItems/inProgress are matched once each above. Don't re-match them
+      // here: a duplicate match with a looser rule silently wins.
     }
 
     function canSubmitFrqResponse() {
@@ -68,6 +280,25 @@ service cloud.firestore {
     // published prompts, the queue contains only ungraded responses, and a
     // grading result is kept separately for the student's dashboard.
 
+    // A result proves that a real student submission was consumed atomically.
+    // The claim timestamp cannot be added retroactively to an arbitrary result.
+    function claimsFrqQueue(resultId) {
+      let queued = get(/databases/$(database)/documents/ungraded-frqs/$(resultId));
+      let result = request.resource.data;
+      return queued != null
+        && result.templateId == queued.data.templateId
+        && result.subject == queued.data.subject
+        && result.unitId == queued.data.unitId
+        && result.studentId == queued.data.studentId
+        && result.responses == queued.data.responses
+        && result.submittedAt == queued.data.submittedAt
+        && result.queueClaimedAt == request.time
+        && result.gradedAt == request.time
+        && !existsAfter(/databases/$(database)/documents/ungraded-frqs/$(resultId))
+        && !(exists(/databases/$(database)/documents/graded-frqs/$(resultId)))
+        && !(exists(/databases/$(database)/documents/self-graded-frqs/$(resultId)));
+    }
+
 
     match /ungraded-frqs/{submissionId} {
   // `resource` is null when the document does not exist, and dereferencing it
@@ -77,6 +308,8 @@ service cloud.firestore {
     (isAuthenticated() && resource != null && resource.data.studentId == request.auth.uid);
 
   allow create: if isAuthenticated()
+    && !exists(/databases/$(database)/documents/graded-frqs/$(submissionId))
+    && !exists(/databases/$(database)/documents/self-graded-frqs/$(submissionId))
     && request.resource.data.keys().hasOnly([
       'templateId',
       'subject',
@@ -90,6 +323,9 @@ service cloud.firestore {
     && request.resource.data.unitId is string
     && request.resource.data.studentId == request.auth.uid
     && request.resource.data.responses is map
+    // The server's clock, not the browser's: /api/activity/frq only records
+    // a submission made in the last hour, which a forged time would defeat.
+    && request.resource.data.submittedAt == request.time
     && exists(
       /databases/$(database)/documents/subjects/$(request.resource.data.subject)/units/$(request.resource.data.unitId)/frqs/$(request.resource.data.templateId)
     );
@@ -109,6 +345,9 @@ service cloud.firestore {
   // student cannot write here even about their own attempt — a self-assessment
   // goes to `self-graded-frqs` instead, where it carries no such authority.
   allow create: if isGraderOrMemberOrAdmin()
+    && claimsFrqQueue(resultId)
+    && request.resource.data.studentId != request.auth.uid
+    && !existsAfter(/databases/$(database)/documents/self-graded-frqs/$(resultId))
     && resultId == request.resource.data.sourceSubmissionId
     && request.resource.data.keys().hasOnly([
       'sourceSubmissionId',
@@ -122,7 +361,8 @@ service cloud.firestore {
       'feedback',
       'grades',
       'graderId',
-      'gradedAt'
+      'gradedAt',
+      'queueClaimedAt'
     ])
     && request.resource.data.grades is list
     && request.resource.data.sourceSubmissionId is string
@@ -135,7 +375,16 @@ service cloud.firestore {
     && request.resource.data.feedback is string
     && request.resource.data.graderId == request.auth.uid;
 
-  allow update, delete: if isGraderOrMemberOrAdmin();
+  // Regrades can change the verdict, never its submission provenance or author.
+  allow update: if isGraderOrMemberOrAdmin()
+    && resource.data.graderId == request.auth.uid
+    && request.resource.data.diff(resource.data).affectedKeys()
+      .hasOnly(['score', 'feedback', 'grades', 'gradedAt'])
+    && request.resource.data.score is string
+    && request.resource.data.feedback is string
+    && request.resource.data.grades is list
+    && request.resource.data.gradedAt == request.time;
+  allow delete: if isGraderOrMemberOrAdmin();
 }
 
     // A student's own assessment of their own attempt. Deliberately a separate
@@ -143,13 +392,20 @@ service cloud.firestore {
     // like, so nothing stored here carries a grader's authority, and no query
     // for official results has to remember to filter these back out.
     match /self-graded-frqs/{resultId} {
-  allow get, list: if isGraderOrMemberOrAdmin() ||
+  // A self-grade's transaction reads this result before creating it, as the
+  // student, so a get of one that doesn't exist yet must be allowed or
+  // "Submit Self-Grade" fails. A missing document has nothing to reveal.
+  allow get: if isGraderOrMemberOrAdmin() ||
+    (isAuthenticated() && (resource == null || resource.data.studentId == request.auth.uid));
+  allow list: if isGraderOrMemberOrAdmin() ||
     (isAuthenticated() && resource != null && resource.data.studentId == request.auth.uid);
 
   // Only the author of the attempt, and only as themselves: both ids must be
   // the caller's own uid, so a self-assessment cannot be filed against
   // somebody else's work or signed as though staff had graded it.
   allow create: if isAuthenticated()
+    && claimsFrqQueue(resultId)
+    && !existsAfter(/databases/$(database)/documents/graded-frqs/$(resultId))
     && request.resource.data.studentId == request.auth.uid
     && request.resource.data.graderId == request.auth.uid
     && resultId == request.resource.data.sourceSubmissionId
@@ -165,7 +421,8 @@ service cloud.firestore {
       'feedback',
       'grades',
       'graderId',
-      'gradedAt'
+      'gradedAt',
+      'queueClaimedAt'
     ])
     && request.resource.data.grades is list
     && request.resource.data.sourceSubmissionId is string
@@ -221,9 +478,12 @@ service cloud.firestore {
       allow write: if isMemberOrAdmin();
     }
 
-    // Allow users to access and write to their own profiles
+    // Public profile projections are server-written and contain only the
+    // allowlisted fields. Private profiles are visible to their owner only;
+    // there are intentionally no client write rules for this collection.
     match /profiles/{userId} {
-      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      allow read: if resource.data.isPublic == true
+        || (isAuthenticated() && request.auth.uid == userId);
     }
 
     match /feedback/{feedbackId} {

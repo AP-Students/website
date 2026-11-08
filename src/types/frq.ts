@@ -153,6 +153,8 @@ export interface GradedFRQSubmission extends GradableFRQSubmission {
   graderId: string;
   gradedAt: Timestamp;
   sourceSubmissionId: string;
+  /** Proof of the atomic queue-to-result claim, immutable after creation. */
+  queueClaimedAt?: Timestamp;
 }
 
 export interface FRQSubmission {

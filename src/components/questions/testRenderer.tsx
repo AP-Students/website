@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Bookmark, Calculator, Check, X } from "lucide-react";
 import Header from "./digital-testing/Header";
 import QuestionPanel from "./digital-testing/QuestionPanel";
@@ -17,6 +17,14 @@ import {
   type CalculatorPermission,
   type CalculatorType,
 } from "@/lib/calculator";
+import SaveButton from "@/components/subject/save-button";
+import { reportWithRetry } from "@/lib/gamification/notifyActivityFailure";
+import { reportMcqTest } from "@/lib/gamification/reportActivity";
+import { auth } from "@/lib/firebase";
+import { useTestAutosave } from "@/components/hooks/useTestAutosave";
+import type { McqTestState } from "@/types/dashboard";
+import type { Timestamp } from "firebase/firestore";
+import { toast } from "sonner";
 import clsx from "clsx";
 import { cn } from "@/lib/utils";
 import "katex/dist/katex.min.css";
@@ -27,6 +35,8 @@ interface Props {
   adminMode?: boolean;
   directions?: string;
   testName: string;
+  /** Enables the Save button. Omitted in admin previews. */
+  testId?: string;
   calculatorCourseDefault?: CalculatorPermission;
   calculatorDefault?: CalculatorPermission;
   calculatorType?: CalculatorType;
@@ -34,6 +44,14 @@ interface Props {
   referenceSheetEnabled?: boolean;
   /** The resolved sheet, or null if enabled but unavailable (deleted, fetch error). */
   referenceSheet?: ReferenceSheet | null;
+  /** Where this test lives; when set, a finished test counts toward the streak. */
+  attemptSource?: { subject: string; unitId: string; testId: string };
+  /** Question to open on (0-based); out-of-range values open the first. */
+  initialQuestionIndex?: number;
+  /** A save to pick the test back up from, already checked with `resumeTest`. */
+  resume?: { state: McqTestState; startedAt: Timestamp };
+  /** False when an earlier save couldn't be read: saving now could overwrite it. */
+  saveProgress?: boolean;
 }
 
 const initialQuestions: QuestionFormat[] = [
@@ -83,19 +101,70 @@ export default function DigitalTestingPage({
   adminMode = false,
   directions,
   testName,
+  testId,
   calculatorCourseDefault,
   calculatorDefault,
   calculatorType = "graphing",
   referenceSheetEnabled = false,
   referenceSheet,
+  attemptSource,
+  initialQuestionIndex = 0,
+  resume,
+  saveProgress = true,
 }: Props) {
   const [questions, setQuestions] = useState<QuestionFormat[]>(
     inputQuestions || initialQuestions,
   );
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(
+    resume
+      ? resume.state.currentIndex
+      : initialQuestionIndex > 0 && initialQuestionIndex < questions.length
+        ? initialQuestionIndex
+        : 0,
+  );
   const [selectedAnswers, setSelectedAnswers] = useState<
     Record<number, string[]>
-  >({});
+  >(resume?.state.answers ?? {});
+  // A test picked back up counts down from the time it had left.
+  const startingSeconds = resume?.state.secondsRemaining ?? time * 60;
+
+  // The test as it stands, for the autosave. Kept in a ref so the countdown
+  // updating it every second doesn't re-render the test.
+  const progress = useRef<McqTestState>({
+    answers: selectedAnswers,
+    currentIndex: currentQuestionIndex,
+    secondsRemaining: startingSeconds,
+  });
+  useEffect(() => {
+    progress.current = {
+      ...progress.current,
+      answers: selectedAnswers,
+      currentIndex: currentQuestionIndex,
+    };
+  }, [selectedAnswers, currentQuestionIndex]);
+  const recordTimeLeft = useCallback((secondsRemaining: number) => {
+    progress.current = { ...progress.current, secondsRemaining };
+  }, []);
+  const savingProgress = !adminMode && saveProgress && !!attemptSource;
+  const autosave = useTestAutosave(
+    savingProgress ? attemptSource : undefined,
+    testName,
+    progress,
+    resume?.startedAt,
+  );
+
+  // A test that opens where the student left it says so, so the answers
+  // already filled in and the shorter timer aren't a surprise.
+  useEffect(() => {
+    if (!resume) return;
+    const { currentIndex, secondsRemaining } = resume.state;
+    toast.info(
+      secondsRemaining > 0
+        ? `Picked up where you left off: question ${currentIndex + 1}, ${Math.max(1, Math.round(secondsRemaining / 60))} min left.`
+        : "Time ran out on this test, so your saved answers were submitted.",
+      { id: "test-resumed" },
+    );
+  }, [resume]);
 
   const [contentHighlights, setContentHighlights] = useState<Highlight[][]>(
     initialQuestions.map(() => []),
@@ -132,7 +201,22 @@ export default function DigitalTestingPage({
     // restarted timer can't drag the user back to the completion page.
     if (value && submitted) return;
     setSubmitted(value);
-    if (value && !adminMode) setShowCompletionPage(true);
+    if (value && !adminMode) {
+      setShowCompletionPage(true);
+      // A submitted test isn't in progress any more.
+      autosave.finish();
+      // The results are already on screen; a failed XP save offers a retry.
+      const uid = auth.currentUser?.uid;
+      // A signed-out visitor has no streak or XP to add to.
+      if (attemptSource && uid) {
+        reportWithRetry(
+          () => reportMcqTest({ ...attemptSource, answers: selectedAnswers }),
+          "Error recording MCQ test:",
+          `xp-mcq-${attemptSource.subject}-${attemptSource.unitId}-${attemptSource.testId}`,
+          uid,
+        );
+      }
+    }
   };
 
   // Track highlights for all --- uses index as key to corrospond to question, and array to hold highlights (might need to move to Highlighter file)
@@ -183,7 +267,9 @@ export default function DigitalTestingPage({
         <Header
           setSubmitted={handleSetSubmitted}
           submitted={submitted}
-          timeRemaining={time * 60}
+          timeRemaining={startingSeconds}
+          onTimeChange={recordTimeLeft}
+          progressSaved={savingProgress && auth.currentUser !== null}
           directions={directions}
           referenceSheetEnabled={referenceSheetEnabled}
           referenceSheet={referenceSheet}
@@ -263,6 +349,17 @@ export default function DigitalTestingPage({
                 <Check className="stroke-green-500 stroke-[3px]" />
               ) : (
                 <X className="stroke-red-500 stroke-[3px]" />
+              )}
+
+              {testId && !adminMode && questions.length > 0 && (
+                <SaveButton
+                  key={currentQuestionIndex}
+                  id={`test_${testId}_${currentQuestionIndex}`}
+                  kind="question"
+                  questionIndex={currentQuestionIndex}
+                  title={`${testName} – Question ${currentQuestionIndex + 1}`}
+                  className="py-0.5"
+                />
               )}
 
               {submitted && questions[currentQuestionIndex]!.topic && (

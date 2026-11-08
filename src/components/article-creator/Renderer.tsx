@@ -446,7 +446,11 @@ const Renderer = (props: { content: OutputData }) => {
       mounted
         .get(instanceId)
         ?.root.render(
-          <QuestionsView key={questions.length} questions={questions} />,
+          <QuestionsView
+            key={questions.length}
+            questions={questions}
+            instanceId={instanceId}
+          />,
         );
     }
     // Unmounting another root synchronously from inside this commit makes

@@ -5,12 +5,18 @@ import type { QuestionFormat } from "@/types/questions";
 import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
+import SaveButton, { questionTitle } from "@/components/subject/save-button";
 
 interface Props {
   questionInstance: QuestionFormat;
+  /** Question block id; enables the Save button. */
+  instanceId?: string;
 }
 
-const CheckForUnderstanding: React.FC<Props> = ({ questionInstance }) => {
+const CheckForUnderstanding: React.FC<Props> = ({
+  questionInstance,
+  instanceId,
+}) => {
   const isFrq = questionInstance.type === "frq";
   const frqId = useId();
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
@@ -61,8 +67,18 @@ const CheckForUnderstanding: React.FC<Props> = ({ questionInstance }) => {
 
   return (
     <div className="max-w-6xl rounded-lg border border-primary bg-primary-foreground p-4">
-      <div className="markdown text-xl text-foreground">
-        <RenderContent content={questionInstance.question} origin="question" />
+      <div className="flex items-start gap-2">
+        <div className="markdown flex-1 text-xl text-foreground">
+          <RenderContent content={questionInstance.question} origin="question" />
+        </div>
+        {instanceId && (
+          <SaveButton
+            id={`question_${instanceId}_0`}
+            kind="question"
+            questionIndex={0}
+            title={questionTitle(questionInstance.question.value)}
+          />
+        )}
       </div>
 
       {isFrq ? (

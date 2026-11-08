@@ -10,6 +10,7 @@ export interface User {
   createdWith: "email" | "google";
   createdAt: Date;
   lastFrqResponseAt: Timestamp;
+  mySubjects?: string[];
 }
 
 export interface UserChapterData {
@@ -20,4 +21,16 @@ export interface UserChapterData {
     | "Complete"
     | "Need Review"
     | "Skipped";
+  /** Set by the server once the chapter's reading XP has been awarded. */
+  readingXpAwarded?: boolean;
+  /**
+   * Saved with each progress change so the dashboard can list and link to
+   * chapters still in progress. Missing on chapters last marked before these
+   * were recorded.
+   */
+  subject?: string;
+  unitId?: string; // "unit-3", as in the chapter's URL
+  label?: string;
+  href?: string;
+  updatedAt?: Timestamp;
 }

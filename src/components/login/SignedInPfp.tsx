@@ -63,6 +63,13 @@ const SignedInPfp = ({ mobile }: { mobile?: boolean }) => {
           )}
 
           <Link
+            href="/dashboard"
+            className="block w-full px-3 py-2 text-left transition-colors duration-100 hover:bg-gray-100"
+          >
+            My Dashboard
+          </Link>
+
+          <Link
             href="/account"
             className="block w-full px-3 py-2 text-left transition-colors duration-100 hover:bg-gray-100"
           >
@@ -95,6 +102,13 @@ const SignedInPfp = ({ mobile }: { mobile?: boolean }) => {
               Admin Dashboard
             </Link>
           )}
+
+          <Link
+            href="/dashboard"
+            className={buttonVariants({ variant: "default" })}
+          >
+            My Dashboard
+          </Link>
 
           <Link
             href="/account"

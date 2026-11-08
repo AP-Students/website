@@ -5,6 +5,7 @@ import CookieBanner from "@/components/global/CookieBanner";
 import React from "react";
 import ReportErrorButton from "@/components/global/ReportErrorButton";
 import { CookieBannerProvider } from "@/components/global/CookieBannerContext";
+import LiveNotificationBanner from "@/components/global/LiveNotificationBanner";
 
 export default function RootLayoutClient({
   children,
@@ -14,9 +15,10 @@ export default function RootLayoutClient({
   return (
     <UserProvider>
       {children}
+      <LiveNotificationBanner />
       <CookieBannerProvider>
-      <CookieBanner />
-      <ReportErrorButton />
+        <CookieBanner />
+        <ReportErrorButton />
       </CookieBannerProvider>
     </UserProvider>
   );

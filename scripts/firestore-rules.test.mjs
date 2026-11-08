@@ -1,0 +1,604 @@
+import assert from "node:assert/strict";
+import { before, test } from "node:test";
+
+// firebase emulators:exec --only firestore --project demo-fivehive
+// "node --test scripts/firestore-rules.test.mjs"
+const host = process.env.FIRESTORE_EMULATOR_HOST;
+const project = process.env.GCLOUD_PROJECT ?? "demo-fivehive";
+if (
+  host &&
+  (!/^(127\.0\.0\.1|localhost):\d+$/.test(host) || !project.startsWith("demo-"))
+) {
+  throw new Error("Use a local emulator and a demo project for rules tests.");
+}
+const root = `projects/${project}/databases/(default)/documents`;
+const base = `http://${host}/v1/${root}`;
+const fields = (data) =>
+  Object.fromEntries(
+    Object.entries(data).map(([key, value]) => [key, encode(value)]),
+  );
+function encode(value) {
+  if (value instanceof Date) return { timestampValue: value.toISOString() };
+  if (value === null) return { nullValue: null };
+  if (typeof value === "string") return { stringValue: value };
+  if (typeof value === "number") return { integerValue: String(value) };
+  if (typeof value === "boolean") return { booleanValue: value };
+  if (Array.isArray(value))
+    return { arrayValue: { values: value.map(encode) } };
+  return { mapValue: { fields: fields(value) } };
+}
+function token(uid) {
+  const now = Math.floor(Date.now() / 1000);
+  const part = (value) =>
+    Buffer.from(JSON.stringify(value)).toString("base64url");
+  return `${part({ alg: "none", typ: "JWT" })}.${part({
+    aud: project,
+    iss: `https://securetoken.google.com/${project}`,
+    sub: uid,
+    user_id: uid,
+    iat: now,
+    exp: now + 3600,
+    firebase: { sign_in_provider: "custom" },
+  })}.`;
+}
+async function request(suffix, uid, method = "GET", body) {
+  const headers = { "Content-Type": "application/json" };
+  if (uid != null)
+    headers.Authorization = `Bearer ${uid === "server" ? "owner" : token(uid)}`;
+  return fetch(`${base}${suffix}`, {
+    method,
+    signal: AbortSignal.timeout(15_000),
+    headers,
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  });
+}
+const doc = (path, uid, method = "GET", data) =>
+  request(`/${path}`, uid, method, data ? { fields: fields(data) } : undefined);
+const stamp = (fieldPath) => ({ fieldPath, setToServerValue: "REQUEST_TIME" });
+const commit = (uid, path, data, times = [], deletes = []) =>
+  request(":commit", uid, "POST", {
+    writes: [
+      {
+        update: { name: `${root}/${path}`, fields: fields(data) },
+        updateTransforms: times.map(stamp),
+      },
+      ...deletes.map((path) => ({ delete: `${root}/${path}` })),
+    ],
+  });
+// Like the client's setDoc with { merge: true }: only the named fields change.
+const merge = (uid, path, data, times = []) =>
+  request(":commit", uid, "POST", {
+    writes: [
+      {
+        update: { name: `${root}/${path}`, fields: fields(data) },
+        updateMask: { fieldPaths: Object.keys(data) },
+        updateTransforms: times.map(stamp),
+      },
+    ],
+  });
+async function status(response, expected) {
+  assert.equal(response.status, expected, await response.text());
+}
+const owned = [
+  "userStats/student",
+  "users/student/completedTests/test",
+  "users/student/completedSubjects/subject",
+  "users/student/achievements/achievement",
+];
+const submittedAt = new Date("2026-10-01T12:00:00.000Z");
+const queued = {
+  templateId: "template",
+  subject: "physics",
+  unitId: "unit",
+  studentId: "student",
+  responses: { part: "answer" },
+  submittedAt,
+};
+const savedGrade = {
+  ...queued,
+  sourceSubmissionId: "attempt",
+  score: "2/3",
+  feedback: "Good",
+  grades: [],
+  graderId: "staff",
+  gradedAt: submittedAt,
+  queueClaimedAt: submittedAt,
+};
+before(async () => {
+  if (!host) return;
+  for (const [path, data] of [
+    ["users/student", { access: "user", uid: "student" }],
+    ["users/other", { access: "user", uid: "other" }],
+    ["users/staff", { access: "grader", uid: "staff" }],
+    ["users/another-grader", { access: "grader", uid: "another-grader" }],
+    ["users/admin", { access: "admin", uid: "admin" }],
+    ...[...owned, "xpAwards/receipt"].map((path) => [path, { xp: 10 }]),
+    ["config/xp", { frqGradeBonus: 25 }],
+    [
+      "notifications/student/items/notice",
+      { title: "Earned", readAt: null, expiresAt: null },
+    ],
+    [
+      "notifications/student/items/legacy-notice",
+      { title: "Older tab", readAt: null, expiresAt: null },
+    ],
+    ["profiles/student", { uid: "student", isPublic: false }],
+    ["profiles/public", { uid: "public", isPublic: true }],
+    ["graded-frqs/attempt", savedGrade],
+    [
+      "self-graded-frqs/self",
+      { studentId: "student", score: "2/3", graderId: "student" },
+    ],
+    ["ungraded-frqs/pending", { studentId: "student" }],
+    [
+      "users/student/chapterData/completed",
+      { progress: "Complete", readingXpAwarded: true },
+    ],
+    [
+      "users/student/frqResponses/legacy",
+      { userId: "student", responseText: "answer", grade: "2/3" },
+    ],
+  ])
+    await status(await doc(path, "server", "PATCH", data), 200);
+});
+const check = (name, fn) => test(name, { skip: !host }, fn);
+check(
+  "progress and payout state cannot be forged, deleted, or read by other students",
+  async () => {
+    for (const path of [...owned, "xpAwards/receipt"]) {
+      for (const method of ["PATCH", "DELETE"])
+        await status(
+          await doc(
+            path,
+            "student",
+            method,
+            method === "PATCH" ? { xp: 999 } : undefined,
+          ),
+          403,
+        );
+      await status(
+        await doc(`${path}-new`, "student", "PATCH", { xp: 999 }),
+        403,
+      );
+      await status(await doc(path, "other"), 403);
+      await status(
+        await doc(path, "student"),
+        path.startsWith("xpAwards/") ? 403 : 200,
+      );
+    }
+    await status(
+      await doc("users/student", "student", "PATCH", { access: "admin" }),
+      403,
+    );
+    await status(
+      await doc("users/student", "student", "PATCH", {
+        access: "user",
+        uid: "student",
+        xp: 999,
+      }),
+      403,
+    );
+  },
+);
+check(
+  "XP admin's full settings save works and non-admin writes fail",
+  async () => {
+    const config = {
+      readingComplete: 10,
+      mcqTestComplete: 10,
+      mcqCorrectAnswer: 1,
+      frqSubmission: 15,
+      frqGradeBonus: 73,
+      streakDay: 5,
+      streakMilestones: { 7: 50 },
+      updatedBy: "admin",
+    };
+    await status(await doc("config/xp", "student"), 200);
+    for (const uid of ["student", "staff"]) {
+      await status(
+        await commit(uid, "config/xp", { ...config, updatedBy: uid }, [
+          "updatedAt",
+        ]),
+        403,
+      );
+      await status(await doc("config/xp", uid, "DELETE"), 403);
+    }
+    await status(
+      await commit("admin", "config/xp", config, ["updatedAt"]),
+      200,
+    );
+    const saved = await doc("config/xp", "admin");
+    assert.equal((await saved.json()).fields.frqGradeBonus.integerValue, "73");
+  },
+);
+check(
+  "submission and grade ownership/staff permissions preserve official and self grading",
+  async () => {
+    for (const path of [
+      "graded-frqs/attempt",
+      "self-graded-frqs/self",
+      "ungraded-frqs/pending",
+      "users/student/frqResponses/legacy",
+    ]) {
+      await status(await doc(path, "student"), 200);
+      await status(await doc(path, "staff"), 200);
+      await status(await doc(path, "other"), 403);
+      await status(
+        await doc(path, "student", "PATCH", {
+          studentId: "student",
+          score: "3/3",
+        }),
+        403,
+      );
+    }
+    await status(
+      await commit(
+        "staff",
+        "graded-frqs/attempt",
+        { ...savedGrade, score: "3/3" },
+        ["gradedAt"],
+      ),
+      200,
+    );
+    const grade = { ...savedGrade, sourceSubmissionId: "new" };
+    await status(
+      await commit("student", "graded-frqs/new", grade, ["gradedAt"]),
+      403,
+    );
+    await status(
+      await commit("staff", "graded-frqs/new", grade, ["gradedAt"]),
+      403,
+    );
+    await status(
+      await doc("ungraded-frqs/new", "server", "PATCH", queued),
+      200,
+    );
+    // The grading page's transaction reads the result before creating it, so
+    // the student must get a 404 for it, not a denial.
+    await status(await doc("self-graded-frqs/new", "student"), 404);
+    await status(
+      await commit(
+        "student",
+        "self-graded-frqs/new",
+        { ...grade, graderId: "student" },
+        ["gradedAt", "queueClaimedAt"],
+        ["ungraded-frqs/new"],
+      ),
+      200,
+    );
+    await status(
+      await commit(
+        "other",
+        "self-graded-frqs/forged",
+        { ...grade, sourceSubmissionId: "forged", graderId: "other" },
+        ["gradedAt"],
+      ),
+      403,
+    );
+  },
+);
+check(
+  "official grades require an atomic matching queue claim, and provenance cannot be rewritten",
+  async () => {
+    const grade = { ...savedGrade, sourceSubmissionId: "claim" };
+    const times = ["gradedAt", "queueClaimedAt"];
+    const deletes = ["ungraded-frqs/claim"];
+    await status(
+      await commit("staff", "graded-frqs/claim", grade, times, deletes),
+      403,
+    );
+    await status(
+      await doc("ungraded-frqs/claim", "server", "PATCH", queued),
+      200,
+    );
+    // A saved document alone, a missing claim stamp, or a substituted owner/FRQ
+    // never proves that the student submission was legitimately graded.
+    await status(await commit("staff", "graded-frqs/claim", grade, times), 403);
+    const { queueClaimedAt: _stamp, ...withoutClaim } = grade;
+    await status(
+      await commit(
+        "staff",
+        "graded-frqs/claim",
+        withoutClaim,
+        ["gradedAt"],
+        deletes,
+      ),
+      403,
+    );
+    for (const changes of [
+      { studentId: "other" },
+      { templateId: "arbitrary" },
+      { subject: "arbitrary" },
+      { unitId: "arbitrary" },
+      { responses: { part: "substituted" } },
+      { submittedAt: new Date(0) },
+      { graderId: "another-grader" },
+    ])
+      await status(
+        await commit(
+          "staff",
+          "graded-frqs/claim",
+          { ...grade, ...changes },
+          times,
+          deletes,
+        ),
+        403,
+      );
+    await status(
+      await commit("staff", "graded-frqs/claim", grade, times, deletes),
+      200,
+    );
+    await status(
+      await commit("staff", "graded-frqs/claim", grade, times, deletes),
+      403,
+    );
+    const response = await doc("graded-frqs/claim", "staff");
+    const actual = (await response.json()).fields;
+    for (const [field, value] of [
+      ["studentId", { stringValue: "other" }],
+      ["templateId", { stringValue: "arbitrary" }],
+      ["graderId", { stringValue: "another-grader" }],
+      ["queueClaimedAt", { timestampValue: new Date(0).toISOString() }],
+    ])
+      await status(
+        await request("/graded-frqs/claim", "staff", "PATCH", {
+          fields: { ...actual, [field]: value },
+        }),
+        403,
+      );
+    await status(
+      await request(":commit", "another-grader", "POST", {
+        writes: [
+          {
+            update: {
+              name: `${root}/graded-frqs/claim`,
+              fields: { ...actual, score: { stringValue: "3/3" } },
+            },
+            updateTransforms: [stamp("gradedAt")],
+          },
+        ],
+      }),
+      403,
+    );
+    await status(
+      await request(":commit", "staff", "POST", {
+        writes: [
+          {
+            update: {
+              name: `${root}/graded-frqs/claim`,
+              fields: { ...actual, score: { stringValue: "3/3" } },
+            },
+            updateTransforms: [stamp("gradedAt")],
+          },
+        ],
+      }),
+      200,
+    );
+  },
+);
+check(
+  "notifications are private, server-created, and acknowledge-only with server timestamps",
+  async () => {
+    const path = "notifications/student/items/notice";
+    const original = { title: "Earned", readAt: null, expiresAt: null };
+    await status(await doc(path, "student"), 200);
+    await status(await doc(path, "other"), 403);
+    for (const changes of [
+      { title: "Forged" },
+      { expiresAt: "invalid" },
+      { readAt: "invalid" },
+    ]) {
+      await status(
+        await doc(path, "student", "PATCH", { ...original, ...changes }),
+        403,
+      );
+    }
+    await status(await doc(path, "student", "DELETE"), 403);
+    await status(await doc(`${path}-new`, "student", "PATCH", original), 403);
+    const validExpiry = new Date(Date.now() + 48 * 60 * 60 * 1000);
+    await status(
+      await commit(
+        "student",
+        path,
+        { ...original, expiresAt: validExpiry },
+        ["readAt"],
+      ),
+      200,
+    );
+    const unreadPath = "notifications/student/items/invalid-expiry";
+    await status(await doc(unreadPath, "server", "PATCH", original), 200);
+    for (const hours of [46, 50]) {
+      await status(
+        await commit(
+          "student",
+          unreadPath,
+          {
+            ...original,
+            expiresAt: new Date(Date.now() + hours * 60 * 60 * 1000),
+          },
+          ["readAt"],
+        ),
+        403,
+      );
+    }
+    await status(
+      await commit(
+        "student",
+        "notifications/student/items/legacy-notice",
+        { ...original, title: "Older tab" },
+        ["readAt"],
+      ),
+      200,
+    );
+  },
+);
+check("public profile reads follow visibility and clients cannot write projections", async () => {
+  await status(await doc("profiles/public", null), 200);
+  await status(await doc("profiles/student", null), 403);
+  await status(await doc("profiles/student", "student"), 200);
+  await status(await doc("profiles/student", "other"), 403);
+  await status(
+    await doc("profiles/student", "student", "PATCH", {
+      uid: "student",
+      isPublic: true,
+    }),
+    403,
+  );
+  await status(await doc("profiles/public", "student", "DELETE"), 403);
+});
+check(
+  "chapter progress saves its dashboard listing with the server's time, never an XP receipt",
+  async () => {
+    const listing = {
+      subject: "ap-physics-2",
+      unitId: "unit-3",
+      label: "Gauss's Law",
+      href: "/subject/ap-physics-2/unit-3-abc/chapter/gauss-law/gauss-law",
+    };
+    // What the tracker sends: progress on its own, then the listing.
+    const path = "users/student/chapterData/gauss-law";
+    await status(await merge("student", path, { progress: "Reading" }), 200);
+    await status(await merge("student", path, listing, ["updatedAt"]), 200);
+    await status(await merge("student", path, { progress: "Practicing" }), 200);
+    await status(await doc(path, "student"), 200);
+    await status(await doc(path, "other"), 403);
+
+    // A chapter can also be created with its listing in one write. Either
+    // way the listing is checked, and updatedAt must be the server's time.
+    await status(
+      await merge(
+        "student",
+        "users/student/chapterData/fresh",
+        { progress: "Reading", ...listing },
+        ["updatedAt"],
+      ),
+      200,
+    );
+    const forged = [
+      { href: "https://example.com/phish" },
+      { label: "" },
+      { subject: 7 },
+      { updatedAt: submittedAt },
+      { readingXpAwarded: true },
+      { completedAt: submittedAt },
+    ];
+    for (const [index, changes] of forged.entries()) {
+      const stamps = "updatedAt" in changes ? [] : ["updatedAt"];
+      await status(
+        await merge(
+          "student",
+          `users/student/chapterData/forged-${index}`,
+          { progress: "Reading", ...listing, ...changes },
+          stamps,
+        ),
+        403,
+      );
+      await status(
+        await merge("student", path, { ...listing, ...changes }, stamps),
+        403,
+      );
+    }
+    await status(await merge("other", path, listing, ["updatedAt"]), 403);
+
+    // A chapter whose XP was awarded can still be marked for review and
+    // listed, and its receipt stays.
+    const completedPath = "users/student/chapterData/completed";
+    await status(
+      await merge("student", completedPath, { progress: "Need Review" }),
+      200,
+    );
+    await status(
+      await merge("student", completedPath, listing, ["updatedAt"]),
+      200,
+    );
+    const completed = await (await doc(completedPath, "student")).json();
+    assert.equal(completed.fields.readingXpAwarded.booleanValue, true);
+  },
+);
+check(
+  "in-progress tests and FRQ drafts keep the dashboard's shape and the server's time, one save a second",
+  async () => {
+    const testPath = "users/student/inProgress/mcq_test_unit-2";
+    const practiceTest = {
+      kind: "mcq_test",
+      subject: "biology",
+      unitId: "unit-2",
+      refId: "u2-test",
+      label: "Unit 2 Test",
+      href: "/subject/biology/unit-2-abc/test/u2-test",
+      startedAt: submittedAt,
+      state: { answers: { 0: ["B"] }, currentIndex: 1, secondsRemaining: 1740 },
+    };
+    const draftPath = "users/student/inProgress/frq_essay";
+    const draft = {
+      kind: "frq",
+      subject: "english",
+      unitId: "unit-3",
+      refId: "essay",
+      label: "Argument Essay",
+      href: "/subject/english/unit-3-abc/frq/essay",
+      startedAt: submittedAt,
+      state: { responses: { thesis: "<p>Slant rhyme unsettles closure.</p>" } },
+    };
+
+    // What the test autosave and the FRQ draft write.
+    await status(
+      await commit("student", testPath, practiceTest, ["updatedAt"]),
+      200,
+    );
+    await status(await commit("student", draftPath, draft, ["updatedAt"]), 200);
+    await status(await doc(draftPath, "student"), 200);
+    await status(await doc(draftPath, "other"), 403);
+    await status(
+      await commit("other", "users/student/inProgress/frq_other", draft, [
+        "updatedAt",
+      ]),
+      403,
+    );
+
+    // A second save within a second is refused; a moment later it lands.
+    await status(await commit("student", draftPath, draft, ["updatedAt"]), 403);
+    await new Promise((resolve) => setTimeout(resolve, 1_100));
+    await status(await commit("student", draftPath, draft, ["updatedAt"]), 200);
+
+    const forged = [
+      ["client clock", draft, {}, []],
+      ["link off the site", draft, { href: "javascript:alert(1)" }],
+      ["extra field", draft, { xp: 999 }],
+      ["unknown kind", draft, { kind: "reading" }],
+      ["empty label", draft, { label: "" }],
+      ["answers in a draft", draft, { state: { responses: {}, answers: {} } }],
+      ["draft that isn't a map", draft, { state: { responses: "essay" } }],
+      [
+        "negative question",
+        practiceTest,
+        {
+          state: { answers: {}, currentIndex: -1, secondsRemaining: 60 },
+        },
+      ],
+    ];
+    for (const [name, base, changes, stamps = ["updatedAt"]] of forged) {
+      const kind = changes.kind ?? base.kind;
+      const response = await commit(
+        "student",
+        `users/student/inProgress/${kind}_${name.replaceAll(" ", "-")}`,
+        { ...base, ...changes },
+        stamps,
+      );
+      assert.equal(response.status, 403, name);
+    }
+    // The id says what it holds: an FRQ draft can't sit under a test's id.
+    await status(
+      await commit(
+        "student",
+        "users/student/inProgress/mcq_test_essay",
+        draft,
+        ["updatedAt"],
+      ),
+      403,
+    );
+
+    await status(await doc(draftPath, "other", "DELETE"), 403);
+    await status(await doc(draftPath, "student", "DELETE"), 200);
+  },
+);

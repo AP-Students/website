@@ -1,0 +1,161 @@
+"use client";
+
+import { useRef } from "react";
+import Link from "next/link";
+import type { ActivityEvent, GradeStatus } from "@/types/dashboard";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { findCourse } from "@/lib/dashboard/subjects";
+import { cn } from "@/lib/utils";
+import { useActivityPage } from "@/components/hooks/useActivityPage";
+import Pager from "@/components/dashboard/Pager";
+
+const FRQ_STATUS: Record<GradeStatus, string> = {
+  none: "Submitted",
+  pending: "Awaiting grade",
+  graded: "Graded",
+  self_graded: "Self-graded",
+};
+
+function unitLabel(unitId: string): string | null {
+  const match = /^unit-(\d+)/.exec(unitId);
+  return match ? `Unit ${match[1]}` : null;
+}
+
+function describe(event: ActivityEvent) {
+  if (event.type === "mcq_test") {
+    const missed = event.questions?.find((question) => !question.correct);
+    if (missed) {
+      return {
+        item: `Q${missed.index}`,
+        detail: missed.topic,
+        action: "Go to Question",
+        href: `${event.href}?question=${missed.index}`,
+      };
+    }
+    const score = event.score
+      ? `${event.score.correct}/${event.score.total} correct`
+      : "Test completed";
+    return { item: event.label, detail: score, action: "View Test" };
+  }
+  if (event.type === "frq") {
+    return {
+      item: event.label,
+      detail:
+        (event.gradeStatus === "graded" || event.gradeStatus === "self_graded") && event.frqScore
+          ? `${FRQ_STATUS[event.gradeStatus]} · ${event.frqScore}`
+          : FRQ_STATUS[event.gradeStatus],
+      action: "View FRQ",
+    };
+  }
+  return {
+    item: event.label,
+    detail: "Reading completed",
+    action: "Open Reading",
+  };
+}
+
+export default function RecentActivity({ uid }: { uid: string }) {
+  const {
+    events,
+    page,
+    hasNext,
+    totalPages,
+    loading,
+    error,
+    nextPage,
+    previousPage,
+    hasNewActivity,
+    refresh,
+  } = useActivityPage(uid);
+
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  // The button disappears once clicked, so focus moves to the heading rather
+  // than being lost.
+  const showNewActivity = () => {
+    refresh();
+    headingRef.current?.focus();
+  };
+
+  return (
+    <section>
+      <div className="mb-3 flex items-center justify-between">
+        <h2
+          ref={headingRef}
+          tabIndex={-1}
+          className="text-2xl font-bold outline-none"
+        >
+          Recent Activity:
+        </h2>
+        <div aria-live="polite">
+          {hasNewActivity && (
+            <Button variant="outline" size="sm" onClick={showNewActivity}>
+              New activity · Refresh
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {error ? (
+        <p role="alert" className="rounded-md bg-red-100 p-4 text-red-700">
+          Couldn&apos;t load your activity. Refresh to try again.
+        </p>
+      ) : loading && events.length === 0 ? (
+        <p role="status" className="text-gray-500">
+          Loading your activity…
+        </p>
+      ) : events.length === 0 ? (
+        <p className="text-gray-500">
+          No activity yet. Finish a practice test or FRQ to see it here.
+        </p>
+      ) : (
+        <>
+          <ul
+            aria-busy={loading}
+            className="divide-y divide-gray-300 overflow-hidden rounded-lg border border-gray-300 bg-white shadow"
+          >
+            {events.map((event) => {
+              const {
+                item,
+                detail,
+                action,
+                href = event.href,
+              } = describe(event);
+              const subjectName =
+                findCourse(event.subject)?.name ?? event.subject;
+              const title = [subjectName, unitLabel(event.unitId), item]
+                .filter(Boolean)
+                .join(" | ");
+
+              return (
+                <li key={event.id} className="p-4">
+                  <p className="font-semibold">{title}</p>
+                  <p className="text-sm text-gray-600">{detail}</p>
+                  <Link
+                    href={href}
+                    aria-label={`${action}: ${title}`}
+                    className={cn(
+                      buttonVariants({ size: "sm" }),
+                      "mt-2 rounded-full",
+                    )}
+                  >
+                    {action}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+          <Pager
+            label="Recent activity pages"
+            page={page}
+            onPreviousPage={previousPage}
+            onNextPage={nextPage}
+            hasNext={hasNext}
+            totalPages={totalPages}
+            disabled={loading}
+          />
+        </>
+      )}
+    </section>
+  );
+}

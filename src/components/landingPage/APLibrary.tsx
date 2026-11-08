@@ -1,6 +1,6 @@
 import APsection from "./APsection";
 
-const sectionData = [
+export const sectionData = [
   {
     title: "Math and Computer Science",
     numofCol: "lg:col-span-2",

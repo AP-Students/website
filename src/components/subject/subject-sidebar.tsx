@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { BookDashed, BookOpenCheck, ChevronsLeft, PenLine } from "lucide-react";
+import {
+  BookDashed,
+  BookOpenCheck,
+  Check,
+  ChevronsLeft,
+  PenLine,
+} from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -15,10 +21,11 @@ import usePathname from "../client/pathname";
 type Props = {
   subject: Subject;
   preview: boolean;
+  completedChapterIds: Set<string>;
 };
 
 const SubjectSidebar = (props: Props) => {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
@@ -64,121 +71,129 @@ const SubjectSidebar = (props: Props) => {
             // Otherwise display numbers start at 1 (classic behaviour).
             const uNum = props.subject.hasUnit0 ? unitIndex : unitIndex + 1;
             return (
-            <AccordionItem
-              className="border-none"
-              value={unit.title}
-              key={unitIndex}
-            >
-              <AccordionTrigger className="text-balance pb-2 text-left">
-                {unit.title}
-              </AccordionTrigger>
+              <AccordionItem
+                className="border-none"
+                value={unit.title}
+                key={unitIndex}
+              >
+                <AccordionTrigger className="text-balance pb-2 text-left">
+                  {unit.title}
+                </AccordionTrigger>
 
-              <AccordionContent className="flex flex-col gap-x-2 pb-0">
-                <div className="grow">
-                  {unit.chapters.map((chapter, chapterIndex) => (
-                    <Link
-                      className={cn(
-                        "group relative mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0",
-                        !props.preview &&
-                          !chapter.isPublic &&
-                          "pointer-events-none opacity-70",
-                      )}
-                      aria-disabled={!props.preview && !chapter.isPublic}
-                      tabIndex={
-                        !props.preview && !chapter.isPublic ? -1 : undefined
-                      }
-                      key={chapterIndex}
-                      href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${uNum}-${unit.id}/chapter/${chapter.id}/${formatSlug(chapter.title)}`}
-                    >
-                      <div className="flex size-6 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-[.75rem] text-white">
-                        {uNum}.{chapterIndex + 1}
-                      </div>
-                      <span className="text-balance leading-tight group-hover:underline">
-                        {chapter.title}
-                      </span>
-                      <p
+                <AccordionContent className="flex flex-col gap-x-2 pb-0">
+                  <div className="grow">
+                    {unit.chapters.map((chapter, chapterIndex) => (
+                      <Link
                         className={cn(
-                          "ml-auto text-nowrap rounded-full border border-gray-400 px-2 text-xs",
-                          chapter.isPublic && "hidden",
+                          "group relative mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0",
+                          !props.preview &&
+                            !chapter.isPublic &&
+                            "pointer-events-none opacity-70",
                         )}
+                        aria-disabled={!props.preview && !chapter.isPublic}
+                        tabIndex={
+                          !props.preview && !chapter.isPublic ? -1 : undefined
+                        }
+                        key={chapterIndex}
+                        href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${uNum}-${unit.id}/chapter/${chapter.id}/${formatSlug(chapter.title)}`}
                       >
-                        WIP
-                      </p>
-                    </Link>
-                  ))}
-                  {unit.tests?.map((test, testIndex) => (
-                    <Link
-                      className={cn(
-                        "group mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0",
-                        !props.preview &&
-                          !test.isPublic &&
-                          "pointer-events-none opacity-70",
-                      )}
-                      aria-disabled={!props.preview && !test.isPublic}
-                      tabIndex={
-                        !props.preview && !test.isPublic ? -1 : undefined
-                      }
-                      href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${uNum}-${unit.id}/test/${test.id}`}
-                      key={test.id}
-                    >
-                      {test.isPublic ? (
-                        <BookOpenCheck className="size-6" />
-                      ) : (
-                        <BookDashed className="size-6 shrink-0 opacity-70" />
-                      )}
-                      <span className="text-balance group-hover:underline">
-                        {test.name
-                          ? test.name
-                          : // unit.tests cuz typescript doesn't recognize I checked for unit.tests already
-                            `Unit ${uNum} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
-                      </span>
-                      <p
-                        className={cn(
-                          "ml-auto text-nowrap rounded-full border border-gray-400 px-2 text-xs",
-                          test.isPublic && "hidden",
+                        <div className="flex size-6 flex-shrink-0 items-center justify-center rounded bg-primary text-center text-[.75rem] text-white">
+                          {uNum}.{chapterIndex + 1}
+                        </div>
+                        <span className="text-balance leading-tight group-hover:underline">
+                          {chapter.title}
+                        </span>
+                        {props.completedChapterIds.has(chapter.id) && (
+                          <Check
+                            aria-label="Completed"
+                            className="size-4 shrink-0 stroke-green-600 stroke-[3]"
+                          />
                         )}
+                        <p
+                          className={cn(
+                            "ml-auto text-nowrap rounded-full border border-gray-400 px-2 text-xs",
+                            chapter.isPublic && "hidden",
+                          )}
+                        >
+                          WIP
+                        </p>
+                      </Link>
+                    ))}
+                    {unit.tests?.map((test, testIndex) => (
+                      <Link
+                        className={cn(
+                          "group mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0",
+                          !props.preview &&
+                            !test.isPublic &&
+                            "pointer-events-none opacity-70",
+                        )}
+                        aria-disabled={!props.preview && !test.isPublic}
+                        tabIndex={
+                          !props.preview && !test.isPublic ? -1 : undefined
+                        }
+                        href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${uNum}-${unit.id}/test/${test.id}`}
+                        key={test.id}
                       >
-                        WIP
-                      </p>
-                    </Link>
-                  ))}
-                  {unit.frqs?.map((frq, frqIndex) => (
-                    <Link
-                      className={cn(
-                        "group mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0",
-                        !props.preview &&
-                          !frq.isPublic &&
-                          "pointer-events-none opacity-70",
-                      )}
-                      aria-disabled={!props.preview && !frq.isPublic}
-                      tabIndex={!props.preview && !frq.isPublic ? -1 : undefined}
-                      href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${uNum}-${unit.id}/frq/${frq.id}`}
-                      key={frq.id}
-                    >
-                      <PenLine
-                        className={cn(
-                          "size-6 shrink-0",
-                          !frq.isPublic && "opacity-70",
+                        {test.isPublic ? (
+                          <BookOpenCheck className="size-6" />
+                        ) : (
+                          <BookDashed className="size-6 shrink-0 opacity-70" />
                         )}
-                      />
-                      <span className="text-balance group-hover:underline">
-                        {frq.title
-                          ? frq.title
-                          : `Unit ${uNum} FRQ ${unit.frqs && unit.frqs.length > 1 ? ` ${frqIndex + 1}` : ""}`}
-                      </span>
-                      <p
+                        <span className="text-balance group-hover:underline">
+                          {test.name
+                            ? test.name
+                            : // unit.tests cuz typescript doesn't recognize I checked for unit.tests already
+                              `Unit ${uNum} Test ${unit.tests && unit.tests.length > 1 ? ` ${testIndex + 1}` : ""}`}
+                        </span>
+                        <p
+                          className={cn(
+                            "ml-auto text-nowrap rounded-full border border-gray-400 px-2 text-xs",
+                            test.isPublic && "hidden",
+                          )}
+                        >
+                          WIP
+                        </p>
+                      </Link>
+                    ))}
+                    {unit.frqs?.map((frq, frqIndex) => (
+                      <Link
                         className={cn(
-                          "ml-auto text-nowrap rounded-full border border-gray-400 px-2 text-xs",
-                          frq.isPublic && "hidden",
+                          "group mb-3 flex items-center gap-x-1.5 text-sm font-medium last:mb-0",
+                          !props.preview &&
+                            !frq.isPublic &&
+                            "pointer-events-none opacity-70",
                         )}
+                        aria-disabled={!props.preview && !frq.isPublic}
+                        tabIndex={
+                          !props.preview && !frq.isPublic ? -1 : undefined
+                        }
+                        href={`${pathname.split("/").slice(0, 3).join("/")}/unit-${uNum}-${unit.id}/frq/${frq.id}`}
+                        key={frq.id}
                       >
-                        WIP
-                      </p>
-                    </Link>
-                  ))}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
+                        <PenLine
+                          className={cn(
+                            "size-6 shrink-0",
+                            !frq.isPublic && "opacity-70",
+                          )}
+                        />
+                        <span className="text-balance group-hover:underline">
+                          {frq.title
+                            ? frq.title
+                            : `Unit ${uNum} FRQ ${unit.frqs && unit.frqs.length > 1 ? ` ${frqIndex + 1}` : ""}`}
+                        </span>
+                        <p
+                          className={cn(
+                            "ml-auto text-nowrap rounded-full border border-gray-400 px-2 text-xs",
+                            frq.isPublic && "hidden",
+                          )}
+                        >
+                          WIP
+                        </p>
+                      </Link>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
             );
           })}
         </Accordion>
