@@ -1,14 +1,17 @@
 /** A value of null is shown as a dash: still loading, or failed to load. */
 export default function GlobalStats({
+  streak,
   problemsSolved,
   subjectsCompleted,
   totalXp,
 }: {
+  streak?: number | null;
   problemsSolved: number | null;
   subjectsCompleted: number | null;
   totalXp: number | null;
 }) {
   const rows = [
+    ...(streak === undefined ? [] : [{ label: "Day Streak", value: streak }]),
     { label: "Problems Solved", value: problemsSolved },
     { label: "Subjects Completed", value: subjectsCompleted },
     { label: "Total XP", value: totalXp },

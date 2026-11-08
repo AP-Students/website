@@ -44,11 +44,13 @@ const COLLAPSED_COUNT = 6;
 interface AchievementsCardProps {
   stats: AchievementStats;
   earnedIds: ReadonlySet<string>;
+  earnedOnly ?: boolean;
 }
 
 export default function AchievementsCard({
   stats,
   earnedIds,
+  earnedOnly = false
 }: AchievementsCardProps) {
   const [showAll, setShowAll] = useState(false);
 
@@ -56,7 +58,9 @@ export default function AchievementsCard({
     Math.min(stats[achievement.stat], achievement.threshold) /
     achievement.threshold;
 
-  const sorted = [...ACHIEVEMENTS].sort((a, b) => {
+  const sorted = ACHIEVEMENTS.filter(
+    (achievement) => !earnedOnly || earnedIds.has(achievement.id),
+  ).sort((a, b) => {
     const aEarned = earnedIds.has(a.id);
     const bEarned = earnedIds.has(b.id);
     if (aEarned !== bEarned) return aEarned ? -1 : 1;
@@ -69,9 +73,15 @@ export default function AchievementsCard({
       <div className="mb-4 flex items-baseline justify-between">
         <h2 className="text-2xl font-bold">Achievements:</h2>
         <span className="text-sm text-gray-600">
-          {earnedIds.size} / {ACHIEVEMENTS.length} earned
+          {earnedOnly
+            ? `${sorted.length} earned`
+            : `${earnedIds.size} / ${ACHIEVEMENTS.length} earned`}
         </span>
       </div>
+
+      {earnedOnly && sorted.length === 0 && (
+        <p className="text-gray-500">No achievements earned yet.</p>
+      )}
 
       <ul className="grid grid-cols-2 gap-x-2 gap-y-6 sm:grid-cols-3">
         {visible.map((achievement) => {
