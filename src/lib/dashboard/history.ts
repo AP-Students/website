@@ -57,7 +57,7 @@ export function toHistoryRow(event: ActivityEvent): HistoryRow {
 
   if (event.type === "frq") {
     status =
-      event.gradeStatus === "graded" && event.frqScore
+      (event.gradeStatus === "graded" || event.gradeStatus === "self_graded") && event.frqScore
         ? `${FRQ_STATUS[event.gradeStatus]} · ${event.frqScore}`
         : FRQ_STATUS[event.gradeStatus];
     // A graded FRQ's id is its submission's, which is also the id of its

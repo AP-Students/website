@@ -37,10 +37,16 @@ export function useNotifications(uid: string | undefined) {
         setNotifications(
           snapshot.docs
             .map((item) => ({ ...item.data(), id: item.id }) as AppNotification)
-            .filter(
-              (item) =>
-                !item.expiresAt || item.expiresAt.toMillis() > Date.now(),
-            ),
+            .filter((item) => {
+              const expiresAt =
+                item.expiresAt ??
+                (item.readAt
+                  ? Timestamp.fromMillis(
+                      item.readAt.toMillis() + 48 * 60 * 60 * 1000,
+                    )
+                  : undefined);
+              return !expiresAt || expiresAt.toMillis() > Date.now();
+            }),
         );
         setLoadedUid(uid);
       },

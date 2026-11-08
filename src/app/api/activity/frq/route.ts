@@ -211,7 +211,32 @@ export async function POST(request: NextRequest) {
         newlyUnlocked: [],
         alreadyRecorded: true,
       };
-      if (event?.exists) return response;
+      if (event?.exists) {
+        if (
+          event.data()?.gradeStatus === "pending" &&
+          gradeStatus === "self_graded"
+        ) {
+          const selfGrade = await transaction.get(
+            adminDb.collection("self-graded-frqs").doc(submissionId),
+          );
+          const selfGradeData = selfGrade.data();
+          if (
+            selfGrade.exists &&
+            selfGradeData?.studentId === uid &&
+            typeof selfGradeData.score === "string"
+          ) {
+            transaction.set(
+              eventRef,
+              {
+                gradeStatus: "self_graded",
+                frqScore: selfGradeData.score,
+              },
+              { merge: true },
+            );
+          }
+        }
+        return response;
+      }
 
       const { day, timeZone } = resolveActivityDay(
         now,
@@ -271,7 +296,8 @@ export async function POST(request: NextRequest) {
         dayKey: day,
         xpAwarded,
         gradeStatus,
-        ...(gradeStatus === "graded" && typeof submission.score === "string"
+        ...((gradeStatus === "graded" || gradeStatus === "self_graded") &&
+        typeof submission.score === "string"
           ? { frqScore: submission.score }
           : {}),
       });

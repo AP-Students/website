@@ -118,6 +118,10 @@ before(async () => {
       "notifications/student/items/notice",
       { title: "Earned", readAt: null, expiresAt: null },
     ],
+    [
+      "notifications/student/items/legacy-notice",
+      { title: "Older tab", readAt: null, expiresAt: null },
+    ],
     ["profiles/student", { uid: "student", isPublic: false }],
     ["profiles/public", { uid: "public", isPublic: true }],
     ["graded-frqs/attempt", savedGrade],
@@ -414,6 +418,15 @@ check(
         403,
       );
     }
+    await status(
+      await commit(
+        "student",
+        "notifications/student/items/legacy-notice",
+        original,
+        ["readAt"],
+      ),
+      200,
+    );
   },
 );
 check("public profile reads follow visibility and clients cannot write projections", async () => {

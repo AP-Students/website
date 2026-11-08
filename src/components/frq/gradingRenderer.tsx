@@ -238,6 +238,12 @@ const FRQGradingRenderer = ({
       });
 
       if (selfGrading) {
+        reportWithRetry(
+          () => reportFrqSubmission(submission.id),
+          "Error updating self-graded FRQ activity:",
+          `xp-frq-self-grade-${submission.id}`,
+          user.uid,
+        );
         // The result doc is keyed by the submission id, so this is now readable
         // and it is the only FRQ page a non-staff account can open.
         router.push(`/frq-feedback/${submission.id}`);

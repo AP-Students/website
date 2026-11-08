@@ -41,7 +41,7 @@ function describe(event: ActivityEvent) {
     return {
       item: event.label,
       detail:
-        event.gradeStatus === "graded" && event.frqScore
+        (event.gradeStatus === "graded" || event.gradeStatus === "self_graded") && event.frqScore
           ? `${FRQ_STATUS[event.gradeStatus]} · ${event.frqScore}`
           : FRQ_STATUS[event.gradeStatus],
       action: "View FRQ",

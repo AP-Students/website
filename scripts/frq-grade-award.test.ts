@@ -6,6 +6,7 @@ import {
   type Transaction as AdminTransaction,
 } from "firebase-admin/firestore";
 import { awardAchievements } from "../src/lib/server/awardAchievements.ts";
+import { buildPublicProfile } from "../src/lib/server/publicProfile.ts";
 import {
   checkAchievements,
   readAchievementStats,
@@ -305,7 +306,14 @@ void test("pays the student, updates levels, and leaves streak/calendar untouche
   assert.equal(db.docs.get(statsPath)?.frqsSubmitted, 1);
   assert.deepEqual(
     db.writes.sort(),
-    [statsPath, receiptPath, notificationPath, notificationReceiptPath, "profiles/student"].sort(),
+    [
+      statsPath,
+      receiptPath,
+      notificationPath,
+      notificationReceiptPath,
+      "profiles/student",
+      "notifications/student/items/level_up_2",
+    ].sort(),
   );
   assert.equal(db.docs.has("userStats/staff"), false);
   assert.equal(db.docs.get(receiptPath)?.xpAwarded, 17);
@@ -667,6 +675,52 @@ void test("pure achievement checks and ineligible stats never create notificatio
   assert.equal(db.docs.get("profiles/student")?.isPublic, false);
 });
 
+void test("public profiles use live streaks and safe bounded name and photo fields", () => {
+  const today = new Date();
+  const todayKey = [
+    today.getUTCFullYear(),
+    String(today.getUTCMonth() + 1).padStart(2, "0"),
+    String(today.getUTCDate()).padStart(2, "0"),
+  ].join("-");
+  const stale = new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000);
+  const staleKey = [
+    stale.getUTCFullYear(),
+    String(stale.getUTCMonth() + 1).padStart(2, "0"),
+    String(stale.getUTCDate()).padStart(2, "0"),
+  ].join("-");
+  const profile = buildPublicProfile(
+    "student",
+    {
+      displayName: ` ${"A".repeat(120)} `,
+      photoURL: "javascript:alert(1)",
+    },
+    {
+      currentStreak: 7,
+      longestStreak: 12,
+      lastActiveDay: staleKey,
+      timeZone: "UTC",
+    },
+    [],
+    true,
+  );
+
+  assert.equal(todayKey.length, 10);
+  assert.equal(profile.displayName.length, 80);
+  assert.equal(profile.currentStreak, 0);
+  assert.equal(profile.longestStreak, 12);
+  assert.equal("photoURL" in profile, false);
+  assert.equal(
+    buildPublicProfile(
+      "student",
+      { photoURL: "https://firebasestorage.googleapis.com/v0/b/demo/o/photo" },
+      {},
+      [],
+      false,
+    ).photoURL,
+    "https://firebasestorage.googleapis.com/v0/b/demo/o/photo",
+  );
+});
+
 void test("new achievements and their notifications commit together once under concurrency", async () => {
   const db = new MemoryDb();
   const results = await Promise.all([
@@ -682,14 +736,14 @@ void test("new achievements and their notifications commit together once under c
   assert.equal(notification.type, "achievement");
   assert.equal(notification.href, "/dashboard#achievements");
   assert.equal(notification.expiresAt, null);
-  assert.equal(db.writes.length, 3);
+  assert.equal(db.writes.length, 4);
   assert.equal(db.docs.get("profiles/student")?.achievementCount, 1);
   assert.deepEqual(db.docs.get("profiles/student")?.achievements, [
     { id: "frq-1", title: "Free Thinker" },
   ]);
   assert.ok(db.retries > 0);
   assert.deepEqual(await awardBadges(db, { frqsSubmitted: 1 }), []);
-  assert.equal(db.writes.length, 4);
+  assert.equal(db.writes.length, 5);
 });
 
 void test("earned achievements never re-notify even after notification deletion", async () => {
