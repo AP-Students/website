@@ -5,9 +5,14 @@ import katex from "katex";
 import "katex/contrib/mhchem";
 import hljs from "highlight.js";
 import "@/styles/highlightjs.css";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { QuestionsOutput } from "./custom_questions/QuestionInstance";
+import { QuestionsView } from "./custom_questions/QuestionInstance";
+import {
+  previewQuestions,
+  syncPreviewRoots,
+  type MountedPreview,
+} from "./questionPreviews";
 import type { QuestionFormat } from "@/types/questions";
 import "@/styles/katexStyling.css";
 import styles from "./Renderer.module.css";
@@ -304,12 +309,11 @@ const customParsers: Record<
   },
 };
 
-const rootMap = new Map<Element, Root>();
-
 const Renderer = (props: { content: OutputData }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const dataFetched = useRef<boolean>(false);
   const instanceIdsLoaded = useRef<Set<string>>(new Set());
+  const previews = useRef(new Map<string, MountedPreview<Element, Root>>());
 
   useEffect(() => {
     const fetchData = async () => {
@@ -363,35 +367,6 @@ const Renderer = (props: { content: OutputData }) => {
       } catch (error) {
         console.error("Error fetching questions from Firestore:", error);
       }
-
-      // Proceed to render the components
-      if (containerRef.current) {
-        props.content.blocks.forEach((block) => {
-          /* eslint-disable */ // InstanceOf doesnt seem to work so Im just using this as a substitute
-          if (block.type === "questionsAddCard") {
-            const instanceId = block.data.instanceId;
-            const placeholder = containerRef.current!.querySelector(
-              `.questions-block-${instanceId}`,
-            );
-
-            if (placeholder) {
-              let root = rootMap.get(placeholder);
-
-              // If no root exists for this placeholder, create one and store it
-              if (!root) {
-                root = createRoot(placeholder);
-                rootMap.set(placeholder, root);
-              }
-
-              // Render the component
-              root.render(
-                <QuestionsOutput instanceId={instanceId.toString()} />,
-              );
-            }
-          }
-          /* eslint-enable */
-        });
-      }
     };
 
     // Call the fetchData function
@@ -400,30 +375,108 @@ const Renderer = (props: { content: OutputData }) => {
     });
   }, [props.content]);
 
+  const markup = useMemo(() => {
+    if (!props.content) return "";
+    const parser = new edjsParser(undefined, customParsers);
+    return props.content.blocks
+      .map((block) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        const blockMarkup = parser.parseBlock(block);
+        if (blockMarkup instanceof Error) return "";
+
+        const alignment = ALIGNABLE_TYPES.has(block.type)
+          ? sanitizeAlignment(block.tunes?.alignment)
+          : undefined;
+
+        return alignment && alignment !== "left"
+          ? `<div style="text-align:${alignment}">${blockMarkup}</div>`
+          : blockMarkup;
+      })
+      .join("");
+  }, [props.content]);
+
+  // The React build Next ships rewrites `innerHTML` whenever this prop is a new
+  // object, even when the HTML inside is identical. Built inline, every
+  // re-render of the page around it (autosave's "Saving…"/"Saved" included)
+  // replaced the question placeholders and took the cards mounted in them.
+  const html = useMemo(() => ({ __html: markup }), [markup]);
+
+  const questionBlocks = useMemo(
+    () =>
+      (props.content?.blocks ?? [])
+        .filter((block) => block.type === "questionsAddCard")
+        .map((block) => {
+          const data = block.data as {
+            instanceId?: unknown;
+            questions?: unknown;
+          };
+          return {
+            instanceId: String(data.instanceId),
+            questions: previewQuestions(data.questions),
+          };
+        }),
+    [props.content],
+  );
+
+  // After every render, not only when the content changes: if the HTML was
+  // replaced for any reason, its question placeholders are new nodes and need
+  // their cards mounted again. Each card gets the questions from the editor's
+  // latest output, so editing a question updates the preview too.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const placeholders = new Map<string, Element>();
+    for (const { instanceId } of questionBlocks) {
+      const placeholder = container.querySelector(
+        `.questions-block-${CSS.escape(instanceId)}`,
+      );
+      if (placeholder) placeholders.set(instanceId, placeholder);
+    }
+
+    const { mounted, stale } = syncPreviewRoots(
+      previews.current,
+      placeholders,
+      (placeholder) => createRoot(placeholder),
+    );
+    previews.current = mounted;
+    for (const { instanceId, questions } of questionBlocks) {
+      // Keyed by count: adding or removing a question starts the quiz over
+      // rather than leaving it on a question that no longer exists.
+      mounted
+        .get(instanceId)
+        ?.root.render(
+          <QuestionsView key={questions.length} questions={questions} />,
+        );
+    }
+    // Unmounting another root synchronously from inside this commit makes
+    // React warn about a race, so the detached ones go just after it.
+    if (stale.length) setTimeout(() => stale.forEach((root) => root.unmount()));
+  });
+
+  const isMounted = useRef(false);
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+      // Deferred like the stale roots above, and checked again when it runs:
+      // React's development-mode double mount runs this cleanup and then
+      // mounts the same Renderer again, which goes on using these roots.
+      setTimeout(() => {
+        if (isMounted.current) return;
+        previews.current.forEach(({ root }) => root.unmount());
+        previews.current = new Map();
+      });
+    };
+  }, []);
+
   if (!props.content) return null;
-
-  const parser = new edjsParser(undefined, customParsers);
-  const markup = props.content.blocks
-    .map((block) => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      const blockMarkup = parser.parseBlock(block);
-      if (blockMarkup instanceof Error) return "";
-
-      const alignment = ALIGNABLE_TYPES.has(block.type)
-        ? sanitizeAlignment(block.tunes?.alignment)
-        : undefined;
-
-      return alignment && alignment !== "left"
-        ? `<div style="text-align:${alignment}">${blockMarkup}</div>`
-        : blockMarkup;
-    })
-    .join("");
 
   return (
     <article
       ref={containerRef}
       className="prose before:prose-code:content-none after:prose-code:content-none"
-      dangerouslySetInnerHTML={{ __html: markup }}
+      dangerouslySetInnerHTML={html}
     ></article>
   );
 };

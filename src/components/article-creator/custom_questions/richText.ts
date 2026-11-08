@@ -115,6 +115,65 @@ export function extractClipboardFragment(html: string): string {
   return html.slice(start + FRAGMENT_START.length, end);
 }
 
+/**
+ * Whether a CSS `font-weight` value reads as bold. 600 (semibold) and up is
+ * where browsers switch to a bold face; an empty value means "not set here".
+ */
+export function isBoldFontWeight(value: string): boolean {
+  const weight = value.trim().toLowerCase();
+  if (weight === "bold" || weight === "bolder") return true;
+  if (weight === "") return false;
+  const numeric = Number(weight);
+  return Number.isFinite(numeric) && numeric >= 600;
+}
+
+/**
+ * Cuts clipboard HTML down to what was copied, with bold expressed as tags,
+ * before any editor reads it.
+ *
+ * - Windows wraps the copy in a CRLF-padded document (see
+ *   `extractClipboardFragment`). Kept, those line breaks showed as empty lines
+ *   in a question box and as two stray spaces in a caption.
+ * - Google Docs wraps every copy in `<b style="font-weight:normal"
+ *   id="docs-internal-guid-…">` and marks its real bold on spans with
+ *   `font-weight:700`. Every editor here reads `<b>` as bold and drops span
+ *   styles, so anything pasted from Docs came out entirely bold. The wrapper is
+ *   unwrapped, and a bold span gets a `<strong>` so the real bold survives.
+ */
+export function normalizePastedHtml(html: string): string {
+  const fragment = extractClipboardFragment(html);
+  if (typeof window === "undefined") return fragment;
+
+  const template = document.createElement("template");
+  template.innerHTML = fragment;
+  // Clipboard metadata (`<meta charset="utf-8">` from Docs and from Chrome on
+  // macOS). Left in front of the text, it made the sanitizer's HTML parser drop
+  // a leading space from the paste.
+  template.content.querySelectorAll("meta").forEach((node) => node.remove());
+  template.content
+    .querySelectorAll<HTMLElement>("b, strong")
+    .forEach((node) => {
+      const weight = node.style.fontWeight;
+      if (weight && !isBoldFontWeight(weight)) {
+        node.replaceWith(...Array.from(node.childNodes));
+      }
+    });
+  template.content.querySelectorAll<HTMLElement>("span").forEach((node) => {
+    if (!isBoldFontWeight(node.style.fontWeight)) return;
+    if (node.closest("b, strong")) return;
+    // Inside the span rather than around it, so the span's other styles (a
+    // highlight background, an underline) still reach the editor's sanitizer.
+    const strong = document.createElement("strong");
+    strong.append(...Array.from(node.childNodes));
+    node.append(strong);
+    // The weight is a tag now. Dropping it from the style keeps a second pass
+    // (the article editor's paste listener runs before a question box's own
+    // handler) from wrapping it in another `<strong>`.
+    node.style.removeProperty("font-weight");
+  });
+  return template.innerHTML;
+}
+
 /** Whether a CSS colour (hex, `rgb()` or `rgba()`) is `HIGHLIGHT_COLOR`. */
 export function isHighlightColor(value: string): boolean {
   const color = value.trim().toLowerCase();
@@ -141,7 +200,7 @@ export function isHighlightColor(value: string): boolean {
  * highlighted text still keeps its highlight when copied between boxes.
  */
 export function sanitizePastedQuestionRichText(html: string): string {
-  const fragment = extractClipboardFragment(html);
+  const fragment = normalizePastedHtml(html);
   if (typeof window === "undefined") return sanitizeQuestionRichText(fragment);
 
   const template = document.createElement("template");

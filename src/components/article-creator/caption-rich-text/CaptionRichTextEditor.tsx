@@ -15,7 +15,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { isValidUrl } from "./sanitize";
-import { htmlToRichCaption, serializeRichCaption } from "./convert";
+import {
+  htmlToRichCaption,
+  plainTextToRichCaption,
+  serializeRichCaption,
+} from "./convert";
+import { normalizePastedHtml } from "../custom_questions/richText";
 import { renderRichCaptionToHtml } from "./render";
 import type { RichCaption, CaptionLinkMark } from "./types";
 
@@ -305,9 +310,14 @@ export function CaptionRichTextEditor({
       e.stopPropagation();
       const html = e.clipboardData.getData("text/html");
       const text = e.clipboardData.getData("text/plain");
-      const source = html || text;
-      if (!source) return;
-      const fragments = htmlToRichCaption(source);
+      if (!html && !text) return;
+      // Copied HTML arrives wrapped: on Windows in a CRLF-padded document, whose
+      // line breaks became two stray spaces around the paste, and from Google
+      // Docs inside a non-bold `<b>`, which made the whole paste bold. Plain
+      // text is plain: parsed as HTML, a literal "<b>" in it became bold too.
+      const fragments = html
+        ? htmlToRichCaption(normalizePastedHtml(html))
+        : plainTextToRichCaption(text);
       const safe = renderRichCaptionToHtml(fragments);
       document.execCommand("insertHTML", false, safe);
       commit();

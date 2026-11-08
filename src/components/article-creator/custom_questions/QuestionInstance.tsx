@@ -74,6 +74,17 @@ export const QuestionsOutput: React.FC<{ instanceId: string }> = ({
 }) => {
   const { questions } = syncedQuestions(instanceId);
 
+  return <QuestionsView questions={questions} />;
+};
+
+/**
+ * A question block as a learner sees it. The editor's preview hands it the
+ * questions straight from the editor's latest output, so an edit shows up
+ * without going through `localStorage`.
+ */
+export const QuestionsView: React.FC<{ questions: QuestionFormat[] }> = ({
+  questions,
+}) => {
   return (
     <div className="mt-8">
       {questions.length === 1 ? (
