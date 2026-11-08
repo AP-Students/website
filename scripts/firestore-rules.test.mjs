@@ -253,6 +253,9 @@ check(
       await doc("ungraded-frqs/new", "server", "PATCH", queued),
       200,
     );
+    // The grading page's transaction reads the result before creating it, so
+    // the student must get a 404 for it, not a denial.
+    await status(await doc("self-graded-frqs/new", "student"), 404);
     await status(
       await commit(
         "student",

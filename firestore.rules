@@ -392,7 +392,12 @@ service cloud.firestore {
     // like, so nothing stored here carries a grader's authority, and no query
     // for official results has to remember to filter these back out.
     match /self-graded-frqs/{resultId} {
-  allow get, list: if isGraderOrMemberOrAdmin() ||
+  // A self-grade's transaction reads this result before creating it, as the
+  // student, so a get of one that doesn't exist yet must be allowed or
+  // "Submit Self-Grade" fails. A missing document has nothing to reveal.
+  allow get: if isGraderOrMemberOrAdmin() ||
+    (isAuthenticated() && (resource == null || resource.data.studentId == request.auth.uid));
+  allow list: if isGraderOrMemberOrAdmin() ||
     (isAuthenticated() && resource != null && resource.data.studentId == request.auth.uid);
 
   // Only the author of the attempt, and only as themselves: both ids must be
