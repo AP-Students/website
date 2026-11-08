@@ -117,10 +117,12 @@ export interface PublicProfile {
   level: number;
   currentStreak: number;
   longestStreak: number;
+  lastActiveDay: string | null; // dayKey; re-apply streakAsOf when reading
+  timeZone: string; // IANA zone the student's days are counted in
   problemsSolved: number;
   subjectsCompleted: number;
   achievementCount: number;
-    achievements: Array<{ id: string; title: string }>;
+  achievements: Array<{ id: string; title: string }>;
 }
 
 export type NotificationType = "level_up" | "achievement" | "frq_graded";

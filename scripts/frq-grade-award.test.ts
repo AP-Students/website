@@ -708,17 +708,41 @@ void test("public profiles use live streaks and safe bounded name and photo fiel
   assert.equal(profile.displayName.length, 80);
   assert.equal(profile.currentStreak, 0);
   assert.equal(profile.longestStreak, 12);
+  // Readers need these to decay a streak the profile froze at its last write.
+  assert.equal(profile.lastActiveDay, staleKey);
+  assert.equal(profile.timeZone, "UTC");
   assert.equal("photoURL" in profile, false);
+  const live = buildPublicProfile(
+    "student",
+    { photoURL: "https://firebasestorage.googleapis.com/v0/b/demo/o/photo" },
+    {
+      currentStreak: 3,
+      longestStreak: 3,
+      lastActiveDay: todayKey,
+      timeZone: "UTC",
+    },
+    [],
+    false,
+  );
   assert.equal(
-    buildPublicProfile(
-      "student",
-      { photoURL: "https://firebasestorage.googleapis.com/v0/b/demo/o/photo" },
-      {},
-      [],
-      false,
-    ).photoURL,
+    live.photoURL,
     "https://firebasestorage.googleapis.com/v0/b/demo/o/photo",
   );
+  assert.equal(live.currentStreak, 3);
+  const neverActive = buildPublicProfile("student", {}, {}, [], false);
+  assert.equal(neverActive.lastActiveDay, null);
+  assert.equal(neverActive.displayName, "Student");
+  // 80 characters, not 80 UTF-16 units: the last emoji stays whole.
+  const emojiName = buildPublicProfile(
+    "student",
+    { displayName: `a${"😀".repeat(100)}` },
+    {},
+    [],
+    false,
+  ).displayName;
+  assert.equal(Array.from(emojiName).length, 80);
+  assert.equal(emojiName.endsWith("😀"), true);
+  assert.equal(emojiName.includes("�"), false);
 });
 
 void test("new achievements and their notifications commit together once under concurrency", async () => {

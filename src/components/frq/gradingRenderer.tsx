@@ -2,7 +2,11 @@
 
 import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
 import { db } from "@/lib/firebase";
-import { reportFrqGrade } from "@/lib/gamification/reportActivity";
+import { reportWithRetry } from "@/lib/gamification/notifyActivityFailure";
+import {
+  reportFrqGrade,
+  reportFrqSubmission,
+} from "@/lib/gamification/reportActivity";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -238,10 +242,11 @@ const FRQGradingRenderer = ({
       });
 
       if (selfGrading) {
+        const submissionId = submission.id;
         reportWithRetry(
-          () => reportFrqSubmission(submission.id),
+          () => reportFrqSubmission(submissionId),
           "Error updating self-graded FRQ activity:",
-          `xp-frq-self-grade-${submission.id}`,
+          `xp-frq-self-grade-${submissionId}`,
           user.uid,
         );
         // The result doc is keyed by the submission id, so this is now readable

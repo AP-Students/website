@@ -34,15 +34,16 @@ export function buildPublicProfile(
   const xp = readXpTotal(stats);
   const streak = readStreakState(stats);
   const photoURL = safePhotoURL(user?.photoURL);
+  // Cut by characters, not UTF-16 units, so an emoji is never split in half.
   const displayName =
     typeof user?.displayName === "string"
-      ? user.displayName.trim().slice(0, 80)
+      ? Array.from(user.displayName.trim()).slice(0, 80).join("").trimEnd()
       : "";
-  const today = resolveActivityDay(
+  const { day: today, timeZone } = resolveActivityDay(
     new Date(),
     stats?.timeZone,
     stats?.timeZone,
-  ).day;
+  );
 
   return {
     uid,
@@ -53,8 +54,13 @@ export function buildPublicProfile(
       : {}),
     xp,
     level: levelForXp(xp).level,
+    // currentStreak is only current as of this write. Nothing rewrites the
+    // profile once a student goes quiet, so readers re-apply streakAsOf with
+    // lastActiveDay and timeZone.
     currentStreak: streakAsOf(streak, today),
     longestStreak: streak.longestStreak,
+    lastActiveDay: streak.lastActiveDay,
+    timeZone,
     problemsSolved: nonNegativeCount(stats?.problemsSolved),
     subjectsCompleted: nonNegativeCount(stats?.subjectsCompleted),
     achievementCount: nonNegativeCount(achievements.length),

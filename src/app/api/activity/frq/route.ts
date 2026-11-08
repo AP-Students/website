@@ -149,14 +149,19 @@ export async function POST(request: NextRequest) {
 
   const now = new Date();
   const { submittedAt, subject, unitId, templateId } = submission;
-  if (
-    !(submittedAt instanceof Timestamp) ||
-    now.getTime() - submittedAt.toMillis() > RECORDING_WINDOW_MS
-  ) {
-    return NextResponse.json(
+  const tooOldToRecord = () =>
+    NextResponse.json(
       { error: "Submission is too old to record" },
       { status: 409 },
     );
+  if (!(submittedAt instanceof Timestamp)) return tooOldToRecord();
+  // A self-grade can be finished long after the recording window. It may still
+  // upgrade the event recorded at submission, which pays nothing, but it can
+  // never record a new event once the window has passed.
+  const pastRecordingWindow =
+    now.getTime() - submittedAt.toMillis() > RECORDING_WINDOW_MS;
+  if (pastRecordingWindow && gradeStatus !== "self_graded") {
+    return tooOldToRecord();
   }
   if (
     !isDocumentId(subject) ||
@@ -237,6 +242,7 @@ export async function POST(request: NextRequest) {
         }
         return response;
       }
+      if (pastRecordingWindow) return null;
 
       const { day, timeZone } = resolveActivityDay(
         now,
@@ -264,6 +270,8 @@ export async function POST(request: NextRequest) {
           level: progress.level,
           longestStreak: next.longestStreak,
           currentStreak: next.currentStreak,
+          lastActiveDay: next.lastActiveDay,
+          timeZone,
           frqsSubmitted:
             nonNegativeNumber(statsData?.frqsSubmitted, 0) + 1,
         },
@@ -341,6 +349,7 @@ export async function POST(request: NextRequest) {
       };
     });
 
+    if (!result) return tooOldToRecord();
     return NextResponse.json(result);
   } catch (error) {
     console.error("Unable to record submitted FRQ", error);

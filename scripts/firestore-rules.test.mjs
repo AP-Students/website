@@ -422,7 +422,7 @@ check(
       await commit(
         "student",
         "notifications/student/items/legacy-notice",
-        original,
+        { ...original, title: "Older tab" },
         ["readAt"],
       ),
       200,

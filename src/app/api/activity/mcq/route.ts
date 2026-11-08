@@ -170,6 +170,8 @@ export async function POST(request: NextRequest) {
           level: progress.level,
           longestStreak: streak.longestStreak,
           currentStreak: streak.currentStreak,
+          lastActiveDay: streak.lastActiveDay,
+          timeZone,
           mcqTestsCompleted:
             (typeof statsData.mcqTestsCompleted === "number"
               ? statsData.mcqTestsCompleted
