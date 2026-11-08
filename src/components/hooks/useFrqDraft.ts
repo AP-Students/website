@@ -10,7 +10,9 @@ import {
 import { db } from "@/lib/firebase";
 import { readInProgressItem } from "@/lib/dashboard/inProgress";
 import {
+  GUEST_DRAFT_OWNER,
   backupKey,
+  claimGuestDraft,
   createDraftAutosave,
   frqDraftDocument,
   frqDraftId,
@@ -44,15 +46,32 @@ const readLocal = (key: string) => {
   }
 };
 
+/** `start`, plus what was written on this FRQ while signed out. */
+const withGuestAnswers = (templateId: string, uid: string, start: Responses) => {
+  try {
+    return claimGuestDraft(
+      window.localStorage,
+      templateId,
+      uid,
+      start,
+      Date.now(),
+    );
+  } catch {
+    // Merely reading `window.localStorage` throws when the browser blocks it.
+    return start;
+  }
+};
+
 /**
  * A student's draft of an FRQ: loads it, keeps it saved while they write,
  * and clears it once they submit.
  *
  * `uid` is undefined while sign-in is still loading, and null when no one is
- * signed in, in which case nothing is saved. `loaded` is undefined until the
- * draft is ready to start from. Call `noteEdit()` when the student changes an
- * answer: only edits are copied to the browser, so a draft still loading can
- * never overwrite the backup.
+ * signed in, in which case the draft is kept only in this browser, until they
+ * sign in to submit. `loaded` is undefined until the draft is ready to start
+ * from. Call `noteEdit()` when the student changes an answer: only edits are
+ * copied to the browser, so a draft still loading can never overwrite the
+ * backup.
  */
 export function useFrqDraft(
   template: FRQTemplate | null,
@@ -72,7 +91,10 @@ export function useFrqDraft(
   const subject = template?.subject;
   const unitId = template?.unitId;
   const title = template?.title ?? "";
-  const key = templateId && uid ? backupKey(templateId, uid) : "";
+  const key =
+    templateId && uid !== undefined
+      ? backupKey(templateId, uid ?? GUEST_DRAFT_OWNER)
+      : "";
   const draftPath =
     templateId && subject && unitId && uid
       ? dashboardDocumentPaths.inProgress(
@@ -86,13 +108,26 @@ export function useFrqDraft(
     edited.current = false;
     finished.current = false;
     if (uid === undefined) return;
-    if (!draftPath || !key) {
+    if (!templateId || !key) {
       setLoaded({ responses: {}, startedAt: null, saveToServer: false });
       return;
     }
 
     let cancelled = false;
     const backup = readLocal(key);
+    // Back from signing in to submit: what they wrote signed out comes along.
+    const claimed = (start: Responses) =>
+      uid ? withGuestAnswers(templateId, uid, start) : start;
+    if (!draftPath) {
+      // Signed out, so the browser's copy is the only one.
+      setLoaded({
+        responses: claimed(backup?.responses ?? {}),
+        startedAt: null,
+        saveToServer: false,
+      });
+      return;
+    }
+
     getDoc(doc(db, draftPath))
       .then((snapshot) => {
         const data = snapshot.data({ serverTimestamps: "estimate" });
@@ -106,7 +141,7 @@ export function useFrqDraft(
             : null;
         if (cancelled) return;
         setLoaded({
-          responses: startingDraft(saved, backup),
+          responses: claimed(startingDraft(saved, backup)),
           startedAt: item?.startedAt ?? null,
           saveToServer: true,
         });
@@ -115,7 +150,7 @@ export function useFrqDraft(
         console.error("Error loading FRQ draft:", error);
         if (cancelled) return;
         setLoaded({
-          responses: backup?.responses ?? {},
+          responses: claimed(backup?.responses ?? {}),
           startedAt: null,
           saveToServer: false,
         });
@@ -123,7 +158,7 @@ export function useFrqDraft(
     return () => {
       cancelled = true;
     };
-  }, [uid, key, draftPath]);
+  }, [uid, templateId, key, draftPath]);
 
   // The browser's copy follows every edit, so nothing typed is lost even
   // when the server can't be reached.

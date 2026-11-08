@@ -2,6 +2,7 @@ import type { FRQFeedbackDocument } from "@/components/frq/feedback/types";
 import type { FRQTemplate, GradedFRQSubmission } from "@/types/frq";
 import type { Timestamp } from "firebase/firestore";
 import { buildGradingQuestions } from "./gradingView.ts";
+import { getDirectionsPlacement } from "./studentView.ts";
 import {
   getAllParts,
   getCriterionDescriptionHtml,
@@ -62,6 +63,10 @@ export const buildFeedbackDocument = (
     mostRecentEditor: graded.graderId,
     id: graded.sourceSubmissionId,
     isVisible: true,
+    // From the test page's own rule rather than a copy of it: a legacy
+    // document's directions are its stimulus and must stay on screen, while
+    // anything newer tucks them behind the header toggle.
+    directionsPlacement: getDirectionsPlacement(template),
 
     // Scores and responses stay one flat list keyed by part id rather than
     // being nested under questions. That is the shape they are stored in, and

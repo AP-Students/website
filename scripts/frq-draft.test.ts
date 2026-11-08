@@ -3,7 +3,9 @@ import { test } from "node:test";
 import { Timestamp } from "firebase/firestore";
 import { readInProgressItem } from "../src/lib/dashboard/inProgress.ts";
 import {
+  GUEST_DRAFT_OWNER,
   backupKey,
+  claimGuestDraft,
   createDraftAutosave,
   frqDraftDocument,
   frqDraftId,
@@ -12,6 +14,7 @@ import {
   readBackup,
   startingDraft,
   writeBackup,
+  type DraftStorage,
   type Responses,
 } from "../src/lib/dashboard/frqDraft.ts";
 import { AUTOSAVE_EVERY_MS } from "../src/lib/dashboard/testAutosave.ts";
@@ -209,4 +212,101 @@ test("FRQs with the same id in different units never share a draft", () => {
   }
   // The browser's copy keeps the key it always had, so older copies are found.
   assert.equal(backupKey("essay", "ada"), "frq-draft:essay:ada");
+});
+
+// Signed-out visitors (see claimGuestDraft).
+
+const createStorage = (
+  initial: Record<string, string> = {},
+  { failWrites = false } = {},
+) => {
+  const items = new Map(Object.entries(initial));
+  const storage: DraftStorage = {
+    getItem: (key) => items.get(key) ?? null,
+    setItem: (key, value) => {
+      if (failWrites) throw new Error("QuotaExceededError");
+      items.set(key, value);
+    },
+    removeItem: (key) => {
+      items.delete(key);
+    },
+  };
+  return { storage, items };
+};
+
+const guestKey = backupKey("frq1", GUEST_DRAFT_OWNER);
+const userKey = backupKey("frq1", "uid-123");
+
+test("a visitor's answers are kept under the guest key", () => {
+  assert.equal(guestKey, "frq-draft:frq1:guest");
+  assert.equal(userKey, "frq-draft:frq1:uid-123");
+});
+
+test("signing in carries the signed-out answers onto the account", () => {
+  const { storage, items } = createStorage({
+    [guestKey]: writeBackup({ p1: "<p>Guest answer</p>", p2: "" }, 1_000),
+  });
+
+  const opened = claimGuestDraft(storage, "frq1", "uid-123", {}, 5_000);
+
+  assert.deepEqual(opened, { p1: "<p>Guest answer</p>" });
+  // Written as the account's newest copy, so it beats an older saved draft.
+  assert.deepEqual(readBackup(items.get(userKey) ?? null), {
+    responses: { p1: "<p>Guest answer</p>" },
+    savedAt: 5_000,
+  });
+  // Claimed once: the guest copy is gone.
+  assert.equal(items.has(guestKey), false);
+});
+
+test("a guest answer replaces the account's answer for the same part only", () => {
+  // Copies written before drafts reached the server are bare maps.
+  const { storage } = createStorage({
+    [guestKey]: JSON.stringify({ p1: "newer", p2: "<p></p>", p3: "" }),
+  });
+
+  // What the account would open with: its saved draft or its browser copy.
+  const start = { p1: "older", p2: "kept", p3: "also kept" };
+  assert.deepEqual(claimGuestDraft(storage, "frq1", "uid-123", start, 5_000), {
+    p1: "newer",
+    p2: "kept",
+    p3: "also kept",
+  });
+});
+
+test("an empty guest draft leaves the account's draft untouched", () => {
+  const userDraft = writeBackup({ p1: "mine" }, 1_000);
+  const { storage, items } = createStorage({
+    [guestKey]: JSON.stringify({ p1: "", p2: "<p> </p>" }),
+    [userKey]: userDraft,
+  });
+
+  const start = { p1: "mine" };
+  assert.equal(claimGuestDraft(storage, "frq1", "uid-123", start, 5_000), start);
+  assert.equal(items.get(userKey), userDraft);
+  assert.equal(items.has(guestKey), false);
+});
+
+test("a full localStorage keeps the guest copy so it can be claimed later", () => {
+  const { storage, items } = createStorage(
+    { [guestKey]: JSON.stringify({ p1: "answer" }) },
+    { failWrites: true },
+  );
+
+  const start = { p1: "" };
+  assert.equal(claimGuestDraft(storage, "frq1", "uid-123", start, 5_000), start);
+  assert.equal(items.has(guestKey), true);
+  assert.equal(items.has(userKey), false);
+});
+
+test("claiming only touches the FRQ being opened", () => {
+  const otherGuestKey = backupKey("frq2", GUEST_DRAFT_OWNER);
+  const { storage, items } = createStorage({
+    [otherGuestKey]: JSON.stringify({ p1: "other FRQ" }),
+  });
+
+  claimGuestDraft(storage, "frq1", "uid-123", {}, 5_000);
+
+  assert.equal(items.has(otherGuestKey), true);
+  assert.equal(items.has(userKey), false);
 });

@@ -7,15 +7,8 @@ import { useEffect, useState } from "react";
 import { type Subject } from "@/types/firestore";
 
 import { db } from "@/lib/firebase";
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  onSnapshot,
-  query,
-  where,
-} from "firebase/firestore";
+import { loadUnitFrqs } from "@/lib/firestore/frqListing";
+import { collection, doc, getDoc, onSnapshot } from "firebase/firestore";
 import { useUser } from "@/components/hooks/UserContext";
 
 export default function Layout({
@@ -59,39 +52,10 @@ export default function Layout({
           // needs the unit's FRQs too — otherwise an FRQ is reachable only from
           // the subject landing page.
           const unitsWithFrqs = await Promise.all(
-            subjectData.units.map(async (unit) => {
-              try {
-                const frqsCollectionRef = collection(
-                  db,
-                  "subjects",
-                  params.slug,
-                  "units",
-                  unit.id,
-                  "frqs",
-                );
-
-                const frqsSnapshot = await getDocs(
-                  canPreview
-                    ? frqsCollectionRef
-                    : query(frqsCollectionRef, where("isPublic", "==", true)),
-                );
-
-                return {
-                  ...unit,
-                  frqs: frqsSnapshot.docs.map((frqDoc) => ({
-                    ...frqDoc.data(),
-                    id: frqDoc.id,
-                  })),
-                };
-              } catch (frqError) {
-                console.error(
-                  `Unable to load FRQs for unit ${unit.id}:`,
-                  frqError,
-                );
-
-                return { ...unit, frqs: [] };
-              }
-            }),
+            subjectData.units.map(async (unit) => ({
+              ...unit,
+              frqs: await loadUnitFrqs(params.slug, unit, canPreview),
+            })),
           );
 
           setSubject({ ...subjectData, units: unitsWithFrqs });

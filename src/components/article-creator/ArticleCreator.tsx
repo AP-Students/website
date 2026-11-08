@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { type OutputData } from "@editorjs/editorjs";
 import Editor, { type EditorHandle } from "./Editor";
 import { cn } from "@/lib/utils";
@@ -19,6 +19,8 @@ import {
 } from "./FetchArticleFunctions";
 import { sanitizeAlignment } from "./alignment";
 import { Blocker } from "@/app/admin/subject/navigation-block";
+import { AutosaveStatus } from "@/app/admin/subject/autosave-status";
+import { useAutosave } from "@/components/hooks/useAutosave";
 import { Button } from "@/components/ui/button";
 import { usePathname } from "next/navigation";
 import { Input } from "../ui/input";
@@ -107,6 +109,7 @@ function ArticleCreator({ className }: { className?: string }) {
   const chapter = pathParts[3]!;
 
   const [chapterLoading, setChapterLoading] = useState<boolean>(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -122,40 +125,55 @@ function ArticleCreator({ className }: { className?: string }) {
           chapter,
         );
         const docSnap = await getDoc(docRef);
-        const articleData = docSnap.data() as ArticleData;
-        const editorData = articleData.data;
-        setAuthor(articleData.author ?? "");
+        const articleData = docSnap.data() as ArticleData | undefined;
+        const editorData = articleData?.data;
+        setAuthor(articleData?.author ?? "");
 
-        revertTableObjectToArray(editorData);
-        setInitialData(editorData);
-        setData(editorData);
+        // A chapter added on the subject page has no content until its first
+        // save, so it starts from the template above. Reading `.blocks` off the
+        // missing data threw, and the chapter never finished loading.
+        if (editorData) {
+          revertTableObjectToArray(editorData);
+          setInitialData(editorData);
+          setData(editorData);
+        }
         setChapterLoading(false);
       }
     })().catch((error) => {
       console.error("Error fetching data:", error);
+      setLoadError(
+        error instanceof Error
+          ? `Could not load this chapter: ${error.message}`
+          : "Could not load this chapter.",
+      );
     });
   }, [chapter, subject, unit]);
 
-  const handleSave = async () => {
-    if (!data) {
-      alert("Please enter the content.");
-      return;
-    }
-
+  // Writes the draft it is handed, and throws so the autosave status reports a
+  // failure instead of an alert interrupting the author every few seconds.
+  const saveArticle = async (articleDraft: {
+    author: string;
+    data: OutputData;
+  }) => {
     const user = await getUser();
-    const pathParts = window.location.pathname.split("/").slice(-3);
 
     if (!user || (user.access !== "admin" && user.access !== "member")) {
-      alert("User is not authorized to perform this action.");
-      return;
+      throw new Error("User is not authorized to perform this action.");
     }
 
     const newArticle = {
       id: uuidv4(),
       createdAt: new Date(),
-      author,
-      title: pathParts.join("/"),
-      data,
+      author: articleDraft.author,
+      // From this editor's route, like `docRef` below, not `window.location`:
+      // a save that finishes after the author has left (Back pressed while it
+      // was waiting) would otherwise be titled after the page they went to.
+      title: pathParts.slice(-3).join("/"),
+      // The block processing below rewrites blocks in place: a table's rows
+      // become an object. Done on the live state, a second save of the same
+      // draft, which is what Retry is, handed that object to `processTable`
+      // and threw on `reduce`.
+      data: structuredClone(articleDraft.data),
     };
 
     try {
@@ -171,7 +189,7 @@ function ArticleCreator({ className }: { className?: string }) {
 
       // Traverse through data to find QuestionFormat[] arrays
       const updatedDataBlocks = await Promise.all(
-        data.blocks.map(async (block) => {
+        newArticle.data.blocks.map(async (block) => {
           // because of .type, its inferable that block.data is of an questions, so you can assert .data.questions as QuestionFormat[]
           /* eslint-disable */
           if (block.tunes && "alignment" in block.tunes) {
@@ -221,18 +239,28 @@ function ArticleCreator({ className }: { className?: string }) {
 
       newArticle.data.blocks = updatedDataBlocks;
       await setDoc(docRef, newArticle);
-
-      alert(`Article saved successfully.`);
-      setUnsavedChanges(false);
     } catch (error) {
       console.error("Error saving article:", error);
-      alert("ERROR SAVING ARTICLE!\n" + String(error));
+      throw error;
     }
   };
 
-  const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
-
   const [author, setAuthor] = useState<string>("");
+
+  const draft = useMemo(() => ({ author, data }), [author, data]);
+
+  const autosave = useAutosave({
+    value: draft,
+    save: saveArticle,
+    enabled: !chapterLoading,
+    // EditorJS stamps a fresh `time` on every output, so comparing it would
+    // make each editor callback look like an edit.
+    serialize: (articleDraft) =>
+      JSON.stringify({
+        author: articleDraft.author,
+        blocks: articleDraft.data.blocks,
+      }),
+  });
 
   const editorHandleRef = useRef<EditorHandle | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -274,7 +302,7 @@ function ArticleCreator({ className }: { className?: string }) {
 
   return (
     <>
-      {unsavedChanges && <Blocker />}
+      {autosave.hasUnsavedChanges && <Blocker onLeave={autosave.flush} />}
 
       <div className="flex items-end justify-between gap-2">
         <div className="grid w-full max-w-sm items-center gap-1.5">
@@ -287,13 +315,21 @@ function ArticleCreator({ className }: { className?: string }) {
             onChange={(e) => setAuthor(e.target.value)}
           />
         </div>
-        {(!chapterLoading || unsavedChanges) && (
-          <Button
-            className="bg-blue-500 hover:bg-blue-600"
-            onClick={() => handleSave()}
-          >
-            <Save className="mr-2" /> Save Changes
-          </Button>
+        {!chapterLoading && (
+          <div className="flex items-center gap-3">
+            <AutosaveStatus
+              status={autosave.status}
+              error={autosave.error}
+              onRetry={() => void autosave.saveNow()}
+            />
+            <Button
+              className="bg-blue-500 hover:bg-blue-600"
+              onClick={() => void autosave.saveNow()}
+              disabled={autosave.status === "saving"}
+            >
+              <Save className="mr-2" /> Save Changes
+            </Button>
+          </div>
         )}
       </div>
 
@@ -378,12 +414,22 @@ function ArticleCreator({ className }: { className?: string }) {
       <div className={cn("grid grid-cols-1 pb-8 sm:grid-cols-2", className)}>
         {/* Left column: Editor */}
         <div className="rounded-md border p-4">
-          <Editor
-            ref={editorHandleRef}
-            content={initialData}
-            setData={setData}
-            setUnsavedChanges={setUnsavedChanges}
-          />
+          {/* Mounted once the chapter has loaded, never before. Mounting on the
+              template and swapping the content in made EditorJS tear down an
+              instance that was still starting, and that instance could finish
+              afterwards and paint the template over the real article. With
+              autosave, one keystroke there would overwrite the stored chapter. */}
+          {chapterLoading ? (
+            <p className="text-sm text-muted-foreground">
+              {loadError ?? "Loading chapter..."}
+            </p>
+          ) : (
+            <Editor
+              ref={editorHandleRef}
+              content={initialData}
+              setData={setData}
+            />
+          )}
         </div>
 
         {/* Right column: Renderer */}

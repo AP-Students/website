@@ -27,6 +27,7 @@ import Delimiter from "@editorjs/delimiter";
 import Alert from "editorjs-alert";
 import AlignmentTune from "./AlignmentTune";
 import { QuestionsAddCard } from "./custom_questions/QuestionsAddCard";
+import { normalizePastedHtml } from "./custom_questions/richText";
 import {
   deleteObject,
   getDownloadURL,
@@ -826,7 +827,8 @@ export interface EditorHandle {
 const Editor = forwardRef<
   EditorHandle,
   {
-    setUnsavedChanges: (unsavedChanges: boolean) => void;
+    /** Optional: an autosaving parent detects changes from `setData` instead. */
+    setUnsavedChanges?: (unsavedChanges: boolean) => void;
     setData: (data: OutputData) => void;
     content: OutputData;
   }
@@ -857,7 +859,7 @@ const Editor = forwardRef<
     },
     placeholder: "Press '/' to see available blocks",
     onChange: (api) => {
-      setUnsavedChanges(true);
+      setUnsavedChanges?.(true);
       api.saver
         .save()
         .then((outputData) => {
@@ -912,7 +914,7 @@ const Editor = forwardRef<
 
       await editorRef.current.render(parsed);
       setData(parsed);
-      setUnsavedChanges(true);
+      setUnsavedChanges?.(true);
     },
   }));
 
@@ -933,6 +935,31 @@ const Editor = forwardRef<
       }
     };
   }, [editor]);
+
+  // EditorJS reads pasted HTML itself, from a listener on this holder, and
+  // keeps `<b>` as bold and a Windows clipboard's padding as text. So a paste
+  // from Google Docs, which wraps everything in a non-bold `<b>`, came out bold.
+  // This capture listener runs first and shadows `getData` on that one event's
+  // clipboard. The event itself is untouched, so pastes EditorJS leaves to the
+  // browser (alt-text inputs, table cells) still happen natively.
+  useEffect(() => {
+    const holder = document.getElementById("editorjs");
+    if (!holder) return;
+    const normalizePaste = (event: ClipboardEvent) => {
+      const clipboard = event.clipboardData;
+      const html = clipboard?.getData("text/html");
+      if (!clipboard || !html) return;
+      const normalized = normalizePastedHtml(html);
+      const getData = clipboard.getData.bind(clipboard);
+      Object.defineProperty(clipboard, "getData", {
+        configurable: true,
+        value: (format: string) =>
+          format.toLowerCase() === "text/html" ? normalized : getData(format),
+      });
+    };
+    holder.addEventListener("paste", normalizePaste, true);
+    return () => holder.removeEventListener("paste", normalizePaste, true);
+  }, []);
 
   return <div className="prose w-full" id="editorjs"></div>;
 });

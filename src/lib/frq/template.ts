@@ -185,6 +185,15 @@ const normalizeQuestion = (value: unknown): FRQTemplateQuestion[] => {
   return [question];
 };
 
+// Legacy iff NO entry carries a parts array. Stated negatively on purpose: an
+// `every` over "lacks parts" also fails on non-object entries, which
+// misclassified a legacy document containing a stray null as nested and
+// silently discarded all of its parts.
+const isLegacyQuestionList = (value: unknown): boolean =>
+  Array.isArray(value) &&
+  value.length > 0 &&
+  !value.some((entry) => Array.isArray(asRecord(entry)?.parts));
+
 /**
  * Documents written before the question/part split stored a flat list of parts
  * under `questions`. They are detected by the absence of a `parts` array — a
@@ -199,15 +208,7 @@ const normalizeQuestions = (value: unknown): FRQTemplateQuestion[] => {
     return [];
   }
 
-  // Legacy iff NO entry carries a parts array. Stated negatively on purpose:
-  // an `every` over "lacks parts" also fails on non-object entries, which
-  // misclassified a legacy document containing a stray null as nested and
-  // silently discarded all of its parts.
-  const isLegacyShape =
-    value.length > 0 &&
-    !value.some((entry) => Array.isArray(asRecord(entry)?.parts));
-
-  if (!isLegacyShape) {
+  if (!isLegacyQuestionList(value)) {
     return value.flatMap(normalizeQuestion);
   }
 
@@ -269,6 +270,7 @@ export const normalizeFrqTemplate = (
   if (calculatorDefault) template.calculatorDefault = calculatorDefault;
   if (calculatorType) template.calculatorType = calculatorType;
   if (referenceSheetId) template.referenceSheetId = referenceSheetId;
+  if (isLegacyQuestionList(record.questions)) template.legacyFlatShape = true;
 
   return template;
 };

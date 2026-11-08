@@ -11,7 +11,9 @@ import { AUTOSAVE_EVERY_MS, type Schedule } from "./testAutosave.ts";
  * dashboard's In Progress list shows and any device can pick up. On every
  * change they're also copied to this browser's localStorage, as a backup for
  * when a save can't reach the server. Opening the FRQ again starts from
- * whichever copy is newer. Submitting deletes both.
+ * whichever copy is newer. Submitting deletes both. A signed-out visitor's
+ * answers are kept only in the browser, and join the account's draft when
+ * they sign in.
  *
  * Kept free of React and of Firestore, so it can be tested on its own;
  * `useFrqDraft` connects it to both.
@@ -118,6 +120,54 @@ export function readBackup(stored: string | null): BackupDraft | null {
     };
   } catch {
     return null;
+  }
+}
+
+/**
+ * Whose browser copy a signed-out visitor's answers are kept under. They need
+ * an account to submit, and signing in navigates away from the FRQ, so their
+ * work waits here until they come back. Firebase uids are 28-character random
+ * strings, so this can't collide with a real account.
+ */
+export const GUEST_DRAFT_OWNER = "guest";
+
+export type DraftStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
+
+/**
+ * Moves what a visitor wrote while signed out onto the account they just
+ * signed in with, so having to sign in to submit never costs them the
+ * attempt. `start` is what the account would open with otherwise. A guest
+ * answer replaces the account's answer for the same part because it's the
+ * newer work; a part the guest left blank keeps the account's.
+ *
+ * The merged answers are written to the account's browser copy as its newest,
+ * and only then is the guest copy removed, so it's claimed once. If that
+ * write fails, e.g. localStorage is full, the guest copy stays to be claimed
+ * next time and the account opens with `start`.
+ */
+export function claimGuestDraft(
+  storage: DraftStorage,
+  templateId: string,
+  uid: string,
+  start: Responses,
+  now: number,
+): Responses {
+  const guestKey = backupKey(templateId, GUEST_DRAFT_OWNER);
+  try {
+    const guestAnswers = Object.entries(
+      readBackup(storage.getItem(guestKey))?.responses ?? {},
+    ).filter(([, response]) => hasResponseText(response));
+    if (guestAnswers.length === 0) {
+      storage.removeItem(guestKey);
+      return start;
+    }
+    const merged = { ...start, ...Object.fromEntries(guestAnswers) };
+    storage.setItem(backupKey(templateId, uid), writeBackup(merged, now));
+    storage.removeItem(guestKey);
+    return merged;
+  } catch {
+    // A full or disabled localStorage should not interrupt the attempt.
+    return start;
   }
 }
 

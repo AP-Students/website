@@ -510,6 +510,9 @@ export default function TeamHive() {
                   filter: "drop-shadow(0 10px 22px rgba(0,0,0,0.18))",
                   transform: "translateZ(0)",
                   willChange: "transform",
+                  // Tiles are squares that overlap their neighbours, so only
+                  // the hex-shaped hit area inside TeamMemberHex takes the mouse.
+                  pointerEvents: "none",
                 }}
               >
                 {/* Ensure the hit area matches the positioned wrapper */}

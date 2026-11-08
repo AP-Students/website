@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "@/app/admin/subject/link";
 import { ArrowLeft, Save, Plus } from "lucide-react";
 import { useUser } from "@/components/hooks/UserContext";
@@ -8,18 +8,17 @@ import { db } from "@/lib/firebase";
 import type { FRQTemplate } from "@/types/frq";
 import {
   collection,
-  deleteDoc,
   doc,
   getDoc,
   getDocs,
   serverTimestamp,
-  setDoc,
-  updateDoc,
   writeBatch,
 } from "firebase/firestore";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Blocker } from "@/app/admin/subject/navigation-block";
+import { AutosaveStatus } from "@/app/admin/subject/autosave-status";
+import { useAutosave } from "@/components/hooks/useAutosave";
 import apClassesData from "@/components/apClasses.json";
 import { cn, formatSlug } from "@/lib/utils";
 import short from "short-uuid";
@@ -32,6 +31,8 @@ import {
   getFrqTemplateDocRef,
   getFrqTemplatesCollectionRef,
 } from "@/lib/firestore/frqRefs";
+import { writeFrqWithListing } from "@/lib/firestore/frqListing";
+import { rebuildUnitFrqListing, toFrqListingEntry } from "@/lib/frq/listing";
 
 const translator = short(short.constants.flickrBase58);
 
@@ -88,7 +89,6 @@ export default function Page({ params }: { params: { slug: string } }) {
   const [resetting, setResetting] = useState<boolean>(false);
 
   const [subjectLoading, setSubjectLoading] = useState<boolean>(true);
-  const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
 
   // For adding a new unit
   const [newUnitTitle, setNewUnitTitle] = useState<string>("");
@@ -191,13 +191,11 @@ export default function Page({ params }: { params: { slug: string } }) {
     };
     setUnits((prev) => [...prev, newUnit]);
     setNewUnitTitle("");
-    setUnsavedChanges(true);
   };
 
   const handleDeleteUnit = (unitId: string) => {
     if (!confirm("Delete this unit?")) return;
     setUnits((prev) => prev.filter((u) => u.id !== unitId));
-    setUnsavedChanges(true);
   };
 
   const handleMoveUnitUp = (index: number) => {
@@ -207,7 +205,6 @@ export default function Page({ params }: { params: { slug: string } }) {
     updatedUnits[index] = updatedUnits[index - 1]!;
     updatedUnits[index - 1] = temp!;
     setUnits(updatedUnits);
-    setUnsavedChanges(true);
   };
 
   const handleMoveUnitDown = (index: number) => {
@@ -217,13 +214,11 @@ export default function Page({ params }: { params: { slug: string } }) {
     updatedUnits[index] = updatedUnits[index + 1]!;
     updatedUnits[index + 1] = temp!;
     setUnits(updatedUnits);
-    setUnsavedChanges(true);
   };
 
   // Called by each <UnitComponent> whenever that unit updates
   const handleUnitChange = (unitId: string, updatedUnit: Unit) => {
     setUnits((prev) => prev.map((u) => (u.id === unitId ? updatedUnit : u)));
-    setUnsavedChanges(true);
   };
 
   /****************************************************
@@ -237,13 +232,11 @@ export default function Page({ params }: { params: { slug: string } }) {
       content: { value: "", files: [] },
     };
     setReferenceSheets((prev) => [...prev, newSheet]);
-    setUnsavedChanges(true);
   };
 
   const handleDeleteReferenceSheet = (sheetId: string) => {
     if (!confirm("Delete this reference sheet?")) return;
     setReferenceSheets((prev) => prev.filter((sheet) => sheet.id !== sheetId));
-    setUnsavedChanges(true);
   };
 
   const handleReferenceSheetChange = (
@@ -253,7 +246,6 @@ export default function Page({ params }: { params: { slug: string } }) {
     setReferenceSheets((prev) =>
       prev.map((sheet) => (sheet.id === sheetId ? updated : sheet)),
     );
-    setUnsavedChanges(true);
   };
 
   const handleMoveReferenceSheetUp = (index: number) => {
@@ -263,7 +255,6 @@ export default function Page({ params }: { params: { slug: string } }) {
     updatedSheets[index] = updatedSheets[index - 1]!;
     updatedSheets[index - 1] = temp!;
     setReferenceSheets(updatedSheets);
-    setUnsavedChanges(true);
   };
 
   const handleMoveReferenceSheetDown = (index: number) => {
@@ -273,7 +264,6 @@ export default function Page({ params }: { params: { slug: string } }) {
     updatedSheets[index] = updatedSheets[index + 1]!;
     updatedSheets[index + 1] = temp!;
     setReferenceSheets(updatedSheets);
-    setUnsavedChanges(true);
   };
 
   /****************************************************
@@ -300,20 +290,26 @@ export default function Page({ params }: { params: { slug: string } }) {
     };
 
     try {
-      await setDoc(getFrqTemplateDocRef(params.slug, unitId, frqId), {
-        subject: newFrq.subject,
-        unitId: newFrq.unitId,
-        title: newFrq.title,
-        directions: newFrq.directions,
-        questions: newFrq.questions,
-        isPublic: newFrq.isPublic,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+      await writeFrqWithListing(
+        params.slug,
+        unitId,
+        frqId,
+        toFrqListingEntry({ ...newFrq, id: frqId }),
+        (transaction) => {
+          transaction.set(getFrqTemplateDocRef(params.slug, unitId, frqId), {
+            subject: newFrq.subject,
+            unitId: newFrq.unitId,
+            title: newFrq.title,
+            directions: newFrq.directions,
+            questions: newFrq.questions,
+            isPublic: newFrq.isPublic,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+        },
+      );
 
       setFrqTemplates((currentFrqs) => [...currentFrqs, newFrq]);
-
-      setUnsavedChanges(true);
     } catch (error) {
       // Discarding this error is what made a permission-denied rule look
       // identical to a network blip, so the real cause never reached anyone.
@@ -345,18 +341,24 @@ export default function Page({ params }: { params: { slug: string } }) {
     }
 
     try {
-      await updateDoc(getFrqTemplateDocRef(params.slug, frq.unitId, frqId), {
-        title: trimmedTitle,
-        updatedAt: serverTimestamp(),
-      });
+      await writeFrqWithListing(
+        params.slug,
+        frq.unitId,
+        frqId,
+        toFrqListingEntry({ ...frq, id: frqId, title: trimmedTitle }),
+        (transaction) => {
+          transaction.update(
+            getFrqTemplateDocRef(params.slug, frq.unitId, frqId),
+            { title: trimmedTitle, updatedAt: serverTimestamp() },
+          );
+        },
+      );
 
       setFrqTemplates((currentFrqs) =>
         currentFrqs.map((item) =>
           item.id === frqId ? { ...item, title: trimmedTitle } : item,
         ),
       );
-
-      setUnsavedChanges(true);
     } catch (error) {
       console.error("Error renaming FRQ:", error);
 
@@ -392,7 +394,17 @@ export default function Page({ params }: { params: { slug: string } }) {
     }
 
     try {
-      await deleteDoc(getFrqTemplateDocRef(params.slug, frq.unitId, frqId));
+      await writeFrqWithListing(
+        params.slug,
+        frq.unitId,
+        frqId,
+        null,
+        (transaction) => {
+          transaction.delete(
+            getFrqTemplateDocRef(params.slug, frq.unitId, frqId),
+          );
+        },
+      );
 
       setFrqTemplates((currentFrqs) =>
         currentFrqs.filter((item) => item.id !== frqId),
@@ -420,18 +432,24 @@ export default function Page({ params }: { params: { slug: string } }) {
     }
 
     try {
-      await updateDoc(getFrqTemplateDocRef(params.slug, frq.unitId, frqId), {
-        isPublic,
-        updatedAt: serverTimestamp(),
-      });
+      await writeFrqWithListing(
+        params.slug,
+        frq.unitId,
+        frqId,
+        toFrqListingEntry({ ...frq, id: frqId, isPublic }),
+        (transaction) => {
+          transaction.update(
+            getFrqTemplateDocRef(params.slug, frq.unitId, frqId),
+            { isPublic, updatedAt: serverTimestamp() },
+          );
+        },
+      );
 
       setFrqTemplates((currentFrqs) =>
         currentFrqs.map((item) =>
           item.id === frqId ? { ...item, isPublic } : item,
         ),
       );
-
-      setUnsavedChanges(true);
     } catch (error) {
       console.error("Error updating FRQ visibility:", error);
 
@@ -458,6 +476,9 @@ export default function Page({ params }: { params: { slug: string } }) {
     }
     setResetting(true);
     try {
+      // An autosave landing after the reset would put the old course back.
+      await autosave.flush();
+
       // 1. Fetch and delete existing structure/articles/tests under /subjects/porting
       const unitsCollectionRef = collection(db, "subjects", "porting", "units");
       const unitsSnap = await getDocs(unitsCollectionRef);
@@ -550,7 +571,11 @@ export default function Page({ params }: { params: { slug: string } }) {
 
       setSubjectTitle(DEFAULT_PORTING_SUBJECT.title);
       setUnits(DEFAULT_PORTING_SUBJECT.units);
-      setUnsavedChanges(false);
+      autosave.reset({
+        ...draft,
+        title: DEFAULT_PORTING_SUBJECT.title,
+        units: DEFAULT_PORTING_SUBJECT.units,
+      });
 
       alert("AP Porting course reset successfully.");
     } catch (error) {
@@ -561,18 +586,52 @@ export default function Page({ params }: { params: { slug: string } }) {
     }
   };
 
-  // Replaces save
-  const handleSave = async () => {
-    // Rebuild the Subject object from current state
-    const subjectToSave: Subject = {
-      title: subjectTitle,
-      units: units,
-      hasUnit0: hasUnit0,
-      calculatorDefault,
-      referenceSheets: referenceSheets,
-    };
+  // The units with their FRQ listings rebuilt from Firestore as it is now.
+  // Neither the listing in `units` nor `frqTemplates` will do: both were loaded
+  // with the page, so an FRQ renamed or published since — in another tab, or in
+  // the FRQ editor — would have that change rolled back by this save.
+  const withLatestFrqListings = async (unitsToSave: Unit[]) => {
+    const storedSubject = await getDoc(doc(db, "subjects", params.slug));
+    const storedUnits = storedSubject.exists()
+      ? ((storedSubject.data() as Subject).units ?? [])
+      : [];
 
+    return Promise.all(
+      unitsToSave.map(async (unit) => {
+        try {
+          const snapshot = await getDocs(
+            getFrqTemplatesCollectionRef(params.slug, unit.id),
+          );
+
+          return rebuildUnitFrqListing(
+            unit,
+            snapshot.docs.map((frqDoc) => ({
+              ...frqDoc.data(),
+              id: frqDoc.id,
+            })),
+            storedUnits,
+          );
+        } catch (frqError) {
+          // One unreadable FRQ collection must not stop the subject saving.
+          console.error(`Unable to load FRQs for unit ${unit.id}:`, frqError);
+
+          return rebuildUnitFrqListing(unit, null, storedUnits);
+        }
+      }),
+    );
+  };
+
+  // Replaces save. Writes the draft it is handed rather than reading state, so
+  // an autosave stores exactly the snapshot it marks as saved. Throws on
+  // failure: the autosave status reports it, where an alert every few seconds
+  // would not be usable.
+  const saveSubject = async (subjectDraft: Subject) => {
     try {
+      const subjectToSave: Subject = {
+        ...subjectDraft,
+        units: await withLatestFrqListings(subjectDraft.units),
+      };
+
       const batch = writeBatch(db);
 
       // 1. Save the main subject doc
@@ -685,13 +744,30 @@ export default function Page({ params }: { params: { slug: string } }) {
 
       // 3. Commit the batch
       await batch.commit();
-      alert("Subject content saved successfully.");
-      setUnsavedChanges(false);
     } catch (error) {
       console.error("Error saving:", error);
-      alert("Error saving subject. Check console for details.");
+      throw error;
     }
   };
+
+  const draft = useMemo<Subject>(
+    () => ({
+      title: subjectTitle,
+      units,
+      hasUnit0,
+      calculatorDefault,
+      referenceSheets,
+    }),
+    [subjectTitle, units, hasUnit0, calculatorDefault, referenceSheets],
+  );
+
+  const autosave = useAutosave({
+    value: draft,
+    save: saveSubject,
+    // Never before the subject has loaded, or the empty template shown while
+    // loading (or after a failed load) could be written over the real course.
+    enabled: !subjectLoading,
+  });
 
   // Adds save
   // const handleSave = async () => {
@@ -759,17 +835,22 @@ export default function Page({ params }: { params: { slug: string } }) {
 
   return (
     <>
-      {/* If unsaved changes exist, use the <Blocker /> to warn on navigation */}
-      {unsavedChanges && <Blocker />}
+      {/* If unsaved changes exist, use the <Blocker /> to save them, or warn
+          if that fails, before navigating */}
+      {autosave.hasUnsavedChanges && <Blocker onLeave={autosave.flush} />}
 
       <div className="relative min-h-screen">
         <main
           className={cn(
             "container max-w-3xl flex-grow px-4 pb-8 pt-10 md:px-10 lg:px-14 2xl:px-20",
-            unsavedChanges && "ring-8 ring-red-500",
+            // Only a failure is alarming now: ordinary unsaved edits save
+            // themselves within seconds.
+            autosave.status === "error" && "ring-8 ring-red-500",
           )}
         >
-          <div className="flex justify-between">
+          {/* Wraps so the save controls drop below the back link on a phone
+              instead of pushing the page sideways. */}
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <Link
               className={buttonVariants({ variant: "outline" })}
               href="/admin"
@@ -777,7 +858,12 @@ export default function Page({ params }: { params: { slug: string } }) {
               <ArrowLeft className="mr-2" />
               Return to Admin Dashboard
             </Link>
-            <div className="flex gap-2">
+            <div className="ml-auto flex items-center gap-2">
+              <AutosaveStatus
+                status={autosave.status}
+                error={autosave.error}
+                onRetry={() => void autosave.saveNow()}
+              />
               {params.slug === "porting" && (
                 <Button
                   className="bg-red-500 text-white hover:bg-red-600"
@@ -787,13 +873,11 @@ export default function Page({ params }: { params: { slug: string } }) {
                   {resetting ? "Resetting..." : "Reset Course"}
                 </Button>
               )}
-              {(!subjectLoading || unsavedChanges) && (
+              {!subjectLoading && (
                 <Button
-                  className={cn(
-                    "bg-blue-500 hover:bg-blue-600",
-                    unsavedChanges && "animate-pulse",
-                  )}
-                  onClick={handleSave}
+                  className="bg-blue-500 hover:bg-blue-600"
+                  onClick={() => void autosave.saveNow()}
+                  disabled={autosave.status === "saving"}
                 >
                   <Save className="mr-2" /> Save Changes
                 </Button>
@@ -812,10 +896,7 @@ export default function Page({ params }: { params: { slug: string } }) {
               id="has-unit0"
               type="checkbox"
               checked={hasUnit0}
-              onChange={(e) => {
-                setHasUnit0(e.target.checked);
-                setUnsavedChanges(true);
-              }}
+              onChange={(e) => setHasUnit0(e.target.checked)}
               className="h-4 w-4"
             />
             This subject has a Unit 0 (foundational unit numbered starting from
@@ -834,10 +915,9 @@ export default function Page({ params }: { params: { slug: string } }) {
               id="course-calculator-default"
               className="rounded border p-1.5 text-sm"
               value={calculatorDefault}
-              onChange={(e) => {
-                setCalculatorDefault(e.target.value as CalculatorPermission);
-                setUnsavedChanges(true);
-              }}
+              onChange={(e) =>
+                setCalculatorDefault(e.target.value as CalculatorPermission)
+              }
             >
               <option value="not-allowed">Not allowed</option>
               <option value="allowed">Allowed</option>

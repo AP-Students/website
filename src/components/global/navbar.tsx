@@ -14,6 +14,8 @@ import { MenuIcon } from "lucide-react";
 import SignedInPfp from "../login/SignedInPfp";
 import { useUser } from "../hooks/UserContext";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { getAuthHref } from "@/lib/redirect";
 
 const links = [
   {
@@ -42,6 +44,8 @@ const Navbar = ({
   className?: string;
 }) => {
   const { user } = useUser();
+  // Signing in from here comes back to this page rather than the homepage.
+  const pathname = usePathname();
 
   const [atTopOfPage, setAtTopOfPage] = useState(true);
 
@@ -98,10 +102,12 @@ const Navbar = ({
               <SignedInPfp />
             ) : (
               <>
-                <NavbarLink href="/signup">Sign up</NavbarLink>
+                <NavbarLink href={getAuthHref("/signup", pathname)}>
+                  Sign up
+                </NavbarLink>
 
                 <Link
-                  href="/login"
+                  href={getAuthHref("/login", pathname)}
                   className={cn(
                     buttonVariants({ variant: "default" }),
                     "text-md px-5 font-semibold",
@@ -134,6 +140,7 @@ const Navbar = ({
 
 const MobileNavbar = () => {
   const { user } = useUser();
+  const pathname = usePathname();
 
   return (
     <>
@@ -168,13 +175,13 @@ const MobileNavbar = () => {
             ) : (
               <>
                 <Link
-                  href="/signup"
+                  href={getAuthHref("/signup", pathname)}
                   className={buttonVariants({ variant: "outline" })}
                 >
                   Sign up
                 </Link>
                 <Link
-                  href="/login"
+                  href={getAuthHref("/login", pathname)}
                   className={buttonVariants({ variant: "default" })}
                 >
                   Log in

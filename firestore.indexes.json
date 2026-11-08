@@ -7,14 +7,6 @@
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "occurredAt", "order": "DESCENDING" }
       ]
-    },
-    {
-      "collectionGroup": "graded-frqs",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "studentId", "order": "ASCENDING" },
-        { "fieldPath": "gradedAt", "order": "DESCENDING" }
-      ]
     }
   ],
   "fieldOverrides": []
