@@ -110,11 +110,16 @@ export async function awardFrqGrade(
     const notificationReceiptRef = db
       .collection("xpAwards")
       .doc(`frq_grade_${submissionId}`);
-    const [stats, receipt, notificationReceipt] = await transaction.getAll(
-      statsRef,
-      receiptRef,
-      notificationReceiptRef,
+    const activityRef = db.doc(
+      dashboardDocumentPaths.activity(`${studentId}_frq_${submissionId}`),
     );
+    const [stats, receipt, notificationReceipt, activity] =
+      await transaction.getAll(
+        statsRef,
+        receiptRef,
+        notificationReceiptRef,
+        activityRef,
+      );
     const statsData = stats?.data();
     const progress = addXp(readXpTotal(statsData), 0);
     const response: ActivityAwardResponse = {
@@ -308,21 +313,32 @@ export async function awardFrqGrade(
     const notification = await transaction.get(notificationRef);
     const shouldNotify =
       notificationState?.notificationCreated !== true && !notification.exists;
+    const activityData = activity?.data() as
+      | Record<string, unknown>
+      | undefined;
+    const activityNeedsGrade =
+      activity?.exists === true &&
+      (activityData?.gradeStatus !== "graded" ||
+        activityData?.frqScore !== grade.score);
     if (
       xpAwarded === 0 &&
       !shouldNotify &&
       notificationState?.notificationCreated === true &&
-      receipt?.exists
+      receipt?.exists &&
+      !activityNeedsGrade
     )
       return response;
 
     const next = addXp(progress.xp, xpAwarded);
     const newlyUnlocked =
       xpAwarded > 0
-        ? await awardAchievements(transaction, db, studentId, {
-            ...statsData,
-            level: next.level,
-          })
+        ? await awardAchievements(
+            transaction,
+            db,
+            studentId,
+            { ...statsData, xp: next.xp, level: next.level },
+            { fromLevel: progress.level, toLevel: next.level },
+          )
         : [];
     if (shouldNotify) {
       createNotification(transaction, notificationRef, {
@@ -331,6 +347,16 @@ export async function awardFrqGrade(
         body: `Your FRQ was graded: ${grade.score as string}. View your feedback.`,
         href: `/frq-feedback/${submissionId}`,
       });
+    }
+
+    // Keep the dashboard event in sync with the saved grade in the same
+    // transaction as its XP receipt. Grading does not change streak/calendar.
+    if (activityNeedsGrade) {
+      transaction.set(
+        activityRef,
+        { gradeStatus: "graded", frqScore: grade.score as string },
+        { merge: true },
+      );
     }
 
     transaction.set(receiptRef, {

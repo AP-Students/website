@@ -147,7 +147,11 @@ void test("saved FRQ processing can retry after failure without touching the que
         RenderContent: "div",
       },
       "@/lib/firebase": { db: {} },
+      "@/lib/gamification/notifyActivityFailure": {
+        reportWithRetry: () => undefined,
+      },
       "@/lib/gamification/reportActivity": {
+        reportFrqSubmission: async () => null,
         reportFrqGrade: async (id: string) => {
           calls.push(id);
           if (calls.length === 1) throw new Error("temporary outage");

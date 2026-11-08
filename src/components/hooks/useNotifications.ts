@@ -9,6 +9,7 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  Timestamp,
   updateDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -36,10 +37,16 @@ export function useNotifications(uid: string | undefined) {
         setNotifications(
           snapshot.docs
             .map((item) => ({ ...item.data(), id: item.id }) as AppNotification)
-            .filter(
-              (item) =>
-                !item.expiresAt || item.expiresAt.toMillis() > Date.now(),
-            ),
+            .filter((item) => {
+              const expiresAt =
+                item.expiresAt ??
+                (item.readAt
+                  ? Timestamp.fromMillis(
+                      item.readAt.toMillis() + 48 * 60 * 60 * 1000,
+                    )
+                  : undefined);
+              return !expiresAt || expiresAt.toMillis() > Date.now();
+            }),
         );
         setLoadedUid(uid);
       },
@@ -52,8 +59,10 @@ export function useNotifications(uid: string | undefined) {
 
   const markRead = async (id: string) => {
     if (!uid) return;
+    const expiresAt = Timestamp.fromMillis(Date.now() + 48 * 60 * 60 * 1000);
     await updateDoc(doc(db, dashboardDocumentPaths.notification(uid, id)), {
       readAt: serverTimestamp(),
+      expiresAt,
     });
   };
   return {

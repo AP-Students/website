@@ -149,14 +149,19 @@ export async function POST(request: NextRequest) {
 
   const now = new Date();
   const { submittedAt, subject, unitId, templateId } = submission;
-  if (
-    !(submittedAt instanceof Timestamp) ||
-    now.getTime() - submittedAt.toMillis() > RECORDING_WINDOW_MS
-  ) {
-    return NextResponse.json(
+  const tooOldToRecord = () =>
+    NextResponse.json(
       { error: "Submission is too old to record" },
       { status: 409 },
     );
+  if (!(submittedAt instanceof Timestamp)) return tooOldToRecord();
+  // A self-grade can be finished long after the recording window. It may still
+  // upgrade the event recorded at submission, which pays nothing, but it can
+  // never record a new event once the window has passed.
+  const pastRecordingWindow =
+    now.getTime() - submittedAt.toMillis() > RECORDING_WINDOW_MS;
+  if (pastRecordingWindow && gradeStatus !== "self_graded") {
+    return tooOldToRecord();
   }
   if (
     !isDocumentId(subject) ||
@@ -211,7 +216,33 @@ export async function POST(request: NextRequest) {
         newlyUnlocked: [],
         alreadyRecorded: true,
       };
-      if (event?.exists) return response;
+      if (event?.exists) {
+        if (
+          event.data()?.gradeStatus === "pending" &&
+          gradeStatus === "self_graded"
+        ) {
+          const selfGrade = await transaction.get(
+            adminDb.collection("self-graded-frqs").doc(submissionId),
+          );
+          const selfGradeData = selfGrade.data();
+          if (
+            selfGrade.exists &&
+            selfGradeData?.studentId === uid &&
+            typeof selfGradeData.score === "string"
+          ) {
+            transaction.set(
+              eventRef,
+              {
+                gradeStatus: "self_graded",
+                frqScore: selfGradeData.score,
+              },
+              { merge: true },
+            );
+          }
+        }
+        return response;
+      }
+      if (pastRecordingWindow) return null;
 
       const { day, timeZone } = resolveActivityDay(
         now,
@@ -229,10 +260,23 @@ export async function POST(request: NextRequest) {
         (paysSubmissionXp ? xpConfig.frqSubmission : 0) +
         streakXp(streak, next, xpConfig);
       const progress = addXp(totalXp, xpAwarded);
-      const newlyUnlocked = await awardAchievements(transaction, adminDb, uid, {
-        ...statsData, level: progress.level, longestStreak: next.longestStreak,
-        frqsSubmitted: nonNegativeNumber(statsData?.frqsSubmitted, 0) + 1,
-      });
+      const newlyUnlocked = await awardAchievements(
+        transaction,
+        adminDb,
+        uid,
+        {
+          ...statsData,
+          xp: progress.xp,
+          level: progress.level,
+          longestStreak: next.longestStreak,
+          currentStreak: next.currentStreak,
+          lastActiveDay: next.lastActiveDay,
+          timeZone,
+          frqsSubmitted:
+            nonNegativeNumber(statsData?.frqsSubmitted, 0) + 1,
+        },
+        { fromLevel: addXp(totalXp, 0).level, toLevel: progress.level },
+      );
 
       if (paysSubmissionXp) {
         transaction.create(xpAwardRef, {
@@ -260,6 +304,10 @@ export async function POST(request: NextRequest) {
         dayKey: day,
         xpAwarded,
         gradeStatus,
+        ...((gradeStatus === "graded" || gradeStatus === "self_graded") &&
+        typeof submission.score === "string"
+          ? { frqScore: submission.score }
+          : {}),
       });
       transaction.set(
         statsRef,
@@ -301,6 +349,7 @@ export async function POST(request: NextRequest) {
       };
     });
 
+    if (!result) return tooOldToRecord();
     return NextResponse.json(result);
   } catch (error) {
     console.error("Unable to record submitted FRQ", error);

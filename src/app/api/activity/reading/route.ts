@@ -166,10 +166,19 @@ export async function POST(request: NextRequest) {
 
       const xpAwarded = xpConfig.readingComplete;
       const progress = addXp(totalXp, xpAwarded);
-      const newlyUnlocked = await awardAchievements(transaction, adminDb, uid, {
-        ...statsData, level: progress.level,
-        readingsCompleted: nonNegativeNumber(statsData?.readingsCompleted, 0) + 1,
-      });
+      const newlyUnlocked = await awardAchievements(
+        transaction,
+        adminDb,
+        uid,
+        {
+          ...statsData,
+          xp: progress.xp,
+          level: progress.level,
+          readingsCompleted:
+            nonNegativeNumber(statsData?.readingsCompleted, 0) + 1,
+        },
+        { fromLevel: addXp(totalXp, 0).level, toLevel: progress.level },
+      );
 
       transaction.set(
         chapterDataRef,

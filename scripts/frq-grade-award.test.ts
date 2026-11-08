@@ -6,6 +6,7 @@ import {
   type Transaction as AdminTransaction,
 } from "firebase-admin/firestore";
 import { awardAchievements } from "../src/lib/server/awardAchievements.ts";
+import { buildPublicProfile } from "../src/lib/server/publicProfile.ts";
 import {
   checkAchievements,
   readAchievementStats,
@@ -17,10 +18,11 @@ import {
 } from "../src/lib/server/awardFrqGrade.ts";
 
 type Data = Record<string, unknown>;
-type Ref = { path: string; id: string; field?: string; value?: unknown };
+type Ref = { path: string; id: string; field?: string; value?: unknown; collectionQuery?: boolean };
 type Snapshot = { exists: boolean; data: () => Data | undefined };
+type QuerySnapshot = { docs: Array<{ id: string; data: () => Data }> };
 type Transaction = {
-  get: (ref: Ref) => Promise<Snapshot>;
+  get: (ref: Ref) => Promise<Snapshot & Partial<QuerySnapshot>>;
   getAll: (...refs: Ref[]) => Promise<Snapshot[]>;
   create: (ref: Ref, data: Data) => void;
   set: (ref: Ref, data: Data, options?: { merge: boolean }) => void;
@@ -38,6 +40,8 @@ class MemoryDb {
   }
   collection(path: string) {
     return {
+      path,
+      collectionQuery: true,
       doc: (id: string) => this.doc(`${path}/${id}`),
       where: (field: string, _operator: string, value: unknown) => ({
         ...this.doc(path),
@@ -69,24 +73,24 @@ class MemoryDb {
             0,
             "Firestore requires reads before writes",
           );
-          if (ref.field) {
+          if (ref.field || ref.collectionQuery) {
             reads.set(
               `query:${ref.path}`,
               this.versions.get(`query:${ref.path}`) ?? 0,
             );
+            const docs = [...this.docs]
+              .filter(([path, data]) =>
+                path.slice(0, path.lastIndexOf("/")) === ref.path &&
+                (!ref.field || data[ref.field] === ref.value),
+              )
+              .map(([path, data]) => ({
+                id: this.doc(path).id,
+                data: () => data,
+              }));
             return {
               exists: false,
               data: () => undefined,
-              docs: [...this.docs]
-                .filter(
-                  ([path, data]) =>
-                    path.slice(0, path.lastIndexOf("/")) === ref.path &&
-                    data[ref.field!] === ref.value,
-                )
-                .map(([path, data]) => ({
-                  id: this.doc(path).id,
-                  data: () => data,
-                })),
+              docs,
             };
           }
           reads.set(ref.path, this.versions.get(ref.path) ?? 0);
@@ -302,10 +306,22 @@ void test("pays the student, updates levels, and leaves streak/calendar untouche
   assert.equal(db.docs.get(statsPath)?.frqsSubmitted, 1);
   assert.deepEqual(
     db.writes.sort(),
-    [statsPath, receiptPath, notificationPath, notificationReceiptPath].sort(),
+    [
+      statsPath,
+      receiptPath,
+      notificationPath,
+      notificationReceiptPath,
+      "profiles/student",
+      "notifications/student/items/level_up_2",
+    ].sort(),
   );
   assert.equal(db.docs.has("userStats/staff"), false);
   assert.equal(db.docs.get(receiptPath)?.xpAwarded, 17);
+  assert.equal(db.docs.get("profiles/student")?.isPublic, false);
+  assert.equal(db.docs.get("profiles/student")?.xp, 107);
+  assert.deepEqual(db.docs.get("profiles/student")?.achievements, [
+    { id: "frq-1", title: "frq-1" },
+  ]);
 });
 
 void test("replays and concurrent requests cannot double pay", async () => {
@@ -655,7 +671,78 @@ void test("pure achievement checks and ineligible stats never create notificatio
   );
   assert.deepEqual(db.writes, []);
   assert.deepEqual(await awardBadges(db, {}), []);
-  assert.deepEqual(db.writes, []);
+  assert.deepEqual(db.writes, ["profiles/student"]);
+  assert.equal(db.docs.get("profiles/student")?.isPublic, false);
+});
+
+void test("public profiles use live streaks and safe bounded name and photo fields", () => {
+  const today = new Date();
+  const todayKey = [
+    today.getUTCFullYear(),
+    String(today.getUTCMonth() + 1).padStart(2, "0"),
+    String(today.getUTCDate()).padStart(2, "0"),
+  ].join("-");
+  const stale = new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000);
+  const staleKey = [
+    stale.getUTCFullYear(),
+    String(stale.getUTCMonth() + 1).padStart(2, "0"),
+    String(stale.getUTCDate()).padStart(2, "0"),
+  ].join("-");
+  const profile = buildPublicProfile(
+    "student",
+    {
+      displayName: ` ${"A".repeat(120)} `,
+      photoURL: "javascript:alert(1)",
+    },
+    {
+      currentStreak: 7,
+      longestStreak: 12,
+      lastActiveDay: staleKey,
+      timeZone: "UTC",
+    },
+    [],
+    true,
+  );
+
+  assert.equal(todayKey.length, 10);
+  assert.equal(profile.displayName.length, 80);
+  assert.equal(profile.currentStreak, 0);
+  assert.equal(profile.longestStreak, 12);
+  // Readers need these to decay a streak the profile froze at its last write.
+  assert.equal(profile.lastActiveDay, staleKey);
+  assert.equal(profile.timeZone, "UTC");
+  assert.equal("photoURL" in profile, false);
+  const live = buildPublicProfile(
+    "student",
+    { photoURL: "https://firebasestorage.googleapis.com/v0/b/demo/o/photo" },
+    {
+      currentStreak: 3,
+      longestStreak: 3,
+      lastActiveDay: todayKey,
+      timeZone: "UTC",
+    },
+    [],
+    false,
+  );
+  assert.equal(
+    live.photoURL,
+    "https://firebasestorage.googleapis.com/v0/b/demo/o/photo",
+  );
+  assert.equal(live.currentStreak, 3);
+  const neverActive = buildPublicProfile("student", {}, {}, [], false);
+  assert.equal(neverActive.lastActiveDay, null);
+  assert.equal(neverActive.displayName, "Student");
+  // 80 characters, not 80 UTF-16 units: the last emoji stays whole.
+  const emojiName = buildPublicProfile(
+    "student",
+    { displayName: `a${"😀".repeat(100)}` },
+    {},
+    [],
+    false,
+  ).displayName;
+  assert.equal(Array.from(emojiName).length, 80);
+  assert.equal(emojiName.endsWith("😀"), true);
+  assert.equal(emojiName.includes("�"), false);
 });
 
 void test("new achievements and their notifications commit together once under concurrency", async () => {
@@ -673,10 +760,14 @@ void test("new achievements and their notifications commit together once under c
   assert.equal(notification.type, "achievement");
   assert.equal(notification.href, "/dashboard#achievements");
   assert.equal(notification.expiresAt, null);
-  assert.equal(db.writes.length, 2);
+  assert.equal(db.writes.length, 4);
+  assert.equal(db.docs.get("profiles/student")?.achievementCount, 1);
+  assert.deepEqual(db.docs.get("profiles/student")?.achievements, [
+    { id: "frq-1", title: "Free Thinker" },
+  ]);
   assert.ok(db.retries > 0);
   assert.deepEqual(await awardBadges(db, { frqsSubmitted: 1 }), []);
-  assert.equal(db.writes.length, 2);
+  assert.equal(db.writes.length, 5);
 });
 
 void test("earned achievements never re-notify even after notification deletion", async () => {
@@ -688,13 +779,13 @@ void test("earned achievements never re-notify even after notification deletion"
     db.docs.has("notifications/student/items/achievement_frq-1"),
     false,
   );
-  assert.equal(db.writes.length, 2);
+  assert.equal(db.writes.length, 4);
 });
 
 void test("previously earned achievements are not backfilled with notifications", async () => {
   const db = fixture();
   assert.deepEqual(await awardBadges(db, { frqsSubmitted: 1 }), []);
-  assert.deepEqual(db.writes, []);
+  assert.deepEqual(db.writes, ["profiles/student"]);
 });
 
 void test("new thresholds award only the newly earned achievement", async () => {
@@ -702,7 +793,7 @@ void test("new thresholds award only the newly earned achievement", async () => 
   await awardBadges(db, { frqsSubmitted: 1 });
   assert.deepEqual(await awardBadges(db, { frqsSubmitted: 10 }), ["frq-10"]);
   assert.deepEqual(await awardBadges(db, { frqsSubmitted: 10 }), []);
-  assert.equal(db.writes.length, 4);
+  assert.equal(db.writes.length, 7);
 });
 
 void test("FRQ grade XP can unlock a level achievement for the student", async () => {
@@ -712,6 +803,7 @@ void test("FRQ grade XP can unlock a level achievement for the student", async (
   assert.deepEqual(result.newlyUnlocked, ["level-5"]);
   assert.ok(db.docs.has("users/student/achievements/level-5"));
   assert.ok(db.docs.has("notifications/student/items/achievement_level-5"));
+  assert.ok(db.docs.has("notifications/student/items/level_up_5"));
   assert.equal(db.docs.get(statsPath)?.currentStreak, 4);
   assert.equal((await award(db)).newlyUnlocked.length, 0);
 });

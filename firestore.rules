@@ -96,13 +96,27 @@ service cloud.firestore {
 
     match /notifications/{userId}/items/{notificationId} {
       allow read: if isAuthenticated() && request.auth.uid == userId;
-      // Notifications and their TTL are server-controlled. Recipients may only
-      // acknowledge an existing notification using the server's clock.
+      // Recipients may acknowledge once. The browser proposes a 48-hour TTL;
+      // accept a one-hour clock-skew window around Firestore's server time.
       allow update: if isAuthenticated()
         && request.auth.uid == userId
-        && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['readAt'])
-        && request.resource.data.readAt == request.time;
+        && resource.data.readAt == null
+        && resource.data.expiresAt == null
+        && request.resource.data.readAt == request.time
+        && (
+          // Older open tabs only write readAt. Accept that acknowledgement
+          // during rollout; the bell derives the same 48-hour cutoff when
+          // expiresAt is absent.
+          (request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['readAt'])
+            && request.resource.data.expiresAt == null)
+          ||
+          (request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['readAt', 'expiresAt'])
+            && request.resource.data.expiresAt is timestamp
+            && request.resource.data.expiresAt >= request.time + duration.value(47, 'h')
+            && request.resource.data.expiresAt <= request.time + duration.value(49, 'h'))
+        );
     }
 
     // Saved readings/problems reuse the dashboard SavedItem contract:
@@ -459,11 +473,12 @@ service cloud.firestore {
       allow write: if isMemberOrAdmin();
     }
 
-    // Public profiles will be a server-written mirror of userStats (XP, level,
-    // streak) that feeds the leaderboard, so a student must not be able to
-    // write their own. Reads open up to everyone once that mirror exists.
+    // Public profile projections are server-written and contain only the
+    // allowlisted fields. Private profiles are visible to their owner only;
+    // there are intentionally no client write rules for this collection.
     match /profiles/{userId} {
-      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow read: if resource.data.isPublic == true
+        || (isAuthenticated() && request.auth.uid == userId);
     }
 
     match /feedback/{feedbackId} {

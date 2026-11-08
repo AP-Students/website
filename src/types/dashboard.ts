@@ -49,6 +49,8 @@ export interface ActivityEvent {
   dayKey: string; // "2026-09-20", computed in the USER's timezone
   xpAwarded: number;
   gradeStatus: GradeStatus;
+  /** The saved FRQ score, e.g. "4/6". */
+  frqScore?: string;
   score?: { correct: number; total: number };
   questions?: { index: number; topic: string; correct: boolean }[]; // mcq only
 }
@@ -105,18 +107,22 @@ export interface ActivityCalendar {
   updatedAt: Timestamp;
 }
 
-/** World-readable mirror of a user's stats. No email, no role, ever. */
+/** Server-written profile projection. Never includes email or private activity. */
 export interface PublicProfile {
   uid: string;
+  isPublic: boolean;
   displayName: string;
   photoURL?: string;
   xp: number;
   level: number;
   currentStreak: number;
   longestStreak: number;
+  lastActiveDay: string | null; // dayKey; re-apply streakAsOf when reading
+  timeZone: string; // IANA zone the student's days are counted in
   problemsSolved: number;
+  subjectsCompleted: number;
   achievementCount: number;
-  updatedAt: Timestamp;
+  achievements: Array<{ id: string; title: string }>;
 }
 
 export type NotificationType = "level_up" | "achievement" | "frq_graded";
