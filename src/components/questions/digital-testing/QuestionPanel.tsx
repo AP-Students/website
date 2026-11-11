@@ -4,6 +4,7 @@ import clsx from "clsx";
 import "@/styles/strikeThrough.css";
 import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
 import { Check, X } from "lucide-react";
+import { correctOptionIds } from "@/lib/questionAnswers";
 
 interface QuestionPanelProps {
   showEliminationTools: boolean;
@@ -78,6 +79,11 @@ export default function QuestionPanel({
 
   if (!questionInstance) return null;
 
+  const correctIds = correctOptionIds(
+    questionInstance.options,
+    questionInstance.answers,
+  );
+
   const toggleStrike = (index: number, optionId: string) => {
     const newStrikedAnswers = [...strikedAnswers];
     const currentStrikes = new Set(newStrikedAnswers[currentQuestionIndex]);
@@ -115,11 +121,11 @@ export default function QuestionPanel({
                   isStrikedThrough && "striked-through",
                   submitted &&
                     selectedAnswers.includes(option.id) &&
-                    questionInstance.answers.includes(`${index + 1}`) &&
+                    correctIds.includes(option.id) &&
                     "border-green-500 bg-green-200",
                   submitted &&
                     selectedAnswers.includes(option.id) &&
-                    !questionInstance.answers.includes(`${index + 1}`) &&
+                    !correctIds.includes(option.id) &&
                     "border-red-500 bg-red-200",
                 )}
               >
@@ -168,7 +174,7 @@ export default function QuestionPanel({
                   )}
 
                   {submitted &&
-                    (questionInstance.answers.includes(`${index + 1}`) ? (
+                    (correctIds.includes(option.id) ? (
                       <Check className="ml-auto stroke-green-500 stroke-[3px]" />
                     ) : (
                       <X className="ml-auto stroke-red-500 stroke-[3px]" />
