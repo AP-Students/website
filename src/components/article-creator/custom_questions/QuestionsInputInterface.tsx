@@ -13,6 +13,10 @@ import {
 import AdvancedTextbox from "./AdvancedTextbox";
 import { Input } from "@/components/ui/input";
 import { richTextToPlainText } from "./richText";
+import {
+  answersAfterOptionRemoved,
+  missingOptionPositions,
+} from "@/lib/questionAnswers";
 
 interface Props {
   questions: QuestionFormat[];
@@ -177,12 +181,24 @@ const QuestionsInputInterface: React.FC<Props> = ({
 
   const deleteOption = (qIndex: number, oIndex: number) => {
     const newQuestions = [...questions];
-    const newOptions = newQuestions[qIndex]!.options.filter(
-      (_, index) => index !== oIndex,
-    );
-    newQuestions[qIndex]!.options = newOptions;
+    const question = newQuestions[qIndex]!;
+    newQuestions[qIndex] = {
+      ...question,
+      options: question.options.filter((_, index) => index !== oIndex),
+      // Answers are option positions, so shift them to stay on the same options.
+      answers: answersAfterOptionRemoved(question.answers, oIndex),
+    };
     setQuestions(newQuestions);
     setUnsavedChanges?.(true);
+  };
+
+  // Checked on every render, not only on typing, so adding or deleting an
+  // option updates it straight away.
+  const missingOptionMessage = (question: QuestionFormat) => {
+    const optionCount = question.options.length;
+    const missing = missingOptionPositions(question.answers, optionCount);
+    if (missing.length === 0) return null;
+    return `There is no Option ${missing.join(" or ")}. This question has ${optionCount} option${optionCount === 1 ? "" : "s"}.`;
   };
 
   const validateCorrectAnswer = (
@@ -332,6 +348,11 @@ const QuestionsInputInterface: React.FC<Props> = ({
                       }}
                     />
                     {error && <div className="text-red-500">{error}</div>}
+                    {missingOptionMessage(questionInstance) && (
+                      <div className="text-red-500">
+                        {missingOptionMessage(questionInstance)}
+                      </div>
+                    )}
                   </div>
                 )}
                 <div>
