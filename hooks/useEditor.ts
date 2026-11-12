@@ -34,8 +34,24 @@ const useEditor = (config: EditorConfig) => {
           }
 
           setIsEditorReady(true);
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- The call is safe
-          new Undo({ editor });
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment -- The call is safe
+          const undo = new Undo({ editor });
+          // Unless it is told what the editor opened with, the plugin's first
+          // state is a single empty block, so the first Ctrl+Z after opening
+          // a chapter undid all the way to that and emptied the editor. It is
+          // given the editor's own saved output, not `config.data`: the plugin
+          // compares block counts, and saving drops blocks such as empty
+          // paragraphs, so a count taken from `config.data` could look like a
+          // deleted block and make the first undo insert one.
+          editor
+            .save()
+            .then((opened) => {
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- The call is safe
+              undo.initialize(opened);
+            })
+            .catch((error) => {
+              console.error("Could not set the undo starting point:", error);
+            });
           config.onReady?.();
         },
         onChange: (api, event) => {
