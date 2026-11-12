@@ -14,9 +14,7 @@ import useEditor from "hooks/useEditor";
 import Header from "@editorjs/header";
 import Paragraph from "@editorjs/paragraph";
 import Quote from "@editorjs/quote";
-import List from "@editorjs/list";
 import Table from "@editorjs/table";
-import CodeTool from "@editorjs/code";
 import InlineCode from "@editorjs/inline-code";
 import Image from "@editorjs/image";
 import Embed from "@editorjs/embed";
@@ -26,6 +24,7 @@ import MathTex from "editorjs-math";
 import Delimiter from "@editorjs/delimiter";
 import Alert from "editorjs-alert";
 import AlignmentTune from "./AlignmentTune";
+import { CodeBlock, ListBlock } from "./convertibleTools";
 import { QuestionsAddCard } from "./custom_questions/QuestionsAddCard";
 import { normalizePastedHtml } from "./custom_questions/richText";
 import {
@@ -760,7 +759,7 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
   },
 
   list: {
-    class: List as unknown as ToolConstructable,
+    class: ListBlock as unknown as ToolConstructable,
     inlineToolbar: true,
     shortcut: "CTRL+ALT+8",
     tunes: ["alignment"],
@@ -804,7 +803,7 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
   },
 
   code: {
-    class: CodeTool as unknown as ToolConstructable,
+    class: CodeBlock as unknown as ToolConstructable,
     inlineToolbar: true,
   },
 
