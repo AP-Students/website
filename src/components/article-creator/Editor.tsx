@@ -46,6 +46,11 @@ import {
   serializeRichCaption,
   richCaptionToPlainText,
 } from "./caption-rich-text/convert";
+import {
+  DEFAULT_HEADING_LEVEL,
+  HEADING_LEVELS,
+  nearestHeadingLevel,
+} from "./headingLevels";
 
 interface EditorImageData {
   file: { url?: string; storageRefFullPath?: string; [key: string]: unknown };
@@ -708,16 +713,36 @@ class CustomImage extends Image {
   }
 }
 
+/**
+ * The Heading tool, keeping every saved heading at a level it offers.
+ *
+ * The tool shows a saved level it doesn't offer, such as an H4 in imported
+ * JSON, at its default level, and saves it that way. With Heading 1 as the
+ * default, that would make such a heading the biggest on the page, so it
+ * gets the nearest offered level instead, as pasted H4 to H6 already do.
+ */
+class HeadingBlock extends Header {
+  normalizeData(
+    data: Parameters<Header["normalizeData"]>[0],
+  ): ReturnType<Header["normalizeData"]> {
+    const normalized = super.normalizeData(data);
+    return {
+      ...normalized,
+      level: nearestHeadingLevel(normalized.level, HEADING_LEVELS),
+    };
+  }
+}
+
 export const EDITOR_TOOLS: EditorConfig["tools"] = {
   header: {
-    class: Header as unknown as ToolConstructable,
+    class: HeadingBlock as unknown as ToolConstructable,
     shortcut: "CTRL+SHIFT+H",
     inlineToolbar: true,
     tunes: ["alignment"],
     config: {
       placeholder: "Enter a Header",
-      levels: [1, 2, 3],
-      defaultLevel: 2,
+      levels: [...HEADING_LEVELS],
+      defaultLevel: DEFAULT_HEADING_LEVEL,
     },
   },
 
