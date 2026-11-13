@@ -28,5 +28,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   const asset = (await getAdminDb().doc(`contentAssets/${importId}_${params.id}`).get()).data();
   if (!asset || asset.ownerUid !== revision.ownerUid) return jsonError(404, "ASSET_NOT_FOUND", "Image not found.");
   const [bytes] = await getAdminStorage().bucket().file(asset.path).download();
-  return new NextResponse(bytes as unknown as BodyInit, { headers: { "Content-Type": asset.contentType, "Cache-Control": "private, no-store" } });
+  const headers: Record<string, string> = { "Content-Type": asset.contentType, "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" };
+  if (asset.contentType === "image/svg+xml") {
+    headers["Content-Disposition"] = "attachment";
+    headers["Content-Security-Policy"] = "sandbox; default-src 'none'";
+  }
+  return new NextResponse(bytes as unknown as BodyInit, { headers });
 }

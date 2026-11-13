@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { type NextRequest, NextResponse } from "next/server";
 import { authenticate, jsonError, requireScopedCourse } from "@/lib/mcpApi";
 import { getAdminDb } from "@/lib/mcpAdmin";
@@ -24,15 +24,32 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   const schemaDiagnostics = validateMcpSchema(String(source.contentType), body.content);
   if (schemaDiagnostics.length) return jsonError(422, "INVALID_REVISION", "Revision content failed the canonical JSON schema.", schemaDiagnostics);
   const revisionId = randomUUID();
+  const requestHash = createHash("sha256").update(JSON.stringify({ content: body.content, reviewedArtifactHash: body.reviewedArtifactHash ?? null })).digest("hex");
+  const claimId = createHash("sha256").update(JSON.stringify([auth.uid, params.id, key])).digest("hex");
+  const db = getAdminDb();
+  const importRef = db.doc(`mcpImports/${params.id}`);
+  const claimRef = db.doc(`mcpRevisionIdempotency/${claimId}`);
   const content = source.contentType === "chapter" ? storeChapterTables(body.content) : body.content;
-  const destination = source.state === "published"
-    ? { ...source.destination, mode: "update", baseRevisionId: source.publishedRevisionId ?? params.id }
-    : source.destination;
-  const revision = { revisionId, importId: params.id, ownerUid: auth.uid, contentType: source.contentType, content, metadata: source.metadata, destination, assetBindings: source.assetBindings ?? [], reviewedArtifactHash: body.reviewedArtifactHash ?? null, state: "draft", idempotencyKey: key, createdAt: FieldValue.serverTimestamp() };
-  // Draft saves only write private revision records, never the live document.
-  const batch = getAdminDb().batch();
-  batch.create(getAdminDb().doc(`contentRevisions/${revisionId}`), revision);
-  batch.update(getAdminDb().doc(`mcpImports/${params.id}`), { latestRevisionId: revisionId, updatedAt: FieldValue.serverTimestamp() });
-  await batch.commit();
-  return NextResponse.json({ revisionId, state: "draft" }, { status: 201 });
+  const result = await db.runTransaction(async (tx) => {
+    const [claimSnap, currentImportSnap] = await Promise.all([tx.get(claimRef), tx.get(importRef)]);
+    const claim = claimSnap.data();
+    if (claim) return claim.requestHash === requestHash
+      ? { revisionId: String(claim.revisionId), created: false }
+      : { error: "IDEMPOTENCY_CONFLICT" as const };
+    const currentImport = currentImportSnap.data();
+    if (!currentImportSnap.exists || !currentImport || currentImport.ownerUid !== auth.uid) return { error: "IMPORT_NOT_FOUND" as const };
+    const destination = currentImport.state === "published"
+      ? { ...currentImport.destination, mode: "update", baseRevisionId: currentImport.publishedRevisionId ?? params.id }
+      : currentImport.destination;
+    const revision = { revisionId, importId: params.id, ownerUid: auth.uid, contentType: currentImport.contentType, content, metadata: currentImport.metadata, destination, assetBindings: currentImport.assetBindings ?? [], reviewedArtifactHash: body.reviewedArtifactHash ?? null, state: "draft", idempotencyKey: key, createdAt: FieldValue.serverTimestamp() };
+    // The key claim, private revision, and latest pointer commit together.
+    tx.create(claimRef, { ownerUid: auth.uid, importId: params.id, revisionId, requestHash, createdAt: FieldValue.serverTimestamp() });
+    tx.create(db.doc(`contentRevisions/${revisionId}`), revision);
+    tx.update(importRef, { latestRevisionId: revisionId, updatedAt: FieldValue.serverTimestamp() });
+    return { revisionId, created: true };
+  });
+  if ("error" in result) return result.error === "IMPORT_NOT_FOUND"
+    ? jsonError(404, "IMPORT_NOT_FOUND", "Import not found.")
+    : jsonError(409, "IDEMPOTENCY_CONFLICT", "This idempotency key was already used with different content.");
+  return NextResponse.json({ revisionId: result.revisionId, state: "draft" }, { status: result.created ? 201 : 200 });
 }

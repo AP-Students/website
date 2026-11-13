@@ -4,14 +4,13 @@ import { authenticate, jsonError, requireScopedCourse } from "@/lib/mcpApi";
 import { getAdminDb, getAdminStorage } from "@/lib/mcpAdmin";
 
 const MAX_ASSET_BYTES = 5 * 1024 * 1024;
-const ALLOWED_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif", "image/svg+xml"]);
+const ALLOWED_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
 
 function signatureMatches(type: string, bytes: Uint8Array) {
   if (type === "image/png") return bytes.length >= 8 && bytes.slice(0, 8).every((value, index) => value === [137, 80, 78, 71, 13, 10, 26, 10][index]);
   if (type === "image/jpeg") return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
   if (type === "image/gif") return new TextDecoder().decode(bytes.slice(0, 6)) === "GIF87a" || new TextDecoder().decode(bytes.slice(0, 6)) === "GIF89a";
   if (type === "image/webp") return new TextDecoder().decode(bytes.slice(0, 4)) === "RIFF" && new TextDecoder().decode(bytes.slice(8, 12)) === "WEBP";
-  if (type === "image/svg+xml") { const text = new TextDecoder().decode(bytes.slice(0, 200_000)); return /<svg[\s>]/i.test(text) && !/<script|xlink:href\s*=\s*["']https?:/i.test(text); }
   return false;
 }
 
@@ -30,7 +29,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   const loaded = await loadImport(request, params.id);
   if (loaded.auth instanceof NextResponse) return loaded.auth;
   const contentType = request.headers.get("content-type")?.split(";", 1)[0] ?? "application/octet-stream";
-  if (!ALLOWED_TYPES.has(contentType)) return jsonError(415, "UNSUPPORTED_IMAGE", "Only PNG, JPEG, WebP, GIF, and SVG images are accepted.");
+  if (!ALLOWED_TYPES.has(contentType)) return jsonError(415, "UNSUPPORTED_IMAGE", "Only PNG, JPEG, WebP, and GIF images are accepted.");
   const bytes = new Uint8Array(await request.arrayBuffer());
   if (bytes.byteLength > MAX_ASSET_BYTES) return jsonError(413, "IMAGE_TOO_LARGE", "Images must be 5 MiB or smaller.");
   if (bytes.byteLength === 0) return jsonError(422, "EMPTY_IMAGE", "The uploaded image is empty.");
@@ -47,5 +46,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   const asset = (await getAdminDb().doc(`contentAssets/${params.id}_${params.assetId}`).get()).data();
   if (!asset || asset.ownerUid !== loaded.auth.uid) return jsonError(404, "ASSET_NOT_FOUND", "Asset not found.");
   const [bytes] = await getAdminStorage().bucket().file(asset.path).download();
-  return new NextResponse(bytes as unknown as BodyInit, { headers: { "Content-Type": asset.contentType, "Cache-Control": "private, no-store" } });
+  const headers: Record<string, string> = { "Content-Type": asset.contentType, "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" };
+  if (asset.contentType === "image/svg+xml") {
+    headers["Content-Disposition"] = "attachment";
+    headers["Content-Security-Policy"] = "sandbox; default-src 'none'";
+  }
+  return new NextResponse(bytes as unknown as BodyInit, { headers });
 }

@@ -8,14 +8,23 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore";
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null) as { pairingId?: string; pairingSecret?: string; codeVerifier?: string } | null;
   if (!body?.pairingId || !body.pairingSecret || !body.codeVerifier) return jsonError(422, "INVALID_PAIRING", "Pairing credentials are required.");
-  const ref = getAdminDb().doc(`mcpPairings/${body.pairingId}`); const snap = await ref.get(); const pairing = snap.data();
-  if (!pairing || pairing.state !== "approved" || pairing.secretHash !== hashSecret(body.pairingSecret)) return jsonError(409, "PAIRING_PENDING", "Pairing is not approved or is invalid.");
-  const expiresAt = pairing.expiresAt instanceof Timestamp ? pairing.expiresAt.toMillis() : new Date(pairing.expiresAt).getTime();
-  if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) return jsonError(409, "PAIRING_EXPIRED", "The pairing session has expired.");
-  const challenge = createHash("sha256").update(body.codeVerifier).digest("base64url");
-  if (challenge !== pairing.codeChallenge) return jsonError(409, "PKCE_INVALID", "The pairing verifier does not match the original request.");
+  const { pairingId, pairingSecret, codeVerifier } = body;
+  const challenge = createHash("sha256").update(codeVerifier).digest("base64url");
   const connectionSecret = randomBytes(32).toString("base64url"); const connectionId = randomBytes(16).toString("hex");
-  await getAdminDb().doc(`mcpConnections/${connectionId}`).set({ uid: pairing.uid, secretHash: hashSecret(connectionSecret), label: pairing.label, allowedSubjectSlugs: pairing.allowedSubjectSlugs, expiresAt: Timestamp.fromMillis(Date.now() + 30 * 86400_000), createdAt: FieldValue.serverTimestamp() });
-  await ref.update({ state: "consumed", consumedAt: FieldValue.serverTimestamp() });
+  const db = getAdminDb();
+  const ref = db.doc(`mcpPairings/${pairingId}`);
+  const result = await db.runTransaction(async (tx) => {
+    const pairing = (await tx.get(ref)).data();
+    if (!pairing || pairing.state !== "approved" || pairing.secretHash !== hashSecret(pairingSecret)) return "PAIRING_PENDING";
+    const expiresAt = pairing.expiresAt instanceof Timestamp ? pairing.expiresAt.toMillis() : new Date(pairing.expiresAt).getTime();
+    if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) return "PAIRING_EXPIRED";
+    if (challenge !== pairing.codeChallenge) return "PKCE_INVALID";
+    tx.create(db.doc(`mcpConnections/${connectionId}`), { uid: pairing.uid, secretHash: hashSecret(connectionSecret), label: pairing.label, allowedSubjectSlugs: pairing.allowedSubjectSlugs, expiresAt: Timestamp.fromMillis(Date.now() + 30 * 86400_000), createdAt: FieldValue.serverTimestamp() });
+    tx.update(ref, { state: "consumed", consumedAt: FieldValue.serverTimestamp() });
+    return "OK";
+  });
+  if (result === "PAIRING_PENDING") return jsonError(409, result, "Pairing is not approved or is invalid.");
+  if (result === "PAIRING_EXPIRED") return jsonError(409, result, "The pairing session has expired.");
+  if (result === "PKCE_INVALID") return jsonError(409, result, "The pairing verifier does not match the original request.");
   return NextResponse.json({ connectionId, connectionSecret, expiresInSeconds: 30 * 86400 });
 }
