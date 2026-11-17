@@ -46,7 +46,7 @@ const initialQuestions: QuestionFormat[] = [
       { id: "3", value: { value: "Rome", files: [] } },
       { id: "4", value: { value: "Berlin", files: [] } },
     ],
-    answers: ["Paris"],
+    answers: ["1"],
     explanation: { value: "Paris is the capital city of France.", files: [] },
     content: {
       value:
@@ -65,7 +65,7 @@ const initialQuestions: QuestionFormat[] = [
       { id: "3", value: { value: "Osaka", files: [] } },
       { id: "4", value: { value: "Hiroshima", files: [] } },
     ],
-    answers: ["Tokyo"],
+    answers: ["1"],
     explanation: { value: "Tokyo is the capital city of Japan.", files: [] },
     content: {
       value:

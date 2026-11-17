@@ -4,6 +4,7 @@ import { Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { QuestionFormat } from "@/types/questions";
 import { usePathname } from "next/navigation";
+import { correctOptionIds } from "@/lib/questionAnswers";
 
 interface FooterProps {
   goToQuestion: (index: number) => void;
@@ -18,12 +19,16 @@ export function isQuestionCorrect(
   question: QuestionFormat,
   selected: string[],
 ) {
+  // Stored answers are option positions; selections are option ids.
+  const correct = correctOptionIds(question.options, question.answers);
+  if (correct.length === 0) return false;
+
   if (question.type === "mcq") {
-    return question.answers.includes(selected[0]!);
+    return selected.length > 0 && correct.includes(selected[0]!);
   }
 
-  if (selected.length !== question.answers.length) return false;
-  for (const answer of question.answers) {
+  if (selected.length !== correct.length) return false;
+  for (const answer of correct) {
     if (!selected.includes(answer)) return false;
   }
 
