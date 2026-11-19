@@ -31,16 +31,17 @@ service cloud.firestore {
         'xp', 'level', 'xpIntoLevel', 'xpForNextLevel', 'currentStreak',
         'longestStreak', 'lastActiveDay', 'readingsCompleted',
         'mcqTestsCompleted', 'problemsSolved', 'frqsSubmitted',
-        'subjectsCompleted', 'perSubject', 'updatedAt'
+        'subjectsCompleted', 'perSubject', 'updatedAt', 'username'
       ]);
     }
 
+    // username is only set through /api/username, which keeps it unique.
     function doesNotSetDerivedDashboardFields() {
       return !request.resource.data.keys().hasAny([
         'xp', 'level', 'xpIntoLevel', 'xpForNextLevel', 'currentStreak',
         'longestStreak', 'lastActiveDay', 'readingsCompleted',
         'mcqTestsCompleted', 'problemsSolved', 'frqsSubmitted',
-        'subjectsCompleted', 'perSubject', 'updatedAt'
+        'subjectsCompleted', 'perSubject', 'updatedAt', 'username'
       ]);
     }
 
@@ -196,6 +197,11 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && request.auth.uid == userId;
 
       match /achievements/{achievementId} {
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+      }
+
+      // Written only by /api/friends.
+      match /friends/{friendId} {
         allow read: if isAuthenticated() && request.auth.uid == userId;
       }
 
@@ -484,6 +490,18 @@ service cloud.firestore {
     match /profiles/{userId} {
       allow read: if resource.data.isPublic == true
         || (isAuthenticated() && request.auth.uid == userId);
+    }
+
+    // Username -> uid, for finding friends. Written only by the server.
+    match /usernames/{username} {
+      allow get: if isAuthenticated();
+      allow list: if isAuthenticated() && request.query.limit <= 20;
+    }
+
+    // Only the two people involved can see a request. Written only by the server.
+    match /friendRequests/{requestId} {
+      allow read: if isAuthenticated()
+        && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
     }
 
     match /feedback/{feedbackId} {

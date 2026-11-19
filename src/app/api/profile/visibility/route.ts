@@ -2,12 +2,16 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { requireUser } from "@/lib/server/activityRequest";
 import { buildPublicProfile } from "@/lib/server/publicProfile";
+import { removeFriendData } from "@/lib/server/friends";
 
 export async function DELETE(request: NextRequest) {
   const caller = await requireUser(request);
   if ("error" in caller) return caller.error;
 
   try {
+    // Called before an account is deleted, so it also frees the username and
+    // removes the account's friendships and friend requests.
+    await removeFriendData(getAdminDb(), caller.uid);
     await getAdminDb().doc(`profiles/${caller.uid}`).delete();
     return NextResponse.json({ deleted: true });
   } catch (error) {

@@ -602,3 +602,51 @@ check(
     await status(await doc(draftPath, "student", "DELETE"), 200);
   },
 );
+check("usernames, friend requests and friend lists are server-written and private", async () => {
+  // Only the server sets a username, so it stays unique.
+  await status(await merge("student", "users/student", { username: "sneaky" }), 403);
+  await status(await merge("student", "users/student", { displayName: "Still fine" }), 200);
+  await status(
+    await commit("newcomer", "users/newcomer", { access: "user", uid: "newcomer", username: "sneaky" }),
+    403,
+  );
+
+  await status(await commit("server", "usernames/sam", { uid: "student", username: "sam" }), 200);
+  await status(await commit("server", "friendRequests/other_student", { from: "other", to: "student" }), 200);
+  await status(await commit("server", "users/student/friends/other", { uid: "other" }), 200);
+
+  // Usernames: anyone signed in can look them up, a few at a time.
+  await status(await doc("usernames/sam", "other"), 200);
+  await status(await doc("usernames/sam", null), 403);
+  const usernames = (limit) =>
+    request(":runQuery", "other", "POST", {
+      structuredQuery: { from: [{ collectionId: "usernames" }], ...(limit ? { limit } : {}) },
+    });
+  await status(await usernames(10), 200);
+  await status(await usernames(50), 403);
+  await status(await usernames(), 403);
+  await status(await commit("student", "usernames/taken", { uid: "student", username: "taken" }), 403);
+
+  // Requests: only the two people involved.
+  await status(await doc("friendRequests/other_student", "student"), 200);
+  await status(await doc("friendRequests/other_student", "other"), 200);
+  await status(await doc("friendRequests/other_student", "staff"), 403);
+  const requestsTo = (uid, to) =>
+    request(":runQuery", uid, "POST", {
+      structuredQuery: {
+        from: [{ collectionId: "friendRequests" }],
+        ...(to
+          ? { where: { fieldFilter: { field: { fieldPath: "to" }, op: "EQUAL", value: { stringValue: to } } } }
+          : {}),
+      },
+    });
+  await status(await requestsTo("student", "student"), 200);
+  await status(await requestsTo("staff", "student"), 403);
+  await status(await requestsTo("student"), 403);
+  await status(await commit("student", "friendRequests/student_other", { from: "student", to: "other" }), 403);
+
+  // Friend lists: only your own, and only the server adds to them.
+  await status(await doc("users/student/friends/other", "student"), 200);
+  await status(await doc("users/student/friends/other", "other"), 403);
+  await status(await commit("other", "users/other/friends/student", { uid: "student" }), 403);
+});

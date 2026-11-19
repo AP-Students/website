@@ -11,6 +11,7 @@ import GlobalStats from "@/components/dashboard/GlobalStats";
 import StreakBar from "@/components/dashboard/StreakBar";
 import ActivityCalendar from "@/components/dashboard/ActivityCalendar";
 import AchievementsCard from "@/components/dashboard/AchievementsCard";
+import FriendsPanel from "@/components/dashboard/FriendsPanel";
 import { useAchievements } from "@/components/hooks/useAchievements";
 import RecentActivity from "@/components/dashboard/RecentActivity";
 import SubmissionHistory from "@/components/dashboard/SubmissionHistory";
@@ -274,6 +275,9 @@ export default function Dashboard() {
               <>
                 {profile}
                 <ProfileVisibility uid={user.uid} />
+                <div className="mt-12">
+                  <FriendsPanel uid={user.uid} username={userDoc?.username} />
+                </div>
               </>
             ),
           }}
