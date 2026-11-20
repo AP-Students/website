@@ -271,7 +271,13 @@ export default function Dashboard() {
               <InProgressList inProgress={inProgress} limit={Infinity} />
             ),
             achievements,
-            leaderboard: <Leaderboard uid={user.uid} xp={xpProgress?.xp} />,
+            leaderboard: (
+              <Leaderboard
+                uid={user.uid}
+                xp={xpProgress?.xp}
+                xpFailed={Boolean(xpError)}
+              />
+            ),
             profile: (
               <>
                 {profile}

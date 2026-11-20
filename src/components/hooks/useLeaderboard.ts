@@ -51,14 +51,18 @@ export function useLeaderboard(
   const latest = useRef(0);
 
   const load = useCallback(async () => {
-    if (!uid || xp === undefined) return;
+    // The list doesn't need your XP; only your rank does. So it loads even
+    // while your XP is loading, or if it failed to.
+    if (!uid) return;
     const id = ++latest.current;
     setState((current) => ({ ...current, loading: true }));
     try {
       const [top, mine, above] = await Promise.all([
         getDocs(query(publicByXp(), limit(LEADERBOARD_SIZE))),
         getDoc(doc(db, "profiles", uid)),
-        getCountFromServer(query(publicByXp(), where("xp", ">", xp))),
+        xp === undefined
+          ? undefined
+          : getCountFromServer(query(publicByXp(), where("xp", ">", xp))),
       ]);
       if (id !== latest.current) return;
       setState({
@@ -67,7 +71,7 @@ export function useLeaderboard(
             toLeaderboardEntry(profile.id, profile.data()),
           ),
         ),
-        myRank: rankFromCountAbove(above.data().count),
+        myRank: above ? rankFromCountAbove(above.data().count) : undefined,
         isPublic: mine.data()?.isPublic === true,
         updatedAt: new Date(),
         loading: false,

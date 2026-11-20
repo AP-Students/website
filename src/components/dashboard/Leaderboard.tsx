@@ -9,10 +9,13 @@ import { useLeaderboard } from "@/components/hooks/useLeaderboard";
 export default function Leaderboard({
   uid,
   xp,
+  xpFailed = false,
 }: {
   uid: string;
   /** The viewer's XP, or undefined while it loads. */
   xp: number | undefined;
+  /** Your XP couldn't be loaded, so your rank can't be worked out. */
+  xpFailed?: boolean;
 }) {
   const { entries, myRank, isPublic, updatedAt, error, loading, refresh } =
     useLeaderboard(uid, xp);
@@ -57,7 +60,15 @@ export default function Leaderboard({
 
       {error && (
         <p role="alert" className="rounded-md bg-red-100 p-4 text-red-700">
-          Couldn&apos;t load the leaderboard. Try refreshing in a moment.
+          {entries && updatedAt
+            ? `Couldn't refresh the leaderboard, so this is from ${updatedAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}. Try again in a moment.`
+            : "Couldn't load the leaderboard. Try refreshing in a moment."}
+        </p>
+      )}
+      {xpFailed && (
+        <p role="alert" className="rounded-md bg-red-100 p-4 text-red-700">
+          Couldn&apos;t load your XP, so your rank isn&apos;t shown. Reload the
+          page to try again.
         </p>
       )}
       {!entries && !error && (
