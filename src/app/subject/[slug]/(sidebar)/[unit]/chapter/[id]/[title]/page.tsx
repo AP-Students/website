@@ -63,7 +63,7 @@ function ChapterArticle({ data }: { data: OutputData }) {
     <>
       <article
         id={CONTAINER_ID}
-        className="prose before:prose-code:content-none after:prose-code:content-none"
+        className="prose break-words [overflow-wrap:anywhere] before:prose-code:content-none after:prose-code:content-none"
         dangerouslySetInnerHTML={{ __html: renderEditorJsToHtml(data) }}
       ></article>
       <QuestionsHydrator content={data} containerId={CONTAINER_ID} />

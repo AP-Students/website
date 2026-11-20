@@ -475,7 +475,7 @@ const Renderer = (props: { content: OutputData }) => {
   return (
     <article
       ref={containerRef}
-      className="prose before:prose-code:content-none after:prose-code:content-none"
+      className="prose break-words [overflow-wrap:anywhere] before:prose-code:content-none after:prose-code:content-none"
       dangerouslySetInnerHTML={html}
     ></article>
   );
