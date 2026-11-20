@@ -16,6 +16,9 @@ const EXTENSIONS: Readonly<Record<string, string>> = {
 // Give up on a pasted image after this long.
 export const PASTED_IMAGE_TIMEOUT_MS = 30_000;
 
+// Same limit as images picked from disk.
+export const PASTED_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+
 export function pastedImageFileName(mimeType: string): string {
   const type = mimeType.split(";")[0]?.trim().toLowerCase() ?? "";
   const extension = EXTENSIONS[type];
@@ -29,6 +32,7 @@ export async function fetchPastedImage(
   url: string,
   fetchImpl: typeof fetch = fetch,
   timeoutMs: number = PASTED_IMAGE_TIMEOUT_MS,
+  maxBytes: number = PASTED_IMAGE_MAX_BYTES,
 ): Promise<File> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -39,12 +43,35 @@ export async function fetchPastedImage(
         `The image request failed with status ${response.status}.`,
       );
     }
-    const blob = await response.blob();
-    if (!blob.type.startsWith("image/")) {
-      throw new Error(`The link isn't an image (${blob.type || "no type"}).`);
+    const type =
+      response.headers
+        .get("content-type")
+        ?.split(";")[0]
+        ?.trim()
+        .toLowerCase() ?? "";
+    if (!type.startsWith("image/")) {
+      throw new Error(`The link isn't an image (${type || "no type"}).`);
     }
-    return new File([blob], pastedImageFileName(blob.type), {
-      type: blob.type,
+    // Check the size before and while downloading, so a huge file is never
+    // fully loaded into the tab just to be rejected afterwards.
+    if (Number(response.headers.get("content-length")) > maxBytes) {
+      throw new Error("The image is too big.");
+    }
+    const chunks: Uint8Array[] = [];
+    let size = 0;
+    const reader = response.body?.getReader();
+    while (reader) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > maxBytes) {
+        await reader.cancel();
+        throw new Error("The image is too big.");
+      }
+      chunks.push(value);
+    }
+    return new File(chunks as BlobPart[], pastedImageFileName(type), {
+      type,
     });
   } finally {
     clearTimeout(timer);

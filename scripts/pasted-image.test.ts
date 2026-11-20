@@ -93,3 +93,67 @@ test("a download that never finishes gives up after the timeout", async () => {
   );
   assert.ok(Date.now() - started < 2000);
 });
+
+test("an image that says it's over the limit is refused without downloading it", async () => {
+  let read = false;
+  // highWaterMark 0 so pull() only runs when something actually reads.
+  const body = new ReadableStream(
+    {
+      pull() {
+        read = true;
+      },
+    },
+    { highWaterMark: 0 },
+  );
+  await assert.rejects(
+    fetchPastedImage(
+      "https://example.com/huge.png",
+      respondWith(
+        new Response(body, {
+          headers: { "content-type": "image/png", "content-length": "9999999" },
+        }),
+      ),
+      1000,
+      5_000_000,
+    ),
+    /too big/,
+  );
+  assert.equal(read, false);
+});
+
+test("a download with no size given stops as soon as it goes over the limit", async () => {
+  let sent = 0;
+  const endless = new ReadableStream<Uint8Array>({
+    pull(controller) {
+      sent += 1000;
+      controller.enqueue(new Uint8Array(1000));
+    },
+  });
+  await assert.rejects(
+    fetchPastedImage(
+      "https://example.com/endless.png",
+      respondWith(
+        new Response(endless, { headers: { "content-type": "image/png" } }),
+      ),
+      1000,
+      5000,
+    ),
+    /too big/,
+  );
+  // It stopped right after passing 5,000 bytes, not after the whole stream.
+  assert.ok(sent <= 7000, `read ${sent} bytes`);
+});
+
+test("an image just under the limit still works", async () => {
+  const file = await fetchPastedImage(
+    "https://example.com/ok.png",
+    respondWith(
+      new Response(new Uint8Array(5000), {
+        headers: { "content-type": "image/png" },
+      }),
+    ),
+    1000,
+    5000,
+  );
+  assert.equal(file.size, 5000);
+});
