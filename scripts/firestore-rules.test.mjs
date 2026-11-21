@@ -446,6 +446,64 @@ check("public profile reads follow visibility and clients cannot write projectio
   );
   await status(await doc("profiles/public", "student", "DELETE"), 403);
 });
+check("the leaderboard can list and count public profiles, but nothing private", async () => {
+  for (const [id, isPublic, xp] of [
+    ["leader-a", true, 300],
+    ["leader-b", true, 100],
+    ["leader-private", false, 500],
+  ]) {
+    await status(await commit("server", `profiles/${id}`, { uid: id, isPublic, xp }), 200);
+  }
+  const isPublic = {
+    fieldFilter: {
+      field: { fieldPath: "isPublic" },
+      op: "EQUAL",
+      value: { booleanValue: true },
+    },
+  };
+  const above = (xp) => ({
+    fieldFilter: {
+      field: { fieldPath: "xp" },
+      op: "GREATER_THAN",
+      value: { integerValue: String(xp) },
+    },
+  });
+  const byXp = (where) => ({
+    from: [{ collectionId: "profiles" }],
+    ...(where ? { where } : {}),
+    orderBy: [{ field: { fieldPath: "xp" }, direction: "DESCENDING" }],
+  });
+  const list = (uid, where) =>
+    request(":runQuery", uid, "POST", {
+      structuredQuery: { ...byXp(where), limit: 20 },
+    });
+  const count = (uid, where) =>
+    request(":runAggregationQuery", uid, "POST", {
+      structuredAggregationQuery: {
+        structuredQuery: byXp(where),
+        aggregations: [{ alias: "count", count: {} }],
+      },
+    });
+
+  for (const uid of ["student", null]) {
+    const top = await list(uid, isPublic);
+    assert.equal(top.status, 200, await top.clone().text());
+    const names = (await top.json())
+      .filter((row) => row.document)
+      .map((row) => row.document.name.split("/").pop());
+    assert.deepEqual(names, ["leader-a", "leader-b"]);
+
+    const rank = await count(uid, {
+      compositeFilter: { op: "AND", filters: [isPublic, above(150)] },
+    });
+    assert.equal(rank.status, 200, await rank.clone().text());
+    const [{ result }] = await rank.json();
+    assert.equal(result.aggregateFields.count.integerValue, "1");
+  }
+
+  await status(await list("student"), 403);
+  await status(await count("student", above(150)), 403);
+});
 check(
   "chapter progress saves its dashboard listing with the server's time, never an XP receipt",
   async () => {
