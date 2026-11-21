@@ -55,7 +55,7 @@ export default function Leaderboard({
         )}
       </p>
 
-      {error && !entries && (
+      {error && (
         <p role="alert" className="rounded-md bg-red-100 p-4 text-red-700">
           Couldn&apos;t load the leaderboard. Try refreshing in a moment.
         </p>
