@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { db } from "@/lib/firebase";
 import {
   doc,
@@ -23,6 +23,9 @@ import {
 import { cn } from "@/lib/utils";
 import { ShieldAlert } from "lucide-react";
 import { clearUserCache } from "@/components/hooks/users";
+import { useGradingCoverage } from "@/components/hooks/useGradingCoverage";
+import { FRQ_SUBJECTS } from "@/lib/firestore/gradingCoverage";
+import { subjectChoices } from "@/lib/gradingCoverage";
 
 const matcher = new RegExpMatcher({
   ...englishDataset.build(),
@@ -45,6 +48,26 @@ const FRQSubmissionPage = () => {
     null,
   );
   const isAPComputerScienceA = FRQSubject === "AP Computer Science A";
+
+  // Only subjects someone on the team can grade.
+  const coverage = useGradingCoverage();
+  const choices = useMemo(
+    () => subjectChoices(FRQ_SUBJECTS, coverage.data),
+    [coverage.data],
+  );
+  const [droppedSubject, setDroppedSubject] = useState("");
+
+  // The list is live, so the subject they picked can stop being offered.
+  useEffect(() => {
+    if (
+      FRQSubject &&
+      !coverage.loading &&
+      !choices.subjects.includes(FRQSubject)
+    ) {
+      setDroppedSubject(FRQSubject);
+      setFRQSubject("");
+    }
+  }, [FRQSubject, coverage.loading, choices.subjects]);
 
   // Set cooldown from user data
   useEffect(() => {
@@ -161,7 +184,15 @@ const FRQSubmissionPage = () => {
           <>
             <QuestionSelector
               setFRQYear={setFRQYear}
-              setFRQSubject={setFRQSubject}
+              subject={FRQSubject}
+              subjects={choices.subjects}
+              subjectsLoading={coverage.loading}
+              limited={choices.limited}
+              droppedSubject={droppedSubject}
+              setFRQSubject={(subject) => {
+                setDroppedSubject("");
+                setFRQSubject(subject);
+              }}
               setFRQQuestionType={setFRQQuestionType}
               setFRQQuestionNumber={setFRQQuestionNumber}
             />
@@ -245,16 +276,24 @@ const FRQSubmissionPage = () => {
 
 export default FRQSubmissionPage;
 
-import apClassesData from "@/components/apClasses.json";
 import Link from "next/link";
-const apClasses = apClassesData.apClasses;
 function QuestionSelector({
   setFRQYear,
+  subject,
+  subjects,
+  subjectsLoading,
+  limited,
+  droppedSubject,
   setFRQSubject,
   setFRQQuestionType,
   setFRQQuestionNumber,
 }: {
   setFRQYear: (year: number | null) => void;
+  subject: string;
+  subjects: string[];
+  subjectsLoading: boolean;
+  limited: boolean;
+  droppedSubject: string;
   setFRQSubject: (subject: string) => void;
   setFRQQuestionType: (questionType: string) => void;
   setFRQQuestionNumber: (questionNumber: number | null) => void;
@@ -272,6 +311,20 @@ function QuestionSelector({
         relevant to current AP standards.
       </p>
       <h3 className="font-bold">Select Your Question</h3>
+      {limited && subjects.length === 0 && (
+        <p className="rounded-md border border-red-300 bg-red-50 px-2 py-1">
+          We don&apos;t have graders for any subject right now, so we can&apos;t
+          take FRQs. Please check back soon.
+        </p>
+      )}
+      {droppedSubject &&
+        subjects.length > 0 &&
+        !subjects.includes(droppedSubject) && (
+          <p className="rounded-md border border-red-300 bg-red-50 px-2 py-1">
+            We can&apos;t grade {droppedSubject} FRQs right now, so it was taken
+            off the list. Please pick another subject.
+          </p>
+        )}
       <div className="grid grid-cols-2 gap-4">
         <label className="flex flex-col">
           <span className="mb-1 font-medium">Year</span>
@@ -291,15 +344,29 @@ function QuestionSelector({
           <span className="mb-1 font-medium">Subject</span>
           <select
             className="rounded border px-3 py-2"
+            value={subject}
+            disabled={subjectsLoading || subjects.length === 0}
             onChange={(e) => setFRQSubject(e.target.value)}
           >
-            <option value="">-- Select Subject --</option>
-            {apClasses.map((apClass) => (
+            <option value="">
+              {subjectsLoading
+                ? "Loading subjects..."
+                : subjects.length === 0
+                  ? "-- No subjects available --"
+                  : "-- Select Subject --"}
+            </option>
+            {subjects.map((apClass) => (
               <option key={apClass} value={apClass}>
                 {apClass}
               </option>
             ))}
           </select>
+          {limited && subjects.length > 0 && (
+            <span className="mt-1 text-sm opacity-70">
+              Don&apos;t see your subject? We don&apos;t have a grader for it
+              yet.
+            </span>
+          )}
         </label>
         <label className="flex flex-col">
           <span className="mb-1 font-medium">Question Type</span>

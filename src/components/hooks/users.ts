@@ -169,14 +169,9 @@ export const getUser = async (): Promise<User | null> => {
   });
 };
 
-// Fetch all users from Firestore (cached in-memory only)
-let users: User[] = [];
-
+// Fetch all users from Firestore. Not cached: an admin coming back to the
+// admin page needs to see the roles and subjects they just changed.
 export const getAllUsers = async (): Promise<User[]> => {
-  if (users.length > 0) {
-    return users;
-  }
-
   try {
     const usersCollection = collection(db, "users");
     const usersSnapshot = await getDocs(usersCollection);
@@ -184,7 +179,6 @@ export const getAllUsers = async (): Promise<User[]> => {
       uid: doc.id,
       ...(doc.data() as Omit<User, "uid">),
     }));
-    users = usersList;
     return usersList;
   } catch (error) {
     console.error("Error fetching users:", error);
