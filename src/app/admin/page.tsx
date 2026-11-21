@@ -13,9 +13,9 @@ import { useUser } from "../../components/hooks/UserContext";
 import Link from "next/link";
 import { cn, formatSlug } from "@/lib/utils";
 import { Ban, ClipboardPen, PencilRuler, ShieldUser, X } from "lucide-react";
-import { doc, getDocs, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getDocs } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
+import { SubjectChecklist, TeamQualifications } from "./TeamQualifications";
 
 const apClasses = [...apClassesData.apClasses, "AP Porting"];
 
@@ -213,13 +213,8 @@ function AdminPanel({ user }: { user: User }) {
                   key={u.uid}
                   className="grid cursor-pointer grid-cols-1 gap-x-4 p-2 text-center hover:bg-lime-100 md:grid-cols-3"
                   onClick={() => {
-                    if (u.access === "admin") {
-                      alert("Admins cannot demote other admins");
-                      return;
-                    } else {
-                      setSelectedUser(u);
-                      openDialog();
-                    }
+                    setSelectedUser(u);
+                    openDialog();
                   }}
                 >
                   <p className="text-left font-bold">{u.displayName}</p>
@@ -244,6 +239,14 @@ function AdminPanel({ user }: { user: User }) {
             )}
         </ul>
       </div>
+
+      <TeamQualifications
+        users={users}
+        onSelect={(u) => {
+          setSelectedUser(u);
+          openDialog();
+        }}
+      />
 
       <dialog
         id="dialog"
@@ -274,24 +277,30 @@ function AdminPanel({ user }: { user: User }) {
                 {selectedUser.lastFrqResponseAt?.toDate()?.toLocaleString() ??
                   "Never"}
               </small>
-              <br />
-              {/* <CheckboxList
-                docId={selectedUser.uid}
-                collectionName="users"
-                options={apClasses}
-                allowedSubjects={selectedUser.graderSubjectAccess ?? []}
-                onUpdate={(updatedSubjects: string[]) => {
-                  setUsers((prev) =>
-                    prev.map((user) =>
-                      user.uid === selectedUser.uid
-                        ? { ...user, graderSubjectAccess: updatedSubjects }
-                        : user,
-                    ),
-                  );
-                }}
-              /> */}
             </h3>
-            <div className="flex justify-between gap-4">
+            <SubjectChecklist
+              key={selectedUser.uid}
+              member={selectedUser}
+              onSaved={(subjects) => {
+                const update = (u: User) =>
+                  u.uid === selectedUser.uid
+                    ? { ...u, graderSubjectAccess: subjects }
+                    : u;
+                setUsers((prev) => prev.map(update));
+                setSelectedUser((u) => u && update(u));
+              }}
+            />
+            {selectedUser.access === "admin" && (
+              <p className="mt-4 text-sm text-gray-500">
+                Admins cannot demote other admins.
+              </p>
+            )}
+            <div
+              className={cn(
+                "mt-4 flex justify-between gap-4",
+                selectedUser.access === "admin" && "hidden",
+              )}
+            >
               <button
                 className={cn(
                   "rounded-md bg-blue-600 px-4 py-2 text-white",
@@ -299,7 +308,8 @@ function AdminPanel({ user }: { user: User }) {
                 )}
                 onClick={async () => {
                   try {
-                    await handleRoleChange(selectedUser, "member");
+                    if (!(await handleRoleChange(selectedUser, "member")))
+                      return;
                     setUsers((prev) =>
                       prev.map((user) =>
                         user.uid === selectedUser.uid
@@ -327,7 +337,8 @@ function AdminPanel({ user }: { user: User }) {
                 )}
                 onClick={async () => {
                   try {
-                    await handleRoleChange(selectedUser, "grader");
+                    if (!(await handleRoleChange(selectedUser, "grader")))
+                      return;
                     setUsers((prev) =>
                       prev.map((user) =>
                         user.uid === selectedUser.uid
@@ -355,7 +366,7 @@ function AdminPanel({ user }: { user: User }) {
                 )}
                 onClick={async () => {
                   try {
-                    await handleRoleChange(selectedUser, "user");
+                    if (!(await handleRoleChange(selectedUser, "user"))) return;
                     setUsers((prev) =>
                       prev.map((user) =>
                         user.uid === selectedUser.uid
@@ -383,7 +394,8 @@ function AdminPanel({ user }: { user: User }) {
                 )}
                 onClick={async () => {
                   try {
-                    await handleRoleChange(selectedUser, "banned");
+                    if (!(await handleRoleChange(selectedUser, "banned")))
+                      return;
                     setUsers((prev) =>
                       prev.map((user) =>
                         user.uid === selectedUser.uid
@@ -411,71 +423,5 @@ function AdminPanel({ user }: { user: User }) {
     </>
   );
 }
-
-interface CheckboxListProps {
-  options: string[];
-  docId: string;
-  collectionName: string;
-  allowedSubjects: string[];
-  onUpdate: (updatedSubjects: string[]) => void;
-}
-
-const CheckboxList: React.FC<CheckboxListProps> = ({
-  options,
-  docId,
-  collectionName,
-  allowedSubjects,
-  onUpdate,
-}) => {
-  const [checkedItems, setCheckedItems] = useState<string[]>([]);
-  useEffect(() => {
-    setCheckedItems(allowedSubjects);
-  }, [allowedSubjects]);
-
-  const handleCheckboxChange = (item: string) => {
-    setCheckedItems((prev) =>
-      prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item],
-    );
-  };
-
-  // TODO: use slugs so that firestore sec rules can read these?
-  const handleSave = async () => {
-    try {
-      const docRef = doc(db, collectionName, docId);
-      await updateDoc(docRef, {
-        graderSubjectAccess: checkedItems,
-      });
-      onUpdate(checkedItems);
-      alert("Document updated successfully!");
-    } catch (error) {
-      console.error("Error updating document:", error);
-      alert("Failed to update document:\n" + String(error));
-    }
-  };
-
-  return (
-    <div className="relative">
-      <Button className="absolute right-6 top-3" onClick={handleSave}>
-        Save
-      </Button>
-      <div className="max-h-64 overflow-y-scroll rounded-md border border-orange-500 p-2 shadow">
-        <h3>Allowed to grade these subjects:</h3>
-        {options.map((item) => (
-          <div key={item}>
-            <label>
-              <input
-                type="checkbox"
-                checked={checkedItems.includes(item)}
-                onChange={() => handleCheckboxChange(item)}
-                className="mr-1"
-              />
-              {item}
-            </label>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
 
 export default Page;
