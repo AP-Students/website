@@ -58,7 +58,6 @@ export function buildPublicProfile(
     // profile once a student goes quiet, so readers re-apply streakAsOf with
     // lastActiveDay and timeZone.
     currentStreak: streakAsOf(streak, today),
-    longestStreak: streak.longestStreak,
     lastActiveDay: streak.lastActiveDay,
     timeZone,
     problemsSolved: nonNegativeCount(stats?.problemsSolved),
