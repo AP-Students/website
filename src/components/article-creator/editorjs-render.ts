@@ -12,6 +12,7 @@ import styles from "./Renderer.module.css";
 import { sanitizeAlignment } from "./alignment";
 import { renderRichCaptionToHtml } from "./caption-rich-text/render";
 import { coerceRichCaption } from "./caption-rich-text/convert";
+import { escapeHtml, oneOf, safeUrl, sanitizeInlineHtml } from "./safeHtml";
 
 // Tool names the "alignment" BlockTune is registered on (see Editor.tsx).
 const ALIGNABLE_TYPES = new Set(["paragraph", "header", "list"]);
@@ -29,34 +30,21 @@ export const katexMacros = {
   "\\qty": "#1\\,\\mathrm{#2}",
 };
 
-function escapeHtml(text: string): string {
-  return text
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
-// derived from advancedtextbox
-//
-// `transformText` is applied to the non-LaTeX segments only. Paragraphs, headers
-// and list items legitimately store EditorJS inline markup (<b>, <mark>, <a>, an
-// inline toolbar is enabled on all three), so they pass it through untouched.
-// Table cells have no inline toolbar and are plain text, so the table parser
-// passes `escapeHtml`. That has to happen in here rather than around the result,
-// or it would escape KaTeX's own generated HTML too.
+// Only the LaTeX ($@...$) is decoded, since KaTeX needs "<" and not "&lt;".
+// The rest is stored HTML and goes through transformText (the inline
+// sanitizer by default). Don't decode it: that turns typed text like
+// "<img ...>" into real HTML. Table cells are plain text, so they decode and
+// then escape.
 function parseLatex(
   text: string,
-  transformText: (part: string) => string = (part) => part,
+  transformText: (part: string) => string = sanitizeInlineHtml,
 ): string {
-  const decoded = decodeEntities(text);
-
-  return decoded
+  if (typeof text !== "string") return "";
+  return text
     .split(/(\$@[^$]+\$)/g)
     .map((part) => {
       if (/^\$@[^$]+\$$/.test(part)) {
-        const expr = part.slice(2, -1);
+        const expr = decodeEntities(part.slice(2, -1));
         return katex.renderToString(expr, {
           throwOnError: false,
           output: "html",
@@ -68,6 +56,32 @@ function parseLatex(
     .join("");
 }
 
+const plainText = (part: string) => escapeHtml(decodeEntities(part));
+
+const ALERT_TYPES = [
+  "primary",
+  "secondary",
+  "info",
+  "success",
+  "warning",
+  "danger",
+  "light",
+  "dark",
+] as const;
+const ALERT_ALIGNS = ["left", "center", "right"] as const;
+const COUNTER_TYPES = [
+  "numeric",
+  "lower-roman",
+  "upper-roman",
+  "lower-alpha",
+  "upper-alpha",
+] as const;
+
+const wholeNumber = (value: unknown, fallback: number) =>
+  typeof value === "number" && Number.isFinite(value) && value > 0
+    ? Math.round(value)
+    : fallback;
+
 const customParsers: Record<
   string,
   (data: BlockData, _config: Config) => string
@@ -78,9 +92,9 @@ const customParsers: Record<
       message: string;
       type: string;
     };
-    return `<div class="cdx-alert cdx-alert-align-${align} cdx-alert-${type}">
+    return `<div class="cdx-alert cdx-alert-align-${oneOf(align, ALERT_ALIGNS, "left")} cdx-alert-${oneOf(type, ALERT_TYPES, "info")}">
       <div class="cdx-alert__message" contenteditable="true" data-placeholder="Type here..." data-empty="false">
-        ${message}
+        ${sanitizeInlineHtml(message)}
       </div>
     </div>`;
   },
@@ -104,12 +118,15 @@ const customParsers: Record<
       height: number;
       width: number;
     };
+    // Only real web pages can be embedded, never javascript: or data: URLs.
+    const src = safeUrl(embed, { relative: false });
+    if (!src) return "";
     return `<div class="cdx-block embed-tool">
       <preloader class="embed-tool__preloader">
-        <div class="embed-tool__url">${source}</div>
+        <div class="embed-tool__url">${escapeHtml(String(source ?? ""))}</div>
       </preloader>
-      <iframe class="rounded-lg w-full" height="${height}" width="${width}" style="margin: 0 auto;" frameborder="0" scrolling="no" allowtransparency="true" src="${embed}" class="embed-tool__content"></iframe>
-      <figcaption class="fig-cap">${caption}</figcaption>
+      <iframe class="rounded-lg w-full" height="${wholeNumber(height, 320)}" width="${wholeNumber(width, 580)}" style="margin: 0 auto;" frameborder="0" scrolling="no" allowtransparency="true" src="${src}" class="embed-tool__content"></iframe>
+      <figcaption class="fig-cap">${sanitizeInlineHtml(caption)}</figcaption>
     </div>`;
   },
 
@@ -146,8 +163,8 @@ const customParsers: Record<
     // @editorjs/quote's renderSettings), so only "center" needs a style.
     const style = alignment === "center" ? ' style="text-align:center"' : "";
     return `<blockquote${style}>
-      <p class="mb-3">${text}</p>
-      <cite>${caption}</cite>
+      <p class="mb-3">${sanitizeInlineHtml(text)}</p>
+      <cite>${sanitizeInlineHtml(caption)}</cite>
     </blockquote>`;
   },
 
@@ -165,7 +182,7 @@ const customParsers: Record<
         return `<tr>${row.reduce(
           (acc, cell) =>
             acc +
-            `<th class="${cellClass}">${parseLatex(cell, escapeHtml)}</th>`,
+            `<th class="${cellClass}">${parseLatex(cell, plainText)}</th>`,
           "",
         )}</tr>`;
       }
@@ -173,7 +190,7 @@ const customParsers: Record<
       // For other rows, use <td> tags
       return `<tr>${row.reduce(
         (acc, cell) =>
-          acc + `<td class="${cellClass}">${parseLatex(cell, escapeHtml)}</td>`,
+          acc + `<td class="${cellClass}">${parseLatex(cell, plainText)}</td>`,
         "",
       )}</tr>`;
     });
@@ -185,6 +202,13 @@ const customParsers: Record<
 
   list: (data, _config) => {
     const { style, items, meta } = data;
+    const start =
+      typeof meta?.start === "number" && Number.isInteger(meta.start)
+        ? meta.start
+        : undefined;
+    const counterType = meta?.counterType
+      ? oneOf(meta.counterType, COUNTER_TYPES, "numeric")
+      : undefined;
 
     const renderItems = (items: typeof data.items, depth = 0): string => {
       if (!items || items.length === 0) return "";
@@ -217,7 +241,7 @@ const customParsers: Record<
       //   : "";
 
       return `
-      <${tag} class="depth-${depth}" style="counter-reset: item ${meta?.start ? meta.start - 1 || 1 : ""}; ${meta?.counterType ? `--list-counter-type: ${meta.counterType};` : ""}">
+      <${tag} class="depth-${depth}" style="counter-reset: item ${start ? start - 1 || 1 : ""}; ${counterType ? `--list-counter-type: ${counterType};` : ""}">
       ${items
         .map(
           (item) =>
@@ -238,6 +262,9 @@ const customParsers: Record<
       instanceId: string;
       content: QuestionFormat;
     };
+    // Becomes part of a class name, so only plain id characters.
+    if (typeof instanceId !== "string" || !/^[\w-]+$/.test(instanceId))
+      return "";
     return `<div class="questions-block-${instanceId}"></div>`;
   },
 
@@ -254,7 +281,8 @@ const customParsers: Record<
     const imageConditions = `${data.stretched && width === undefined ? "img-fullwidth" : ""} ${
       data.withBorder ? "img-border" : ""
     } ${data.withBackground ? "img-bg" : ""} ${data.centerImage ? "img-center" : ""} ${isSvg ? "img-svg" : ""}`;
-    const widthStyle = width !== undefined ? ` style="width:${width}%;max-width:100%;"` : "";
+    const widthStyle =
+      width !== undefined ? ` style="width:${width}%;max-width:100%;"` : "";
     const imgClass = _config.image.imgClass ?? "";
     let imageSrc;
 
@@ -272,13 +300,16 @@ const customParsers: Record<
       );
     }
 
+    const src = safeUrl(imageSrc);
+    if (!src) return "";
+
     // Prefer richCaption for the figcaption body; fall back to plain caption.
     const rich = (data as { richCaption?: unknown }).richCaption;
     let captionBody = "";
     if (Array.isArray(rich) && rich.length > 0) {
       captionBody = renderRichCaptionToHtml(coerceRichCaption(rich));
     } else if (typeof data.caption === "string" && data.caption.length > 0) {
-      captionBody = decodeEntities(data.caption);
+      captionBody = sanitizeInlineHtml(data.caption);
     }
     const rawAltText =
       typeof data.altText === "string"
@@ -293,12 +324,12 @@ const customParsers: Record<
       .replaceAll(">", "&gt;");
 
     if (_config.image.use === "img") {
-      return `<img class="${imageConditions} ${imgClass}" src="${imageSrc}" alt="${altText}"${widthStyle}>`;
+      return `<img class="${imageConditions} ${imgClass}" src="${src}" alt="${altText}"${widthStyle}>`;
     } else if (_config.image.use === "figure") {
       const figureClass = _config.image.figureClass ?? "";
       const figCapClass = _config.image.figCapClass ?? "";
 
-      return `<figure class="${figureClass}"><img class="${imgClass} ${imageConditions}" src="${imageSrc}" alt="${altText}"${widthStyle}><figcaption class="${figCapClass}">${captionBody}</figcaption></figure>`;
+      return `<figure class="${figureClass}"><img class="${imgClass} ${imageConditions}" src="${src}" alt="${altText}"${widthStyle}><figcaption class="${figCapClass}">${captionBody}</figcaption></figure>`;
     }
     return "ERROR DISPLAYING IMAGE";
   },
@@ -315,6 +346,9 @@ export function renderEditorJsToHtml(content: OutputData): string {
 
   return content.blocks
     .map((block) => {
+      // Only block types we render ourselves. The parser library's defaults
+      // include a "raw" block that outputs its HTML as-is.
+      if (!Object.hasOwn(customParsers, block.type)) return "";
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const blockMarkup = parser.parseBlock(block);
       if (blockMarkup instanceof Error) return "";
