@@ -82,6 +82,7 @@ async function status(response, expected) {
 const owned = [
   "userStats/student",
   "users/student/completedTests/test",
+  "users/student/testAttempts/test",
   "users/student/completedSubjects/subject",
   "users/student/achievements/achievement",
 ];

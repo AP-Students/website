@@ -8,21 +8,10 @@ import { loadXpConfig } from "@/lib/gamification/loadXpConfig";
 import { isDocumentId, requireUser } from "@/lib/server/activityRequest";
 import { awardAchievements } from "@/lib/server/awardAchievements";
 import { prepareTestCompletion } from "@/lib/server/testCompletion";
+import { gradeAttempt, questionFingerprint, testAttemptKey } from "@/lib/testReview";
 
 type SubmittedAnswers = Record<number, string[]>;
-type StoredQuestion = { type?: unknown; answers?: unknown; topic?: unknown };
-
-const asStringArray = (value: unknown): string[] =>
-  Array.isArray(value) && value.every((entry) => typeof entry === "string")
-    ? value
-    : [];
-
-const sameOptionIds = (submitted: string[], official: string[]) => {
-  const submittedIds = new Set(submitted);
-  const officialIds = new Set(official);
-  return submittedIds.size === submitted.length && submittedIds.size === officialIds.size &&
-    [...submittedIds].every((id) => officialIds.has(id));
-};
+type StoredQuestion = { type?: unknown; options?: unknown; answers?: unknown; question?: unknown; topic?: unknown };
 
 function parseAnswers(value: unknown): SubmittedAnswers | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
@@ -107,17 +96,37 @@ export async function POST(request: NextRequest) {
   const href = `/subject/${subject}/unit-${unitNumber}-${unitId}/test/${testId}`;
   const totalReadings = units.reduce((count, unit) => count + (Array.isArray(unit.chapters) ? unit.chapters.length : 0), 0);
   const questions = Array.isArray(testData?.questions) ? testData.questions as StoredQuestion[] : [];
-  const results = questions.map((question, index) => {
-    const officialAnswers = asStringArray(question.answers);
-    const gradable = (question.type === "mcq" || question.type === "multi-answer") && officialAnswers.length > 0;
-    return { gradable, correct: gradable && sameOptionIds(answers[index] ?? [], officialAnswers), topic: typeof question.topic === "string" ? question.topic : "" };
-  });
+  // Stored answers are option positions, so grading maps them to option ids
+  // first (the same way the test page and the review page do).
+  const graded = gradeAttempt(questions, answers);
+  const results = questions.map((question, index) => ({
+    ...graded[index]!,
+    topic: typeof question.topic === "string" ? question.topic : "",
+  }));
   const total = results.filter((result) => result.gradable).length;
   if (total === 0) return NextResponse.json({ error: "Test has no gradable questions" }, { status: 400 });
 
   const correct = results.filter((result) => result.correct).length;
   const testXp = xpConfig.mcqTestComplete + correct * xpConfig.mcqCorrectAnswer;
   const eventRef = adminDb.doc(dashboardDocumentPaths.activity(`${uid}_mcq_test_${testId}`));
+  const label = typeof testData?.name === "string" ? testData.name : "Unit Test";
+  // The latest attempt, retakes included, for the review page. Only what
+  // the test can use is kept, so a crafted request can't bloat the doc.
+  const attemptRef = adminDb.doc(
+    dashboardDocumentPaths.testAttempt(uid, testAttemptKey({ subject, unitId, testId })),
+  );
+  const attempt = {
+    subject, unitId, testId, label, href,
+    answers: Object.fromEntries(
+      questions.flatMap((_question, index) => {
+        const ids = (answers[index] ?? []).filter((id) => id.length <= 200).slice(0, 26);
+        return ids.length ? [[String(index), ids]] : [];
+      }),
+    ),
+    fingerprints: questions.map(questionFingerprint),
+    score: { correct, total },
+    submittedAt: FieldValue.serverTimestamp(),
+  };
   const statsRef = adminDb.doc(dashboardDocumentPaths.stats(uid));
 
   try {
@@ -143,6 +152,7 @@ export async function POST(request: NextRequest) {
           : [];
         completion.write();
         if (completion.subjectCompleted || newCompletion) transaction.set(statsRef, { subjectsCompleted, mcqTestsCompleted, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+        transaction.set(attemptRef, attempt);
         return { ...awardResponse(0, totalXp, level, false, previousStreak.currentStreak, true), newlyUnlocked };
       }
 
@@ -189,7 +199,7 @@ export async function POST(request: NextRequest) {
       transaction.set(eventRef, {
         id: eventRef.id,
         userId: uid, type: "mcq_test", subject, unitId, sourceId: testId,
-        label: typeof testData?.name === "string" ? testData.name : "Unit Test",
+        label,
         href,
         occurredAt: FieldValue.serverTimestamp(), dayKey, xpAwarded, gradeStatus: "none",
         score: { correct, total },
@@ -223,6 +233,7 @@ export async function POST(request: NextRequest) {
         updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true });
       transaction.set(calendarRef, { uid, year: Number(year), days: { ...calendarDays, [dayKey]: currentDayCount + 1 }, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      transaction.set(attemptRef, attempt);
       return { ...awardResponse(xpAwarded, progress.xp, progress.level, progress.leveledUp, streak.currentStreak, false), newlyUnlocked };
     });
     return NextResponse.json(result);

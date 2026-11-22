@@ -73,7 +73,9 @@ export function toHistoryRow(event: ActivityEvent): HistoryRow {
     status = event.score
       ? `${event.score.correct}/${event.score.total} correct`
       : "Completed";
-    action = "View test";
+    // The review page shows the latest attempt's answers, with a retake link.
+    href = `${event.href}/review`;
+    action = "Review answers";
   }
 
   return {

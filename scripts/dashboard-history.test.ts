@@ -71,6 +71,9 @@ test("MCQ tests show their score, readings show completion", () => {
   );
   assert.equal(mcq.typeLabel, "MCQ Test");
   assert.equal(mcq.status, "4/5 correct");
+  // MCQ tests open their review, which links on to a retake.
+  assert.equal(mcq.action, "Review answers");
+  assert.ok(mcq.href.endsWith("/review"), mcq.href);
 
   const reading = toHistoryRow(event({ type: "reading", gradeStatus: "none" }));
   assert.equal(reading.typeLabel, "Reading");

@@ -28,6 +28,9 @@ export const dashboardDocumentPaths = {
     `notifications/${uid}/items/${notificationId}`,
   completedTest: (uid: string, testKey: string) =>
     `users/${uid}/completedTests/${testKey}`,
+  /** The student's latest graded attempt at a unit test, for reviewing it. */
+  testAttempt: (uid: string, testKey: string) =>
+    `users/${uid}/testAttempts/${testKey}`,
   completedSubject: (uid: string, subject: string) =>
     `users/${uid}/completedSubjects/${subject}`,
   savedItem: (uid: string, itemId: string) =>
