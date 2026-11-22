@@ -8,6 +8,8 @@ import {
   katexMacros,
 } from "@/components/article-creator/Renderer";
 import ReferenceSheetPanel from "@/components/questions/ReferenceSheetPanel";
+import PausedOverlay from "@/components/questions/PausedOverlay";
+import { useTestTimer } from "@/components/hooks/useTestTimer";
 import type { ReferenceSheet } from "@/types/firestore";
 
 interface HeaderProps {
@@ -42,31 +44,18 @@ const Header: React.FC<HeaderProps> = ({
   const referenceSheetUnavailable = referenceSheetEnabled && !referenceSheet;
   const pathname = usePathname() ?? "";
   const [showTimer, setShowTimer] = useState(true);
-  const [remainingTime, setRemainingTime] = useState(timeRemaining);
+  const timer = useTestTimer(timeRemaining, submitted);
+  const remainingTime = timer.remaining;
   const [showDirections, setShowDirections] = useState(true);
   const directionsRef = useRef<HTMLDivElement>(null); // Ref for detecting outside clicks
   const toggleButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Start the countdown timer
+  // The test hands itself in when time runs out.
   useEffect(() => {
-    const timer = setInterval(() => {
-      setRemainingTime((prevTime) => {
-        if (prevTime <= 1) {
-          clearInterval(timer); // Stop at 0
-          return 0;
-        }
-        return prevTime - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    if (remainingTime <= 0) {
+    if (timer.timeUp) {
       setSubmitted(true);
     }
-  }, [remainingTime, setSubmitted]);
+  }, [timer.timeUp, setSubmitted]);
 
   // Close directions when clicking outside
   useEffect(() => {
@@ -137,6 +126,14 @@ const Header: React.FC<HeaderProps> = ({
             >
               {formatTime(remainingTime)}
             </p>
+          )}
+          {!submitted && (
+            <button
+              onClick={timer.pause}
+              className="rounded-full border px-2 transition-colors hover:bg-gray-200"
+            >
+              Pause
+            </button>
           )}
           {!submitted && remainingTime >= 5 * 60 && (
             <button
@@ -230,6 +227,13 @@ const Header: React.FC<HeaderProps> = ({
           sheet={referenceSheet}
           open={showReferenceSheet}
           onOpenChange={setShowReferenceSheet}
+        />
+      )}
+
+      {timer.paused && !submitted && (
+        <PausedOverlay
+          timeLeft={formatTime(remainingTime)}
+          onResume={timer.resume}
         />
       )}
     </header>
