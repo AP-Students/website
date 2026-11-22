@@ -94,7 +94,7 @@ const customParsers: Record<
     };
     return `<div class="cdx-alert cdx-alert-align-${oneOf(align, ALERT_ALIGNS, "left")} cdx-alert-${oneOf(type, ALERT_TYPES, "info")}">
       <div class="cdx-alert__message" contenteditable="true" data-placeholder="Type here..." data-empty="false">
-        ${sanitizeInlineHtml(message)}
+        ${sanitizeInlineHtml(message, { lines: true })}
       </div>
     </div>`;
   },
@@ -123,7 +123,7 @@ const customParsers: Record<
     if (!src) return "";
     return `<div class="cdx-block embed-tool">
       <preloader class="embed-tool__preloader">
-        <div class="embed-tool__url">${escapeHtml(String(source ?? ""))}</div>
+        <div class="embed-tool__url">${escapeHtml(decode(String(source ?? "")))}</div>
       </preloader>
       <iframe class="rounded-lg w-full" height="${wholeNumber(height, 320)}" width="${wholeNumber(width, 580)}" style="margin: 0 auto;" frameborder="0" scrolling="no" allowtransparency="true" src="${src}" class="embed-tool__content"></iframe>
       <figcaption class="fig-cap">${sanitizeInlineHtml(caption)}</figcaption>

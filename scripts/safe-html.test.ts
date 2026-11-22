@@ -172,3 +172,52 @@ test("escapeHtml and oneOf", () => {
     "info",
   );
 });
+
+test("alert boxes keep their lines (Enter adds a <div> per line)", () => {
+  // From the live "while loops" chapter.
+  const message =
+    '3<div data-empty="false">6</div><div data-empty="false">5</div><div data-empty="true"><br></div>';
+  assert.equal(
+    sanitizeInlineHtml(message, { lines: true }),
+    "3<div>6</div><div>5</div><div><br></div>",
+  );
+  assert.equal(
+    sanitizeInlineHtml("<p>a</p><ul><li>b</li></ul>", { lines: true }),
+    "<p>a</p><ul><li>b</li></ul>",
+  );
+  // Only alerts get them; elsewhere they still show as text.
+  assert.equal(sanitizeInlineHtml("<div>x</div>"), "&lt;div&gt;x&lt;/div&gt;");
+});
+
+test("line tags lose their attributes like everything else", () => {
+  assert.equal(
+    sanitizeInlineHtml(
+      '<div onclick="alert(1)" style="position:fixed">x</div>',
+      {
+        lines: true,
+      },
+    ),
+    "<div>x</div>",
+  );
+});
+
+test("tags are always balanced, so a block can't close what it sits in", () => {
+  // An extra </div> would close the alert box itself.
+  assert.equal(sanitizeInlineHtml("a</div></div>b", { lines: true }), "ab");
+  assert.equal(sanitizeInlineHtml("<b>bold"), "<b>bold</b>");
+  assert.equal(
+    sanitizeInlineHtml("<div><b>x</div>y", { lines: true }),
+    "<div><b>x</b></div>y",
+  );
+  assert.equal(sanitizeInlineHtml("<b><i>x</b>y</i>"), "<b><i>x</i></b>y");
+  assert.equal(sanitizeInlineHtml("a<br>b<br/>c</br>"), "a<br>b<br>c");
+});
+
+test("lots of unmatched tags are still quick", () => {
+  const started = Date.now();
+  sanitizeInlineHtml("<b>".repeat(50_000) + "</i>".repeat(50_000));
+  sanitizeInlineHtml("<div>".repeat(50_000) + "</p>".repeat(50_000), {
+    lines: true,
+  });
+  assert.ok(Date.now() - started < 1000);
+});
