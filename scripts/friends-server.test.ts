@@ -5,6 +5,7 @@ import { getFirestore, type Firestore } from "firebase-admin/firestore";
 import {
   cancelFriendRequest,
   claimUsername,
+  ensureProfiles,
   FriendError,
   removeFriend,
   removeFriendData,
@@ -249,5 +250,36 @@ test(
     assert.equal(await exists(`friendRequests/${d}_${a}`), false);
     // Other people's data is untouched.
     assert.equal(await exists(`usernames/bee_${run}`), true);
+  },
+);
+
+test(
+  "becoming friends gives both a private profile, without touching existing ones",
+  { skip },
+  async () => {
+    const [a, b] = await users("a", "b");
+    await claimUsername(db, a, `ay_${run}`);
+    await claimUsername(db, b, `bee_${run}`);
+    await db.doc(`userStats/${b}`).set({ xp: 250 });
+    await db
+      .doc(`profiles/${a}`)
+      .set({ uid: a, isPublic: true, displayName: "Already public", xp: 0 });
+    await sendFriendRequest(db, a, `bee_${run}`);
+    await respondToFriendRequest(db, b, a, true);
+
+    const bProfile = (await db.doc(`profiles/${b}`).get()).data();
+    assert.equal(bProfile?.isPublic, false);
+    assert.equal(bProfile?.xp, 250);
+    assert.equal(bProfile?.displayName, b);
+    // An existing (public) profile is left as it is.
+    assert.deepEqual((await db.doc(`profiles/${a}`).get()).data(), {
+      uid: a,
+      isPublic: true,
+      displayName: "Already public",
+      xp: 0,
+    });
+    // Running it again changes nothing.
+    await ensureProfiles(db, [a, b]);
+    assert.equal((await db.doc(`profiles/${b}`).get()).data()?.xp, 250);
   },
 );

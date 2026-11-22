@@ -487,9 +487,13 @@ service cloud.firestore {
     // Public profile projections are server-written and contain only the
     // allowlisted fields. Private profiles are visible to their owner only;
     // there are intentionally no client write rules for this collection.
+    // Public profiles are readable by anyone. Friends can always see each
+    // other's (friend lists are written only by /api/friends).
     match /profiles/{userId} {
       allow read: if resource.data.isPublic == true
-        || (isAuthenticated() && request.auth.uid == userId);
+        || (isAuthenticated() && request.auth.uid == userId)
+        || (isAuthenticated()
+          && exists(/databases/$(database)/documents/users/$(userId)/friends/$(request.auth.uid)));
     }
 
     // Username -> uid, for finding friends. Written only by the server.

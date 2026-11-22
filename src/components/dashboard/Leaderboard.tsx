@@ -4,21 +4,69 @@ import Link from "next/link";
 import { RotateCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LEADERBOARD_SIZE } from "@/lib/leaderboard";
-import { useLeaderboard } from "@/components/hooks/useLeaderboard";
+import { useState } from "react";
+import {
+  useLeaderboard,
+  type LeaderboardScope,
+} from "@/components/hooks/useLeaderboard";
 
 export default function Leaderboard({
   uid,
   xp,
   xpFailed = false,
+  displayName,
+  photoURL,
 }: {
   uid: string;
   /** The viewer's XP, or undefined while it loads. */
   xp: number | undefined;
   /** Your XP couldn't be loaded, so your rank can't be worked out. */
   xpFailed?: boolean;
+  /** Used for your own row on the friends board. */
+  displayName?: string;
+  photoURL?: string;
 }) {
-  const { entries, myRank, isPublic, updatedAt, error, loading, refresh } =
-    useLeaderboard(uid, xp);
+  const [scope, setScope] = useState<LeaderboardScope>("everyone");
+  // Keyed by scope so switching starts from "Loading…", not the other list.
+  return (
+    <Board
+      key={scope}
+      uid={uid}
+      xp={xp}
+      xpFailed={xpFailed}
+      scope={scope}
+      setScope={setScope}
+      me={{ displayName, photoURL }}
+    />
+  );
+}
+
+function Board({
+  uid,
+  xp,
+  xpFailed,
+  scope,
+  setScope,
+  me,
+}: {
+  uid: string;
+  xp: number | undefined;
+  xpFailed: boolean;
+  scope: LeaderboardScope;
+  setScope: (scope: LeaderboardScope) => void;
+  me: { displayName?: string; photoURL?: string };
+}) {
+  const {
+    entries,
+    myRank,
+    isPublic,
+    friendCount,
+    updatedAt,
+    error,
+    loading,
+    refresh,
+  } = useLeaderboard(uid, xp, scope, me);
+  const friends = scope === "friends";
   const onBoard = entries?.some((entry) => entry.uid === uid) ?? false;
 
   return (
@@ -43,8 +91,32 @@ export default function Leaderboard({
           Refresh
         </button>
       </div>
+      <div
+        role="group"
+        aria-label="Show"
+        className="inline-flex self-start rounded-full border border-gray-300 bg-white p-1"
+      >
+        {(["everyone", "friends"] as const).map((option) => (
+          <button
+            key={option}
+            type="button"
+            aria-pressed={scope === option}
+            onClick={() => setScope(option)}
+            className={cn(
+              "rounded-full px-4 py-1 text-sm font-semibold transition-colors",
+              scope === option
+                ? "bg-primary text-white"
+                : "text-gray-600 hover:text-gray-900",
+            )}
+          >
+            {option === "everyone" ? "Everyone" : "Friends"}
+          </button>
+        ))}
+      </div>
       <p className="text-sm text-gray-600">
-        Top {LEADERBOARD_SIZE} students by XP. Only public profiles are listed.
+        {friends
+          ? "You and your friends, by XP."
+          : `Top ${LEADERBOARD_SIZE} students by XP. Only public profiles are listed.`}
         {updatedAt && (
           <>
             {" "}
@@ -65,7 +137,7 @@ export default function Leaderboard({
             : "Couldn't load the leaderboard. Try refreshing in a moment."}
         </p>
       )}
-      {xpFailed && (
+      {xpFailed && !friends && (
         <p role="alert" className="rounded-md bg-red-100 p-4 text-red-700">
           Couldn&apos;t load your XP, so your rank isn&apos;t shown. Reload the
           page to try again.
@@ -79,6 +151,15 @@ export default function Leaderboard({
       {entries?.length === 0 && (
         <p className="text-gray-500">
           No one has made their profile public yet.
+        </p>
+      )}
+      {friends && friendCount === 0 && (
+        <p className="rounded-md border border-gray-300 bg-white p-4">
+          You haven&apos;t added any friends yet.{" "}
+          <a href="#profile" className="text-primary underline">
+            Find friends on the Profile tab
+          </a>{" "}
+          to see how you compare.
         </p>
       )}
 
@@ -127,26 +208,30 @@ export default function Leaderboard({
         </ol>
       )}
 
-      {entries && myRank !== undefined && xp !== undefined && !onBoard && (
-        <p className="rounded-md border border-gray-300 bg-white p-4">
-          {isPublic ? (
-            <>
-              You&apos;re <strong>#{myRank}</strong> with {xp.toLocaleString()}{" "}
-              XP.
-            </>
-          ) : (
-            <>
-              Your profile is private, so you&apos;re not on the leaderboard.
-              With {xp.toLocaleString()} XP you&apos;d be{" "}
-              <strong>#{myRank}</strong>.{" "}
-              <a href="#profile" className="text-primary underline">
-                Make your profile public
-              </a>{" "}
-              to show up.
-            </>
-          )}
-        </p>
-      )}
+      {!friends &&
+        entries &&
+        myRank !== undefined &&
+        xp !== undefined &&
+        !onBoard && (
+          <p className="rounded-md border border-gray-300 bg-white p-4">
+            {isPublic ? (
+              <>
+                You&apos;re <strong>#{myRank}</strong> with{" "}
+                {xp.toLocaleString()} XP.
+              </>
+            ) : (
+              <>
+                Your profile is private, so you&apos;re not on the leaderboard.
+                With {xp.toLocaleString()} XP you&apos;d be{" "}
+                <strong>#{myRank}</strong>.{" "}
+                <a href="#profile" className="text-primary underline">
+                  Make your profile public
+                </a>{" "}
+                to show up.
+              </>
+            )}
+          </p>
+        )}
     </section>
   );
 }

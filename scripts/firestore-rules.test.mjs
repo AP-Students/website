@@ -708,3 +708,20 @@ check("usernames, friend requests and friend lists are server-written and privat
   await status(await doc("users/student/friends/other", "other"), 403);
   await status(await commit("other", "users/other/friends/student", { uid: "student" }), 403);
 });
+check("friends can see each other's profile even when it's private", async () => {
+  await status(await commit("server", "profiles/hidden", { uid: "hidden", isPublic: false, xp: 5 }), 200);
+  await status(await commit("server", "users/hidden/friends/student", { uid: "student" }), 200);
+  await status(await doc("profiles/hidden", "student"), 200);
+  await status(await doc("profiles/hidden", "other"), 403);
+  await status(await doc("profiles/hidden", null), 403);
+  // Listing still needs the public filter, friends or not.
+  await status(
+    await request(":runQuery", "student", "POST", {
+      structuredQuery: { from: [{ collectionId: "profiles" }], limit: 5 },
+    }),
+    403,
+  );
+  // Once they're not friends any more, it's private again.
+  await status(await commit("server", "users/hidden", { uid: "hidden" }, [], ["users/hidden/friends/student"]), 200);
+  await status(await doc("profiles/hidden", "student"), 403);
+});

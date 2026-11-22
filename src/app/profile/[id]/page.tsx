@@ -9,8 +9,10 @@ import { doc, onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { readStreakState, streakAsOf } from "@/lib/gamification/streak";
 import { toDayKey } from "@/lib/gamification/calendarDay";
+import { useUser } from "@/components/hooks/UserContext";
 
 type PublicProfile = {
+  isPublic?: boolean;
   displayName: string;
   photoURL?: string;
   xp: number;
@@ -25,6 +27,9 @@ type PublicProfile = {
 export default function PublicProfilePage() {
   const pathname = usePathname() ?? "";
   const uid = pathname.split("/").at(-1) ?? "";
+  // Who's looking decides what Firestore lets through, so wait for sign-in.
+  const { user, loading } = useUser();
+  const viewer = user?.uid;
 
   const [profile, setProfile] = useState<PublicProfile | null | undefined>(
     undefined,
@@ -34,6 +39,7 @@ export default function PublicProfilePage() {
   useEffect(() => {
     setProfile(undefined);
     setFailed(false);
+    if (loading) return;
     if (!uid) {
       setProfile(null);
       return;
@@ -41,9 +47,12 @@ export default function PublicProfilePage() {
     return onSnapshot(
       doc(db, "profiles", uid),
       (snapshot) => {
+        // A profile that isn't public can only be read by its owner or a
+        // friend. Owners still see what strangers see.
+        const data = snapshot.data() as PublicProfile | undefined;
         setProfile(
-          snapshot.exists() && snapshot.data().isPublic === true
-            ? (snapshot.data() as PublicProfile)
+          data && (data.isPublic === true || (viewer && viewer !== uid))
+            ? data
             : null,
         );
       },
@@ -56,7 +65,7 @@ export default function PublicProfilePage() {
         setFailed(true);
       },
     );
-  }, [uid]);
+  }, [uid, viewer, loading]);
 
   return (
     <div>
@@ -78,19 +87,26 @@ export default function PublicProfilePage() {
             This profile is private.
           </h1>
         ) : (
-          <ProfileView
-            displayName={profile.displayName}
-            photoURL={profile.photoURL}
-            xp={profile.xp}
-            streak={streakAsOf(
-              readStreakState(profile),
-              toDayKey(new Date(), profile.timeZone),
+          <>
+            {profile.isPublic !== true && (
+              <p className="mx-auto mb-6 max-w-2xl rounded-md bg-gray-100 p-3 text-center text-sm text-gray-700">
+                Only friends can see this profile.
+              </p>
             )}
-            problemsSolved={profile.problemsSolved}
-            subjectsCompleted={profile.subjectsCompleted}
-            earnedIds={new Set(profile.achievements.map((a) => a.id))}
-            nameAs="h1"
-          />
+            <ProfileView
+              displayName={profile.displayName}
+              photoURL={profile.photoURL}
+              xp={profile.xp}
+              streak={streakAsOf(
+                readStreakState(profile),
+                toDayKey(new Date(), profile.timeZone),
+              )}
+              problemsSolved={profile.problemsSolved}
+              subjectsCompleted={profile.subjectsCompleted}
+              earnedIds={new Set(profile.achievements.map((a) => a.id))}
+              nameAs="h1"
+            />
+          </>
         )}
       </main>
       <Footer />

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  friendsBoard,
   rankEntries,
   rankFromCountAbove,
   toLeaderboardEntry,
@@ -79,4 +80,21 @@ test("missing or bad fields fall back to safe values", () => {
   assert.equal(row.displayName, "Student");
   assert.equal(row.photoURL, undefined);
   assert.equal(row.xp, 0);
+});
+
+test("the friends board ranks you among your friends, highest XP first", () => {
+  const board = friendsBoard(entry("me", 200), [
+    entry("ann", 500),
+    entry("bo", 100),
+    entry("cy", 200),
+  ]);
+  assert.deepEqual(
+    board.map((row) => `${row.rank}:${row.uid}`),
+    ["1:ann", "2:cy", "2:me", "4:bo"],
+  );
+});
+
+test("the friends board never lists you twice", () => {
+  const board = friendsBoard(entry("me", 50), [entry("me", 50)]);
+  assert.equal(board.length, 1);
 });
