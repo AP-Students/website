@@ -37,6 +37,7 @@ import {
 } from "firebase/storage";
 import { isSvgFileName, resolveUploadContentType } from "@/lib/utils";
 import { fetchPastedImage } from "./pastedImage";
+import { imageStoragePath } from "./imageStoragePath";
 import {
   mountRichCaptionEditor,
   resolveInitialRichCaption,
@@ -114,10 +115,7 @@ async function uploadImageFile(file: File) {
   }
 
   const storage = getStorage();
-  const storageRef = ref(
-    storage,
-    "images/" + new Date().getTime() + "_" + file.name,
-  );
+  const storageRef = ref(storage, imageStoragePath(file.name));
   const contentType = resolveUploadContentType(file);
   const snapshot = await uploadBytes(
     storageRef,
