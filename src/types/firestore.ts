@@ -42,6 +42,8 @@ export type UnitTest = {
   calculatorType?: CalculatorType;
   referenceSheetEnabled?: boolean;
   referenceSheetId?: string;
+  /** Students can check each answer as they go, instead of only at the end. */
+  allowCheckAnswer?: boolean;
 };
 
 export type UnitFRQ = {
