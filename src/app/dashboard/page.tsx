@@ -36,6 +36,7 @@ import ProfileView from "@/components/dashboard/ProfileView";
 import { streakAsOf } from "@/lib/gamification/streak";
 import { toDayKey } from "@/lib/gamification/calendarDay";
 import ProfileVisibility from "@/components/dashboard/ProfileVisibility";
+import Leaderboard from "@/components/dashboard/Leaderboard";
 
 function LoadError({ children }: { children: string }) {
   return (
@@ -271,6 +272,13 @@ export default function Dashboard() {
               <InProgressList inProgress={inProgress} limit={Infinity} />
             ),
             achievements,
+            leaderboard: (
+              <Leaderboard
+                uid={user.uid}
+                xp={xpProgress?.xp}
+                xpFailed={Boolean(xpError)}
+              />
+            ),
             profile: (
               <>
                 {profile}
