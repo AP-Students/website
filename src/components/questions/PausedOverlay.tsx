@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
 // Covers the whole test while the timer is paused, so a pause stops the work
@@ -12,8 +13,25 @@ export default function PausedOverlay({
   timeLeft: string;
   onResume: () => void;
 }) {
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  // Covering the page isn't enough on its own: Tab would still reach the
+  // answer boxes underneath. Everything else is made inert until Resume.
+  useEffect(() => {
+    const overlay = overlayRef.current;
+    const others = [...document.body.children].filter(
+      (element): element is HTMLElement =>
+        element instanceof HTMLElement && element !== overlay && !element.inert,
+    );
+    for (const element of others) element.inert = true;
+    return () => {
+      for (const element of others) element.inert = false;
+    };
+  }, []);
+
   return createPortal(
     <div
+      ref={overlayRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="paused-title"

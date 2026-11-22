@@ -31,10 +31,19 @@ export function useTestTimer(limitSeconds: number, stopped = false): TestTimer {
   const running = !stopped && !isPaused(state);
   useEffect(() => {
     if (!running) return;
-    // Faster than once a second so the display never skips a second.
-    const tick = window.setInterval(() => setNow(Date.now()), 250);
-    return () => window.clearInterval(tick);
-  }, [running]);
+    // Wakes up just after each new second of used time, so the page updates
+    // once a second and the clock never skips a second.
+    const untilNextSecond = (at: number) =>
+      1000 - (usedMs(state, at) % 1000) + 10;
+    let timeout = 0;
+    const tick = () => {
+      const at = Date.now();
+      setNow(at);
+      timeout = window.setTimeout(tick, untilNextSecond(at));
+    };
+    timeout = window.setTimeout(tick, untilNextSecond(Date.now()));
+    return () => window.clearTimeout(timeout);
+  }, [running, state]);
 
   return {
     ...readTimer(limitSeconds, usedMs(state, now)),
