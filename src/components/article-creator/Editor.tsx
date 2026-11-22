@@ -35,6 +35,8 @@ import {
   uploadBytes,
 } from "firebase/storage";
 import { isSvgFileName, resolveUploadContentType } from "@/lib/utils";
+import { fetchPastedImage } from "./pastedImage";
+import { imageStoragePath } from "./imageStoragePath";
 import {
   mountRichCaptionEditor,
   resolveInitialRichCaption,
@@ -117,10 +119,7 @@ async function uploadImageFile(file: File) {
   }
 
   const storage = getStorage();
-  const storageRef = ref(
-    storage,
-    "images/" + new Date().getTime() + "_" + file.name,
-  );
+  const storageRef = ref(storage, imageStoragePath(file.name));
   const contentType = resolveUploadContentType(file);
   const snapshot = await uploadBytes(
     storageRef,
@@ -760,6 +759,25 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
         async uploadByFile(file: File) {
           try {
             const uploadedFile = await uploadImageFile(file);
+
+            return {
+              success: 1,
+              file: uploadedFile,
+            };
+          } catch (err) {
+            console.log(err);
+
+            return { success: 0 };
+          }
+        },
+        // Pasted image links, e.g. images copied from Google Docs. Without this
+        // the image tool posted to an upload endpoint we don't have and got
+        // stuck loading.
+        async uploadByUrl(url: string) {
+          try {
+            const uploadedFile = await uploadImageFile(
+              await fetchPastedImage(url),
+            );
 
             return {
               success: 1,
