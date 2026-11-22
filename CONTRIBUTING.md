@@ -135,6 +135,8 @@ To test admin functionality locally:
 
 If there are any issues with the process above, please tell us, and we'll fix it!
 
+To set which subjects graders can grade, see [docs/grader-subjects.md](docs/grader-subjects.md).
+
 ---
 
 # Contribution Guidelines
