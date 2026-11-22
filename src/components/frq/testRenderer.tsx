@@ -37,6 +37,9 @@ import { resolveCalculatorPermission } from "@/lib/calculator";
 import { cn } from "@/lib/utils";
 import type { ReferenceSheet } from "@/types/firestore";
 import ReferenceSheetPanel from "@/components/questions/ReferenceSheetPanel";
+import PausedOverlay from "@/components/questions/PausedOverlay";
+import { useTestTimer } from "@/components/hooks/useTestTimer";
+import { formatClock } from "@/lib/testTimer";
 import { addDoc, serverTimestamp } from "firebase/firestore";
 import { BookOpen, Calculator, LogOut } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
@@ -101,8 +104,10 @@ const FRQTestRenderer = ({
   const [markedForReview, setMarkedForReview] = useState<
     Record<string, boolean>
   >({});
-  const [timeRemaining, setTimeRemaining] = useState(
-    () => (template?.timeLimitMinutes ?? DEFAULT_TIME_LIMIT_MINUTES) * 60,
+  // Keeps running past zero so the student can see how far over they went.
+  const timer = useTestTimer(
+    (template?.timeLimitMinutes ?? DEFAULT_TIME_LIMIT_MINUTES) * 60,
+    hasSubmitted,
   );
   const [timerHidden, setTimerHidden] = useState(false);
   const [showTimeUpPopup, setShowTimeUpPopup] = useState(false);
@@ -175,32 +180,10 @@ const FRQTestRenderer = ({
   );
 
   useEffect(() => {
-    setTimeRemaining(
-      (template?.timeLimitMinutes ?? DEFAULT_TIME_LIMIT_MINUTES) * 60,
-    );
-  }, [template?.timeLimitMinutes]);
-
-  useEffect(() => {
-    if (hasSubmitted) {
-      return;
-    }
-
-    const timer = window.setInterval(() => {
-      setTimeRemaining((currentTime) =>
-        currentTime > 0 ? currentTime - 1 : 0,
-      );
-    }, 1000);
-
-    return () => {
-      window.clearInterval(timer);
-    };
-  }, [hasSubmitted]);
-
-  useEffect(() => {
-    if (timeRemaining === 0 && !hasSubmitted) {
+    if (timer.timeUp && !hasSubmitted) {
       setShowTimeUpPopup(true);
     }
-  }, [timeRemaining, hasSubmitted]);
+  }, [timer.timeUp, hasSubmitted]);
 
   const calculatorAllowed = resolveCalculatorPermission(
     undefined,
@@ -286,9 +269,7 @@ const FRQTestRenderer = ({
     [draftKey, responses, router, template, user],
   );
 
-  const formattedTime = `${Math.floor(timeRemaining / 3600)}:${String(
-    Math.floor((timeRemaining % 3600) / 60),
-  ).padStart(2, "0")}:${String(timeRemaining % 60).padStart(2, "0")}`;
+  const formattedTime = formatClock(timer.remaining);
 
   const currentQuestion = questions[currentQuestionIndex];
   const testName = template?.title ?? "FRQ";
@@ -406,6 +387,17 @@ const FRQTestRenderer = ({
     />
   ) : null;
 
+  const pausedOverlay = timer.paused ? (
+    <PausedOverlay
+      timeLeft={
+        timer.timeUp
+          ? `${formatClock(timer.overtime)} over time`
+          : formattedTime
+      }
+      onResume={timer.resume}
+    />
+  ) : null;
+
   if (hasSubmitted) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-50 px-6 text-black">
@@ -432,6 +424,7 @@ const FRQTestRenderer = ({
       <main className="min-h-screen bg-gray-50 px-6 py-12 text-black">
         {timeUpModal}
         {submissionModal}
+        {pausedOverlay}
 
         <ReviewPage
           heading={sectionHeading.reviewHeading}
@@ -450,6 +443,7 @@ const FRQTestRenderer = ({
     <main className="min-h-screen w-full bg-white text-black">
       {timeUpModal}
       {submissionModal}
+      {pausedOverlay}
       {referenceSheet && (
         <ReferenceSheetPanel
           sheet={referenceSheet}
@@ -497,17 +491,42 @@ const FRQTestRenderer = ({
           </div>
 
           <div className="text-center">
-            <p className="font-sans text-lg font-bold">
-              {timerHidden ? "" : formattedTime}
-            </p>
+            {timer.timeUp ? (
+              <p
+                className="font-sans text-lg font-bold text-red-600"
+                aria-label={
+                  timerHidden
+                    ? undefined
+                    : `Overtime ${formatClock(timer.overtime)}`
+                }
+              >
+                {timerHidden ? "" : `+${formatClock(timer.overtime)}`}
+              </p>
+            ) : (
+              <p className="font-sans text-lg font-bold">
+                {timerHidden ? "" : formattedTime}
+              </p>
+            )}
+            {timer.timeUp && !timerHidden && (
+              <p className="text-xs font-semibold text-red-600">Overtime</p>
+            )}
 
-            <button
-              type="button"
-              className="rounded border border-gray-400 px-2 py-0.5 text-xs"
-              onClick={() => setTimerHidden((currentValue) => !currentValue)}
-            >
-              {timerHidden ? "Show" : "Hide"}
-            </button>
+            <div className="flex justify-center gap-1">
+              <button
+                type="button"
+                className="rounded border border-gray-400 px-2 py-0.5 text-xs"
+                onClick={() => setTimerHidden((currentValue) => !currentValue)}
+              >
+                {timerHidden ? "Show" : "Hide"}
+              </button>
+              <button
+                type="button"
+                className="rounded border border-gray-400 px-2 py-0.5 text-xs"
+                onClick={timer.pause}
+              >
+                Pause
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-4">
