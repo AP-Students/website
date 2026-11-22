@@ -209,6 +209,11 @@ service cloud.firestore {
       match /completedTests/{testId} {
         allow read: if isAuthenticated() && request.auth.uid == userId;
       }
+      // Your latest graded attempt at each unit test, for reviewing it.
+      // Only the server writes these, when it grades the test.
+      match /testAttempts/{testKey} {
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+      }
       match /completedSubjects/{subjectId} {
         allow read: if isAuthenticated() && request.auth.uid == userId;
       }
