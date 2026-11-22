@@ -52,6 +52,7 @@ import {
   HEADING_LEVELS,
   nearestHeadingLevel,
 } from "./headingLevels";
+import { withoutImageMetadata } from "@/lib/imageMetadata";
 
 interface EditorImageData {
   file: { url?: string; storageRefFullPath?: string; [key: string]: unknown };
@@ -123,7 +124,7 @@ async function uploadImageFile(file: File) {
   const contentType = resolveUploadContentType(file);
   const snapshot = await uploadBytes(
     storageRef,
-    file,
+    await withoutImageMetadata(file),
     contentType ? { contentType } : undefined,
   );
   const downloadURL = await getDownloadURL(snapshot.ref);

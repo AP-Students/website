@@ -1,5 +1,6 @@
 import { db, storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { withoutImageMetadata } from '@/lib/imageMetadata';
 import { collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 
 export interface SubmitBugReportParams {
@@ -42,7 +43,7 @@ export async function submitBugReport({
 
   if (attachedImage) {
     const imageRef = ref(storage, `feedbackImages/${Date.now()}-${attachedImage.name}`);
-    await uploadBytes(imageRef, attachedImage);
+    await uploadBytes(imageRef, await withoutImageMetadata(attachedImage));
     payload.attachedImage = await getDownloadURL(imageRef);
   }
 
