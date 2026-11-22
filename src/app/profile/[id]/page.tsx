@@ -15,7 +15,6 @@ type PublicProfile = {
   photoURL?: string;
   xp: number;
   currentStreak: number;
-  longestStreak: number;
   lastActiveDay: string | null;
   timeZone: string;
   problemsSolved: number;

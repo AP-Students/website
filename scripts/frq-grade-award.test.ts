@@ -707,7 +707,6 @@ void test("public profiles use live streaks and safe bounded name and photo fiel
   assert.equal(todayKey.length, 10);
   assert.equal(profile.displayName.length, 80);
   assert.equal(profile.currentStreak, 0);
-  assert.equal(profile.longestStreak, 12);
   // Readers need these to decay a streak the profile froze at its last write.
   assert.equal(profile.lastActiveDay, staleKey);
   assert.equal(profile.timeZone, "UTC");

@@ -155,6 +155,8 @@ export default function ProfileVisibility({ uid }: { uid: string }) {
             <li>Your current streak</li>
             <li>Problems solved and subjects completed</li>
             <li>The achievements you&apos;ve earned</li>
+            <li>Last active day</li>
+            <li>Your timezone</li>
           </ul>
           <p className="text-sm text-gray-600">
             Your email, activity and calendar always stay private. You can
