@@ -16,6 +16,7 @@ export const DASHBOARD_TABS = [
   { id: "saved", label: "Saved" },
   { id: "in-progress", label: "In Progress" },
   { id: "achievements", label: "Achievements" },
+  { id: "leaderboard", label: "Leaderboard" },
   { id: "profile", label: "Profile" },
 ] as const;
 
@@ -30,7 +31,7 @@ const tabFromHash = (): DashboardTabId => {
 };
 
 /**
- * The dashboard's seven tabs. The open tab is kept in the URL hash, e.g.
+ * The dashboard's tabs. The open tab is kept in the URL hash, e.g.
  * /dashboard#history, so a tab can be linked to and survives a reload; a
  * plain `<a href="#history">` anywhere on the page switches to it.
  */
