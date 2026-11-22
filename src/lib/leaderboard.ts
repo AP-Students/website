@@ -55,3 +55,16 @@ export function rankEntries(
 export function rankFromCountAbove(countAbove: number): number {
   return wholeNumber(countAbove) + 1;
 }
+
+// The friends board: you and your friends, highest XP first. Everyone's on
+// it, so there's no "your rank" note to show.
+export function friendsBoard(
+  me: Omit<LeaderboardEntry, "rank">,
+  friends: readonly Omit<LeaderboardEntry, "rank">[],
+): LeaderboardEntry[] {
+  return rankEntries(
+    [me, ...friends.filter((friend) => friend.uid !== me.uid)].sort(
+      (a, b) => b.xp - a.xp || a.displayName.localeCompare(b.displayName),
+    ),
+  );
+}

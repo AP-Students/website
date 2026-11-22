@@ -4,6 +4,7 @@ import {
   type Transaction,
 } from "firebase-admin/firestore";
 import { normalizeUsername, usernameProblem } from "../username.ts";
+import { buildPublicProfile } from "./publicProfile.ts";
 
 // Everything here runs with the Admin SDK. The rules don't let clients write
 // usernames, friend requests or friend lists, so these are the only way in.
@@ -65,7 +66,7 @@ export async function sendFriendRequest(
   input: string,
 ): Promise<{ status: "pending" | "friends" }> {
   const username = normalizeUsername(input);
-  return db.runTransaction(async (tx) => {
+  const result = await db.runTransaction(async (tx) => {
     const [me, target] = await tx.getAll(
       db.doc(friendPaths.user(uid)),
       db.doc(friendPaths.username(username)),
@@ -84,11 +85,11 @@ export async function sendFriendRequest(
       db.doc(friendPaths.request(uid, friendUid)),
       db.doc(friendPaths.request(friendUid, uid)),
     );
-    if (friendship?.exists) return { status: "friends" };
+    if (friendship?.exists) return { status: "friends" as const, friendUid };
     if (received?.exists) {
       addFriendship(db, tx, uid, friendUid);
       tx.delete(received.ref);
-      return { status: "friends" };
+      return { status: "friends" as const, friendUid };
     }
     if (!sent?.exists) {
       tx.set(db.doc(friendPaths.request(uid, friendUid)), {
@@ -99,8 +100,11 @@ export async function sendFriendRequest(
         createdAt: FieldValue.serverTimestamp(),
       });
     }
-    return { status: "pending" };
+    return { status: "pending" as const, friendUid };
   });
+  if (result.status === "friends")
+    await ensureProfiles(db, [uid, result.friendUid]);
+  return { status: result.status };
 }
 
 export async function respondToFriendRequest(
@@ -116,6 +120,39 @@ export async function respondToFriendRequest(
     if (accept) addFriendship(db, tx, uid, fromUid);
     tx.delete(request.ref);
   });
+  if (accept) await ensureProfiles(db, [uid, fromUid]);
+}
+
+// Friends can see each other's profile, but a student only gets a profile doc
+// once they earn XP or use the public/private switch. So friends get one
+// (private) as soon as they become friends.
+export async function ensureProfiles(db: Firestore, uids: string[]) {
+  await Promise.all(
+    uids.map(async (uid) => {
+      const profileRef = db.doc(`profiles/${uid}`);
+      if ((await profileRef.get()).exists) return;
+      const [user, stats, achievements] = await Promise.all([
+        db.doc(friendPaths.user(uid)).get(),
+        db.doc(`userStats/${uid}`).get(),
+        db.collection(`users/${uid}/achievements`).get(),
+      ]);
+      if (!user.exists) return;
+      const profile = buildPublicProfile(
+        uid,
+        user.data(),
+        stats.data(),
+        achievements.docs.map((doc) => ({
+          id: doc.id,
+          title: String(doc.data().title ?? doc.id),
+        })),
+        false,
+      );
+      // create() fails if someone else made it in the meantime, which is fine.
+      await profileRef.create(profile).catch((error: { code?: number }) => {
+        if (error.code !== 6) throw error;
+      });
+    }),
+  );
 }
 
 export async function cancelFriendRequest(

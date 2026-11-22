@@ -90,7 +90,7 @@ export default function ProfileVisibility({ uid }: { uid: string }) {
             ? "Loading…"
             : isPublic
               ? "Anyone with the link can see the profile above."
-              : "Only you can see the profile above."}
+              : "Only you and your friends can see the profile above."}
       </p>
 
       <div className="mt-4 flex flex-wrap items-center gap-4">

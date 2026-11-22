@@ -277,6 +277,8 @@ export default function Dashboard() {
                 uid={user.uid}
                 xp={xpProgress?.xp}
                 xpFailed={Boolean(xpError)}
+                displayName={(userDoc ?? user).displayName}
+                photoURL={(userDoc ?? user).photoURL}
               />
             ),
             profile: (
