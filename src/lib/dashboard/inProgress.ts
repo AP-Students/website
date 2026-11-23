@@ -68,7 +68,15 @@ function readMcqTestState(value: unknown): McqTestState | null {
     }
     read[Number(index)] = choices;
   }
-  return { answers: read, currentIndex, secondsRemaining };
+  const checked = Array.isArray(value.checked)
+    ? value.checked.filter(isCount)
+    : [];
+  return {
+    answers: read,
+    currentIndex,
+    secondsRemaining,
+    ...(checked.length ? { checked } : {}),
+  };
 }
 
 function readFrqDraftState(value: unknown): FrqDraftState | null {

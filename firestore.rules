@@ -143,8 +143,11 @@ service cloud.firestore {
     // Practice tests and FRQ drafts saved part-way reuse the dashboard
     // InProgressItem contract: kind, subject, unitId, refId, label, href,
     // startedAt and state, with updatedAt stamped server-side. The autosave
-    // writes every few seconds, so one save a second is the most a draft
-    // takes; a runaway or abusive client can't write faster than that.
+    // writes every few seconds, so a save that only moves the clock is held
+    // to one a second; an autosave stuck in a loop can't write faster than
+    // that. A save that records new work always goes through: the save made
+    // as the student leaves can come right after an autosave, and refusing it
+    // would lose their last answer.
     match /users/{userId}/inProgress/{itemId} {
       allow read, delete: if isAuthenticated() && request.auth.uid == userId;
       allow create: if isAuthenticated() && request.auth.uid == userId
@@ -152,7 +155,17 @@ service cloud.firestore {
       allow update: if isAuthenticated() && request.auth.uid == userId
         && isInProgressItem(itemId, request.resource.data)
         && (!('updatedAt' in resource.data)
-          || request.time > resource.data.updatedAt + duration.value(1, 's'));
+          || request.time > resource.data.updatedAt + duration.value(1, 's')
+          || recordsNewWork(resource.data.state, request.resource.data.state));
+    }
+
+    // An answer, a move to another question, a checked answer or a change to
+    // a draft; anything but the time left.
+    function recordsNewWork(before, after) {
+      return before.get('answers', null) != after.get('answers', null)
+        || before.get('currentIndex', null) != after.get('currentIndex', null)
+        || before.get('checked', null) != after.get('checked', null)
+        || before.get('responses', null) != after.get('responses', null);
     }
 
     function isInProgressItem(itemId, data) {
@@ -173,8 +186,10 @@ service cloud.firestore {
     }
 
     function isMcqTestState(state) {
-      return state.keys().hasOnly(['answers', 'currentIndex', 'secondsRemaining'])
+      return state.keys().hasOnly(['answers', 'currentIndex', 'secondsRemaining', 'checked'])
         && state.answers is map && state.answers.size() <= 500
+        && (!('checked' in state)
+          || (state.checked is list && state.checked.size() <= 500))
         && state.currentIndex is int && state.currentIndex >= 0
         && state.secondsRemaining is number && state.secondsRemaining >= 0;
     }

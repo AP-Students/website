@@ -58,6 +58,7 @@ export function mcqTestProgress(input: {
       answers: { ...state.answers },
       currentIndex: state.currentIndex,
       secondsRemaining: Math.max(0, Math.round(state.secondsRemaining)),
+      ...(state.checked?.length ? { checked: [...state.checked] } : {}),
     },
   };
 }
@@ -85,6 +86,12 @@ export function resumeTest(
     if (kept.length > 0) answers[index] = kept;
   }
 
+  // A checked answer stays locked, as long as the answer it locked is still
+  // there to show.
+  const checked = [...new Set(saved.checked ?? [])]
+    .filter((index) => answers[index] !== undefined)
+    .sort((a, b) => a - b);
+
   const last = test.questions.length - 1;
   return {
     answers,
@@ -96,6 +103,7 @@ export function resumeTest(
       Math.max(0, saved.secondsRemaining),
       test.seconds,
     ),
+    ...(checked.length ? { checked } : {}),
   };
 }
 

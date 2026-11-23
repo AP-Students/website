@@ -620,6 +620,25 @@ check(
     await new Promise((resolve) => setTimeout(resolve, 1_100));
     await status(await commit("student", draftPath, draft, ["updatedAt"]), 200);
 
+    // Within the second, a save that records new work still lands: the save
+    // made as a student leaves can come right after an autosave, and must
+    // not lose their last answer. Only the clock is held to one a second.
+    const edited = {
+      ...draft,
+      state: { responses: { thesis: "<p>Slant rhyme unsettles it.</p>" } },
+    };
+    await status(await commit("student", draftPath, edited, ["updatedAt"]), 200);
+    const answered = {
+      ...practiceTest,
+      state: { answers: { 0: ["B"], 1: ["C"] }, currentIndex: 1, secondsRemaining: 1735 },
+    };
+    await status(await commit("student", testPath, answered, ["updatedAt"]), 200);
+    const clockOnly = { ...answered, state: { ...answered.state, secondsRemaining: 1734 } };
+    await status(await commit("student", testPath, clockOnly, ["updatedAt"]), 403);
+    // A checked answer is saved with the test, so it stays locked.
+    const checked = { ...answered, state: { ...answered.state, checked: [0] } };
+    await status(await commit("student", testPath, checked, ["updatedAt"]), 200);
+
     const forged = [
       ["client clock", draft, {}, []],
       ["link off the site", draft, { href: "javascript:alert(1)" }],
@@ -633,6 +652,13 @@ check(
         practiceTest,
         {
           state: { answers: {}, currentIndex: -1, secondsRemaining: 60 },
+        },
+      ],
+      [
+        "checked that isn't a list",
+        practiceTest,
+        {
+          state: { answers: {}, currentIndex: 0, secondsRemaining: 60, checked: "0" },
         },
       ],
     ];

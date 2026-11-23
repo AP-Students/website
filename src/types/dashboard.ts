@@ -170,6 +170,12 @@ export interface McqTestState {
   answers: Record<number, string[]>;
   currentIndex: number;
   secondsRemaining: number;
+  /**
+   * Questions whose answer was checked with "Check answer". A checked answer
+   * is locked, so it's saved to stay locked when the test is picked back up.
+   * Left out when nothing has been checked.
+   */
+  checked?: number[];
 }
 
 export interface FrqDraftState {

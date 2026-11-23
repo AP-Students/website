@@ -31,7 +31,7 @@ export function useTestAutosave(
   label: string,
   progress: MutableRefObject<McqTestState>,
   resumedFrom?: Timestamp,
-): { finish: () => void } {
+): { finish: () => void; saveNow: () => void } {
   const autosave = useRef<TestAutosave | null>(null);
   // A test can be submitted before the autosave starts: one picked back up
   // with no time left is submitted as the header mounts. Remembering that
@@ -104,6 +104,8 @@ export function useTestAutosave(
         finished.current = true;
         autosave.current?.finish();
       },
+      // For changes that can't wait for the next tick, like a checked answer.
+      saveNow: () => autosave.current?.flush(),
     }),
     [],
   );

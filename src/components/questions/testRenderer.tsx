@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bookmark, Calculator, Check, X } from "lucide-react";
 import Header from "./digital-testing/Header";
 import QuestionPanel from "./digital-testing/QuestionPanel";
@@ -130,6 +130,22 @@ export default function DigitalTestingPage({
   >(resume?.state.answers ?? {});
   // A test picked back up counts down from the time it had left.
   const startingSeconds = resume?.state.secondsRemaining ?? time * 60;
+  // Questions whose answer has been checked. Their answer is locked in and
+  // shown as right or wrong, as if the test were already submitted. Saved
+  // with the test, so a reload can't unlock an answer once it's been checked.
+  const [checked, setChecked] = useState<Record<number, boolean>>(() =>
+    Object.fromEntries(
+      (resume?.state.checked ?? []).map((index) => [index, true]),
+    ),
+  );
+  const checkedList = useMemo(
+    () =>
+      Object.keys(checked)
+        .map(Number)
+        .filter((index) => checked[index])
+        .sort((a, b) => a - b),
+    [checked],
+  );
 
   // The test as it stands, for the autosave. Kept in a ref so the countdown
   // updating it every second doesn't re-render the test.
@@ -137,14 +153,16 @@ export default function DigitalTestingPage({
     answers: selectedAnswers,
     currentIndex: currentQuestionIndex,
     secondsRemaining: startingSeconds,
+    checked: checkedList,
   });
   useEffect(() => {
     progress.current = {
       ...progress.current,
       answers: selectedAnswers,
       currentIndex: currentQuestionIndex,
+      checked: checkedList,
     };
-  }, [selectedAnswers, currentQuestionIndex]);
+  }, [selectedAnswers, currentQuestionIndex, checkedList]);
   const recordTimeLeft = useCallback((secondsRemaining: number) => {
     progress.current = { ...progress.current, secondsRemaining };
   }, []);
@@ -155,6 +173,13 @@ export default function DigitalTestingPage({
     progress,
     resume?.startedAt,
   );
+  // A checked answer is saved straight away rather than on the next tick, so
+  // reloading right after checking can't bring back an unlocked answer.
+  const savedCheckCount = useRef(checkedList.length);
+  useEffect(() => {
+    if (checkedList.length > savedCheckCount.current) autosave.saveNow();
+    savedCheckCount.current = checkedList.length;
+  }, [checkedList, autosave]);
 
   // A test that opens where the student left it says so, so the answers
   // already filled in and the shorter timer aren't a surprise.
@@ -175,9 +200,6 @@ export default function DigitalTestingPage({
 
   const [showEliminationTools, setShowEliminationTools] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  // Questions whose answer has been checked. Their answer is locked in and
-  // shown as right or wrong, as if the test were already submitted.
-  const [checked, setChecked] = useState<Record<number, boolean>>({});
   const currentChecked = !!checked[currentQuestionIndex];
   const [showReviewPage, setShowReviewPage] = useState(false);
   const [showCompletionPage, setShowCompletionPage] = useState(false);

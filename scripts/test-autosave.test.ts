@@ -348,6 +348,59 @@ test("the time left never goes over the test's limit, or below zero", () => {
   );
 });
 
+test("checked answers are saved, read back and stay locked when the test is picked back up", () => {
+  const path = "/subject/biology/unit-2-xgxskm69/test/u2-test";
+  const context = pathContext(path);
+  assert.ok(context);
+  const state = {
+    answers: { 0: ["B"], 2: ["A"] },
+    currentIndex: 2,
+    secondsRemaining: 900,
+    checked: [2, 0],
+  };
+  const saved = mcqTestProgress({
+    context,
+    label: "Unit 2 Test",
+    href: path,
+    startedAt: Timestamp.fromDate(new Date("2026-10-20T16:00:00Z")),
+    state,
+  });
+  // Firestore stores map keys as strings.
+  const stored = JSON.parse(JSON.stringify(saved.state)) as unknown;
+  const item = readInProgressItem({
+    id: "save",
+    data: { ...saved, state: stored, updatedAt: saved.startedAt },
+  });
+  assert.ok(item && item.kind === "mcq_test");
+  const read = item.state as McqTestState;
+  assert.deepEqual(read.checked, [2, 0]);
+  assert.deepEqual(resumeTest(read, fourQuestions)?.checked, [0, 2]);
+
+  // A check is kept only while the answer it locked is still on the test.
+  const lostOptionA = {
+    questions: Array.from({ length: 4 }, () => ({
+      options: ["B", "C"].map((id) => ({ id })),
+    })),
+    seconds: 2_700,
+  };
+  assert.deepEqual(resumeTest(read, lostOptionA)?.checked, [0]);
+
+  // Nothing checked leaves the field out, so older saves look the same.
+  assert.equal("checked" in saved.state, true);
+  const unchecked = mcqTestProgress({
+    context,
+    label: "Unit 2 Test",
+    href: path,
+    startedAt: saved.startedAt,
+    state: { ...state, checked: [] },
+  });
+  assert.equal("checked" in unchecked.state, false);
+  assert.equal(
+    "checked" in resumeTest({ ...state, checked: [] }, fourQuestions)!,
+    false,
+  );
+});
+
 test("a question asked for in the link wins over the saved one", () => {
   const saved = {
     answers: { 0: ["B"] },
