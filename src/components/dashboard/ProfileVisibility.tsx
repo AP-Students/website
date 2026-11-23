@@ -89,7 +89,7 @@ export default function ProfileVisibility({ uid }: { uid: string }) {
           : isPublic === undefined
             ? "Loading…"
             : isPublic
-              ? "Anyone with the link can see the profile above."
+              ? "Anyone with the link can see the profile above, and you're listed on the leaderboard."
               : "Only you and your friends can see the profile above."}
       </p>
 
@@ -146,7 +146,8 @@ export default function ProfileVisibility({ uid }: { uid: string }) {
             <DialogTitle>Make your profile public?</DialogTitle>
             <DialogDescription>
               Anyone with the link will see this, even if they aren&apos;t
-              logged in:
+              logged in. Your name, photo, level and XP will also be listed on
+              the leaderboard that every student sees:
             </DialogDescription>
           </DialogHeader>
           <ul className="list-disc pl-5 text-sm">
