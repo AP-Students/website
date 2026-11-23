@@ -313,6 +313,13 @@ export async function awardFrqGrade(
     const notification = await transaction.get(notificationRef);
     const shouldNotify =
       notificationState?.notificationCreated !== true && !notification.exists;
+    // A regrade rewrites the notification still on file, so it and the feed
+    // show the same score. One already read and expired stays gone.
+    const notificationBody = `Your FRQ was graded: ${grade.score as string}. View your feedback.`;
+    const notificationIsStale =
+      notification.exists &&
+      (notification.data() as Record<string, unknown> | undefined)?.body !==
+        notificationBody;
     const activityData = activity?.data() as
       | Record<string, unknown>
       | undefined;
@@ -323,6 +330,7 @@ export async function awardFrqGrade(
     if (
       xpAwarded === 0 &&
       !shouldNotify &&
+      !notificationIsStale &&
       notificationState?.notificationCreated === true &&
       receipt?.exists &&
       !activityNeedsGrade
@@ -344,9 +352,15 @@ export async function awardFrqGrade(
       createNotification(transaction, notificationRef, {
         type: "frq_graded",
         title: "FRQ graded",
-        body: `Your FRQ was graded: ${grade.score as string}. View your feedback.`,
+        body: notificationBody,
         href: `/frq-feedback/${submissionId}`,
       });
+    } else if (notificationIsStale) {
+      transaction.set(
+        notificationRef,
+        { body: notificationBody },
+        { merge: true },
+      );
     }
 
     // Keep the dashboard event in sync with the saved grade in the same
