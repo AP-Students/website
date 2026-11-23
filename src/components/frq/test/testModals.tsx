@@ -28,6 +28,7 @@ export const TimeUpModal = ({
 
       <p className="mt-3 text-sm text-gray-600">
         Your time has ended. You can submit your test now or continue working.
+        If you keep going, the timer will count how far over time you are.
       </p>
 
       <div className="mt-6 flex justify-end gap-3">

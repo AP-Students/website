@@ -33,6 +33,8 @@ interface Props {
   inputQuestions: QuestionFormat[];
   time: number;
   adminMode?: boolean;
+  /** Shows a "Check answer" button on each question. */
+  allowCheckAnswer?: boolean;
   directions?: string;
   testName: string;
   /** Enables the Save button. Omitted in admin previews. */
@@ -64,7 +66,7 @@ const initialQuestions: QuestionFormat[] = [
       { id: "3", value: { value: "Rome", files: [] } },
       { id: "4", value: { value: "Berlin", files: [] } },
     ],
-    answers: ["Paris"],
+    answers: ["1"],
     explanation: { value: "Paris is the capital city of France.", files: [] },
     content: {
       value:
@@ -83,7 +85,7 @@ const initialQuestions: QuestionFormat[] = [
       { id: "3", value: { value: "Osaka", files: [] } },
       { id: "4", value: { value: "Hiroshima", files: [] } },
     ],
-    answers: ["Tokyo"],
+    answers: ["1"],
     explanation: { value: "Tokyo is the capital city of Japan.", files: [] },
     content: {
       value:
@@ -99,6 +101,7 @@ export default function DigitalTestingPage({
   time,
   inputQuestions,
   adminMode = false,
+  allowCheckAnswer = false,
   directions,
   testName,
   testId,
@@ -172,6 +175,10 @@ export default function DigitalTestingPage({
 
   const [showEliminationTools, setShowEliminationTools] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  // Questions whose answer has been checked. Their answer is locked in and
+  // shown as right or wrong, as if the test were already submitted.
+  const [checked, setChecked] = useState<Record<number, boolean>>({});
+  const currentChecked = !!checked[currentQuestionIndex];
   const [showReviewPage, setShowReviewPage] = useState(false);
   const [showCompletionPage, setShowCompletionPage] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
@@ -239,6 +246,7 @@ export default function DigitalTestingPage({
   };
 
   const handleSelectAnswer = (optionId: string) => {
+    if (currentChecked) return;
     setSelectedAnswers((prev) => ({
       ...prev,
       [currentQuestionIndex]:
@@ -249,6 +257,15 @@ export default function DigitalTestingPage({
             : [...(prev[currentQuestionIndex] ?? []), optionId],
     }));
   };
+
+  const currentQuestion = questions[currentQuestionIndex];
+  const checkedCorrect =
+    currentChecked &&
+    !!currentQuestion &&
+    isQuestionCorrect(
+      currentQuestion,
+      selectedAnswers[currentQuestionIndex] ?? [],
+    );
 
   if (showCompletionPage && !adminMode) {
     return (
@@ -447,8 +464,43 @@ export default function DigitalTestingPage({
               onSelectAnswer={handleSelectAnswer}
               currentQuestionIndex={currentQuestionIndex}
               questionsLength={questions.length}
-              submitted={submitted}
+              submitted={submitted || currentChecked}
             />
+            {allowCheckAnswer &&
+              !submitted &&
+              currentQuestion?.type !== "frq" &&
+              (currentChecked ? (
+                <p
+                  role="status"
+                  className={cn(
+                    "mt-4 font-semibold",
+                    checkedCorrect ? "text-green-700" : "text-red-700",
+                  )}
+                >
+                  {checkedCorrect
+                    ? "Correct!"
+                    : "Not quite. The right answer has a check mark."}
+                </p>
+              ) : (
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setChecked((prev) => ({
+                        ...prev,
+                        [currentQuestionIndex]: true,
+                      }))
+                    }
+                    disabled={!selectedAnswers[currentQuestionIndex]?.length}
+                    className="rounded-full border-2 border-black px-4 py-1 font-semibold transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+                  >
+                    Check answer
+                  </button>
+                  <span className="text-sm text-gray-600">
+                    This locks in your answer.
+                  </span>
+                </div>
+              ))}
           </div>
         </div>
       )}

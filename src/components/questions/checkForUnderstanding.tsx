@@ -6,6 +6,7 @@ import { RenderContent } from "@/components/article-creator/custom_questions/Ren
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import SaveButton, { questionTitle } from "@/components/subject/save-button";
+import { correctOptionIds } from "@/lib/questionAnswers";
 
 interface Props {
   questionInstance: QuestionFormat;
@@ -23,6 +24,10 @@ const CheckForUnderstanding: React.FC<Props> = ({
   const [frqAnswer, setFrqAnswer] = useState<string>("");
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [submitted, setSubmitted] = useState<boolean>(false);
+  const correctIds = correctOptionIds(
+    questionInstance.options,
+    questionInstance.answers,
+  );
 
   const handleSelectOption = (id: string) => {
     const numAnswers = questionInstance.answers.length;
@@ -48,14 +53,15 @@ const CheckForUnderstanding: React.FC<Props> = ({
     if (selectedOptions.length > 0) {
       setSubmitted(true);
       const allCorrect =
-        questionInstance.answers.length === selectedOptions.length &&
-        questionInstance.answers.every((id) => selectedOptions.includes(id));
+        correctIds.length > 0 &&
+        correctIds.length === selectedOptions.length &&
+        correctIds.every((id) => selectedOptions.includes(id));
       setIsCorrect(allCorrect);
     }
   };
 
   const isAnswerCorrect = (id: string) => {
-    return questionInstance.answers.includes(id);
+    return correctIds.includes(id);
   };
 
   const handleRetry = () => {

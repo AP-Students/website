@@ -16,6 +16,7 @@ import {
 import { getUser } from "@/components/hooks/users";
 import { getFileFromIndexedDB } from "./RenderAdvancedTextbox";
 import { isSvgFileName, resolveUploadContentType } from "@/lib/utils";
+import { withoutImageMetadata } from "@/lib/imageMetadata";
 import RichTextEditor from "./RichTextEditor";
 
 interface Props {
@@ -326,7 +327,7 @@ export default function AdvancedTextbox({
       const contentType = resolveUploadContentType(file);
       const snapshot = await uploadBytes(
         storageRef,
-        file,
+        await withoutImageMetadata(file),
         contentType ? { contentType } : undefined,
       );
       const downloadURL = await getDownloadURL(snapshot.ref);

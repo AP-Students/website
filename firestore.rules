@@ -188,11 +188,13 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isAuthenticated() && request.auth.uid == userId;
 
+      // Only admins set which subjects someone can grade.
       allow create: if isAuthenticated() && request.auth.uid == userId
         && request.resource.data.access == "user"
-        && doesNotSetDerivedDashboardFields();
+        && doesNotSetDerivedDashboardFields()
+        && !('graderSubjectAccess' in request.resource.data);
       allow update: if isAuthenticated() && request.auth.uid == userId
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['access', 'uid'])
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['access', 'uid', 'graderSubjectAccess'])
         && doesNotChangeDerivedDashboardFields();
       allow delete: if isAuthenticated() && request.auth.uid == userId;
 
@@ -452,6 +454,17 @@ service cloud.firestore {
     // Admins can read/write all user documents
     match /users/{document=**} {
       allow read, write: if isAdmin();
+    }
+
+    // The subjects someone on the team can grade, worked out by the admin page
+    // from everyone's graderSubjectAccess. Anyone can read it so the FRQ
+    // submission page can hide the rest. No doc means show every subject.
+    match /gradingCoverage/{docId} {
+      allow read: if true;
+      allow delete: if isAdmin();
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['subjects', 'updatedAt'])
+        && request.resource.data.subjects is list;
     }
 
     // Subjects and pages can be accessed by members and admins

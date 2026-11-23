@@ -5,6 +5,7 @@ import type { QuestionFormat } from "@/types/questions";
 import { RenderContent } from "@/components/article-creator/custom_questions/RenderAdvancedTextbox";
 import { Textarea } from "@/components/ui/textarea";
 import SaveButton, { questionTitle } from "@/components/subject/save-button";
+import { correctOptionIds } from "@/lib/questionAnswers";
 
 interface QuizRendererProps {
   questions: QuestionFormat[];
@@ -65,9 +66,13 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({
     const correctCount = questions.reduce((acc, question, index) => {
       // Skip free-response questions - they are not auto-graded.
       if (question.type === "frq") return acc;
-      const questionAnswers = question.answers;
+      const questionAnswers = correctOptionIds(
+        question.options,
+        question.answers,
+      );
       const userAnswers = answers[index] ?? [];
       const isCorrect =
+        questionAnswers.length > 0 &&
         questionAnswers.length === userAnswers.length &&
         questionAnswers.every((id) => userAnswers.includes(id));
       return acc + (isCorrect ? 1 : 0);
@@ -78,7 +83,10 @@ const QuizRenderer: React.FC<QuizRendererProps> = ({
   };
 
   const isAnswerCorrect = (optionId: string): boolean => {
-    return questionInstance.answers.includes(optionId);
+    return correctOptionIds(
+      questionInstance.options,
+      questionInstance.answers,
+    ).includes(optionId);
   };
 
   return (
