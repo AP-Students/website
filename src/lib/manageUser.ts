@@ -4,7 +4,7 @@ import {
   deleteUser,
   updatePassword as firebaseUpdatePassword,
 } from "firebase/auth";
-import { doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { arrayRemove, arrayUnion, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { withoutImageMetadata } from "@/lib/imageMetadata";
 
@@ -44,6 +44,29 @@ function mapAuthError(error: unknown): string {
   }
 }
 
+/** Refresh the server-owned profile projection after name/photo edits. */
+async function refreshPublicProfile(): Promise<void> {
+  const user = auth.currentUser;
+  if (!user) return;
+  try {
+    const response = await fetch("/api/profile/visibility", {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${await user.getIdToken()}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    });
+    if (!response.ok) {
+      throw new Error(`Profile refresh failed (${response.status})`);
+    }
+  } catch (error) {
+    // The next stats transaction also refreshes the projection; don't report a
+    // failed name/photo update after Firebase has already saved it.
+    console.error("Unable to refresh the public profile projection", error);
+  }
+}
+
 /**
  * Updates the user's display name in Firebase Authentication and Firestore.
  * @param uid - The user's unique identifier.
@@ -66,6 +89,7 @@ export async function updateDisplayName(
     await updateProfile(user, { displayName });
     const userDocRef = doc(db, "users", uid);
     await updateDoc(userDocRef, { displayName });
+    await refreshPublicProfile();
   } catch (error: unknown) {
     throw mapAuthError(error);
   }
@@ -122,6 +146,7 @@ export async function updatePhotoURL(
     await updateProfile(user, { photoURL });
     const userDocRef = doc(db, "users", uid);
     await updateDoc(userDocRef, { photoURL });
+    await refreshPublicProfile();
   } catch (error: unknown) {
     throw mapAuthError(error);
   }
@@ -170,6 +195,7 @@ export async function uploadProfilePhoto(
 
     await updateProfile(user, { photoURL });
     await updateDoc(doc(db, "users", uid), { photoURL });
+    await refreshPublicProfile();
 
     return photoURL;
   } catch (error: unknown) {
@@ -190,6 +216,15 @@ export async function deleteAccount(): Promise<void> {
   const userDocRef = doc(db, "users", user.uid);
 
   try {
+    const response = await fetch("/api/profile/visibility", {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${await user.getIdToken()}`,
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`Unable to remove public profile (${response.status})`);
+    }
     // Delete Firestore document first
     await deleteDoc(userDocRef);
     // Then delete Firebase user
@@ -198,4 +233,24 @@ export async function deleteAccount(): Promise<void> {
   } catch (error: unknown) {
     throw mapAuthError(error);
   }
+}
+
+/**
+ * Saves the subjects the user has added to their dashboard.
+ * @param uid - the user's unique identifier
+ * @param mySubjects - subject slugs (ex. ["physics-2", "calculus-ab"])
+ */
+export async function updateMySubjects(
+  uid: string,
+  mySubjects: string[],
+): Promise<void>{
+  await updateDoc(doc(db, "users", uid), { mySubjects });
+}
+
+export async function addMySubject(uid: string, slug: string): Promise<void> {
+  await updateDoc(doc(db, "users", uid), { mySubjects: arrayUnion(slug) });
+}
+
+export async function removeMySubject(uid: string, slug: string): Promise<void> {
+  await updateDoc(doc(db, "users", uid), { mySubjects: arrayRemove(slug) });
 }

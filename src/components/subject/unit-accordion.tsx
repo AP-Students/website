@@ -6,7 +6,13 @@ import {
 } from "@/components/ui/accordion";
 import { formatSlug } from "@/lib/utils";
 import { type Unit } from "@/types/firestore";
-import { BookDashed, BookOpenCheck, PencilLine, Pencil } from "lucide-react";
+import {
+  BookDashed,
+  BookOpenCheck,
+  Check,
+  PencilLine,
+  Pencil,
+} from "lucide-react";
 import Link from "next/link";
 
 type Props = {
@@ -15,6 +21,7 @@ type Props = {
   unitIndex: number;
   preview: boolean;
   hasUnit0?: boolean;
+  completedChapterIds: Set<string>;
 };
 
 const UnitAccordion = ({
@@ -23,6 +30,7 @@ const UnitAccordion = ({
   unitIndex,
   preview,
   hasUnit0,
+  completedChapterIds,
 }: Props) => {
   // uNum: display number used in URLs and badges.
   // 0-indexed when hasUnit0 is true (first array element = Unit 0).
@@ -57,6 +65,12 @@ const UnitAccordion = ({
               <div className="text-balance text-base font-medium group-hover:underline sm:text-lg">
                 {chapter.title}
               </div>
+              {completedChapterIds.has(chapter.id) && (
+                <Check
+                  aria-label="Completed"
+                  className="size-5 shrink-0 stroke-green-600 stroke-[3]"
+                />
+              )}
             </Link>
           ) : (
             <div

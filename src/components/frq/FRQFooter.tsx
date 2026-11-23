@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import FRQDropdown from "@/components/frq/FRQDropdown";
 import type { FRQDropdownPart } from "@/components/frq/FRQDropdown";
+import { useToastClearance } from "@/components/hooks/useToastClearance";
 
 interface FooterProps {
   testName: string;
@@ -31,8 +32,13 @@ export default function Footer({
   questionParts,
   onJumpToPart,
 }: FooterProps) {
+  const footerRef = useToastClearance<HTMLElement>();
   return (
-    <footer className="fixed bottom-0 left-0 z-50 flex h-14 w-full items-center justify-between border-t-2 border-gray-300 bg-white px-8">
+    <footer
+      ref={footerRef}
+      data-toast-clearance
+      className="fixed bottom-0 left-0 z-50 flex h-14 w-full items-center justify-between border-t-2 border-gray-300 bg-white px-8"
+    >
       <p className="font-semibold">{testName}</p>
 
       <div className="absolute left-1/2 flex -translate-x-1/2 items-center gap-2">

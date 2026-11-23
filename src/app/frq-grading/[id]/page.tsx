@@ -5,6 +5,7 @@ import { useUser } from "@/components/hooks/UserContext";
 import {
   getFrqTemplateDocRef,
   getUngradedFrqDocRef,
+  getGradedFrqDocRef,
 } from "@/lib/firestore/frqRefs";
 import { normalizeFrqTemplate } from "@/lib/frq/template";
 import type { FRQTemplate, GradableFRQSubmission } from "@/types/frq";
@@ -25,6 +26,7 @@ const Page = ({ params }: PageProps) => {
   );
   const [template, setTemplate] = useState<FRQTemplate | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [savedGrade, setSavedGrade] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   // Members grade alongside admins and graders.
@@ -59,6 +61,7 @@ const Page = ({ params }: PageProps) => {
     const fetchSubmissionAndTemplate = async () => {
       setIsLoading(true);
       setLoadError(null);
+      setSavedGrade(false);
 
       try {
         const submissionSnapshot = await getDoc(
@@ -66,6 +69,17 @@ const Page = ({ params }: PageProps) => {
         );
 
         if (!submissionSnapshot.exists()) {
+          if (isStaffGrader) {
+            const saved = await getDoc(getGradedFrqDocRef(params.id));
+            if (saved.exists()) {
+              setSubmission({
+                id: saved.id,
+                ...(saved.data() as Omit<GradableFRQSubmission, "id">),
+              });
+              setSavedGrade(true);
+              return;
+            }
+          }
           setLoadError(
             "This submission is no longer in the queue. It may already have been graded.",
           );
@@ -112,7 +126,7 @@ const Page = ({ params }: PageProps) => {
     };
 
     void fetchSubmissionAndTemplate();
-  }, [params.id, userLoading, user]);
+  }, [params.id, userLoading, user, isStaffGrader]);
 
   if (userLoading || isLoading) {
     return <div className="p-8">Loading...</div>;
@@ -137,6 +151,7 @@ const Page = ({ params }: PageProps) => {
       template={template}
       selfGrading={isSelfGrading}
       canReturnToQueue={isStaffGrader}
+      savedGrade={savedGrade}
     />
   );
 };

@@ -12,7 +12,8 @@ import { notFound } from "next/navigation";
 import usePathname from "@/components/client/pathname";
 import { useUser } from "@/components/hooks/UserContext";
 import { loadUnitFrqs } from "@/lib/firestore/frqListing";
-import { doc, getDoc } from "firebase/firestore";
+import { collection, doc, getDoc, onSnapshot } from "firebase/firestore";
+import SubjectBookmark from "@/components/subject/subject-bookmark";
 
 const Page = ({ params }: { params: { slug: string } }) => {
   const pathname = usePathname();
@@ -22,6 +23,9 @@ const Page = ({ params }: { params: { slug: string } }) => {
   const [error, setError] = useState<string | null>(null);
   const [isComingSoon, setIsComingSoon] = useState(false);
   const [isSubjectMissing, setIsSubjectMissing] = useState(false);
+  const [completedChapterIds, setCompletedChapterIds] = useState<Set<string>>(
+    new Set(),
+  );
   const { user } = useUser();
 
   useEffect(() => {
@@ -41,7 +45,9 @@ const Page = ({ params }: { params: { slug: string } }) => {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const subjectData = docSnap.data() as Subject;
-          const units = Array.isArray(subjectData.units) ? subjectData.units : [];
+          const units = Array.isArray(subjectData.units)
+            ? subjectData.units
+            : [];
 
           if (units.length === 0) {
             setIsComingSoon(true);
@@ -80,6 +86,27 @@ const Page = ({ params }: { params: { slug: string } }) => {
     }
   }, [user, params.slug]);
 
+  useEffect(() => {
+    if (!user) {
+      setCompletedChapterIds(new Set());
+      return;
+    }
+
+    return onSnapshot(
+      collection(db, "users", user.uid, "chapterData"),
+      (chapterData) => {
+        setCompletedChapterIds(
+          new Set(
+            chapterData.docs
+              .filter((chapter) => chapter.data().progress === "Complete")
+              .map((chapter) => chapter.id),
+          ),
+        );
+      },
+      (error) => console.error("Unable to load completed chapters:", error),
+    );
+  }, [user]);
+
   if (loading) {
     return (
       <div className="flex min-h-screen grow items-center justify-center text-2xl">
@@ -96,7 +123,9 @@ const Page = ({ params }: { params: { slug: string } }) => {
       return (
         <div className="flex min-h-screen w-full grow flex-col items-center justify-center gap-5 px-6 text-center">
           <div className="max-w-lg rounded-2xl border border-amber-200 bg-amber-50 p-8 shadow-sm dark:border-amber-900 dark:bg-amber-950/30">
-            <p className="text-2xl font-semibold">We&apos;re still working on this topic.</p>
+            <p className="text-2xl font-semibold">
+              We&apos;re still working on this topic.
+            </p>
             <p className="mt-2 text-muted-foreground">
               Please check again later.
             </p>
@@ -126,9 +155,12 @@ const Page = ({ params }: { params: { slug: string } }) => {
         <div className="grow">
           <SubjectBreadcrumb locations={[subject.title]} />
 
-          <h1 className="mb-4 mt-1 text-balance text-left text-5xl font-extrabold sm:text-6xl">
-            {subject.title}
-          </h1>
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="mb-4 mt-1 text-balance text-left text-5xl font-extrabold sm:text-6xl">
+              {subject.title}
+            </h1>
+            <SubjectBookmark slug={params.slug} />
+          </div>
 
           <Accordion
             className="w-full"
@@ -140,9 +172,10 @@ const Page = ({ params }: { params: { slug: string } }) => {
                 unit={unit}
                 unitIndex={unitIndex}
                 key={unitIndex}
-                pathname={pathname}
+                pathname={pathname ?? ""}
                 preview={user?.access === "member" || user?.access === "admin"}
                 hasUnit0={subject.hasUnit0}
+                completedChapterIds={completedChapterIds}
               />
             ))}
           </Accordion>

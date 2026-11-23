@@ -83,6 +83,7 @@ const ChapterClient = ({
     return (
       <ChapterScaffold
         subjectTitle={subject.title}
+        subjectSlug={params.slug}
         units={subject.units}
         unitIndex={unitIndex}
         chapterIndex={chapterIndex}

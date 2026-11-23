@@ -98,6 +98,12 @@ const Page = () => {
           </div>
         )}
 
+        {user.access === "admin" && (
+          <Link href="/admin/xp" className="mb-4">
+            <Button className="w-full">XP Settings</Button>
+          </Link>
+        )}
+
         <Link href="/admin/feedback" className="hover:text-yellow-600">
           <Button className="w-full">Check Feedback & Bug Reports</Button>
         </Link>
