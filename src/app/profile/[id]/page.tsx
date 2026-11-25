@@ -4,11 +4,9 @@ import Navbar from "@/components/global/navbar";
 import Footer from "@/components/global/footer";
 import ProfileView from "@/components/dashboard/ProfileView";
 import usePathname from "@/components/client/pathname";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { readStreakState, streakAsOf } from "@/lib/gamification/streak";
-import { toDayKey } from "@/lib/gamification/calendarDay";
 import { useUser } from "@/components/hooks/UserContext";
 
 type PublicProfile = {
@@ -17,8 +15,6 @@ type PublicProfile = {
   photoURL?: string;
   xp: number;
   currentStreak: number;
-  lastActiveDay: string | null;
-  timeZone: string;
   problemsSolved: number;
   subjectsCompleted: number;
   achievements: { id: string; title: string }[];
@@ -31,6 +27,29 @@ export default function PublicProfilePage() {
   const { user, loading } = useUser();
   const viewer = user?.uid;
 
+  const [streak, setStreak] = useState<number>();
+  useEffect(() => {
+    setStreak(undefined);
+    if (!uid || loading) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const idToken = await auth.currentUser?.getIdToken();
+        const response = await fetch(`/api/profile/${uid}/streak`, {
+          headers: idToken ? { Authorization: `Bearer ${idToken}` } : {},
+        });
+        const body = response.ok
+          ? ((await response.json()) as { currentStreak?: number })
+          : null;
+        if (!cancelled) setStreak(body?.currentStreak);
+      } catch {
+        //keep showing the stored streak
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [uid, viewer, loading]);
   const [profile, setProfile] = useState<PublicProfile | null | undefined>(
     undefined,
   );
@@ -97,10 +116,7 @@ export default function PublicProfilePage() {
               displayName={profile.displayName}
               photoURL={profile.photoURL}
               xp={profile.xp}
-              streak={streakAsOf(
-                readStreakState(profile),
-                toDayKey(new Date(), profile.timeZone),
-              )}
+              streak={streak ?? profile.currentStreak}
               problemsSolved={profile.problemsSolved}
               subjectsCompleted={profile.subjectsCompleted}
               earnedIds={new Set(profile.achievements.map((a) => a.id))}

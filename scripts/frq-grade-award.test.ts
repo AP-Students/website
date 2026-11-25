@@ -724,9 +724,6 @@ void test("public profiles use live streaks and safe bounded name and photo fiel
   assert.equal(todayKey.length, 10);
   assert.equal(profile.displayName.length, 80);
   assert.equal(profile.currentStreak, 0);
-  // Readers need these to decay a streak the profile froze at its last write.
-  assert.equal(profile.lastActiveDay, staleKey);
-  assert.equal(profile.timeZone, "UTC");
   assert.equal("photoURL" in profile, false);
   const live = buildPublicProfile(
     "student",
@@ -746,8 +743,14 @@ void test("public profiles use live streaks and safe bounded name and photo fiel
   );
   assert.equal(live.currentStreak, 3);
   const neverActive = buildPublicProfile("student", {}, {}, [], false);
-  assert.equal(neverActive.lastActiveDay, null);
   assert.equal(neverActive.displayName, "Student");
+  assert.equal(
+    buildPublicProfile("student", { displayName: "Jane Doe" }, {}, [], true).displayName,
+    "Jane",
+  );
+  assert.equal("longestStreak" in profile, false);
+  assert.equal("lastActiveDay" in profile, false);
+  assert.equal("timeZone" in profile, false);
   // 80 characters, not 80 UTF-16 units: the last emoji stays whole.
   const emojiName = buildPublicProfile(
     "student",
