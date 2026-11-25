@@ -42,6 +42,7 @@ const Page = () => {
   const [calculatorType, setCalculatorType] = useState<CalculatorType>();
   const [referenceSheetEnabled, setReferenceSheetEnabled] =
     useState<boolean>(false);
+  const [allowCheckAnswer, setAllowCheckAnswer] = useState(false);
   const [referenceSheet, setReferenceSheet] = useState<ReferenceSheet | null>(
     null,
   );
@@ -69,6 +70,7 @@ const Page = () => {
           setTestName(data.name ?? "");
           setCalculatorDefault(data.calculatorDefault);
           setCalculatorType(data.calculatorType);
+          setAllowCheckAnswer(data.allowCheckAnswer === true);
 
           const questionsData = data.questions;
           if (questionsData) {
@@ -163,6 +165,7 @@ const Page = () => {
         calculatorDefault={calculatorDefault}
         calculatorType={calculatorType}
         referenceSheetEnabled={referenceSheetEnabled}
+        allowCheckAnswer={allowCheckAnswer}
         referenceSheet={referenceSheet}
         attemptSource={{ subject, unitId: unitId!, testId }}
         initialQuestionIndex={startQuestionIndex}

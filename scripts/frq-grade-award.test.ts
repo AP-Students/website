@@ -602,11 +602,28 @@ void test("notification uses trusted grade content and is created once under con
   });
   db.put(resultPath, { ...grade, ...scoreFields("6/6") });
   assert.equal((await award(db)).xpAwarded, 8);
+  // A regrade rewrites the text, so the notification and the feed show the
+  // same score. It isn't recreated, and stays read.
+  assert.match(db.docs.get(notificationPath)?.body as string, /6\/6/);
+  assert.equal(db.docs.get(notificationPath)?.id, "frq_graded_attempt");
   assert.equal(
     (db.docs.get(notificationPath)?.readAt as Timestamp).toMillis(),
     2_000,
   );
-  assert.equal(db.writes.filter((path) => path === notificationPath).length, 1);
+  assert.equal(db.writes.filter((path) => path === notificationPath).length, 2);
+  // Replaying the same grade leaves it alone.
+  await award(db);
+  assert.equal(db.writes.filter((path) => path === notificationPath).length, 2);
+});
+
+void test("a lower regrade pays nothing but still updates the notification's score", async () => {
+  const db = fixture();
+  await award(db);
+  const statsBefore = db.docs.get(statsPath);
+  db.put(resultPath, { ...grade, ...scoreFields("1/6") });
+  assert.equal((await award(db)).xpAwarded, 0);
+  assert.match(db.docs.get(notificationPath)?.body as string, /1\/6/);
+  assert.deepEqual(db.docs.get(statsPath), statsBefore);
 });
 
 void test("expired/deleted notifications cannot be recreated by retries", async () => {

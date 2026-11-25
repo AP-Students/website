@@ -8,6 +8,7 @@ import { db } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { submitBugReport } from '@/lib/feedback/submitBugReport';
+import { withoutImageMetadata } from '@/lib/imageMetadata';
 
 export default function FeedbackPage() {
   const [featureProblem, setFeatureProblem] = useState('');
@@ -117,7 +118,7 @@ export default function FeedbackPage() {
 
         if (attachedImage && type !== 'general') {
           const imageRef = ref(storage, `feedbackImages/${Date.now()}-${attachedImage.name}`);
-          await uploadBytes(imageRef, attachedImage);
+          await uploadBytes(imageRef, await withoutImageMetadata(attachedImage));
           feedbackPayload.attachedImage = await getDownloadURL(imageRef);
         }
 

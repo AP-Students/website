@@ -6,6 +6,7 @@ import {
 } from "firebase/auth";
 import { arrayRemove, arrayUnion, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { withoutImageMetadata } from "@/lib/imageMetadata";
 
 /**
  * Maps Firebase Auth errors to user-friendly messages.
@@ -185,9 +186,11 @@ export async function uploadProfilePhoto(
       `profilePictures/${uid}/${Date.now()}-${safeName}`,
     );
 
-    const snapshot = await uploadBytes(imageRef, file, {
-      contentType: file.type,
-    });
+    const snapshot = await uploadBytes(
+      imageRef,
+      await withoutImageMetadata(file),
+      { contentType: file.type },
+    );
     const photoURL = await getDownloadURL(snapshot.ref);
 
     await updateProfile(user, { photoURL });

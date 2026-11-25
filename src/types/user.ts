@@ -5,6 +5,8 @@ export interface User {
   displayName: string;
   email: string;
   photoURL?: string;
+  /** Unique, lowercase. Set only by the server (PUT /api/username). */
+  username?: string;
   access: "admin" | "member" | "grader" | "user" | "banned";
   graderSubjectAccess?: string[];
   createdWith: "email" | "google";

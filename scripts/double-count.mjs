@@ -87,9 +87,18 @@ async function seed() {
   });
   batch.set(db.doc(`${unitPath}/tests/${ids.test}`), {
     isPublic: true,
+    // Stored answers are 1-based option positions, as the editor saves them.
     questions: [
-      { type: "mcq", answers: ["a"] },
-      { type: "mcq", answers: ["b"] },
+      {
+        type: "mcq",
+        options: [{ id: "a" }, { id: "b" }, { id: "c" }],
+        answers: ["1"],
+      },
+      {
+        type: "mcq",
+        options: [{ id: "a" }, { id: "b" }, { id: "c" }],
+        answers: ["2"],
+      },
     ],
   });
   batch.set(db.doc(`${unitPath}/frqs/${ids.frq}`), {

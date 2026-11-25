@@ -6,6 +6,7 @@ import ts from "typescript";
 import { isValidElement, type ReactElement } from "react";
 import * as jsxRuntime from "react/jsx-runtime";
 import { FrqGradeAwardError } from "../src/lib/server/awardFrqGrade.ts";
+import * as testReview from "../src/lib/testReview.ts";
 
 // Execute the actual route/auth source with module-boundary doubles. This keeps
 // Node's existing test runner independent of Next's alias loader and credentials.
@@ -329,7 +330,11 @@ void test("MCQ legacy event ID collisions still record distinct completions once
     ["subjects/physics", { units: [{ id: "unit" }] }],
     [
       "subjects/physics/units/unit/tests/shared",
-      { isPublic: true, questions: [{ type: "mcq", answers: ["a"] }] },
+      // Answers are option positions; the student submits option ids.
+      {
+        isPublic: true,
+        questions: [{ type: "mcq", options: [{ id: "a" }], answers: ["1"] }],
+      },
     ],
     [
       "userStats/student",
@@ -391,6 +396,8 @@ void test("MCQ legacy event ID collisions still record distinct completions once
       dashboardDocumentPaths: {
         activity: (id: string) => `activityEvents/${id}`,
         stats: (uid: string) => `userStats/${uid}`,
+        testAttempt: (uid: string, key: string) =>
+          `users/${uid}/testAttempts/${key}`,
       },
     },
     "@/lib/gamification/streak": {
@@ -404,6 +411,7 @@ void test("MCQ legacy event ID collisions still record distinct completions once
     "@/lib/gamification/loadXpConfig": {
       loadXpConfig: async () => ({ mcqTestComplete: 10, mcqCorrectAnswer: 5 }),
     },
+    "@/lib/testReview": testReview,
     "@/lib/server/activityRequest": {
       requireUser: async () => ({ uid: "student" }),
       isDocumentId: (value: unknown) =>
@@ -440,7 +448,20 @@ void test("MCQ legacy event ID collisions still record distinct completions once
     assert.equal(result.currentStreak, 4);
   }
   assert.equal(completionWrites, 1);
-  assert.deepEqual(writes, ["userStats/student"]);
+  // Each submission saves the attempt for the review page; nothing else
+  // beyond the one completion count is written.
+  const attempt = `users/student/testAttempts/${testReview.testAttemptKey({
+    subject: "physics",
+    unitId: "unit",
+    testId: "shared",
+  })}`;
+  assert.deepEqual(writes, ["userStats/student", attempt, attempt]);
+  // (Compared as JSON: the route ran in another VM context.)
+  assert.equal(JSON.stringify(docs.get(attempt)?.answers), '{"0":["a"]}');
+  assert.equal(
+    JSON.stringify(docs.get(attempt)?.score),
+    '{"correct":1,"total":1}',
+  );
   assert.equal(docs.get("userStats/student")?.mcqTestsCompleted, 2);
   assert.equal(docs.get("userStats/student")?.subjectsCompleted, 1);
   assert.equal(docs.get("userStats/student")?.xp, 100);

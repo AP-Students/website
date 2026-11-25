@@ -11,6 +11,7 @@ import GlobalStats from "@/components/dashboard/GlobalStats";
 import StreakBar from "@/components/dashboard/StreakBar";
 import ActivityCalendar from "@/components/dashboard/ActivityCalendar";
 import AchievementsCard from "@/components/dashboard/AchievementsCard";
+import FriendsPanel from "@/components/dashboard/FriendsPanel";
 import { useAchievements } from "@/components/hooks/useAchievements";
 import RecentActivity from "@/components/dashboard/RecentActivity";
 import SubmissionHistory from "@/components/dashboard/SubmissionHistory";
@@ -35,6 +36,7 @@ import ProfileView from "@/components/dashboard/ProfileView";
 import { streakAsOf } from "@/lib/gamification/streak";
 import { toDayKey } from "@/lib/gamification/calendarDay";
 import ProfileVisibility from "@/components/dashboard/ProfileVisibility";
+import Leaderboard from "@/components/dashboard/Leaderboard";
 
 function LoadError({ children }: { children: string }) {
   return (
@@ -270,10 +272,22 @@ export default function Dashboard() {
               <InProgressList inProgress={inProgress} limit={Infinity} />
             ),
             achievements,
+            leaderboard: (
+              <Leaderboard
+                uid={user.uid}
+                xp={xpProgress?.xp}
+                xpFailed={Boolean(xpError)}
+                displayName={(userDoc ?? user).displayName}
+                photoURL={(userDoc ?? user).photoURL}
+              />
+            ),
             profile: (
               <>
                 {profile}
                 <ProfileVisibility uid={user.uid} />
+                <div className="mt-12">
+                  <FriendsPanel uid={user.uid} username={userDoc?.username} />
+                </div>
               </>
             ),
           }}

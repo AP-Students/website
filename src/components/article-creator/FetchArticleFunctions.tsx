@@ -7,6 +7,7 @@ import { type OutputData } from "@editorjs/editorjs";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getFileFromIndexedDB } from "./custom_questions/RenderAdvancedTextbox";
 import { resolveUploadContentType } from "@/lib/utils";
+import { withoutImageMetadata } from "@/lib/imageMetadata";
 
 export interface ImageData {
   caption: string;
@@ -71,7 +72,7 @@ export const processQuestions = async (
       const contentType = resolveUploadContentType(file);
       const snapshot = await uploadBytes(
         storageRef,
-        file,
+        await withoutImageMetadata(file),
         contentType ? { contentType } : undefined,
       );
       const downloadURL = await getDownloadURL(snapshot.ref);

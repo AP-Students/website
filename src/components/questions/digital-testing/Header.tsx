@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { BookOpen, ChevronDown, ChevronUp, LogOut } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronUp, LogOut, Pause } from "lucide-react";
 import { cn } from "@/lib/utils";
 import katex from "katex";
 import {
@@ -8,6 +8,8 @@ import {
   katexMacros,
 } from "@/components/article-creator/Renderer";
 import ReferenceSheetPanel from "@/components/questions/ReferenceSheetPanel";
+import PausedOverlay from "@/components/questions/PausedOverlay";
+import { useTestTimer } from "@/components/hooks/useTestTimer";
 import type { ReferenceSheet } from "@/types/firestore";
 
 interface HeaderProps {
@@ -48,31 +50,18 @@ const Header: React.FC<HeaderProps> = ({
   const referenceSheetUnavailable = referenceSheetEnabled && !referenceSheet;
   const pathname = usePathname() ?? "";
   const [showTimer, setShowTimer] = useState(true);
-  const [remainingTime, setRemainingTime] = useState(timeRemaining);
+  const timer = useTestTimer(timeRemaining, submitted);
+  const remainingTime = timer.remaining;
   const [showDirections, setShowDirections] = useState(true);
   const directionsRef = useRef<HTMLDivElement>(null); // Ref for detecting outside clicks
   const toggleButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Start the countdown timer
+  // The test hands itself in when time runs out.
   useEffect(() => {
-    const timer = setInterval(() => {
-      setRemainingTime((prevTime) => {
-        if (prevTime <= 1) {
-          clearInterval(timer); // Stop at 0
-          return 0;
-        }
-        return prevTime - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    if (remainingTime <= 0) {
+    if (timer.timeUp) {
       setSubmitted(true);
     }
-  }, [remainingTime, setSubmitted]);
+  }, [timer.timeUp, setSubmitted]);
 
   useEffect(() => {
     onTimeChange?.(remainingTime);
@@ -101,16 +90,20 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="fixed left-0 top-0 z-[1000] flex w-full items-center justify-between border-b-2 border-gray-300 p-2.5">
+    <header className="fixed left-0 top-0 z-[1000] flex w-full items-center justify-between border-b-2 border-gray-300 p-2.5 text-sm sm:text-base">
       <div className="flex w-full items-center justify-between">
-        <p>Unit Test</p>
+        <p className="hidden sm:block">Unit Test</p>
         <button
           ref={toggleButtonRef}
           onClick={handleToggleDirections}
-          className="ml-4 flex items-center text-blue-500 hover:underline"
+          className="flex items-center text-blue-500 hover:underline sm:ml-4"
         >
           Directions
-          {showDirections ? <ChevronUp /> : <ChevronDown />}
+          {showDirections ? (
+            <ChevronUp className="size-4 sm:size-6" />
+          ) : (
+            <ChevronDown className="size-4 sm:size-6" />
+          )}
         </button>
         {referenceSheetEnabled && (
           <button
@@ -137,25 +130,37 @@ const Header: React.FC<HeaderProps> = ({
             Reference Sheet
           </button>
         )}
-        <div className="flex flex-1 items-center justify-center gap-2">
+        <div className="flex flex-1 items-center justify-center gap-1 sm:gap-2">
           {!submitted && (showTimer || remainingTime < 5 * 60) && (
             <p
               className={cn(
-                "text-xl font-bold",
+                "text-base font-bold sm:text-xl",
                 remainingTime < 5 * 60 && "text-red-500",
               )}
             >
               {formatTime(remainingTime)}
             </p>
           )}
+          {!submitted && (
+            <button
+              onClick={timer.pause}
+              aria-label="Pause"
+              className="rounded-full border px-2 py-0.5 transition-colors hover:bg-gray-200 sm:py-0"
+            >
+              <Pause className="size-4 sm:hidden" aria-hidden="true" />
+              <span className="hidden sm:inline">Pause</span>
+            </button>
+          )}
           {!submitted && remainingTime >= 5 * 60 && (
             <button
               onClick={() => {
                 setShowTimer(!showTimer);
               }}
+              aria-label={showTimer ? "Hide Timer" : "Show Timer"}
               className="rounded-full border px-2 transition-colors hover:bg-gray-200"
             >
-              {showTimer ? "Hide Timer" : "Show Timer"}
+              {showTimer ? "Hide" : "Show"}
+              <span className="hidden sm:inline"> Timer</span>
             </button>
           )}
         </div>
@@ -172,9 +177,11 @@ const Header: React.FC<HeaderProps> = ({
               e.preventDefault();
             }
           }}
-          className="ml-16 flex items-center gap-1 hover:underline"
+          aria-label="Exit Test"
+          className="ml-2 flex items-center gap-1 hover:underline sm:ml-16"
         >
-          Exit Test <LogOut />
+          Exit<span className="hidden sm:inline"> Test</span>{" "}
+          <LogOut className="size-4 sm:size-6" />
         </a>
       </div>
 
@@ -242,6 +249,13 @@ const Header: React.FC<HeaderProps> = ({
           sheet={referenceSheet}
           open={showReferenceSheet}
           onOpenChange={setShowReferenceSheet}
+        />
+      )}
+
+      {timer.paused && !submitted && (
+        <PausedOverlay
+          timeLeft={formatTime(remainingTime)}
+          onResume={timer.resume}
         />
       )}
     </header>

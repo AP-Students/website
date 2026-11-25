@@ -82,6 +82,7 @@ async function status(response, expected) {
 const owned = [
   "userStats/student",
   "users/student/completedTests/test",
+  "users/student/testAttempts/test",
   "users/student/completedSubjects/subject",
   "users/student/achievements/achievement",
 ];
@@ -446,6 +447,64 @@ check("public profile reads follow visibility and clients cannot write projectio
   );
   await status(await doc("profiles/public", "student", "DELETE"), 403);
 });
+check("the leaderboard can list and count public profiles, but nothing private", async () => {
+  for (const [id, isPublic, xp] of [
+    ["leader-a", true, 300],
+    ["leader-b", true, 100],
+    ["leader-private", false, 500],
+  ]) {
+    await status(await commit("server", `profiles/${id}`, { uid: id, isPublic, xp }), 200);
+  }
+  const isPublic = {
+    fieldFilter: {
+      field: { fieldPath: "isPublic" },
+      op: "EQUAL",
+      value: { booleanValue: true },
+    },
+  };
+  const above = (xp) => ({
+    fieldFilter: {
+      field: { fieldPath: "xp" },
+      op: "GREATER_THAN",
+      value: { integerValue: String(xp) },
+    },
+  });
+  const byXp = (where) => ({
+    from: [{ collectionId: "profiles" }],
+    ...(where ? { where } : {}),
+    orderBy: [{ field: { fieldPath: "xp" }, direction: "DESCENDING" }],
+  });
+  const list = (uid, where) =>
+    request(":runQuery", uid, "POST", {
+      structuredQuery: { ...byXp(where), limit: 20 },
+    });
+  const count = (uid, where) =>
+    request(":runAggregationQuery", uid, "POST", {
+      structuredAggregationQuery: {
+        structuredQuery: byXp(where),
+        aggregations: [{ alias: "count", count: {} }],
+      },
+    });
+
+  for (const uid of ["student", null]) {
+    const top = await list(uid, isPublic);
+    assert.equal(top.status, 200, await top.clone().text());
+    const names = (await top.json())
+      .filter((row) => row.document)
+      .map((row) => row.document.name.split("/").pop());
+    assert.deepEqual(names, ["leader-a", "leader-b"]);
+
+    const rank = await count(uid, {
+      compositeFilter: { op: "AND", filters: [isPublic, above(150)] },
+    });
+    assert.equal(rank.status, 200, await rank.clone().text());
+    const [{ result }] = await rank.json();
+    assert.equal(result.aggregateFields.count.integerValue, "1");
+  }
+
+  await status(await list("student"), 403);
+  await status(await count("student", above(150)), 403);
+});
 check(
   "chapter progress saves its dashboard listing with the server's time, never an XP receipt",
   async () => {
@@ -561,6 +620,25 @@ check(
     await new Promise((resolve) => setTimeout(resolve, 1_100));
     await status(await commit("student", draftPath, draft, ["updatedAt"]), 200);
 
+    // Within the second, a save that records new work still lands: the save
+    // made as a student leaves can come right after an autosave, and must
+    // not lose their last answer. Only the clock is held to one a second.
+    const edited = {
+      ...draft,
+      state: { responses: { thesis: "<p>Slant rhyme unsettles it.</p>" } },
+    };
+    await status(await commit("student", draftPath, edited, ["updatedAt"]), 200);
+    const answered = {
+      ...practiceTest,
+      state: { answers: { 0: ["B"], 1: ["C"] }, currentIndex: 1, secondsRemaining: 1735 },
+    };
+    await status(await commit("student", testPath, answered, ["updatedAt"]), 200);
+    const clockOnly = { ...answered, state: { ...answered.state, secondsRemaining: 1734 } };
+    await status(await commit("student", testPath, clockOnly, ["updatedAt"]), 403);
+    // A checked answer is saved with the test, so it stays locked.
+    const checked = { ...answered, state: { ...answered.state, checked: [0] } };
+    await status(await commit("student", testPath, checked, ["updatedAt"]), 200);
+
     const forged = [
       ["client clock", draft, {}, []],
       ["link off the site", draft, { href: "javascript:alert(1)" }],
@@ -574,6 +652,13 @@ check(
         practiceTest,
         {
           state: { answers: {}, currentIndex: -1, secondsRemaining: 60 },
+        },
+      ],
+      [
+        "checked that isn't a list",
+        practiceTest,
+        {
+          state: { answers: {}, currentIndex: 0, secondsRemaining: 60, checked: "0" },
         },
       ],
     ];
@@ -602,3 +687,68 @@ check(
     await status(await doc(draftPath, "student", "DELETE"), 200);
   },
 );
+check("usernames, friend requests and friend lists are server-written and private", async () => {
+  // Only the server sets a username, so it stays unique.
+  await status(await merge("student", "users/student", { username: "sneaky" }), 403);
+  await status(await merge("student", "users/student", { displayName: "Still fine" }), 200);
+  await status(
+    await commit("newcomer", "users/newcomer", { access: "user", uid: "newcomer", username: "sneaky" }),
+    403,
+  );
+
+  await status(await commit("server", "usernames/sam", { uid: "student", username: "sam" }), 200);
+  await status(await commit("server", "friendRequests/other_student", { from: "other", to: "student" }), 200);
+  await status(await commit("server", "users/student/friends/other", { uid: "other" }), 200);
+
+  // Usernames: anyone signed in can look them up, a few at a time.
+  await status(await doc("usernames/sam", "other"), 200);
+  await status(await doc("usernames/sam", null), 403);
+  const usernames = (limit) =>
+    request(":runQuery", "other", "POST", {
+      structuredQuery: { from: [{ collectionId: "usernames" }], ...(limit ? { limit } : {}) },
+    });
+  await status(await usernames(10), 200);
+  await status(await usernames(50), 403);
+  await status(await usernames(), 403);
+  await status(await commit("student", "usernames/taken", { uid: "student", username: "taken" }), 403);
+
+  // Requests: only the two people involved.
+  await status(await doc("friendRequests/other_student", "student"), 200);
+  await status(await doc("friendRequests/other_student", "other"), 200);
+  await status(await doc("friendRequests/other_student", "staff"), 403);
+  const requestsTo = (uid, to) =>
+    request(":runQuery", uid, "POST", {
+      structuredQuery: {
+        from: [{ collectionId: "friendRequests" }],
+        ...(to
+          ? { where: { fieldFilter: { field: { fieldPath: "to" }, op: "EQUAL", value: { stringValue: to } } } }
+          : {}),
+      },
+    });
+  await status(await requestsTo("student", "student"), 200);
+  await status(await requestsTo("staff", "student"), 403);
+  await status(await requestsTo("student"), 403);
+  await status(await commit("student", "friendRequests/student_other", { from: "student", to: "other" }), 403);
+
+  // Friend lists: only your own, and only the server adds to them.
+  await status(await doc("users/student/friends/other", "student"), 200);
+  await status(await doc("users/student/friends/other", "other"), 403);
+  await status(await commit("other", "users/other/friends/student", { uid: "student" }), 403);
+});
+check("friends can see each other's profile even when it's private", async () => {
+  await status(await commit("server", "profiles/hidden", { uid: "hidden", isPublic: false, xp: 5 }), 200);
+  await status(await commit("server", "users/hidden/friends/student", { uid: "student" }), 200);
+  await status(await doc("profiles/hidden", "student"), 200);
+  await status(await doc("profiles/hidden", "other"), 403);
+  await status(await doc("profiles/hidden", null), 403);
+  // Listing still needs the public filter, friends or not.
+  await status(
+    await request(":runQuery", "student", "POST", {
+      structuredQuery: { from: [{ collectionId: "profiles" }], limit: 5 },
+    }),
+    403,
+  );
+  // Once they're not friends any more, it's private again.
+  await status(await commit("server", "users/hidden", { uid: "hidden" }, [], ["users/hidden/friends/student"]), 200);
+  await status(await doc("profiles/hidden", "student"), 403);
+});

@@ -7,6 +7,7 @@ import {
 import clsx from "clsx";
 import type { QuestionFormat } from "@/types/questions";
 import { useRouter, usePathname } from "next/navigation";
+import { useToastClearance } from "@/components/hooks/useToastClearance";
 
 interface FooterProps {
   goToQuestion: (index: number) => void;
@@ -37,6 +38,7 @@ export default function Footer({
 }: FooterProps) {
   const router = useRouter();
   const pathname = usePathname() ?? "";
+  const footerRef = useToastClearance<HTMLElement>();
 
   const handleNext = () => {
     if (showReviewPage) {
@@ -70,6 +72,7 @@ export default function Footer({
 
   return (
     <footer
+      ref={footerRef}
       data-toast-clearance
       className="fixed bottom-0 left-0 z-20 flex w-full items-center justify-between border-t-2 border-gray-300 bg-white px-4 py-2.5 text-black"
     >

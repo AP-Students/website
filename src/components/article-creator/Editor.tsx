@@ -14,9 +14,7 @@ import useEditor from "hooks/useEditor";
 import Header from "@editorjs/header";
 import Paragraph from "@editorjs/paragraph";
 import Quote from "@editorjs/quote";
-import List from "@editorjs/list";
 import Table from "@editorjs/table";
-import CodeTool from "@editorjs/code";
 import InlineCode from "@editorjs/inline-code";
 import Image from "@editorjs/image";
 import Embed from "@editorjs/embed";
@@ -26,6 +24,7 @@ import MathTex from "editorjs-math";
 import Delimiter from "@editorjs/delimiter";
 import Alert from "editorjs-alert";
 import AlignmentTune from "./AlignmentTune";
+import { CodeBlock, ListBlock } from "./convertibleTools";
 import { QuestionsAddCard } from "./custom_questions/QuestionsAddCard";
 import { normalizePastedHtml } from "./custom_questions/richText";
 import {
@@ -36,6 +35,8 @@ import {
   uploadBytes,
 } from "firebase/storage";
 import { isSvgFileName, resolveUploadContentType } from "@/lib/utils";
+import { fetchPastedImage } from "./pastedImage";
+import { imageStoragePath } from "./imageStoragePath";
 import {
   mountRichCaptionEditor,
   resolveInitialRichCaption,
@@ -46,6 +47,12 @@ import {
   serializeRichCaption,
   richCaptionToPlainText,
 } from "./caption-rich-text/convert";
+import {
+  DEFAULT_HEADING_LEVEL,
+  HEADING_LEVELS,
+  nearestHeadingLevel,
+} from "./headingLevels";
+import { withoutImageMetadata } from "@/lib/imageMetadata";
 
 interface EditorImageData {
   file: { url?: string; storageRefFullPath?: string; [key: string]: unknown };
@@ -113,14 +120,11 @@ async function uploadImageFile(file: File) {
   }
 
   const storage = getStorage();
-  const storageRef = ref(
-    storage,
-    "images/" + new Date().getTime() + "_" + file.name,
-  );
+  const storageRef = ref(storage, imageStoragePath(file.name));
   const contentType = resolveUploadContentType(file);
   const snapshot = await uploadBytes(
     storageRef,
-    file,
+    await withoutImageMetadata(file),
     contentType ? { contentType } : undefined,
   );
   const downloadURL = await getDownloadURL(snapshot.ref);
@@ -708,16 +712,36 @@ class CustomImage extends Image {
   }
 }
 
+/**
+ * The Heading tool, keeping every saved heading at a level it offers.
+ *
+ * The tool shows a saved level it doesn't offer, such as an H4 in imported
+ * JSON, at its default level, and saves it that way. With Heading 1 as the
+ * default, that would make such a heading the biggest on the page, so it
+ * gets the nearest offered level instead, as pasted H4 to H6 already do.
+ */
+class HeadingBlock extends Header {
+  normalizeData(
+    data: Parameters<Header["normalizeData"]>[0],
+  ): ReturnType<Header["normalizeData"]> {
+    const normalized = super.normalizeData(data);
+    return {
+      ...normalized,
+      level: nearestHeadingLevel(normalized.level, HEADING_LEVELS),
+    };
+  }
+}
+
 export const EDITOR_TOOLS: EditorConfig["tools"] = {
   header: {
-    class: Header as unknown as ToolConstructable,
+    class: HeadingBlock as unknown as ToolConstructable,
     shortcut: "CTRL+SHIFT+H",
     inlineToolbar: true,
     tunes: ["alignment"],
     config: {
       placeholder: "Enter a Header",
-      levels: [1, 2, 3],
-      defaultLevel: 2,
+      levels: [...HEADING_LEVELS],
+      defaultLevel: DEFAULT_HEADING_LEVEL,
     },
   },
 
@@ -747,6 +771,25 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
             return { success: 0 };
           }
         },
+        // Pasted image links, e.g. images copied from Google Docs. Without this
+        // the image tool posted to an upload endpoint we don't have and got
+        // stuck loading.
+        async uploadByUrl(url: string) {
+          try {
+            const uploadedFile = await uploadImageFile(
+              await fetchPastedImage(url),
+            );
+
+            return {
+              success: 1,
+              file: uploadedFile,
+            };
+          } catch (err) {
+            console.log(err);
+
+            return { success: 0 };
+          }
+        },
       },
       actions: [
         {
@@ -760,7 +803,7 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
   },
 
   list: {
-    class: List as unknown as ToolConstructable,
+    class: ListBlock as unknown as ToolConstructable,
     inlineToolbar: true,
     shortcut: "CTRL+ALT+8",
     tunes: ["alignment"],
@@ -804,7 +847,7 @@ export const EDITOR_TOOLS: EditorConfig["tools"] = {
   },
 
   code: {
-    class: CodeTool as unknown as ToolConstructable,
+    class: CodeBlock as unknown as ToolConstructable,
     inlineToolbar: true,
   },
 

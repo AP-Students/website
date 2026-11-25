@@ -28,6 +28,9 @@ export const dashboardDocumentPaths = {
     `notifications/${uid}/items/${notificationId}`,
   completedTest: (uid: string, testKey: string) =>
     `users/${uid}/completedTests/${testKey}`,
+  /** The student's latest graded attempt at a unit test, for reviewing it. */
+  testAttempt: (uid: string, testKey: string) =>
+    `users/${uid}/testAttempts/${testKey}`,
   completedSubject: (uid: string, subject: string) =>
     `users/${uid}/completedSubjects/${subject}`,
   savedItem: (uid: string, itemId: string) =>
@@ -165,6 +168,12 @@ export interface McqTestState {
   answers: Record<number, string[]>;
   currentIndex: number;
   secondsRemaining: number;
+  /**
+   * Questions whose answer was checked with "Check answer". A checked answer
+   * is locked, so it's saved to stay locked when the test is picked back up.
+   * Left out when nothing has been checked.
+   */
+  checked?: number[];
 }
 
 export interface FrqDraftState {

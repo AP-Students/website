@@ -52,6 +52,7 @@ const Page = () => {
   const [referenceSheetEnabled, setReferenceSheetEnabled] =
     useState<boolean>(false);
   const [referenceSheetId, setReferenceSheetId] = useState<string>("");
+  const [allowCheckAnswer, setAllowCheckAnswer] = useState<boolean>(false);
   const [showReferenceSheetPreview, setShowReferenceSheetPreview] =
     useState<boolean>(false);
 
@@ -118,6 +119,7 @@ const Page = () => {
 
         setSubjectReferenceSheets(availableSheets);
         setReferenceSheetEnabled(data.referenceSheetEnabled ?? false);
+        setAllowCheckAnswer(data.allowCheckAnswer === true);
         setReferenceSheetId(
           data.referenceSheetId ?? availableSheets[0]?.id ?? "",
         );
@@ -139,6 +141,7 @@ const Page = () => {
       calculatorType,
       referenceSheetEnabled,
       referenceSheetId,
+      allowCheckAnswer,
     }),
     [
       questions,
@@ -149,6 +152,7 @@ const Page = () => {
       calculatorType,
       referenceSheetEnabled,
       referenceSheetId,
+      allowCheckAnswer,
     ],
   );
 
@@ -183,6 +187,7 @@ const Page = () => {
         referenceSheetId: testDraft.referenceSheetEnabled
           ? testDraft.referenceSheetId
           : "",
+        allowCheckAnswer: testDraft.allowCheckAnswer,
       };
 
       await setDoc(testRef, testData, { merge: true });
@@ -331,6 +336,26 @@ const Page = () => {
               </Button>
             )}
           </div>
+          <div className="grid place-content-start gap-1.5">
+            <Label
+              htmlFor="allowCheckAnswer"
+              className="flex items-center gap-2"
+            >
+              <input
+                type="checkbox"
+                id="allowCheckAnswer"
+                checked={allowCheckAnswer}
+                onChange={(e) => {
+                  setAllowCheckAnswer(e.target.checked);
+                }}
+              />
+              Let students check each answer
+            </Label>
+            <p className="max-w-56 text-xs text-gray-500">
+              Adds a Check answer button to every question. Checking locks in
+              that answer and shows the explanation.
+            </p>
+          </div>
           {!testLoading && (
             <div className="mt-5 grid place-content-start gap-1.5">
               <Button
@@ -369,6 +394,7 @@ const Page = () => {
               calculatorCourseDefault={calculatorCourseDefault}
               calculatorDefault={calculatorDefault}
               calculatorType={calculatorType}
+              allowCheckAnswer={allowCheckAnswer}
             />
           </div>
         </div>
