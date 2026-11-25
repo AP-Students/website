@@ -4,7 +4,7 @@ import {
   reportWithRetry,
 } from "@/lib/gamification/notifyActivityFailure";
 import { reportReadingComplete } from "@/lib/gamification/reportActivity";
-import { BookOpen, Check, ChevronsRight, History, Pencil } from "lucide-react";
+import { BookOpen, Check, ChevronDown, ChevronsRight, History, Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import {
@@ -192,6 +192,7 @@ export default function ProgressTracker({
           )}
         >
           {dropdownIcons[progress]} {progress}
+          <ChevronDown className="ml-1 size-4 opacity-60" aria-hidden="true" />
         </DropdownMenuTrigger>
         <DropdownMenuContent onCloseAutoFocus={(e) => e.preventDefault()}>
           {dropdownLabels.map((value, index) => (
