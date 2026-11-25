@@ -39,7 +39,8 @@ export function buildPublicProfile(
     typeof user?.displayName === "string"
       ? Array.from(user.displayName.trim()).slice(0, 80).join("").trimEnd()
       : "";
-  const { day: today, timeZone } = resolveActivityDay(
+  const firstName = displayName.split(/\s+/)[0] ?? "";
+  const { day: today } = resolveActivityDay(
     new Date(),
     stats?.timeZone,
     stats?.timeZone,
@@ -48,18 +49,13 @@ export function buildPublicProfile(
   return {
     uid,
     isPublic,
-    displayName: displayName || "Student",
+    displayName: firstName || "Student",
     ...(typeof photoURL === "string" && photoURL
       ? { photoURL }
       : {}),
     xp,
     level: levelForXp(xp).level,
-    // currentStreak is only current as of this write. Nothing rewrites the
-    // profile once a student goes quiet, so readers re-apply streakAsOf with
-    // lastActiveDay and timeZone.
     currentStreak: streakAsOf(streak, today),
-    lastActiveDay: streak.lastActiveDay,
-    timeZone,
     problemsSolved: nonNegativeCount(stats?.problemsSolved),
     subjectsCompleted: nonNegativeCount(stats?.subjectsCompleted),
     achievementCount: nonNegativeCount(achievements.length),

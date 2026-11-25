@@ -7,16 +7,12 @@ import usePathname from "@/components/client/pathname";
 import { db } from "@/lib/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { readStreakState, streakAsOf } from "@/lib/gamification/streak";
-import { toDayKey } from "@/lib/gamification/calendarDay";
 
 type PublicProfile = {
   displayName: string;
   photoURL?: string;
   xp: number;
   currentStreak: number;
-  lastActiveDay: string | null;
-  timeZone: string;
   problemsSolved: number;
   subjectsCompleted: number;
   achievements: { id: string; title: string }[];
@@ -26,6 +22,15 @@ export default function PublicProfilePage() {
   const pathname = usePathname() ?? "";
   const uid = pathname.split("/").at(-1) ?? "";
 
+  const [streak, setStreak] = useState<number>();
+  useEffect(() => {
+    setStreak(undefined);
+    if (!uid) return;
+    fetch(`/api/profile/${uid}/streak`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((body) => setStreak(body?.currentStreak ?? 0))
+      .catch(() => setStreak(0));
+  }, [uid]);
   const [profile, setProfile] = useState<PublicProfile | null | undefined>(
     undefined,
   );
@@ -82,10 +87,7 @@ export default function PublicProfilePage() {
             displayName={profile.displayName}
             photoURL={profile.photoURL}
             xp={profile.xp}
-            streak={streakAsOf(
-              readStreakState(profile),
-              toDayKey(new Date(), profile.timeZone),
-            )}
+            streak={streak ?? profile.currentStreak}
             problemsSolved={profile.problemsSolved}
             subjectsCompleted={profile.subjectsCompleted}
             earnedIds={new Set(profile.achievements.map((a) => a.id))}

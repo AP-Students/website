@@ -116,8 +116,6 @@ export interface PublicProfile {
   xp: number;
   level: number;
   currentStreak: number;
-  lastActiveDay: string | null; // dayKey; re-apply streakAsOf when reading
-  timeZone: string; // IANA zone the student's days are counted in
   problemsSolved: number;
   subjectsCompleted: number;
   achievementCount: number;
