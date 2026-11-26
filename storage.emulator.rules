@@ -1,0 +1,22 @@
+// Local workflow fixtures. Loaded only by firebase.emulator.json.
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /profilePictures/{uid}/{name} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+    match /feedbackImages/{name} {
+      allow get, create: if true;
+    }
+    match /images/{name} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    // Advanced textbox attachments use a MIME prefix and timestamp at the root.
+    match /{attachment} {
+      allow read: if attachment.matches('[A-Za-z0-9-]*-[0-9]+-.+');
+      allow write: if request.auth != null && attachment.matches('[A-Za-z0-9-]*-[0-9]+-.+');
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "fivehive-local-emulators",
+  "private": true,
+  "version": "1.0.0",
+  "devDependencies": {
+    "firebase-tools": "15.37.0"
+  }
+}

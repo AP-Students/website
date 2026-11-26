@@ -66,76 +66,67 @@ If the page appears blank initially, try refreshing a few times.
 
 # Using Firebase Emulator
 
-We use Firebase Emulator Suite for local backend development and testing.
+Use the Firebase Emulator Suite for local Authentication, Firestore, and Storage. Starting the website with `npm run dev:emulator` selects the emulator connections automatically.
 
-## 1. Modify `firebase.ts`
+## First-time setup
 
-Open:
+1. Install Node.js 22 (22.13 or later) and JDK 21 or later.
+2. Check that your terminal selects the required versions:
 
-    ./src/lib/firebase.ts
+   ```sh
+   node --version
+   java -version
+   ```
 
-Replace this:
+3. From the repository root, install the website dependencies and local Firebase CLI:
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
+   ```sh
+   npm ci
+   npm run setup:emulator
+   ```
 
-With this:
+## Start local development
 
-    const app = initializeApp(firebaseConfig);
+1. Start the Firebase emulators in one terminal:
 
-    const db = getFirestore(app);
-    connectFirestoreEmulator(db, "127.0.0.1", 8080);
+   ```sh
+   npm run emulate
+   ```
 
-    const auth = getAuth(app);
-    connectAuthEmulator(auth, "http://127.0.0.1:9099");
+   Wait for **All emulators ready**.
 
-Also update your imports:
+2. Open another terminal in the repository root and start the website in emulator mode:
 
-    import { initializeApp } from "firebase/app";
-    import { connectAuthEmulator, getAuth } from "firebase/auth";
-    import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
+   ```sh
+   npm run dev:emulator
+   ```
 
-> IMPORTANT: These emulator changes should remain **local only** and should never be committed.
+3. Open [the website](http://localhost:3000) and [the Emulator UI](http://127.0.0.1:4000). If Next.js prints a different website port, use its printed URL.
 
-## 2. Install Firebase CLI
+The commands supply demo configuration for project `demo-aproject`, including when a hosted `.env` exists. Auth, Firestore, and Storage listen on `127.0.0.1` at ports 9099, 8080, and 9199. Keep those ports and UI port 4000 free.
 
-    npm install -g firebase-tools
+Use `npm run dev:emulator` for this workflow. Plain `npm run dev` uses the configured hosted Firebase project unless the emulator flag is explicitly enabled.
 
-## 3. Initialize Firebase Emulator
+## Test accounts and local data
 
-Run:
+Create an account through the website. To grant local admin access, sign out, open **Firestore → users → your UID** in the Emulator UI, change `access` to `admin`, and sign in again.
 
-    firebase init
+Press Ctrl+C in each terminal to stop the website and emulators. Wait for the emulator export to finish. The next start imports the saved data from the ignored `emulator/` directory.
 
-Enable the following emulators:
+GitHub issue creation from feedback is disabled in emulator mode. Local Storage rules are workflow fixtures and do not verify hosted Storage permissions.
 
-- Authentication
-- Firestore
-- Storage
+## Run the integration check
 
-Use the default ports and enable Emulator UI when prompted.
+Stop any running emulator suite, then run:
 
-## 4. Start the Emulator
+```sh
+npm run test:emulator
+```
 
-    firebase emulators:start
-
-You should now see emulator warnings locally on the website.
-
-Try creating an account to verify everything is working correctly.
-
-## 5. Granting Admin Access
-
-To test admin functionality locally:
-
-1. Log out of your account
-2. Open the Firestore Emulator UI
-3. Modify the `access` field for your user document
-4. Log back in
-
-If there are any issues with the process above, please tell us, and we'll fix it!
+This starts a fresh suite, checks local Auth, Firestore, and Storage operations, and shuts it down without importing or exporting your saved local data.
 
 To set which subjects graders can grade, see [docs/grader-subjects.md](docs/grader-subjects.md).
+
 
 ---
 
