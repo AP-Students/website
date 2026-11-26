@@ -1,3 +1,4 @@
+import { documentsBase, localFirebase } from "@/lib/firebase-routing";
 import type { OutputData } from "@editorjs/editorjs";
 import { env } from "@/env.js";
 
@@ -9,12 +10,12 @@ import { env } from "@/env.js";
  * collection (`allow read: if true` in firestore.rules).
  */
 
-const PROJECT_ID = env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 const API_KEY = env.NEXT_PUBLIC_FIREBASE_API_KEY;
-const BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
 
 // Cache for a day; subject structure changes rarely.
-const REVALIDATE_SECONDS = 86_400;
+const subjectFetchOptions = localFirebase
+  ? { cache: "no-store" as const }
+  : { next: { revalidate: 86_400 } };
 
 interface RestValue {
   stringValue?: string;
@@ -79,9 +80,7 @@ export interface SitemapSubject {
  */
 export async function getAllSubjects(): Promise<SitemapSubject[]> {
   try {
-    const res = await fetch(`${BASE}/subjects?pageSize=300&key=${API_KEY}`, {
-      next: { revalidate: REVALIDATE_SECONDS },
-    });
+    const res = await fetch(`${documentsBase}/subjects?pageSize=300&key=${API_KEY}`, subjectFetchOptions);
     if (!res.ok) return [];
     const data = (await res.json()) as { documents?: RestDocument[] };
     return (data.documents ?? []).map((doc) => {
@@ -104,9 +103,7 @@ export async function getAllSubjects(): Promise<SitemapSubject[]> {
 /** Returns a single subject (title + embedded units), or null on failure. */
 export async function getSubject(slug: string): Promise<SitemapSubject | null> {
   try {
-    const res = await fetch(`${BASE}/subjects/${slug}?key=${API_KEY}`, {
-      next: { revalidate: REVALIDATE_SECONDS },
-    });
+    const res = await fetch(`${documentsBase}/subjects/${slug}?key=${API_KEY}`, subjectFetchOptions);
     if (!res.ok) return null;
     const data = (await res.json()) as RestDocument;
     const fields = parseFields(data.fields ?? {});
@@ -171,8 +168,8 @@ export async function getChapterContent(
     if (!unitId || !chapterId) return null;
 
     const res = await fetch(
-      `${BASE}/subjects/${slug}/units/${unitId}/chapters/${chapterId}?key=${API_KEY}`,
-      { next: { revalidate: REVALIDATE_SECONDS } },
+      `${documentsBase}/subjects/${slug}/units/${unitId}/chapters/${chapterId}?key=${API_KEY}`,
+      subjectFetchOptions,
     );
     if (!res.ok) return null;
 

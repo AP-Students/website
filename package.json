@@ -6,9 +6,12 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
+    "setup:emulator": "npm ci --prefix tools/firebase-emulator",
+    "dev:emulator": "node scripts/firebase-local.mjs dev",
     "lint": "next lint",
     "start": "next start",
-    "emulate": "firebase emulators:start --import emulator --export-on-exit",
+    "emulate": "node scripts/firebase-local.mjs emulate",
+    "test:emulator": "node scripts/firebase-local.mjs test",
     "deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes",
     "test": "node --test --experimental-strip-types \"scripts/*.test.ts\"",
     "test:double-count": "node --test scripts/double-count.mjs"

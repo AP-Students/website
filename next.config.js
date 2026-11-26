@@ -3,10 +3,20 @@
  * for Docker builds.
  */
 await import("./src/env.js");
+import { readFileSync } from "node:fs";
+import { demoFirebaseConfig, usesFirebaseEmulators } from "./src/lib/firebase-mode.js";
+
+const localFirebase = usesFirebaseEmulators(process.env.NODE_ENV, process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS);
+
+const { emulators } = JSON.parse(readFileSync(new URL("./firebase.emulator.json", import.meta.url), "utf8"));
 
 /** @type {import("next").NextConfig} */
 const config = {
   images: {
+    ...(localFirebase ? { remotePatterns: [{
+      protocol: "http", hostname: emulators.storage.host, port: String(emulators.storage.port),
+      pathname: `/v0/b/${demoFirebaseConfig.storageBucket}/o/**`,
+    }] } : {}),
     domains: ["lh3.googleusercontent.com", "firebasestorage.googleapis.com"],
   },
   async redirects() {
